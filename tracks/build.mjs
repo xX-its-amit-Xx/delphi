@@ -21,6 +21,7 @@
 // The raw agent files stay outside the repo. What is committed is this merged, checked artefact.
 import fs from 'node:fs';
 import path from 'node:path';
+import * as READ from './scripts/readability.mjs';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -154,6 +155,65 @@ export function loadSpecialists(agentsDir = AGENTS, verified = {}) {
   });
 }
 
+// The 77-agent fleet (workflow wf_af15c8ea-cdf). Read from the committed copy so the build is
+// reproducible from the repo alone. Groups come from the file-name prefix.
+const FLEET_DIR = path.join(HERE, 'research', 'agents');
+const GROUPS = { bm: 'biomaterials', pp: 'people-funding-clients', q1: 'leanbio-enhancers', q2: 'leanbio-binding',
+  t1: 'track-1', t2: 'track-2', t3: 'track-3', t4: 'track-4', t6: 'track-6' };
+export function loadFleet(verified = {}) {
+  if (!fs.existsSync(FLEET_DIR)) return [];
+  return fs.readdirSync(FLEET_DIR).filter((f) => f.endsWith('.json')).sort().map((f) => {
+    const d = readJson(path.join(FLEET_DIR, f));
+    const slug = f.replace(/\.json$/, '');
+    const group = GROUPS[slug.split('-')[0]] ?? 'other';
+    if (!d) return { slug, group, error: 'unparseable' };
+    return {
+      slug, group, ...d,
+      citations: (d.citations ?? []).map((c) => ({ ...c, agent_says_verified: !!c.verified, verified: undefined,
+        resolved: verified[citeKey(c)] ?? null })),
+      // evidence quotes are the agent's claim until a verifier re-fetches the source
+      findings: (d.findings ?? []).map((x) => ({ ...x, quote_checked: false })),
+    };
+  });
+}
+
+// Plain-language explainers (phase 2). The reading grade is MEASURED here, not taken from the writer, and
+// the no-context reader's own report travels with it so the page can show how the text actually landed.
+const P2 = path.join(HERE, 'research', 'phase2');
+export function loadVerdicts() {
+  if (!fs.existsSync(P2)) return null;
+  const out = { by_agent: {}, tally: {} };
+  for (const f of fs.readdirSync(P2).filter((x) => x.startsWith('verify-'))) {
+    const d = readJson(path.join(P2, f)); if (!d) continue;
+    out.by_agent[d.label.replace(/^verify-/, '')] = { overall: d.overall, claims: d.claims };
+    for (const c of d.claims) out.tally[c.verdict] = (out.tally[c.verdict] ?? 0) + 1;
+  }
+  return out;
+}
+
+const EXPLAIN_TITLE = { 'bm-science': 'The science', 'bm-making': 'The making: printer, resins, tests', 'bm-contract': 'The contract: architecture, market, patents, money' };
+export function attachExplainers(tracks) {
+  const rd = (n) => readJson(path.join(P2, n + '.json'));
+  const prep = (g) => {
+    const ex = rd(`explain2-${g}`) ?? rd(`explain-${g}`); if (!ex) return null;
+    const prose = [ex.one_line, ex.what, ex.why, ...(ex.steps ?? []).map((x) => x.text), ex.wrong_if, ...(ex.could_go_wrong ?? []),
+      ...(ex.questions ?? []).flatMap((q) => [q.q, q.a])].filter(Boolean).join(' ');
+    const a = READ.assess(prose, { glossary: ex.glossary ?? [], limit: 10, max_jargon: 12 });
+    const r = rd(`read2-${g}`) ?? rd(`read-${g}`);
+    const revised = !!rd(`explain2-${g}`);
+    return { ...ex, title: EXPLAIN_TITLE[g] ?? null, revised, reading: { grade: a.grade, unexplained_terms: a.jargon.length, longest_sentence: a.longest_sentence_words, ok: a.ok, failed: a.failed,
+      reader_clarity: r?.clarity_1_to_5 ?? null, reader_unknown_words: r?.words_i_did_not_know ?? [], reader_could_not_follow: r?.sentences_i_could_not_follow ?? [],
+      reader_unanswerable: (r?.test_questions ?? []).filter((q) => !q.answerable_from_text).map((q) => q.question), reader_help: r?.what_would_help ?? null } };
+  };
+  const by = { 1: ['track-1'], 2: ['track-2'], 3: ['track-3'], 4: ['track-4'], 5: ['bm-science', 'bm-making', 'bm-contract'], 6: ['track-6'] };
+  for (const t of tracks) {
+    const all = (by[t.n] ?? []).map(prep).filter(Boolean);
+    t.explain = all[0] ?? null; t.explain_more = all.slice(1);
+  }
+  const lean = ['leanbio-enhancers', 'leanbio-binding', 'people-funding'].map((g) => ({ group: g, ...prep(g) })).filter((x) => x.one_line);
+  return lean;
+}
+
 // ---------------------------------------------------------------- run
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   fs.mkdirSync(OUT_REPO, { recursive: true });
@@ -163,8 +223,11 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const corpus = mergeCorpus();
   const tracks = loadTracks(AGENTS, verified);
   const specialists = loadSpecialists(AGENTS, verified);
+  const fleet = loadFleet(verified);
+  const extraExplain = attachExplainers(tracks);
+  const verdicts = loadVerdicts();
 
-  const allCites = [...tracks.flatMap((t) => t.scout?.citations ?? []), ...specialists.flatMap((s) => s.citations ?? [])];
+  const allCites = [...tracks.flatMap((t) => t.scout?.citations ?? []), ...specialists.flatMap((s) => s.citations ?? []), ...fleet.flatMap((s) => s.citations ?? [])];
   const citeStats = {
     total: allCites.length,
     agent_says_verified: allCites.filter((c) => c.agent_says_verified).length,
@@ -179,7 +242,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     built: new Date().toISOString().slice(0, 10),
     brief: 'tracks/BRIEF-2026-11-12.md',
     lawset: tracks.find((t) => t.laws?.lawset_version)?.laws.lawset_version ?? null,
-    tracks, specialists, synthesis,
+    tracks, specialists, fleet, extraExplain, verdicts, synthesis,
     corpus: corpus.error ? corpus : { ...corpus, works: corpus.works.slice(0, 400) },
     corpus_full_in_repo: 'tracks/research/buehler-corpus.json',
     citations: citeStats,
@@ -194,6 +257,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   console.log(`corpus: ${corpus.error ?? `${corpus.relevant} relevant of ${corpus.works_read_by_agents} read, ${corpus.rejected} rejected, quotes ${corpus.quotes_checked - corpus.quotes_failed}/${corpus.quotes_checked} verified`}`);
   if (!corpus.error) console.log(`  per track: ${Object.entries(corpus.per_track).map(([k, v]) => `T${k}=${v}`).join(' ')}`);
   for (const t of tracks) console.log(`track ${t.n} ${t.slug.padEnd(12)} ${t.status}`);
-  console.log(`specialists: ${specialists.length} | citations ${citeStats.total}, agent-verified ${citeStats.agent_says_verified}, resolved ${citeStats.independently_resolved}, failed ${citeStats.failed_to_resolve}, unchecked ${citeStats.not_yet_checked}`);
+  console.log(`fleet: ${fleet.length} agents, ${fleet.reduce((a, x) => a + (x.findings?.length ?? 0), 0)} findings
+specialists: ${specialists.length} | citations ${citeStats.total}, agent-verified ${citeStats.agent_says_verified}, resolved ${citeStats.independently_resolved}, failed ${citeStats.failed_to_resolve}, unchecked ${citeStats.not_yet_checked}`);
   console.log(`wrote ${path.relative(ROOT, path.join(OUT_DASH, 'tracks.json'))} (${fs.statSync(path.join(OUT_DASH, 'tracks.json')).size} bytes)`);
 }

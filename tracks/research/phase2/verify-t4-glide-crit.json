@@ -1,0 +1,30 @@
+{
+ "label": "verify-t4-glide-crit",
+ "claims": [
+  {
+   "claim": "Public data contradict G1's BEM-absolute arm: slope-based control C_eff 0.88 vs BEM 0.433 (band 0.33-0.57); the 1.2 g loading is a tuned effective number.",
+   "verdict": "supported",
+   "source_says": "psi 35 KL 1.200 ... Ceff_data 0.882 BEM Ceff 0.433 (b_slope.py rerun). Paper: \"we reduce the value of the drag coefficient to obtain good agreement with our experiments.\"",
+   "note": "Rerun reproduces 0.882 vs 0.433; the paper does tune the drag coefficient and uses a 1.2 g net mass loading; the 0.33-0.57 band and 'foregone failure' are the agent's inference, and it rests on lead density and key-mass assumptions."
+  },
+  {
+   "claim": "On public data, pooled over 10 cells with one scalar the disk rule has RMS log error 0.055 vs BEM 0.088; at psi=0 the disk rule wins 0.133 vs 0.227.",
+   "verdict": "supported",
+   "source_says": "both,KL>.1 BEM n=10 RMS log err 0.088; disk 0.055. freeze.py-style RMS psi 0 all BEM 0.227 disk 0.133 n=4.",
+   "note": "Rerun of c_models.py and d_series.py reproduces these numbers exactly; they are in-sample fits (per-psi scalars give a tie 0.052 vs 0.054, which the agent also states)."
+  },
+  {
+   "claim": "With sigma_f 0.04 the frozen R15 test is inconclusive ~84% when BEM is true; G3 and G5 do not separate BEM from disk; only G4 discriminates, against a rival that ignores pitch by construction.",
+   "verdict": "partly",
+   "source_says": "f_mc_out.txt: incl 0.839 (BEM true, sigma 0.04); g4_bem_ok 1.000, g4_dsk_ok 0.000; under disk-true sigma 0.04, g3_all 0.721, g5_ok 0.976.",
+   "note": "Output file shows these numbers, but they come from the agent's own simulation with an assumed sigma_f and rules; I did not re-run f_mc.py or check the 'disk ignores pitch' construction in the design file (not located)."
+  },
+  {
+   "claim": "G6 cannot fail as written (refuted only by a significantly positive slope) and its 0.18 is a 10 percent measurement error bar, not a spread across species.",
+   "verdict": "partly",
+   "source_says": "\"error of ±10% [46], which is illustrated by the error-bar from mean(KL) = 1.8 ± 0.18 in Fig. 3.\" h_power.py: refute-rule fires if beta=-0.0213: 0.000, if beta=0: 0.025.",
+   "note": "The PRL sentence supports the 10 percent error-bar reading (preceding words lost in extraction); the G6 refutation rule itself comes from the design file, which I could not find, so 'cannot fail' is only checked as the agent's simulation output."
+  }
+ ],
+ "overall": "Four key claims checked. Two are supported: I re-ran the scripts and they reproduce the numbers. Two are partly supported. The agent's Monte Carlo output for G3, G4 and G5 matches its file, but that output depends on assumed scatter values and on a design file I could not locate. The 0.18 error-bar reading is backed by the paper, but the G6 refutation rule is unverified. No holdout material was touched."
+}

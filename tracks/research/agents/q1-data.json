@@ -1,0 +1,293 @@
+{
+ "label": "q1-data",
+ "topic": "Q1 enhancer-promoter specificity: public data and a first analysis (GSE186265, Martinez-Ara et al. 2022, mouse ES cells)",
+ "summary": "Dataset: GEO GSE186265 (Martinez-Ara, van Steensel lab, Mol Cell 2022): combinatorial reporter assay of DHS-centred candidate CREs ('enhancers') x promoters from three mouse loci, 3 biological replicates, upstream placement. After pooling orientations/locus libraries to one value per replicate per (enhancer, promoter) cell, 232 enhancers x 31 promoters, 3747 cells (52% filled). Analysed the largest complete block found by a deterministic greedy rule: 98 enhancers x 15 promoters (105 promoter pairs). log2(activity+0.01). Noise = pooled replicate SD in deciles of cell mean (about 1.0 log2 for the weakest 40% of cells, 0.16-0.20 for the strongest 30%). Results (point estimate, bootstrap 95% interval where stated): (1) rank agreement between promoters is weak and variable: Spearman median 0.38 (range -0.29 to 0.72 over the 105 pairs), Kendall tau-b median 0.27 (range -0.19 to 0.52). A purely multiplicative model with the same replicate noise predicts Spearman median 0.81, so all 105 pairs fall below the null's 95% lower bound; per-promoter replicate reliability is high (median 0.96, min 0.72), so this is not replicate noise. (2) Among enhancer pairs whose order is significant (|z|>2) on both promoters of a promoter pair, a median 26.5% (range 9.6-63.5%) are in opposite order; summed over the 105 pairs 65,174 of 224,658 doubly-significant comparisons reverse, against 368 (95% 196-624) expected from noise under a multiplicative model; at |z|>3, 43,854 vs 4.4. The mean size of a reversal (min of the two absolute log2 differences) has median 1.33 log2 over pairs (max 2.52). The most extreme pair, P007 vs P021, has Spearman -0.29 (enhancer+replicate bootstrap -0.47 to -0.10). (3) Spectrum: on the linear matrix the best rank-one fit explains 71.3% of the sum of squares (rep-bootstrap 70.8-71.6%, enhancer+rep 67.2-76.2%); on the log2 matrix 75.7% (uncentered) and 61.6% (grand-mean centred). Because a multiplicative model is rank one on the LINEAR scale and ADDITIVE (row+column effects, not rank one) on the log scale, the more telling log-scale split is: additive row+column effects 73.3% of variance, interaction 26.7% (enh+rep 23.8-30.1%), interaction 11.9x the size expected from replicate noise alone (10.7-13.4), 25.0% after subtracting noise; the best rank-one fit of that interaction captures 38.5% of it (31.7-44.6%); additive + rank-one interaction = 83.6%. Conclusion: in this dataset multiplicativity is a good first approximation for about three quarters of the variance but is rejected as an exact model; the order of enhancer strengths changes materially between promoters (promoter-specific interaction), beyond measurement noise, and the interaction has more than one dimension. Caveats: cCREs are DHS fragments not validated enhancers; promoter-pair correlations are strongly structured (clusters such as P013/P014/P021 correlate ~0.7); orientations and locus libraries pooled; one dataset, one cell type; this is mouse ES cells not human.",
+ "lay_summary": "Imagine 98 loudspeakers (enhancers) each wired to 15 different light bulbs (promoters), and we record how bright each bulb gets. If every speaker simply multiplied every bulb's brightness by a fixed amount, the speakers would rank the same way for every bulb. We found they do not: for typical pairs of bulbs, the speakers' ranking agrees only weakly, and in about a quarter of the clear-cut comparisons the order is flipped. Simple multiplication still explains roughly three quarters of the variation, but the rest is a real bulb-specific effect, about twelve times larger than measurement noise. So an enhancer is not just 'strong' or 'weak'; how strong it looks depends on which promoter it is paired with.",
+ "findings": [
+  {
+   "claim": "GSE186265 contains reporter-assay activities for many enhancer(cCRE) x promoter pairs from three mouse loci with 3 biological replicates; a usable supplementary file is GSE186265_Activities_allcombinations_Upstream.tsv.gz (5,837,300 bytes).",
+   "source": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE186265 ; file https://ftp.ncbi.nlm.nih.gov/geo/series/GSE186nnn/GSE186265/suppl/GSE186265_Activities_allcombinations_Upstream.tsv.gz",
+   "confidence": "high",
+   "value": "sha256 32336d6f3b8ed5aa0829e31d2a6b56665786637785f73841c872d998beb60a03",
+   "evidence_quote": "3 Biological replicates of cDNA samples for each library mix, 2 pDNA replicates for each library mix and 1 iPCR sequencing run per separate library."
+  },
+  {
+   "claim": "The upstream file has 10,678 EP rows covering 232 distinct enhancer fragments x 31 distinct promoter fragments; pooling orientations/locus libraries gives 3747 filled cells of 7192 (52%).",
+   "source": "own calculation: scripts/q1-data/01_blocks.py and 02_build_matrix.py on the downloaded file",
+   "confidence": "high",
+   "value": "232 x 31, 3747 cells",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Largest complete block (greedy, deterministic) is 98 enhancers x 15 promoters, giving 105 promoter pairs.",
+   "source": "own calculation: scripts/q1-data/03_analysis.py (log in scratch/q1-data/log_main.txt)",
+   "confidence": "high",
+   "value": "98 x 15",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Spearman correlation between promoters over the 98 shared enhancers: median 0.382, range -0.286 to 0.715 across 105 pairs (log2(activity+0.01)).",
+   "source": "own calculation: scratch/q1-data/summary_main.json, panel_pairs_main.json",
+   "confidence": "high",
+   "value": "median 0.382 [-0.286, 0.715]",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Kendall tau-b between promoters: median 0.269, range -0.190 to 0.522.",
+   "source": "own calculation: scratch/q1-data/summary_main.json",
+   "confidence": "high",
+   "value": "median 0.269 [-0.190, 0.522]",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Bootstrap intervals for the extreme pairs: P014 vs P021 Spearman 0.715 (replicate bootstrap 0.675-0.746; enhancer+replicate 0.563-0.808); P007 vs P021 Spearman -0.286 (replicate bootstrap -0.317 to -0.259; enhancer+replicate -0.471 to -0.095). Interval for every pair is in panel_pairs_main.json (B=1000).",
+   "source": "own calculation: scratch/q1-data/panel_pairs_main.json",
+   "confidence": "high",
+   "value": "see text",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Replicate noise alone cannot explain the weak agreement: under a purely multiplicative (log-additive) model with the estimated replicate noise, the median pair Spearman would be 0.812; all 105 observed pair Spearmans lie below the null 95% lower bound. Per-promoter replicate reliability median 0.962, min 0.722 (P015).",
+   "source": "own calculation: summary_main.json (null_rho_median_of_pairs, promoter_reliability_spearman); 500 null simulations",
+   "confidence": "medium",
+   "value": "null 0.812 vs observed 0.382",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Rank reversals (|z|>2 on both promoters, opposite sign): 65,174 of 224,658 doubly-significant enhancer-pair comparisons summed over 105 promoter pairs (29.0%; per-pair median fraction 26.5%, range 9.6-63.5%). Null expectation under multiplicative model + noise: 368 (95% 196-624). At |z|>3: 43,854 observed vs 4.4 expected.",
+   "source": "own calculation: summary_main.json, summary_z3.json",
+   "confidence": "medium",
+   "value": "65174/224658",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Typical reversal magnitude: mean over reversed enhancer pairs of min(|log2 difference on promoter a|, |on promoter b|) has median 1.33 log2 across promoter pairs (max 2.52, i.e. about 5.7-fold at both promoters).",
+   "source": "own calculation: panel_pairs_main.json field rev_size_mean_log2",
+   "confidence": "medium",
+   "value": "1.33 log2 (median), 2.52 (max)",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Best rank-one fit explains 71.3% of the sum of squares of the linear-scale 98x15 matrix (replicate bootstrap 70.8-71.6%; enhancer+replicate bootstrap 67.2-76.2%). Linear singular values: 79.9, 37.8, 20.9, 19.2, 11.1, 8.5, 6.9, 6.5, 5.2, 2.8, 2.3, 2.2, 1.9, 1.7, 1.4.",
+   "source": "own calculation: summary_main.json svd.lin_rank1, svd.sv_lin",
+   "confidence": "high",
+   "value": "0.713",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "On log2 scale: best rank-one fit explains 75.7% (uncentered) / 61.6% (grand-mean centred) of the sum of squares; additive row+column effects explain 73.3% of variance about the grand mean, the row x column interaction 26.7% (enh+rep CI 23.8-30.1%). Uncentered log singular values: 91.3, 28.6, 26.5, 15.6, 13.0, ... 4.1.",
+   "source": "own calculation: summary_main.json",
+   "confidence": "high",
+   "value": "73.3% additive / 26.7% interaction",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Interaction sum of squares is 11.9x the amount expected from replicate noise alone (replicate bootstrap 12.0-12.4; enhancer+replicate 10.7-13.4); 25.0% of variance after subtracting the noise expectation. Best rank-one fit of the interaction explains 38.5% of it (31.7-44.6%); additive plus rank-one interaction explains 83.6%.",
+   "source": "own calculation: summary_main.json (svd.interaction_ss_over_noise etc.). Noise expectation = mean SE^2 x (nE-1)(nP-1) assumes homoscedastic-like errors; approximate.",
+   "confidence": "medium",
+   "value": "11.9x",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Results are robust to the pseudocount and threshold: pseudocount 0.03 gives Spearman median 0.378, reversal fraction 0.265, interaction/noise 17.3; pseudocount 0.003 gives 0.378, 0.263, 8.8; z=3 gives reversal fraction 0.222. Linear rank-one share 0.713 in all.",
+   "source": "own calculation: summary_c0.03.json, summary_c0.003.json, summary_z3.json",
+   "confidence": "high",
+   "value": "see text",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Restricting to the more active enhancers does not restore agreement: top 50% by mean activity (n=49) Spearman median 0.355; top 25% (n=25) 0.385.",
+   "source": "own calculation: scratch/q1-data/active_subset.json (04_active_subset.py)",
+   "confidence": "high",
+   "value": "0.355 / 0.385",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "All 363 promoter pairs with at least 20 shared enhancers (pairwise-complete, all 31 promoters): Spearman median 0.312 (range -0.574 to 0.838), median reversal fraction 0.252. Per-pair table in allpairs_main.csv (point estimates only, no bootstrap).",
+   "source": "own calculation: scratch/q1-data/allpairs_main.csv",
+   "confidence": "medium",
+   "value": "median 0.312",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "The original authors report that more than half of the tested CREs show significant promoter selectivity (independent support for promoter-specific enhancer effects).",
+   "source": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE186265",
+   "confidence": "high",
+   "value": "more than half",
+   "evidence_quote": "By systematic reporter assays of thousands of CRE – promoter pairs from three Mb-sized genomic regions in mouse cells, we found that CREs vary substantially in their promoter compatibility, with more than half showing significant selectivity."
+  },
+  {
+   "claim": "Martinez-Ara et al. note that Bergman et al. (human K562) proposed multiplicative combination of enhancer and promoter activity while both datasets also show selectivity.",
+   "source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC9278412/fullTextXML (Discussion)",
+   "confidence": "high",
+   "value": "",
+   "evidence_quote": "Based on mathematical modeling of their data, the authors proposed that intrinsic cCRE and P activities generally combine multiplicatively to determine reporter activity."
+  },
+  {
+   "claim": "Design: three 1-3 Mb loci, a large fraction of all pairwise cCRE-promoter combinations, each element in two orientations.",
+   "source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC9278412/fullTextXML",
+   "confidence": "high",
+   "value": "",
+   "evidence_quote": "From these loci, which each encompass ∼20 genes, we tested a large fraction of all possible pairwise cCRE-promoter (cCRE-P) combinations."
+  }
+ ],
+ "key_claims": [
+  {
+   "claim": "The data have the same 98 enhancers (DHS-centred cCREs) measured on 15 promoters with 3 replicates, in a public GEO file.",
+   "source": "GSE186265 Activities_allcombinations_Upstream file; scripts/q1-data/03_analysis.py",
+   "evidence_quote": "3 Biological replicates of cDNA samples for each library mix, 2 pDNA replicates for each library mix and 1 iPCR sequencing run per separate library."
+  },
+  {
+   "claim": "Promoter-to-promoter rank agreement is weak (Spearman median 0.38, range -0.29 to 0.72) and well below the 0.81 expected for a purely multiplicative model with the same noise.",
+   "source": "scratch/q1-data/summary_main.json (own calculation)",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "About 26% of doubly-significant enhancer-pair orderings reverse between promoters (65,174 of 224,658 overall), versus 368 expected from noise.",
+   "source": "scratch/q1-data/summary_main.json (own calculation)",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Best rank-one (multiplicative) fit explains 71% of the linear-scale matrix; the log-scale interaction is 27% of variance and 11.9x noise, so multiplicativity is a good approximation but not exact.",
+   "source": "scratch/q1-data/summary_main.json (own calculation)",
+   "evidence_quote": ""
+  }
+ ],
+ "table": [
+  {
+   "name": "Dataset GSE186265 upstream activities",
+   "fields": "bytes=5837300; sha256=32336d6f3b8ed5aa0829e31d2a6b56665786637785f73841c872d998beb60a03; downloaded=2026-11-12; rows_EP=10678; enhancers=232; promoters=31; replicates=3; path=D:/Users/ashenoy00000/delphi-work/data/martinezara2022/",
+   "source": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE186nnn/GSE186265/suppl/GSE186265_Activities_allcombinations_Upstream.tsv.gz"
+  },
+  {
+   "name": "Dataset GSE186265 downstream activities+boost indices (downloaded, not used)",
+   "fields": "bytes=177057; sha256=e1cc04471fd4d3384ce7b38079059a047cd104c25ae4eafc848ca6a94fa3a065; downloaded=2026-11-12",
+   "source": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE186nnn/GSE186265/suppl/GSE186265_ActivitiesAndBoostIndices_Downstream.tsv.gz"
+  },
+  {
+   "name": "Dataset GSE186265 boost indices cCRE-P upstream (downloaded, not used)",
+   "fields": "bytes=1023729; sha256=4c3a15dcff575d28f6c16f2bbccd76f29b199e03a67b6e3964de66c96d0c71b2",
+   "source": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE186nnn/GSE186265/suppl/GSE186265_BoostIndices_cCRE-P_Upstream.tsv.gz"
+  },
+  {
+   "name": "Rank agreement, 105 promoter pairs of 15-promoter panel",
+   "fields": "spearman_median=0.382; spearman_range=-0.286..0.715; kendall_median=0.269; kendall_range=-0.190..0.522; null_multiplicative_spearman_median=0.812; n_enhancers=98",
+   "source": "scratch/q1-data/summary_main.json"
+  },
+  {
+   "name": "Rank reversals (|z|>2 both promoters)",
+   "fields": "reversed=65174; doubly_significant=224658; per_pair_median_fraction=0.265; range=0.096..0.635; null_expected=368 (196-624); median_size_log2=1.33",
+   "source": "scratch/q1-data/summary_main.json"
+  },
+  {
+   "name": "Singular-value / variance decomposition",
+   "fields": "linear_rank1=0.713 (CI rep 0.708-0.716; enh+rep 0.672-0.762); log_uncentered_rank1=0.757; additive_share=0.733; interaction_share=0.267; interaction_over_noise=11.9; interaction_rank1_share=0.385",
+   "source": "scratch/q1-data/summary_main.json"
+  }
+ ],
+ "recommendations": [
+  "Treat the multiplicative (rank-one in linear scale) model as the baseline to be refuted: here it fits ~71% but fails against the noise null, so Lean statements about rank-one classes can be tested with this 98x15 matrix (scratch/q1-data/matrix.npz, panel lists in summary_main.json).",
+  "Repeat on a second public dataset (e.g. Bergman et al. 2022 human K562 ExP STARR-seq) to see whether the 27% interaction share and ~26% reversal fraction replicate; I did not locate or download its processed table.",
+  "Next analysis: orientation-resolved matrices and a held-out-promoter prediction test of rank-one vs rank-two models."
+ ],
+ "reproduce": [
+  {
+   "what": "Download the 3 supplementary files and print sha256 (curl, sha256sum)",
+   "command_or_url": "sh D:/Users/ashenoy00000/delphi-work/agents2/scripts/q1-data/00_download.sh",
+   "expected": "Upstream_allcombinations sha256 32336d6f3b8ed5aa..."
+  },
+  {
+   "what": "Build enhancer x promoter x replicate array (Python 3.14.2, numpy 2.5.3, scipy 1.18.1)",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents2/scripts/q1-data/02_build_matrix.py",
+   "expected": "(232, 31, 3) cells 3747 rows pooled 10678"
+  },
+  {
+   "what": "Main analysis, B=1000, pseudocount 0.01, z=2 (about 1 minute)",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents2/scripts/q1-data/03_analysis.py 0.01 2 1000 main",
+   "expected": "panel 98 enhancers x 15 promoters; spearman_median 0.382; n_rev_total 65174; lin_rank1 0.713 (bootstrap intervals vary slightly only in the 3rd decimal; fixed seed 20261112)"
+  },
+  {
+   "what": "Sensitivity runs and active-subset check",
+   "command_or_url": "sh D:/Users/ashenoy00000/delphi-work/agents2/scripts/q1-data/run_all.sh  (or python -I 04_active_subset.py)",
+   "expected": "top50pct spearman_median 0.355; top25pct 0.385; z=3 rev_frac_median 0.222"
+  }
+ ],
+ "citations": [
+  {
+   "authors": "Martinez-Ara M, Comoglio F, van Arensbergen J, van Steensel B",
+   "year": 2022,
+   "title": "Systematic analysis of intrinsic enhancer-promoter compatibility in the mouse genome",
+   "doi_or_arxiv": "10.1016/j.molcel.2022.04.009",
+   "verified": true,
+   "venue": "Molecular Cell",
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1016/j.molcel.2022.04.009 resolved in this run; full text read via Europe PMC PMC9278412",
+   "used_for": "source of dataset GSE186265 and design"
+  },
+  {
+   "authors": "Martinez-Ara M, Comoglio F, van Arensbergen J, van Steensel B",
+   "year": 2021,
+   "title": "Systematic analysis of intrinsic enhancer-promoter compatibility in the mouse genome (bioRxiv preprint)",
+   "doi_or_arxiv": "10.1101/2021.10.21.465269",
+   "verified": true,
+   "venue": "bioRxiv",
+   "how_verified": "Crossref API resolved in this run",
+   "used_for": "preprint version of the dataset paper"
+  },
+  {
+   "authors": "Bergman DT, Jones TR, Liu V, Ray J, et al.",
+   "year": 2022,
+   "title": "Compatibility rules of human enhancer and promoter sequences",
+   "doi_or_arxiv": "10.1038/s41586-022-04877-w",
+   "verified": true,
+   "venue": "Nature",
+   "how_verified": "Crossref API resolved in this run (title and first authors matched); not OA in Europe PMC, text not read",
+   "used_for": "candidate second dataset (human K562) and the multiplicative model, as characterised by Martinez-Ara et al."
+  }
+ ],
+ "could_not_find": [
+  "Bergman et al. 2022 processed data table: the paper is not open access in Europe PMC and I did not locate its accession, so the K562 ExP data were not analysed.",
+  "Zenodo 6406791 (EPCombinations code, 86.8 MB) was not downloaded; GEO supplementary files were sufficient.",
+  "The 'enhancers' are DHS-centred candidate cis-regulatory elements, not individually validated enhancers; no independent enhancer validation was checked.",
+  "Replicate noise is estimated from only 3 replicates per cell via pooled decile variances, and the bootstrap resamples replicates per cell independently (ignores shared batch effects); intervals for rank statistics from the replicate bootstrap are therefore narrow and the enhancer+replicate bootstrap is the more honest interval.",
+  "The point estimate of interaction share (0.267) lies just below its replicate-bootstrap interval (0.269-0.277) because resampling replicates adds noise; the bootstrap is a spread measure here, not bias-corrected.",
+  "Orientation and locus-library effects were pooled by averaging and not analysed separately; the panel was chosen by a greedy rule, not an optimal complete block."
+ ],
+ "glossary": [
+  {
+   "term": "enhancer",
+   "plain": "a stretch of DNA that can turn up the activity of a gene (here, a candidate stretch found by an open-chromatin signal)"
+  },
+  {
+   "term": "promoter",
+   "plain": "the DNA switch right at the start of a gene where reading begins"
+  },
+  {
+   "term": "Spearman / Kendall correlation",
+   "plain": "two scores of how similarly two lists rank the same items; 1 means identical order, 0 unrelated, -1 reversed"
+  },
+  {
+   "term": "rank reversal",
+   "plain": "two enhancers swap order of strength when moved from one promoter to another"
+  },
+  {
+   "term": "singular-value spectrum",
+   "plain": "a list of numbers showing how many independent patterns a table of numbers contains and how big each is"
+  },
+  {
+   "term": "rank one / multiplicative model",
+   "plain": "each result equals an enhancer strength times a promoter strength, so all promoters rank enhancers the same way"
+  },
+  {
+   "term": "log2 scale",
+   "plain": "counting in doublings; a difference of 1 means a twofold change"
+  },
+  {
+   "term": "bootstrap",
+   "plain": "re-computing a number many times on randomly re-drawn copies of the data to see how much it wobbles"
+  },
+  {
+   "term": "interaction",
+   "plain": "the part of the results not explained by an enhancer effect plus a promoter effect added on the log scale"
+  }
+ ]
+}

@@ -1,0 +1,297 @@
+{
+ "label": "explain-leanbio-binding",
+ "one_line": "We test why programs that guess how tightly a drug grips a protein fall short, and prove the maths of one cause.",
+ "what": "Drug makers want to guess how tightly a small molecule sticks to a protein. Computer programs try to do this. They learn from lab measurements of \"stickiness\". We asked a plain question: why do these programs disappoint? Two popular answers exist. One says the lab numbers are too noisy. The other says the tests are too easy because test cases look like the training cases. We read the papers, ran a small simulation, and counted noise in a public drug database. We also wrote the key maths as proofs that a computer checks line by line.",
+ "why": "A program that ranks drug candidates wrongly wastes months of lab work. If the cause is noisy data, we need better measurements. If the cause is easy tests, we need fairer tests. These are different fixes, so the cause matters. Our reading so far is that noise is real but is not the main story. We do not claim this is settled.",
+ "steps": [
+  {
+   "text": "Read the papers on noise in lab measurements and on test cases that leak. Check each number against the paper itself.",
+   "picture": "Like checking a news story against the original report, not a friend's retelling."
+  },
+  {
+   "text": "Download real measurements from a public drug database. Find cases where different labs measured the same drug on the same protein.",
+   "picture": "Like collecting two bathroom scales that weigh the same person, then comparing the readings."
+  },
+  {
+   "text": "Measure how far apart those repeat readings are. Then work out the best score any program could reach against such readings.",
+   "picture": "Like marking a spelling test against an answer key that has a few typos."
+  },
+  {
+   "text": "Split the variation into two parts. One part is between proteins. The other is between drugs for the same protein.",
+   "picture": "Like asking whether a price depends on the shop or on the item inside the shop."
+  },
+  {
+   "text": "Run a made-up experiment. Test a program on look-alike cases, then on truly new cases. Add noise and see what changes.",
+   "picture": "Like giving a student last year's exam, then a brand new one."
+  },
+  {
+   "text": "Write four facts about noise as proofs in a proof-checking language. A computer checks every step.",
+   "picture": "Like a referee who will not let any move pass without a rule to back it."
+  },
+  {
+   "text": "Compare the noise ceiling with the scores that fair tests actually give. See which gap is bigger.",
+   "picture": "Like comparing a speed limit with how fast cars really go on a rough road."
+  },
+  {
+   "text": "List what we could not check, so no one reads more into the result than it holds.",
+   "picture": "Like a map with the unexplored edges marked."
+  }
+ ],
+ "wrong_if": "Our bet, written down before looking, is that noise alone does not explain the poor scores. We are wrong if a fair test with no look-alike cases shows scores right at the noise ceiling. We are also wrong if cleaning out look-alikes leaves scores unchanged. So far the opposite has happened. Scores fell when look-alikes were removed. But we have not tested this on the main benchmark's own labels.",
+ "could_go_wrong": [
+  "Our noise ceiling of about 0.85 to 0.95 out of 1 is our own conversion, and it assumes a tidy bell-shaped spread of errors.",
+  "The made-up experiment used an unusually wide spread of values, which makes noise look cheap, so it shows a mechanism and not a real size.",
+  "The drug database sample uses 40 hand-picked well-studied proteins, so it is not a fair random sample.",
+  "Repeat readings from different papers may differ for reasons other than noise, such as different test conditions.",
+  "We did not compute the noise ceiling for the main benchmark itself, because we did not download its labels.",
+  "Some key papers were behind a paywall, so we read only their summaries.",
+  "The proofs hold only for small, finite settings, and they need a model that has not seen the noise in the labels.",
+  "No proof was tested against real data in this round."
+ ],
+ "questions": [
+  {
+   "q": "Is the lab noise real?",
+   "a": "Yes. When different papers measure the same drug on the same protein, results typically differ by about 0.6 units. One unit is a ten-fold change in stickiness."
+  },
+  {
+   "q": "Then why not blame the noise?",
+   "a": "The ceiling it sets looks higher than what honest programs reach. Programs score about 0.75 to 0.80 on a fair test. Our rough ceiling is 0.85 to 0.95. So noise leaves room, though it is not zero."
+  },
+  {
+   "q": "What is the 'look-alike' problem?",
+   "a": "About half of the standard test cases (49 percent) have a near-twin in the training set. A simple lookup of similar cases, with no learning, scored 0.716 out of 1 on the original split."
+  },
+  {
+   "q": "What happened when the twins were removed?",
+   "a": "That lookup trick dropped to 0.653. Researchers reported that scores fell for other programs too."
+  },
+  {
+   "q": "Can simple tricks match fancy programs?",
+   "a": "On the standard test, a program that looks only at the drug scored 0.76. One that looks only at the protein scored 0.75. Published learning programs scored 0.74 to 0.82."
+  },
+  {
+   "q": "Does knowing the protein help?",
+   "a": "A little. In our sample, protein identity explained only about 8 to 15 percent of the variation. The hard part is ranking similar drugs for one protein."
+  },
+  {
+   "q": "How do you know?",
+   "a": "We checked numbers against the papers' full text or summaries and re-ran our own scripts. A second group of checkers confirmed most claims. Some were only partly confirmed, and we say so above."
+  },
+  {
+   "q": "What have you not checked?",
+   "a": "We have not computed the noise ceiling for the main benchmark. We trained no learning program ourselves. We did not use a second database. We also do not know how much repeat-reading differences come from real noise."
+  }
+ ],
+ "glossary": [
+  {
+   "term": "binding affinity",
+   "plain": "How tightly a small molecule sticks to a protein."
+  },
+  {
+   "term": "protein",
+   "plain": "A large molecule in the body that does a job, and that a drug may grip."
+  },
+  {
+   "term": "molecule",
+   "plain": "A tiny group of atoms joined together."
+  },
+  {
+   "term": "noise",
+   "plain": "Random wobble in a measurement, so repeat readings differ."
+  },
+  {
+   "term": "noise ceiling",
+   "plain": "The best score any program can get when the answer key itself wobbles."
+  },
+  {
+   "term": "leakage",
+   "plain": "When test cases are near-copies of training cases, so the test is too easy."
+  },
+  {
+   "term": "benchmark",
+   "plain": "A standard test that lets people compare programs."
+  },
+  {
+   "term": "correlation score",
+   "plain": "A number from minus 1 to 1 for how well two lists move together; 1 is perfect."
+  },
+  {
+   "term": "unit (of stickiness)",
+   "plain": "A step on a log scale where one step means ten times tighter or looser."
+  },
+  {
+   "term": "simulation",
+   "plain": "A made-up experiment run on a computer with data we create."
+  },
+  {
+   "term": "training set",
+   "plain": "The examples a program studies before it is tested."
+  },
+  {
+   "term": "lookup baseline",
+   "plain": "A simple trick that copies the answer from the most similar known cases, with no learning."
+  },
+  {
+   "term": "database",
+   "plain": "A large organised store of records."
+  },
+  {
+   "term": "variation",
+   "plain": "How spread out a set of numbers is."
+  },
+  {
+   "term": "proof",
+   "plain": "A step-by-step argument showing a statement must be true."
+  },
+  {
+   "term": "proof-checking language",
+   "plain": "A computer language where every step of a proof is checked by machine."
+  },
+  {
+   "term": "kcal/mol",
+   "plain": "A unit of energy for molecules; 1.4 of them means a ten-fold change in stickiness."
+  },
+  {
+   "term": "free-energy simulation",
+   "plain": "A heavy physics calculation that estimates how tightly a drug binds."
+  },
+  {
+   "term": "memorisation",
+   "plain": "Recalling answers seen before instead of working them out."
+  },
+  {
+   "term": "curation",
+   "plain": "Careful cleaning and selecting of data."
+  },
+  {
+   "term": "pKi and pIC50",
+   "plain": "Two ways of writing stickiness on a log scale; higher means tighter."
+  },
+  {
+   "term": "Kendall tau",
+   "plain": "A score for how well two rankings agree; 1 means the same order."
+  },
+  {
+   "term": "CASF2016",
+   "plain": "A widely used standard test set of drug and protein pairs."
+  },
+  {
+   "term": "PDBbind",
+   "plain": "A large public collection of drug and protein structures with stickiness values."
+  },
+  {
+   "term": "ChEMBL",
+   "plain": "A free public database of drug measurements taken from papers."
+  },
+  {
+   "term": "Lean",
+   "plain": "The proof-checking language we used."
+  },
+  {
+   "term": "cycle",
+   "plain": "A loop of changes that ends where it started, so the energies must add to zero."
+  },
+  {
+   "term": "attenuation",
+   "plain": "The weakening of an apparent link between two things because one is measured with noise."
+  },
+  {
+   "term": "uncorrelated",
+   "plain": "Having no straight-line link between two lists of numbers."
+  },
+  {
+   "term": "Cheng-Prusoff",
+   "plain": "A standard formula that links two ways of reporting stickiness."
+  },
+  {
+   "term": "reliability",
+   "plain": "How much of a measurement is real signal rather than noise."
+  },
+  {
+   "term": "standard deviation",
+   "plain": "A typical size of spread around the average."
+  }
+ ],
+ "check_yourself": [
+  {
+   "what": "Run the ceiling arithmetic",
+   "command": "python D:/Users/ashenoy00000/delphi-work/agents2/scripts/q2-critic/ceiling_calc.py",
+   "expect": "A ceiling of 0.847 for tau 0.51 and 0.948 for tau 0.71."
+  },
+  {
+   "what": "Open the leakage paper's full text and look for the 49 percent figure",
+   "command": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC12552120/fullTextXML",
+   "expect": "Quotes on 49 percent of test cases, lookup scores 0.716 and 0.653."
+  },
+  {
+   "what": "Run the unit and energy arithmetic",
+   "command": "python D:/Users/ashenoy00000/delphi-work/agents2/scripts/q2-physics/arithmetic.py",
+   "expect": "RT ln10 = 1.3642 kcal/mol, and exp(1.4/RT) = 10.62."
+  },
+  {
+   "what": "Open the noise paper's summary",
+   "command": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?format=json&resultType=core&query=DOI:%2210.1021/jm300131x%22",
+   "expect": "An abstract that gives a maximum R-squared of 0.81."
+  },
+  {
+   "what": "Run the proof check",
+   "command": "bash D:/Users/ashenoy00000/delphi-work/agents2/scripts/q2-theory-lean/run_check.sh",
+   "expect": "errors=0, sorryAx=0, axiom-lines=16/16, then ALL CHECKED."
+  },
+  {
+   "what": "Check the proof file is unchanged",
+   "command": "sha256sum D:/Users/ashenoy00000/delphi-work/agents2/scripts/q2-theory-lean/Q2Theory.lean",
+   "expect": "33861c42c333465cf60dc29ef014d2c7f54e46e64d53205e19948a5b38c1e44c"
+  }
+ ],
+ "sources": [
+  {
+   "id": "graber2025",
+   "cite": "Graber D et al. 2025. Resolving data bias improves generalization in binding affinity prediction. Nature Machine Intelligence. doi:10.1038/s42256-025-01124-5"
+  },
+  {
+   "id": "kramer2012",
+   "cite": "Kramer C, Kalliokoski T, Gedeck P, Vulpetti A. 2012. The experimental uncertainty of heterogeneous public Ki data. J Med Chem. doi:10.1021/jm300131x"
+  },
+  {
+   "id": "landrum2024",
+   "cite": "Landrum G, Riniker S. 2024. Combining IC50 or Ki values from different sources is a source of significant noise. J Chem Inf Model. doi:10.1021/acs.jcim.4c00049"
+  },
+  {
+   "id": "durant2025",
+   "cite": "Durant G et al. 2025. Robustly interrogating machine learning-based scoring functions: what are they learning? Bioinformatics. doi:10.1093/bioinformatics/btaf040"
+  },
+  {
+   "id": "volkov2022",
+   "cite": "Volkov M et al. 2022. On the frustration to predict binding affinities from protein-ligand structures with deep neural networks. J Med Chem. doi:10.1021/acs.jmedchem.2c00487"
+  },
+  {
+   "id": "ross2023",
+   "cite": "Ross GA et al. 2023. The maximal and current accuracy of rigorous protein-ligand binding free energy calculations. Communications Chemistry. doi:10.1038/s42004-023-01019-9"
+  },
+  {
+   "id": "kalliokoski2013",
+   "cite": "Kalliokoski T, Kramer C, Vulpetti A, Gedeck P. 2013. Comparability of mixed IC50 data, a statistical analysis. PLoS ONE. doi:10.1371/journal.pone.0061007"
+  },
+  {
+   "id": "su2018",
+   "cite": "Su M et al. 2018. Comparative assessment of scoring functions: the CASF-2016 update. J Chem Inf Model. doi:10.1021/acs.jcim.8b00545"
+  },
+  {
+   "id": "lppdbbind2026",
+   "cite": "Li et al. 2026. Leak Proof PDBBind. J Phys Chem B. doi:10.1021/acs.jpcb.5c08598"
+  },
+  {
+   "id": "brown2009",
+   "cite": "Brown SP, Muchmore SW, Hajduk PJ. 2009. Healthy skepticism: assessing realistic model performance. Drug Discovery Today. doi:10.1016/j.drudis.2009.01.012"
+  }
+ ],
+ "left_out": [
+  "Claim that robust-noise ceilings (0.96 and 0.89) show the standard-deviation ceilings are too pessimistic: this is the agent's own inference, not found in the source paper.",
+  "Exact wording that the 0.54 literature noise 'agrees with' our 0.61: the checker found 0.54 lies outside our interval, so we say only 'similar'.",
+  "Proof that errors around a loop have correlation minus 1/(n-1): only implied informally, not a stated theorem.",
+  "Names of the proof axioms (propext, Classical.choice, Quot.sound): not found in the check log, so not stated.",
+  "Exact count of 39 proteins in the variance split: the split used 35 and 38 proteins, so we avoid the single number.",
+  "Ross experimental 0.85 versus free-energy 1.08 kcal/mol as 'near the floor': an interpretation of different sets, not a strict test."
+ ]
+}

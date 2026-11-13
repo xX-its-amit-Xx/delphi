@@ -1,0 +1,806 @@
+{
+ "label": "bm-formlabs-all-resins",
+ "topic": "Every Formlabs resin and powder, as a design space",
+ "summary": "Fetched 2026-11-12 (UTC): the Formlabs materials catalogue, the solvent-compatibility table, the data-sheet index, 57 product pages, 54 English technical data sheets (TDS, PDF; 7 more are web-format TDS pages) and 18 safety data sheets (all saved with URL, date, byte size and sha256 in data/formlabs-tds/MANIFEST.tsv). The table has 48 rows: 23 current Form 4-family SLA resins (including casting, ceramic and colour bases), 7 Form 4B medical resins, 10 legacy or Form 3-only resins, and 8 powders (Nylon 12, 12 White, 12 Tough, 12 GF, 11, 11 CF, TPU 90A, and Polypropylene, which is no longer on the catalogue); Nylon 11 Pro and the six Alpha resins are in findings (web-format TDS). Per material: tensile and flexural modulus, UTS, elongation, Shore, HDT, density where published, 24 h cube water and IPA uptake, biocompatibility standards, minimum layer thickness, printers and the post-cure recipe from the TDS footnotes, state by state (green and post-cured). Main results. (1) Earlier agents are confirmed on the cube table (all current resins 0.0-0.9% water in 24 h; Elastic 50A V2 39.2% IPA vs Rigid 10K <0.1%) but one claim must be narrowed: Flexible 80A Resin V2 gains +8% mass and +3% volume in 1 day in water (+9%/+7% in 1 week) in its own TDS slab test, so \"stock resins gain under 1%\" is false for that resin, and the 0.7% quoted for Flexible 80A in the cube table is the V1 row. (2) The Grey V5 one-week water figures (+3.23% mass, modulus to 65%) are now read cleanly and confirmed. (3) Flexible 50A is the renamed Elastic 50A V2. (4) Chemistry: all Form 4 resins except Silicone 40A are methacrylate/urethane-methacrylate (SDS), so acrylate pairs can co-cure; Silicone 40A is polysiloxane with no bonding evidence. (5) Ranking: the best pairs are Flexible 80A V2 (active) with Rigid 10K, Rigid 4000, Tough 2000 V2, Grey/Clear V5 or Tough 1000 (passive); applying the project 3/2 law with the 0.2 mm wall limit, the printable curvature is best with soft partners (Flexible 50A 26.6 /m, Silicone 40A 20.1 /m at 1 day) because the optimum thickness ratio n^(-1/2) is impractical for stiff partners (8.3 mm of Flexible 80A V2 over 0.2 mm of Rigid 10K). (6) Gaps: no humid-air swelling, no diffusivity, no elastomer moduli, no measured adhesion, slab thickness of the 80A V2 test unstated. All swelling-based curvature numbers are own calculations with stated assumptions and should be replaced by coupon measurements.",
+ "lay_summary": "Formlabs sells about sixty liquid resins and a handful of nylon powders for its 3D printers. We downloaded the official data sheets for all of them and lined up how stiff each one is and how much water or alcohol it soaks up. Almost all of them barely drink water, less than one percent of their weight in a day, so they would hardly change shape in humid air. One soft resin is the exception: it swells about three percent in volume after a day in water, which is enough to make a thin strip bend. Think of a strip of wet paper stuck to a strip of plastic: the paper swells, the plastic does not, and the pair curls. The best pairs are that soft resin glued to a stiff one from the same chemical family. Nobody has published how strongly two Formlabs materials stick to each other, or how fast humid air gets into them, so the next step is a small printed test strip, not more reading.",
+ "glossary": [
+  {
+   "term": "SLA / resin printer",
+   "plain": "a printer that hardens liquid resin layer by layer with a violet light"
+  },
+  {
+   "term": "SLS / Fuse powder",
+   "plain": "a printer that fuses nylon or rubber powder layer by layer with a laser"
+  },
+  {
+   "term": "TDS / SDS",
+   "plain": "the maker's technical data sheet (properties) and safety data sheet (ingredients)"
+  },
+  {
+   "term": "Modulus (Young modulus)",
+   "plain": "how stiff a material is: the force needed to stretch or bend it a little; bigger means stiffer"
+  },
+  {
+   "term": "Secant modulus",
+   "plain": "a rough stiffness taken as stress at a fixed stretch divided by that stretch; used here where no modulus is published"
+  },
+  {
+   "term": "Shore A / Shore D",
+   "plain": "hardness scales from pressing a pin in; A for rubbers, D for hard plastics"
+  },
+  {
+   "term": "HDT",
+   "plain": "heat deflection temperature: the temperature at which a loaded bar starts to sag"
+  },
+  {
+   "term": "Green / post-cured",
+   "plain": "freshly printed and washed, versus after extra light and heat that finishes hardening it"
+  },
+  {
+   "term": "Swelling / mass gain",
+   "plain": "taking up water or solvent so the part gets heavier and bigger"
+  },
+  {
+   "term": "IPA",
+   "plain": "isopropyl alcohol, the liquid used to wash printed resin parts"
+  },
+  {
+   "term": "Bilayer",
+   "plain": "two thin layers of different materials bonded together; if one swells it bends the pair"
+  },
+  {
+   "term": "Curvature (kappa)",
+   "plain": "how tightly a strip bends, in 1/metre; 20 per metre means a circle of radius 5 cm"
+  },
+  {
+   "term": "Methacrylate / polysiloxane",
+   "plain": "the two chemical families here: plastic-like acrylics that cure together, versus silicone, which sticks poorly to other things"
+  },
+  {
+   "term": "Open Material Mode",
+   "plain": "a paid Formlabs setting that lets the printer run non-Formlabs resin or powder"
+  },
+  {
+   "term": "Neo-Hookean",
+   "plain": "a simple model of how rubber stretches, used to correct the rough stiffness estimate"
+  }
+ ],
+ "table": [
+  {
+   "name": "Rigid 10K Resin",
+   "fields": "group=SLA-Form4; tensile_modulus: green=7.5 GPa | PC 60min@70C=10 GPa | PC 60min@70C+125min@90C=10 GPa (blank cell in TDS; merged with previous column only verified for Rigid 10K) | PC 60min@70C +media-blast=11 GPa; UTS: green=55 MPa | PC 60min@70C=65 MPa | PC 60min@70C+125min@90C=53 MPa | PC 60min@70C +media-blast=88 MPa; elongation_break: green=2% | PC 60min@70C=1% | PC 60min@70C+125min@90C=1% (blank cell in TDS; merged with previous column only verified for Rigid 10K) | PC 60min@70C +media-blast=1.7%; flexural_modulus: green=6 GPa | PC 60min@70C=9 GPa | PC 60min@70C+125min@90C=10 GPa | PC 60min@70C +media-blast=9.9 GPa; flexural_strength: green=84 MPa | PC 60min@70C=126 MPa | PC 60min@70C+125min@90C=103 MPa | PC 60min@70C +media-blast=158 MPa; HDT@0.45MPa: green=65 °C | PC 60min@70C=163 °C | PC 60min@70C+125min@90C=218 °C | PC 60min@70C +media-blast=238 °C; HDT@1.8MPa: green=56 °C | PC 60min@70C=82 °C | PC 60min@70C+125min@90C=110 °C | PC 60min@70C +media-blast=92 °C; CTE: green=48 μm/m/°C | PC 60min@70C=47 μm/m/°C | PC 60min@70C+125min@90C=46 μm/m/°C | PC 60min@70C +media-blast=41 μm/m/°C; min_layer_thickness=50 micron (product page tag); printers=Form 4, Form 4B, Form 4L, Form 4BL, Form 3, Form 3L, Form 3B, Form 3BL, Form 2, Form Studio 1; 24h_cube_weight_gain_%: water=<0.1, salt_water=0.1, IPA=<0.1, acetone=<0.1, xylene=<0.1; recipe_and_test_conditions_from_TDS_footnotes=\"Data was obtained from parts printed using Form 3, 100 um and post-cured with a Form Cure for 60 minutes at 70 C. 2 Data was obtained from parts printed using Form 3, 100 um and post-cured with a Form Cure for 60 minutes at 70 C and an additional thermal cure at 90 C for 125 minutes.\"; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/522eb50e6c8ac0e3/original/-ENUS-Rigid-10K-TDS.pdf ; https://formlabs.com/products/rigid-10k-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Rigid 4000 Resin",
+   "fields": "group=SLA-Form4; tensile_modulus: green=2.1 GPa | PC=4.1 GPa; UTS: green=33 MPa | PC=69 MPa; elongation_break: green=23% | PC=5.3%; flexural_modulus: green=1.4 GPa | PC=3.4 GPa; flexural_strength: green=43 MPa | PC=105 MPa; HDT@0.45MPa: green=48 °C | PC=77 °C; HDT@1.8MPa: green=41 °C | PC=60 °C; CTE: green=64 μm/m/°C | PC=63 μm/m/°C; min_layer_thickness=50 micron (product page tag); printers=Form 4, Form 4B, Form 4L, Form 4BL, Form 3, Form 3L, Form 3B, Form 3BL, Form 2, Form Studio 1; 24h_cube_weight_gain_%: water=0.7, salt_water=0.7, IPA=0.4, acetone=3.3, xylene=<0.1; recipe_and_test_conditions_from_TDS_footnotes=\"post-cured with a Form Cure for 15 minutes at 80 C.\"; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/4f8db0ba395cd2de/original/-ENUS-Rigid-4000-TDS.pdf ; https://formlabs.com/products/rigid-4000-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Tough 2000 Resin V2",
+   "fields": "group=SLA-Form4; tensile_modulus: green=1235 MPa | PC=1800 MPa; UTS: green=26.1 MPa | PC=40.4 MPa; elongation_break: green=149% | PC=79%; elongation_yield: green=5.0% | PC=4.5%; flexural_modulus: green=1040 MPa | PC=1701 MPa; flexural_strength: green=38 MPa | PC=67 MPa; shore: PC=61D; HDT@0.45MPa: green=53 °C | PC=70 °C; HDT@1.8MPa: green=45 °C | PC=57 °C; density[Bulk Density]: PC=1.09 g/mL; density[Liquid Density]: PC=1.03 g/mL; CTE: green=142.6 μm/m/°C | PC=134.2 μm/m/°C; min_layer_thickness=not on product page; printers=Form 4, Form 4B, Form 4L, Form 4BL, Form Studio 1; 24h_cube_weight_gain_%: water=0.19, salt_water=0.16, IPA=4.21, acetone=22.92, xylene=27.69; recipe_and_test_conditions_from_TDS_footnotes=\"Data was obtained from parts printed on a Form 4 printer with 100m Tough 2000 Resin V2 settings, washed in a Form Wash V2 for 10+5 minutes in 99% Isopropyl Alcohol, and post-cured at 70 C for 12 minutes in a Form Cure V2. 2 Material Properties Thermal Properties Heat Deflection Temp. || Data was obtained from parts printed on a Form 4 printer with 100m Tough 2000 Resin V2 settings, washed in a Form Wash V2 for 10+5 minutes in 99% Isopropyl Alcohol, and post-cured at 70 C for 12 minutes in a Form Cure V2. 3 Chemical Compatibility (ASTM D543) Tested for chemical compatibility according to ASTM D543.\"; shore: green=61D | PC=76D (TDS row); density: bulk=1.09 g/mL; liquid=1.03 g/mL; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://formlabs-media.formlabs.com/datasheets/251013-MS-TDS-Tough_2000_V2.pdf ; https://formlabs.com/products/tough-2000-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Tough 1500 Resin V2",
+   "fields": "group=SLA-Form4; tensile_modulus: green=1250 MPa | PC=1460 MPa; UTS: green=30 MPa | PC=34 MPa; elongation_break: green=210% | PC=155%; elongation_yield: green=5.6% | PC=6.1%; flexural_modulus: green=900 MPa | PC=1370 MPa; flexural_strength: green=26 MPa | PC=41 MPa; shore: PC=76D; HDT@0.45MPa: green=54 °C | PC=66 °C; HDT@1.8MPa: green=42 °C | PC=53 °C; density[Bulk Density]: PC=1.12 g/mL; density[Liquid Density]: PC=1.02 g/mL; CTE: green=116 μm/m/°C | PC=99 μm/m/°C; min_layer_thickness=not on product page; printers=Form 4, Form 4B, Form 4L, Form 4BL; page_biocompat_tag=Skin Contact; TDS_biocompat_standards=ISO 10993-1, ISO 10993-10, ISO 10993-5; 24h_cube_weight_gain_%: water=0.21, salt_water=0.24, IPA=6.54, acetone=29.64, xylene=72.57; recipe_and_test_conditions_from_TDS_footnotes=\"conditioned for 24 hours at 22C before mechanical testing. || Data was obtained from green parts, printed using Form 4, 100 um, Tough 1500 V2 settings, without additional treatments. 3 ISO 10993 standard testing samples were printed on a Form 4 with 100um Tough 1500 Resin V2 settings, washed in a Form Wash for 10 minutes (5 min clean, 5 min dirty) dried for at least 30 minutes and post-cured at 70 C \"; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://formlabs-media.formlabs.com/datasheets/25011041-TDS-ENUS-0.pdf ; https://formlabs.com/products/tough-1500-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Tough 1000 Resin",
+   "fields": "group=SLA-Form4; tensile_modulus: green=844 MPa | PC=932 MPa; UTS: green=23.7 MPa | PC=26.3 MPa; elongation_break: green=217% | PC=180%; elongation_yield: green=4.8% | PC=5.0%; flexural_modulus: green=595 MPa | PC=761 MPa; flexural_strength: green=22.6 MPa | PC=29.0 MPa; shore: PC=56D; HDT@0.45MPa: green=49.7 °C | PC=55.3 °C; HDT@1.8MPa: green=40.4 °C | PC=44.6 °C; density[Bulk Density]: PC=1.07 g/mL; density[Liquid Density]: PC=1.01 g/mL; CTE: green=161.6 μm/m/°C | PC=168.2 μm/m/°C; min_layer_thickness=not on product page; printers=Form 4, Form 4B, Form 4L, Form 4BL, Form Studio 1; 24h_cube_weight_gain_%: water=0, salt_water=0.2, IPA=6.9, acetone=30.4, xylene=62.7; recipe_and_test_conditions_from_TDS_footnotes=\"Data was obtained from parts printed on a Form 4 printer with 100m Tough 1000 Resin settings, washed in a Form Wash V2 for 10+10 minutes in 99% Isopropyl Alcohol, and post-cured at 70 C for 12 minutes in a Form Cure V2. 2 Material Properties Thermal Properties Heat Deflection Temp. || Data was obtained from parts printed on a Form 4 printer with 100m Tough 1000 Resin settings, washed in a Form Wash V2 for 10+10 minutes in 99% Isopropyl Alcohol, and post-cured at 70 C for 12 minutes in a Form Cure V2. 3 Chemical Compatibility (ASTM D543) Tested for chemical compatibility according to ASTM D543.\"; shore: green=56D | PC=68D (TDS row); density: bulk=1.07 g/mL; liquid=1.01 g/mL; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://formlabs-media.formlabs.com/datasheets/25011071-TDS-ENUS-0.pdf ; https://formlabs.com/products/tough-1000-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Durable Resin",
+   "fields": "group=SLA-Form4; tensile_modulus: green=0.24 GPa | PC=1.0 GPa; UTS: green=13 MPa | PC=28 MPa; elongation_break: green=75% | PC=55%; flexural_modulus: green=0.04 GPa | PC=0.66 GPa; flexural_strength: green=1.0 MPa | PC=24 MPa; HDT@0.45MPa: green=< 30 °C | PC=41 °C; CTE: green=124 μm/m/°C | PC=106 μm/m/°C; min_layer_thickness=50 micron (product page tag); printers=Form 4, Form 4B, Form 4L, Form 4BL, Form 3, Form 3L, Form 3B, Form 3BL, Form 2; 24h_cube_weight_gain_%: water=<1, salt_water=<1, IPA=5.1, acetone=Sample cracked, xylene=6.5; recipe_and_test_conditions_from_TDS_footnotes=\"Data was obtained from parts printed using Form 2, 100 um, Durable settings and post-cured with a Formcure for 60 minutes at 60 C..\"; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/3cc0667b453908e5/original/-ENUS-Durable-TDS.pdf ; https://formlabs.com/products/durable-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Flexible 80A Resin V2",
+   "fields": "group=SLA-Form4; UTS: green=4.0 MPa | PC=10.0 MPa; elongation_break: green=210% | PC=230%; stress@50%: green=1.5 MPa | PC=2.9 MPa; stress@100%: green=2.3 MPa | PC=4.7 MPa; tear: green=11 kN/m | PC=28 kN/m; density[Solid Density]: green=1.09 g/cm3 | PC=1.09 g/cm3 (blank cell in TDS; merged with previous column only verified for Rigid 10K); density[Liquid Density]: green=1.04 g/mL | PC=1.04 g/mL (blank cell in TDS; merged with previous column only verified for Rigid 10K); Tg: green=Not Tested | PC=-49 °C; rebound: green=Not Tested | PC=56%; rebound: green=Not Tested | PC=58%; compression_set[Compression Set (23 °C for 22 hours)]: green=Not Tested | PC=32%; compression_set[Compression Set (70 °C for 22 hours)]: green=Not Tested | PC=85%; min_layer_thickness=not on product page; printers=Form 4, Form 4B, Form 4L, Form 4BL, Form Studio 1; recipe_and_test_conditions_from_TDS_footnotes=\"post-cured at room temperature for 5 minutes in water and 80C for 5 minutes in air in a Form Cure V2 L. || conditioned for 24 hours at 22 C before mechanical testing.\"; shore: green=68A | PC=83A (TDS row text is garbled in extraction: \"68 for a printed | 83 and post-cured\"; product page says 83A); water_immersion_slab_TDS_p5 (deionized water): 1 day hardness=-26 Shore A, mass=+8%, volume=+3%, relative elongation=94%; 1 week hardness=-27, mass=+9%, volume=+7%, relative elongation=101%, relative tensile strength=88%; IPA_immersion_slab: 1 day mass=+45%, volume=+113%; 1 week mass=+48%, volume=+119%; other_aqueous_1day_mass/volume: NaOH 10%=+6%/+2%; HCl 10%=+10%/+6%; H2O2 3%=+10%/+6%; acetic acid 6%=+12%/+7%; bleach 5%=+7%/+4%; note=cube table has no V2 row; the older \"Flexible 80A Resin\" row (IPA 11.7) belongs to V1; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/asset/af9d9268-d8c4-4019-9ccd-bd3af926c67e/-ENUS-Flexible-80A-V2-TDS.pdf ; https://formlabs.com/products/flexible-80a-resin/"
+  },
+  {
+   "name": "Flexible 50A Resin (formerly Elastic 50A V2)",
+   "fields": "group=SLA-Form4; UTS: green=1.7 MPa | PC=3.4 MPa; elongation_break: green=160% | PC=160% (blank cell in TDS; merged with previous column only verified for Rigid 10K); stress@50%: green=0.5 MPa | PC=0.9 MPa; stress@100%: green=0.9 MPa | PC=1.7 MPa; tear: green=8.2 kN/m | PC=12.3 kN/m; shore: green=44 | PC=55; Tg: green=Not Tested | PC=-34.5 °C; rebound: green=Not Tested | PC=18%; compression_set[Compression Set (23 °C for 22 hours)]: green=Not Tested | PC=2.1%; compression_set[Compression Set (70 °C for 22 hours)]: green=Not Tested | PC=3.1%; min_layer_thickness=100 micron (product page tag); printers=Form 4, Form 4B, Form 4L, Form 4BL, Form 3, Form 3L, Form 3B, Form 3BL, Form Studio 1; 24h_cube_weight_gain_%: water=0.7, salt_water=0.6, IPA=39.2, acetone=43.4, xylene=163.9; shore: green=44A | PC=55A; note: product-page image alt text reads \"Flexible 50A Resin V2\"; TDS file is named Flexible-50A-V1-TDS; solvent page row is Elastic 50A Resin V2 (same 39.2 IPA / 43.4 acetone / 163.9 xylene numbers); note=solvent page still uses the old name; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/asset/6c4f970f-53d8-4fb7-8d36-a153d93d26bb/-ENUS-Flexible-50A-V1-TDS.pdf ; https://formlabs.com/products/flexible-50a-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Silicone 40A Resin",
+   "fields": "group=SLA-Form4; UTS: PC=5 MPa; elongation_break: PC=230%; stress@50%: PC=0.4 MPa; stress@100%: PC=1 MPa; tear: PC=12 kN/m; shore: PC=40A; Tg: PC=-107 °C; rebound: PC=34%; compression_set[Compression Set 23 °C for 22 hours]: PC=20%; min_layer_thickness=100 micron (product page tag); printers=Form 4, Form 4B, Form 3, Form 3B, Form Studio 1; page_biocompat_tag=Skin Contact; TDS_biocompat_standards=ISO 10993-1, ISO 10993-10, ISO 10993-23, ISO 10993-5; 24h_cube_weight_gain_%: water=<0.1, salt_water=<0.1, IPA=5.9, acetone=11.5, xylene=Not tested; recipe_and_test_conditions_from_TDS_footnotes=\"post-cured at 60C for 30 minutes submerged in water in a Form Cure.\"; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/2e6bb2b3d645b427/original/-ENUS-Silicone-40A-TDS.pdf ; https://formlabs.com/products/silicone-40a-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Clear Resin V5",
+   "fields": "group=SLA-Form4; tensile_modulus: green=2200 MPa | PC 5min@RT=2575 MPa | PC 15min@60C=2750 MPa; UTS: green=46 MPa | PC 5min@RT=51 MPa | PC 15min@60C=60 MPa; elongation_break: green=13% | PC 5min@RT=10% | PC 15min@60C=8%; flexural_modulus: green=2000 MPa | PC 5min@RT=2450 MPa | PC 15min@60C=2750 MPa; flexural_strength: green=82 MPa | PC 5min@RT=91 MPa | PC 15min@60C=103 MPa; HDT@0.45MPa: green=61 °C | PC 5min@RT=61 °C (blank cell in TDS; merged with previous column only verified for Rigid 10K) | PC 15min@60C=69 °C; HDT@1.8MPa: green=54 °C | PC 5min@RT=54 °C (blank cell in TDS; merged with previous column only verified for Rigid 10K) | PC 15min@60C=57 °C; min_layer_thickness=25 micron (product page tag); printers=Form 4, Form 4B, Form 4L, Form 4BL, Form Studio 1; 24h_cube_weight_gain_%: water=0.9, salt_water=0.8, IPA=0.3, acetone=5.1, xylene=<0.1; recipe_and_test_conditions_from_TDS_footnotes=\"post-cured 1 x 1 x 1 cm cube immersed in respective solvent: Solvent Acetic Acid 5% Acetone Bleach ~5% NaOCl Butyl Acetate Diesel Fuel Diethyl glycol Monomethyl Ether Hydraulic Oil 24 hr weight gain, % 0. || Data was obtained from parts printed on a Form 4 printer with 100 um Clear Resin V5 settings, washed in a Form Wash for 5 minutes in 99% Isopropyl Alcohol, and post-cured at room temperature for 5 minutes in a Form Cure. 3 D ata was obtained from parts printed on a Form 4 printer with 100 um Clear Resin V5 settings, washed in a Form Wash fo\"; Shore D=78D (5 min RT) / 80D (15 min 60C), density=1.21 g/cm3, Tg=96C, CTE(-30-140C)=114.1 um/m/C (older 13-page staging TDS, 5 pp cut from current 2-page TDS); fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/5fd5e7daf1460058/original/-ENUS-Clear-Resin-V5-TDS.pdf ; https://formlabs.com/products/clear-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Grey Resin V5",
+   "fields": "group=SLA-Form4; tensile_modulus: green=2200 MPa | PC 5min@RT=2500 MPa | PC 15min@60C=2675 MPa; UTS: green=46 MPa | PC 5min@RT=54 MPa | PC 15min@60C=62 MPa; elongation_break: green=22% | PC 5min@RT=15% | PC 15min@60C=13%; flexural_modulus: green=2000 MPa | PC 5min@RT=2450 MPa | PC 15min@60C=2750 MPa; flexural_strength: green=82 MPa | PC 5min@RT=91 MPa | PC 15min@60C=103 MPa; HDT@0.45MPa: green=62 °C | PC 5min@RT=62 °C | PC 15min@60C=71 °C; HDT@1.8MPa: green=54 °C | PC 5min@RT=54 °C | PC 15min@60C=59 °C; min_layer_thickness=not on product page; printers=Form 4, Form 4B, Form 4L, Form 4BL, Form Studio 1; 24h_cube_weight_gain_%: water=0.8, salt_water=0.8, IPA=0.3, acetone=4.9, xylene=<0.1; recipe_and_test_conditions_from_TDS_footnotes=\"Data was obtained from parts printed on a Form 4 printer with 100 um Grey Resin V5 settings, washed in a Form Wash for 5 minutes in 99% Isopropyl Alcohol, and post-cured at room temperature for 5 minutes in a Form Cure. 3 Data was obtained from parts printed on a Form 4 printer with 100 um Grey Resin V5 settings, washed in a Form Wash for 5\"; ASTM_D543_immersion_Type_IV_bars (from the older 13-page Clear V5 TDS, which states results are from Grey V5): DI water 1 day mass=101.38% modulus=88.63% strength=89.21% elongation=105.36% of unexposed; DI water 1 week mass=103.23% modulus=65.29% strength=67.62% elongation=83.53%; Shore D (older Clear V5 TDS, Clear not Grey): 78D (5 min RT post-cure) / 80D (15 min 60C); density=1.21 g/cm3; Tg=96 C (Clear V5); fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/2b42aa20e7da7db7/original/-ENUS-Grey-Resin-V5-TDS.pdf ; https://formlabs.com/products/grey-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Black Resin V5",
+   "fields": "group=SLA-Form4; tensile_modulus: green=2200 MPa | PC 5min@RT=2450 MPa | PC 15min@60C=2700 MPa; UTS: green=48 MPa | PC 5min@RT=57 MPa | PC 15min@60C=61 MPa; elongation_break: green=19% | PC 5min@RT=14% | PC 15min@60C=10%; flexural_modulus: green=2000 MPa | PC 5min@RT=2450 MPa | PC 15min@60C=2750 MPa; flexural_strength: green=82 MPa | PC 5min@RT=91 MPa | PC 15min@60C=103 MPa; HDT@0.45MPa: green=61 °C | PC 5min@RT=61 °C (blank cell in TDS; merged with previous column only verified for Rigid 10K) | PC 15min@60C=69 °C; HDT@1.8MPa: green=54 °C | PC 5min@RT=54 °C (blank cell in TDS; merged with previous column only verified for Rigid 10K) | PC 15min@60C=57 °C; min_layer_thickness=not on product page; printers=Form 4, Form 4B, Form 4L, Form 4BL, Form Studio 1; 24h_cube_weight_gain_%: water=0.8, salt_water=0.8, IPA=0.3, acetone=4.9, xylene=<0.1; recipe_and_test_conditions_from_TDS_footnotes=\"post-cured at room temperature for 5 minutes in a Form Cure. || post-cured at 60C for 15 minutes in a Form Cure.\"; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/44db0c354678d098/original/-ENUS-Black-Resin-V5-TDS.pdf ; https://formlabs.com/products/black-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "White Resin V5",
+   "fields": "group=SLA-Form4; tensile_modulus: green=2200 MPa | PC 5min@RT=2500 MPa | PC 15min@60C=2675 MPa; UTS: green=46 MPa | PC 5min@RT=54 MPa | PC 15min@60C=62 MPa; elongation_break: green=22% | PC 5min@RT=15% | PC 15min@60C=13%; flexural_modulus: green=2000 MPa | PC 5min@RT=2450 MPa | PC 15min@60C=2750 MPa; flexural_strength: green=82 MPa | PC 5min@RT=91 MPa | PC 15min@60C=103 MPa; HDT@0.45MPa: green=55 °C | PC 5min@RT=62 °C | PC 15min@60C=71 °C; HDT@1.8MPa: green=47 °C | PC 5min@RT=54 °C | PC 15min@60C=59 °C; min_layer_thickness=not on product page; printers=Form 4, Form 4B, Form 4L, Form 4BL, Form Studio 1; 24h_cube_weight_gain_%: water=0.8, salt_water=0.8, IPA=0.3, acetone=4.9, xylene=<0.1; recipe_and_test_conditions_from_TDS_footnotes=\"Data was obtained from parts printed on a Form 4 printer with 100 um White Resin V5 settings, washed in a Form Wash for 5 minutes in 99% Isopropyl Alcohol, and post-cured at room temperature for 5 minutes in a Form Cure. 3 D ata was obtained from parts printed on a Form 4 printer with 100 um White Resin V5 settings, washed in a Form Wash fo\"; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/4b2ebc1971c90e36/original/-ENUS-White-Resin-V5-TDS.pdf ; https://formlabs.com/products/white-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Color Resin V5",
+   "fields": "group=SLA-Form4; tensile_modulus: green=2200 MPa | PC=2500 MPa; UTS: green=46 MPa | PC=54 MPa; elongation_break: green=22% | PC=15%; flexural_modulus: green=2000 MPa | PC=2450 MPa; flexural_strength: green=82 MPa | PC=91 MPa; HDT@0.45MPa: green=55 °C | PC=62 °C; HDT@1.8MPa: green=47 °C | PC=54 °C; min_layer_thickness=100 micron (product page tag); printers=Form 4, Form 4B, Form 4L, Form 4BL, Form Studio 1; 24h_cube_weight_gain_%: water=0.1, salt_water=0.1, IPA=0.1, acetone=0.4, xylene=0.1; recipe_and_test_conditions_from_TDS_footnotes=\"post-cured at room temperature for 5 minutes in a Form Cure.\"; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/3b7dd8c185a2d62/original/-ENUS-Color-Resin-V5-TDS.pdf ; https://formlabs.com/products/color-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Fast Model Resin",
+   "fields": "group=SLA-Form4; tensile_modulus: green=2.18 GPa | PC 5min@RT=2.48 GPa | PC 15min@60C=2.67 GPa; UTS: green=46 MPa | PC 5min@RT=55 MPa | PC 15min@60C=62 MPa; elongation_break: green=22% | PC 5min@RT=15% | PC 15min@60C=11%; flexural_modulus: green=1.96 GPa | PC 5min@RT=2.60 GPa | PC 15min@60C=2.74 GPa; flexural_strength: green=74 MPa | PC 5min@RT=98 MPa | PC 15min@60C=106 MPa; HDT@0.45MPa: green=55 °C | PC 5min@RT=58 °C | PC 15min@60C=76 °C; HDT@1.8MPa: green=47 °C | PC 5min@RT=49 °C | PC 15min@60C=61 °C; min_layer_thickness=100 micron (product page tag); printers=Form 4, Form 4B, Form 4L, Form 4BL, Form Studio 1; 24h_cube_weight_gain_%: water=0.8, salt_water=0.8, IPA=0.8, acetone=8.9, xylene=0.2; recipe_and_test_conditions_from_TDS_footnotes=\"post-cured 1 x 1 x 1 cm cube immersed in respective solvent: Solvent 24 hr weight gain, % Solvent 24 hr weight gain, % Acetic Acid 5% 0. || Data was obtained from green parts printed on a Form 4 printer with 100 um Fast Model Resin settings, washed in a Form Wash for 5 minutes in 99% Isopropyl Alcohol, and air dried without post-cure. 3 D ata was obtained from parts printed on a Form 4 printer with 100 um Fast Model Resin settings, washed in a Form Wash for 5 minutes in 99% Iso\"; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/2627f4d1c4f991ad/original/-ENUS-Fast-Model-TDS.pdf ; https://formlabs.com/products/fast-model-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "High Temp Resin",
+   "fields": "group=SLA-Form4; tensile_modulus: green=0.75 GPa | PC 60min@60C=2.8 GPa | PC 120min@80C+180min@160C=2.8 GPa; UTS: green=21 MPa | PC 60min@60C=58 MPa | PC 120min@80C+180min@160C=49 MPa; elongation_break: green=14% | PC 60min@60C=3.3% | PC 120min@80C+180min@160C=2.3%; flexural_modulus: green=0.7 GPa | PC 60min@60C=2.6 GPa | PC 120min@80C+180min@160C=2.8 GPa; flexural_strength: green=24 MPa | PC 60min@60C=95 MPa | PC 120min@80C+180min@160C=97 MPa; HDT@0.45MPa: green=49 °C | PC 60min@60C=120 °C | PC 120min@80C+180min@160C=238 °C; HDT@1.8MPa: green=44 °C | PC 60min@60C=78 °C | PC 120min@80C+180min@160C=101 °C; CTE: green=118 μm/m/°C | PC 60min@60C=80 μm/m/°C | PC 120min@80C+180min@160C=75 μm/m/°C; min_layer_thickness=25 micron / 25 micron (Form 3/3B/3+/3B+) (product page tag); printers=Form 4, Form 4B, Form 4L, Form 4BL, Form 3, Form 3L, Form 3B, Form 3BL, Form 2, Form Studio 1; 24h_cube_weight_gain_%: water=<1, salt_water=<1, IPA=<1, acetone=2, xylene=<1; recipe_and_test_conditions_from_TDS_footnotes=\"Data was obtained from green parts, printed using Form 2, 100 um, High Temp settings, washed for 5 minutes in Form Wash and air dried without post cure. 3 D ata was obtained from parts printed using a Form 2, 100 micron, High Temp settings, and post-cured with Form Cure at 60 C for 60 minutes. || post-cured with Form Cure at 80 C for 120 minutes plus an additional thermal cure in a lab oven at 160 C for 180 minutes.\"; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/41c07afd78a70b19/original/-ENUS-High-Temp-TDS.pdf ; https://formlabs.com/products/high-temp-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "ESD Resin",
+   "fields": "group=SLA-Form4; tensile_modulus: PC=1.937 GPa; UTS: PC=44.2 MPa; elongation_break: PC=12%; flexural_modulus: PC=1.841 GPa; flexural_strength: PC=61 MPa; HDT@0.45MPa: PC=62.2 °C; HDT@1.8MPa: PC=54.2 °C; density[Density]: PC=1.116 g/cm3; CTE: PC=123.7 μm/m/°C; min_layer_thickness=50 micron (product page tag); printers=Form 4, Form 4B, Form 4L, Form 4BL, Form 3, Form 3L, Form 3B, Form 3BL, Form Studio 1; 24h_cube_weight_gain_%: water=0.7, salt_water=0.6, IPA=2.6, acetone=13.1, xylene=1.6; recipe_and_test_conditions_from_TDS_footnotes=\"post-cured 1 x 1 x 1 cm cube immersed in respective solvent: Solvent 24 hr weight gain, % Solvent 24 hr weight gain, % Acetic Acid 5% 0. || post-cured at 70C for X 60 minutes in a Form Cure.\"; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/56fb4afef2daed7e/original/-ENUS-ESD-TDS.pdf ; https://formlabs.com/products/esd-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Flame Retardant Resin",
+   "fields": "group=SLA-Form4; tensile_modulus: green=1.8 GPa | PC 60min@70C=2.9 GPa | PC 120min@80C=3.1 GPa; UTS: green=24 MPa | PC 60min@70C=38 MPa | PC 120min@80C=41 MPa; elongation_break: green=20% | PC 60min@70C=9.4% | PC 120min@80C=7.1%; flexural_modulus: green=1.3 GPa | PC 60min@70C=2.7 GPa | PC 120min@80C=2.7 GPa (blank cell in TDS; merged with previous column only verified for Rigid 10K); flexural_strength: green=36 MPa | PC 60min@70C=72 MPa | PC 120min@80C=75 MPa; HDT@0.45MPa: green=55 °C | PC 60min@70C=94 °C | PC 120min@80C=111 °C; HDT@1.8MPa: green=45 °C | PC 60min@70C=71 °C | PC 120min@80C=83 °C; density[Bulk Density]: green=1.25 g/cm3 | PC 60min@70C=1.25 g/cm3 (blank cell in TDS; merged with previous column only verified for Rigid 10K) | PC 120min@80C=1.25 g/cm3 (blank cell in TDS; merged with previous column only verified for Rigid 10K); Tg: green=101 °C | PC 60min@70C=130 °C | PC 120min@80C=144 °C; min_layer_thickness=50 micron (product page tag); printers=Form 4, Form 4B, Form 4L, Form 4BL, Form 3, Form 3L, Form 3B, Form 3BL, Form Studio 1; 24h_cube_weight_gain_%: water=0.2, salt_water=0.2, IPA=0.2, acetone=2.1, xylene=Not tested; recipe_and_test_conditions_from_TDS_footnotes=\"postcured at 80 C and 120 minutes is slightly lower in creep resistance than Rigid 10K Resin samples. || post-cured at 70 C and 60 minutes showed similar creep behavior as Formlabs Nylon 12 SLS Powder.\"; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/4d112451b4287cee/original/-ENUS-Flame-Retardant-TDS.pdf ; https://formlabs.com/products/flame-retardant-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Clear Cast Resin",
+   "fields": "group=SLA-Form4; tensile_modulus: green=1.6 GPa | PC=2.8 GPa; UTS: green=38 MPa | PC=65 MPa; elongation_break: green=12% | PC=6%; flexural_modulus: green=1.3 GPa | PC=2.2 GPa; HDT@0.45MPa: green=50 °C | PC=73 °C; HDT@1.8MPa: green=43 °C | PC=58 °C; CTE: green=- | PC=94.8 μm/m/°C; min_layer_thickness=25 micron (product page tag); printers=Form 4, Form 4B, Form 4L, Form 4BL, Form 3, Form 3L, Form 3B, Form 3BL, Form 2, Form Studio 1; 24h_cube_weight_gain_%: water=<1, salt_water=<1, IPA=<1, acetone=Sample cracked, xylene=<1; note=burn-out casting resin; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/73f204c05847d367/original/-ENUS-Clear-Cast-TDS.pdf ; https://formlabs.com/products/clear-cast-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Castable Wax Resin",
+   "fields": "group=SLA-Form4; tensile_modulus: 220 MPa; UTS: 12 MPa; elongation_break: 13%; min_layer_thickness=25 micron (product page tag); printers=Form 4, Form 4B, Form 4L, Form 4BL, Form 3, Form 3L, Form 3B, Form 2, Form Studio 1; recipe_and_test_conditions_from_TDS_footnotes=\"post-cure required. || post-cure.\"; note=burn-out casting wax; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/2940168342261f32/original/-ENUS-Castable-Wax-TDS.pdf ; https://formlabs.com/products/castable-wax-resin/"
+  },
+  {
+   "name": "Alumina 4N Resin",
+   "fields": "group=SLA-Form4; flexural_modulus: 24.5 MPa; flexural_strength: 3.6 MPa; shore: 70D; density[Theoretical Density]: 3.987 g/cm3; density[Relative Density]: 98.60%; min_layer_thickness=50 micron (product page tag); printers=Form 4, Form 4B, Form 3, Form 3B, Form Studio 1; product_page_headline_values: Tensile Modulus 390000.0 MPa (product page; state not given); green (printed, unfired): flexural strength=3.6 MPa; flexural modulus=24.5 MPa; Shore D=70D; sintered: Young modulus=390 GPa (TDS; product page text says 380 GPa); 4-point flex strength XY=400 MPa, Z=320 MPa; relative density=98.6%; CTE=5 ppm/K; max working temperature=1500 C; note=green part is sintered in a furnace; sintered values differ by orders of magnitude; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/35a40632d8faa55d/original/-ENUS-Alumina-4N-TDS.pdf ; https://formlabs.com/products/ceramic-alumina-4n-resin/"
+  },
+  {
+   "name": "True Cast Resin",
+   "fields": "group=SLA-Form4; CTE: 174.1 μm/m/°C; min_layer_thickness=25 micron (product page tag); printers=Form 4, Form 4B, Form Studio 1; note=jewellery casting; TDS gives almost no mechanical data; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/164b2f4e0ae2f12b/original/-ENUS-True-Cast-Resin-TDS.pdf ; https://formlabs.com/products/true-cast-resin/"
+  },
+  {
+   "name": "Color Base Resin",
+   "fields": "group=SLA-Form4; tensile_modulus: green=1.6 GPa | PC=2.8 GPa; UTS: green=38 MPa | PC=65 MPa; elongation_break: green=12% | PC=6%; flexural_modulus: green=1.3 GPa | PC=2.2 GPa; HDT@0.45MPa: green=50 °C | PC=73 °C; HDT@1.8MPa: green=43 °C | PC=58 °C; min_layer_thickness=25 micron (product page tag); printers=Form 4, Form 4B, Form 4L, Form 4BL, Form 3, Form 3L, Form 3B, Form 3BL, Form 2; recipe_and_test_conditions_from_TDS_footnotes=\"Data was obtained from parts printed using Form 2, 100 um, Clear settings and post-cured with 1.25 mW/cm of 405 nm LED light for 60 minutes at 60 C.\"; note=base for Color Kit; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/5aa4785e01bd62c8/original/-ENUS-General-Purpose-Resins-TDS.pdf ; https://formlabs.com/products/color-base-resin/"
+  },
+  {
+   "name": "BioMed Clear Resin",
+   "fields": "group=SLA-Medical; UTS: PC=52 MPa; elongation_break: PC=12%; flexural_modulus: PC=2300 MPa; flexural_strength: PC=84 MPa; HDT@0.45MPa: PC=67 °C; HDT@1.8MPa: PC=54 °C; water_absorption_ASTM_D570(printed part, duration not stated): PC=0.54%; min_layer_thickness=50 micron (product page tag); printers=Form 4B, Form 4BL, Form 3B, Form 3BL, Form 2; page_biocompat_tag=Skin Contact, Mucosal Membrane Contact; product_page_headline_values: Tensile Modulus 2080.0 MPa | Shore Hardness 78.0 D (product page; state not given); TDS_biocompat_standards=ISO 10993-1, ISO 10993-10, ISO 10993-11, ISO 10993-17, ISO 10993-18, ISO 10993-3, ISO 10993-5, ISO 18562-1, ISO 18562-2, ISO 18562-3, ISO 18562-4, USP Class VI; 24h_cube_weight_gain_%: water=0.3, salt_water=0.3, IPA=<0.1, acetone=3.2, xylene=0.3; recipe_and_test_conditions_from_TDS_footnotes=\"post-cured samples printed on a Form 3B printer with 100 um BioMed Clear Resin settings, washed in a Form Wash for 20 minutes in 99% isopropyl alcohol, and post-cured at 60 C for 60 minutes in a Form Cure. || Form Cure.\"; note=Form 4B/4BL only; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/52c8bbc17a4eda5d/original/-ENUS-BioMed-Clear-TDS.pdf ; https://formlabs.com/products/biomed-clear-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "BioMed Amber Resin",
+   "fields": "group=SLA-Medical; UTS: PC=73 MPa; elongation_break: PC=12%; flexural_modulus: PC=2500 MPa; flexural_strength: PC=103 MPa; HDT@0.45MPa: PC=78 °C; HDT@1.8MPa: PC=65 °C; min_layer_thickness=50 micron (product page tag); printers=Form 4B, Form 4BL, Form 3B, Form 3BL, Form 2; page_biocompat_tag=Skin Contact, Mucosal Membrane Contact; TDS_biocompat_standards=ISO 10993-1, ISO 10993-10, ISO 10993-11, ISO 10993-5; 24h_cube_weight_gain_%: water=0.5, salt_water=0.5, IPA=<0.1, acetone=1.5, xylene=0.1; recipe_and_test_conditions_from_TDS_footnotes=\"post-cured at 60 C for 30 minutes in a Form Cure.\"; note=Form 4B/4BL only; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/67fec1bf5cc775e5/original/-ENUS-BioMed-Amber-TDS.pdf ; https://formlabs.com/products/biomed-amber-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "BioMed Durable Resin",
+   "fields": "group=SLA-Medical; UTS: PC=29.1 MPa; elongation_break: PC=33%; flexural_modulus: PC=643 MPa; flexural_strength: PC=21 MPa; HDT@0.45MPa: PC=46 ºC; HDT@1.8MPa: PC=40 ºC; min_layer_thickness=100 micron (product page tag); printers=Form 4B, Form 4BL, Form 3B, Form 3BL; page_biocompat_tag=Skin Contact, Mucosal Membrane Contact; product_page_headline_values: Tensile Modulus 994.0 MPa | Shore Hardness 75.0 D (product page; state not given); TDS_biocompat_standards=ISO 10993-10, ISO 10993-11, ISO 10993-5, USP Class VI; 24h_cube_weight_gain_%: water=0.5, salt_water=0.5, IPA=2, acetone=12.4, xylene=4.8; recipe_and_test_conditions_from_TDS_footnotes=\"post-cured samples printed on a Form 3B with 100um BioMed Durable Resin settings, washed in a Form Wash for 10 minutes in 99% Isopropyl Alcohol, and post-cured at 60C, 20 minutes in a Form Cure. || post-cured 1 x 1 x 1 cm cube immersed in respective solvent: Solvent 24 hr weight gain, % Solvent 24 hr weight gain, % Acetic Acid 5% 0.\"; note=Form 4B/4BL only; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/541f53ce91e04d9/original/-ENUS-BioMed-Durable-TDS.pdf ; https://formlabs.com/products/biomed-durable-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "BioMed Flex 50A Resin (solvent page: BioMed Elastic 50A)",
+   "fields": "group=SLA-Medical; elongation_break: PC=150%; stress@50%: PC=1 MPa; stress@100%: PC=1.3 MPa; shore: PC=50A; Tg: PC=-36 ºC; rebound: PC=15%; compression_set[Compression Set 23 °C for 22 hours]: PC=8%; compression_set[Compression Set 70 °C for 22 hours]: PC=11%; min_layer_thickness=100 micron (product page tag); printers=Form 4B, Form 4BL, Form 3B, Form 3BL, Form 2; page_biocompat_tag=Skin Contact, Mucosal Membrane Contact; TDS_biocompat_standards=ISO 10993-10, ISO 10993-23, ISO 10993-5, USP Class VI; 24h_cube_weight_gain_%: water=0.7, salt_water=0.6, IPA=39.2, acetone=43.4, xylene=163.9; note=Form 4B/4BL only; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/asset/b9770a7c-c0af-4fee-b9fc-8f193fb9e29b/-ENUS-BioMed-Flex-50A-TDS.pdf ; https://formlabs.com/products/biomed-flex-50a-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "BioMed Flex 80A Resin",
+   "fields": "group=SLA-Medical; elongation_break: PC=135 %; stress@50%: PC=2.6 MPa; stress@100%: PC=4.5 MPa; shore: PC=77 - 80A; Tg: PC=37 ºC; rebound: PC=29%; compression_set[Compression Set 23 °C for 22 hours]: PC=24.7%; compression_set[Compression Set 70 °C for 22 hours]: PC=5.3%; min_layer_thickness=50 micron (product page tag); printers=Form 4B, Form 4BL, Form 3B, Form 3BL; page_biocompat_tag=Skin Contact, Mucosal Membrane Contact; TDS_biocompat_standards=ISO 10993-10, ISO 10993-23, ISO 10993-5, USP Class VI; 24h_cube_weight_gain_%: water=0.6, salt_water=0.5, IPA=25.9, acetone=65.3, xylene=112.5; note=Form 4B/4BL only; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/323d2f218250cecb/original/-ENUS-BioMed-Flex-80A-TDS.pdf ; https://formlabs.com/products/biomed-flex-80a-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "BioMed Black Resin",
+   "fields": "group=SLA-Medical; UTS: PC=36 MPa; elongation_break: PC=14%; flexural_modulus: PC=1600 MPa; flexural_strength: PC=57 MPa; HDT@0.45MPa: PC=67.9 °C; HDT@1.8MPa: PC=49.4 °C; water_absorption_ASTM_D570(printed part, duration not stated): PC=0.44 wt%; min_layer_thickness=50 micron (product page tag); printers=Form 4B, Form 4BL, Form 3B, Form 3BL, Form 2; page_biocompat_tag=Skin Contact, Mucosal Membrane Contact; product_page_headline_values: Tensile Modulus 1523.74 MPa | Shore Hardness 77.0 D (product page; state not given); TDS_biocompat_standards=ISO 10993-10, ISO 10993-5, USP Class VI; 24h_cube_weight_gain_%: water=0.3, salt_water=0.3, IPA=0.2, acetone=3.1, xylene=0.3; recipe_and_test_conditions_from_TDS_footnotes=\"post-cured samples printed on a Form3B with 100um BioMed Black Resin settings, washed in a Form Wash for 5 minutes in 99% Isopropyl Alcohol, and post-cured at 70C, 60 minutes in a Form Cure.\"; note=Form 4B/4BL only; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/3dc10f51d9a27efa/original/-ENUS-BioMed-Black-TDS.pdf ; https://formlabs.com/products/biomed-black-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "BioMed White Resin",
+   "fields": "group=SLA-Medical; UTS: PC=46 MPa; flexural_modulus: PC=2020.16 MPa; flexural_strength: PC=74 MPa; HDT@0.45MPa: PC=67.0 °C; HDT@1.8MPa: PC=52.4 °C; water_absorption_ASTM_D570(printed part, duration not stated): PC=0.40 wt%; min_layer_thickness=50 micron (product page tag); printers=Form 4B, Form 4BL, Form 3B, Form 3BL, Form 2; page_biocompat_tag=Skin Contact, Mucosal Membrane Contact; product_page_headline_values: Tensile Modulus 2020.16 MPa | Shore Hardness 80.0 D (product page; state not given); TDS_biocompat_standards=ISO 10993-10, ISO 10993-11, ISO 10993-5, USP Class VI; 24h_cube_weight_gain_%: water=0.3, salt_water=0.4, IPA=0.2, acetone=2.9, xylene=0.3; recipe_and_test_conditions_from_TDS_footnotes=\"post-cured samples printed on a Form3B with 100um BioMed White Resin settings, washed in a Form Wash for 5 minutes in 99% Isopropyl Alcohol, and post-cured at 60C, 60 minutes in a Form Cure.\"; note=Form 4B/4BL only; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/1853738c6299e8ad/original/-ENUS-BioMed-White-TDS.pdf ; https://formlabs.com/products/biomed-white-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Elastic 50A Resin V1 (legacy)",
+   "fields": "group=SLA-legacy; UTS: 1.61 MPa; elongation_break: 100%; stress@50%: 0.92 MPa; stress@100%: 1.54 MPa; tear: 8.9 kN/m; shore: 40A; compression_set[Compression Set (23 °C for 22 hours)]: 2%; compression_set[Compression Set (70 °C for 22 hours)]: 3%; 24h_cube_weight_gain_%: water=2.3, salt_water=1.7, IPA=25.6, acetone=37.3, xylene=46.6; recipe_and_test_conditions_from_TDS_footnotes=\"Data was obtained from parts printed using Form 2, 100 um, Elastic settings, washed in Form Wash for 20 minutes and post-cured with Form Cure at 60 C for 20 minutes. 3 Tensile testing was performed after 3+ hours at 23 C, using a Die C dumbbell and 20 in/min cross head speed.\"; note=superseded; Form 3/2 era; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://formlabs-media.formlabs.com/datasheets/2001420-TDS-ENUS-0.pdf ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Flexible 80A Resin V1 (legacy)",
+   "fields": "group=SLA-legacy; UTS: green=3.0 MPa | PC=6.4 MPa; elongation_break: green=110% | PC=130%; stress@50%: green=1.5 MPa | PC=2.0 MPa; stress@100%: green=2.8 MPa | PC=3.3 MPa; tear: green=6 kN/m | PC=13 kN/m; shore: green=67A | PC=80A; Tg: green=Not Tested | PC=23 °C; rebound: green=Not Tested | PC=13%; rebound: green=Not Tested | PC=23%; compression_set[Compression Set (23 °C for 22 hours)]: green=Not Tested | PC=15%; compression_set[Compression Set (70 °C for 22 hours)]: green=Not Tested | PC=6%; min_layer_thickness=50 micron (product page tag); printers=Form 4, Form 4B, Form 4L, Form 4BL, Form 3, Form 3L, Form 3B, Form 3BL, Form 2; 24h_cube_weight_gain_%: water=0.7, salt_water=0.5, IPA=11.7, acetone=37.4, xylene=64.1; recipe_and_test_conditions_from_TDS_footnotes=\"post-cured 1 x 1 x 1 cm cube immersed in respective solvent: Solvent 24 hr weight gain, % Solvent 24 hr weight gain, % Acetic Acid 5% 0. || post-cured samples were printed on a Form 4 printer with 100 um Flexible 80A Resin V1.\"; note=superseded by V2; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/442fcd13220df367/original/-ENUS-Flexible-80A-TDS.pdf ; https://formlabs.com/products/flexible-80a-resin-v1/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Tough 1500 Resin V1 (legacy)",
+   "fields": "group=SLA-legacy; tensile_modulus: green=960 MPa | Low Warp Cure (Room Temp)=1260 MPa | full cure (70 °C)=1440 MPa; UTS: green=25 MPa | Low Warp Cure (Room Temp)=30 MPa | full cure (70 °C)=35 MPa; elongation_break: green=85% | Low Warp Cure (Room Temp)=64% | full cure (70 °C)=54%; flexural_modulus: green=720 MPa | Low Warp Cure (Room Temp)=1130 MPa | full cure (70 °C)=1320 MPa; flexural_strength: green=28 MPa | Low Warp Cure (Room Temp)=44 MPa | full cure (70 °C)=51 MPa; HDT@0.45MPa: green=42 °C | Low Warp Cure (Room Temp)=45 °C | full cure (70 °C)=48 °C; HDT@1.8MPa: green=34 °C | Low Warp Cure (Room Temp)=39 °C | full cure (70 °C)=43 °C; CTE: green=114 μm/m/°C | Low Warp Cure (Room Temp)=Not Tested | full cure (70 °C)=97 μm/m/°C; min_layer_thickness=50 micron (product page tag); printers=Form 3, Form 3L; page_biocompat_tag=Skin Contact; TDS_biocompat_standards=ISO 10993-1, ISO 10993-10, ISO 10993-5; 24h_cube_weight_gain_%: water=0.7, salt_water=0.7, IPA=3.2, acetone=19, xylene=3.2; recipe_and_test_conditions_from_TDS_footnotes=\"Data was obtained from green parts, printed using Form 4, 100 um, Tough 1500 settings, without additional treatments. 3 Data was obtained from parts printed using Form 4, 100 um, Tough 1500 settings and postcured with a Form Cure (2nd Generation) for 12 minutes at Room Temperature. || Data was obtained from parts printed using Form 4, 100 um, Tough 1500 settings and post-cured with a Form Cure (2nd Generation) for 12 minutes at 70 C. 5 S O 10993 standard testing samples were printed on a Form 3 with 100um Tough 1500 Resin settings, washed in a Form Wash for 20 minutes in 99% Isopropyl Alcohol, dried for at least 30 minu\"; note=Form 3/3L page; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://formlabs-media.formlabs.com/datasheets/2001292-TDS-ENUS-0.pdf ; https://formlabs.com/products/tough-1500-resin-v1/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Tough 2000 Resin V1 (legacy)",
+   "fields": "group=SLA-legacy; tensile_modulus: green=1630 MPa | Low Warp Cure (Room Temp)=1960 MPa | full cure (70 °C)=2100 MPa; UTS: green=34 MPa | Low Warp Cure (Room Temp)=42 MPa | full cure (70 °C)=46 MPa; elongation_break: green=86% | Low Warp Cure (Room Temp)=51% | full cure (70 °C)=44%; flexural_modulus: green=1320 MPa | Low Warp Cure (Room Temp)=1760 MPa | full cure (70 °C)=1810 MPa; flexural_strength: green=49 MPa | Low Warp Cure (Room Temp)=67 MPa | full cure (70 °C)=71 MPa; HDT@0.45MPa: green=48 °C | Low Warp Cure (Room Temp)=54 °C | full cure (70 °C)=59 °C; HDT@1.8MPa: green=42 °C | Low Warp Cure (Room Temp)=48 °C | full cure (70 °C)=50 °C; CTE: green=107 μm/m/°C | Low Warp Cure (Room Temp)=Not Tested | full cure (70 °C)=91 μm/m/°C; min_layer_thickness=50 micron (product page tag); printers=Form 4, Form 4L, Form 3, Form 3L; 24h_cube_weight_gain_%: water=0.6, salt_water=0.6, IPA=3.7, acetone=18.8, xylene=4.1; recipe_and_test_conditions_from_TDS_footnotes=\"postcured with a Form Cure (2nd generation) for 7 minutes at Room Temperature. || Data was obtained from parts printed using Form 4, 100 um, Tough 2000 settings and postcured with a Form Cure (2nd generation) for 7 minutes at 70 C. 2 SOLVENT COMPATIBILITY Percent weight gain over 24 hours for a printed 1 x 1 x 1 cm cube immersed in respective solvent: Solvent Acetic Acid 5% Acetone Isopropyl Alcohol Bleach ~5% NaOCl But\"; note=Form 4/4L listed on page; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/22b228e34b2eb42d/original/-ENUS-Tough-2000-TDS.pdf ; https://formlabs.com/products/tough-2000-resin-v1/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Draft Resin V2 (Form 3/2 only)",
+   "fields": "group=SLA-legacy; tensile_modulus: 0.8 GPa; UTS: 24 MPa; elongation_break: 14%; flexural_modulus: 0.6 GPa; HDT@0.45MPa: 43 °C; HDT@1.8MPa: 37 °C; min_layer_thickness=100 micron (product page tag); printers=Form 3, Form 3L, Form 3B, Form 3BL, Form 2; 24h_cube_weight_gain_%: water=0.1, salt_water=0.1, IPA=0.1, acetone=0.1, xylene=0.1; recipe_and_test_conditions_from_TDS_footnotes=\"Data was obtained from green parts, printed using a Form 3, 200 micron, Draft v2 Resin settings, washed in Form Wash and air dried without post cure. 3 Data was obtained from parts printed using a Form 3, 200 micron, Draft v2 Resin settings and post-cured with a Form Cure at Room Temperature for 5 minutes. || Data was obtained from parts printed using a Form 3, 200 micron, Draft v2 Resin settings, and post-cured with Form Cure at 60C for 5 minutes. Solvent Compatibility Percent weight gain over 24 hours for a printed and post-cured 1 x 1 x 1 cm cube immersed in respective solvent: Solvent Acetic Acid 5% Acetone Bleach ~5% NaOCl Butyl Acetate D\"; note=Form 3/2 page; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://formlabs-media.formlabs.com/datasheets/2001477-TDS-ENUS-0.pdf ; https://formlabs.com/products/draft-v2-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Model Resin V3 (Form 3/2 only)",
+   "fields": "group=SLA-legacy; UTS: 27 MPa; elongation_break: 14%; HDT@0.45MPa: 47 °C; HDT@1.8MPa: 41 °C; min_layer_thickness=50 micron (product page tag); printers=Form 3, Form 3L, Form 3B, Form 3BL, Form 2; product_page_headline_values: Tensile Modulus 2300.0 MPa (product page; state not given); 24h_cube_weight_gain_%: water=0.2, salt_water=0.2, IPA=<0.1, acetone=0.9, xylene=<0.1; recipe_and_test_conditions_from_TDS_footnotes=\"post-cured at 60C for 5 minutes in a Form Cure. || post-cured 1 x 1 x 1 cm cube immersed in respective solvent: Solvent Acetic Acid 5% Acetone Bleach ~5% NaOCl Butyl Acetate 24 hr weight gain, % 0.\"; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://formlabs-media.formlabs.com/datasheets/2101617-TDS-ENUS-0.pdf ; https://formlabs.com/products/model-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Grey Pro Resin (Form 3/2 only)",
+   "fields": "group=SLA-legacy; tensile_modulus: green=1.4 GPa | PC=2.6 GPa; UTS: green=35 MPa | PC=61 MPa; elongation_break: green=33% | PC=13%; flexural_modulus: green=0.94 GPa | PC=2.2 GPa; flexural_strength: green=39 MPa | PC=86 MPa; HDT@0.45MPa: green=Not tested | PC=78 °C; HDT@1.8MPa: green=Not tested | PC=62 °C; CTE: green=Not tested | PC=79 μm/m/°C; min_layer_thickness=50 micron (product page tag); printers=Form 3, Form 3L, Form 3B, Form 3BL, Form 2; 24h_cube_weight_gain_%: water=0.8, salt_water=0.6, IPA=1.6, acetone=11, xylene=0.4; recipe_and_test_conditions_from_TDS_footnotes=\"Data was obtained from green parts, printed using Form 2, 100 um, Grey Pro settings, without additional treatments. 3 Data was obtained from parts printed using Form 2, 100 um, Grey Pro settings and post-cured with a Form Cure for 120 minutes at 80 C.\"; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/65bdfd3a4ec1f123/original/-ENUS-Grey-Pro-TDS.pdf ; https://formlabs.com/products/grey-pro-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Precision Model Resin",
+   "fields": "group=SLA-legacy; tensile_modulus: green=2.0 GPa | PC=2.2 GPa; UTS: green=44 MPa | PC=50 MPa; elongation_break: green=11% | PC=8.60%; flexural_modulus: green=1.7 GPa | PC=2.3 GPa; flexural_strength: green=68 MPa | PC=87 MPa; HDT@0.45MPa: green=51.7 °C | PC=53.5 °C; HDT@1.8MPa: green=45.1 °C | PC=46.3 °C; CTE: green=80.2 μm/m/°C | PC=81.1 μm/m/°C; min_layer_thickness=not on product page; printers=Form 4B, Form 4BL; 24h_cube_weight_gain_%: water=0.9, salt_water=0.9, IPA=0.6, acetone=10.3, xylene=<0.1; recipe_and_test_conditions_from_TDS_footnotes=\"post-cured at 35C for 5 minutes in a Form Cure.\"; note=dental, Form 4B/4BL; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/37fc9dc612bb3fb7/original/-ENUS-Precision-Model-Resin-TDS.pdf ; https://formlabs.com/products/precision-model-resin/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "PU Rigid 1000 Resin (discontinued?)",
+   "fields": "group=SLA-legacy; UTS: PC=35 ± 3.5 MPa; elongation_break: PC=80 ± 8%; flexural_modulus: PC=0.75 ± 0.03 GPa; flexural_strength: PC=32 ± 1.6 MPa; HDT@0.45MPa: PC=79 °C; HDT@1.8MPa: PC=64 °C; density[Density (solid)]: PC=1.16 g/cm³; density[Smoke Density]: PC=(D s 1.5) = 31 (PASS) (D s 4.0) = 244 (FAIL); Tg: PC=-22 °C; Tg: PC=131 °C; CTE: PC=142 μm/m/°C; TDS_biocompat_standards=ISO 10993-1, ISO 10993-10, ISO 10993-5; 24h_cube_weight_gain_%: water=0.2, salt_water=0.1, IPA=1.7, acetone=11, xylene=2.7; recipe_and_test_conditions_from_TDS_footnotes=\"post-cured samples were measured on Type I tensile bars printed on a Form 2 printer with 100 um PU R1000 Resin settings, washed in a Form Wash for 2 minutes in 99% PGDA, and post-cured. || post-cured at 46C and 70%RH for 3 days in an oven.\"; note=no product page in catalogue; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/59605ddbe190eedf/original/-ENUS-PU-Rigid-1000-TDS.pdf ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "PU Rigid 650 Resin (discontinued?)",
+   "fields": "group=SLA-legacy; UTS: PC=34 ± 3.4 MPa; elongation_break: PC=170 ± 17 %; flexural_modulus: PC=0.57 ± 0.03 GPa; flexural_strength: PC=22 ± 1.1 MPa; HDT@0.45MPa: PC=82 °C; HDT@1.8MPa: PC=59 °C; density[Density (solid)]: PC=1.16 g/cm³; density[Smoke Density]: PC=(D s 1.5) = 15 (PASS) (D s 4.0) = 262 (FAIL); Tg: PC=-19 °C; Tg: PC=142 °C; CTE: PC=130.4 μm/m/°C; TDS_biocompat_standards=ISO 10993-1, ISO 10993-10, ISO 10993-5; 24h_cube_weight_gain_%: water=0.3, salt_water=0.7, IPA=1.3, acetone=8.9, xylene=2; recipe_and_test_conditions_from_TDS_footnotes=\"post-cured samples were measured on Type IV tensile bars printed on a Form 2 printer with100 um PU Rigid 650 Resin settings, washed in a Form Wash for 2 minutes in 99% PGDA, and post-cured.\"; note=no product page in catalogue; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/434deea23c8d01fa/original/-ENUS-PU-Rigid-650-TDS.pdf ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Nylon 12 Powder",
+   "fields": "group=SLS; tensile_modulus: 1850 MPa; UTS: 50 MPa; elongation_break(X/Y): 11%; elongation_break(Z): 6%; flexural_modulus: 1600 MPa; flexural_strength: 66 MPa; HDT@0.45MPa: 171 °C; HDT@1.8MPa: 87 °C; water_absorption_ASTM_D570(printed part, duration not stated): 0.66%; powder_moisture: 0.25%; Vicat: 175 °C; min_layer_thickness=not on product page; printers=Fuse X1, Fuse 1+ 30W, Fuse 1; page_biocompat_tag=Skin Contact, Mucosal Membrane Contact; TDS_biocompat_standards=ISO 10993-1, ISO 10993-10, ISO 10993-11, ISO 10993-5; 24h_cube_weight_gain_%: water=0.1, salt_water=0.2, IPA=0.2, acetone=0.1, xylene=0.1; recipe_and_test_conditions_from_TDS_footnotes=\"conditioned at 50% relative humidity and 23 C for 7 days before testing.\"; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/2a02034348060e54/original/-ENUS-Nylon-12-TDS.pdf ; https://formlabs.com/products/nylon-12-powder-10/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Nylon 12 White Powder",
+   "fields": "group=SLS; tensile_modulus: 1950 MPa; UTS: 47 MPa; elongation_break(X/Y): 8%; elongation_break(Z): 6%; flexural_modulus: 1500 MPa; flexural_strength: 56 MPa; HDT@0.45MPa: 177 °C; HDT@1.8MPa: 87 °C; water_absorption_ASTM_D570(printed part, duration not stated): 1.40%; Vicat: 177 °C; min_layer_thickness=not on product page; printers=Fuse 1+ 30W; page_biocompat_tag=Skin Contact, Mucosal Membrane Contact; TDS_biocompat_standards=ISO 10993-1, ISO 10993-10, ISO 10993-11, ISO 10993-23, ISO 10993-5; 24h_cube_weight_gain_%: water=0.1, salt_water=0.1, IPA=0.2, acetone=0.2, xylene=0.2; recipe_and_test_conditions_from_TDS_footnotes=\"conditioned at 23 C, 50% R.\"; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/7643d18452021a4d/original/-ENUS-Nylon-12-White-TDS.pdf ; https://formlabs.com/products/nylon-12-white-powder/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Nylon 12 Tough Powder",
+   "fields": "group=SLS; tensile_modulus: 1450 MPa; UTS: 42 MPa; elongation_break(X/Y): 25%; elongation_break(Z): 15%; flexural_modulus: 1100 MPa; flexural_strength: 42 MPa; HDT@0.45MPa: 161 °C; HDT@1.8MPa: 46 °C; water_absorption_ASTM_D570(printed part, duration not stated): 0.30%; Vicat: 170 °C; min_layer_thickness=not on product page; printers=Fuse 1+ 30W; page_biocompat_tag=Skin Contact, Mucosal Membrane Contact; TDS_biocompat_standards=ISO 10993-1, ISO 10993-10, ISO 10993-11, ISO 10993-23, ISO 10993-5; 24h_cube_weight_gain_%: water=0.1, salt_water=0.2, IPA=0.3, acetone=0.2, xylene=0.2; recipe_and_test_conditions_from_TDS_footnotes=\"conditioned at 23 C, 50% R.\"; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/193cb61bc0ace02b/original/-ENUS-Nylon-12-Tough-TDS.pdf ; https://formlabs.com/products/nylon-12-tough-powder/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Nylon 12 GF Powder",
+   "fields": "group=SLS; tensile_modulus: 2800 MPa; UTS: 38 MPa; elongation_break(X/Y): 4%; elongation_break(Z): 3%; flexural_modulus: 2400 MPa; flexural_strength: 56 MPa; HDT@0.45MPa: 170 °C; HDT@1.8MPa: 113 °C; water_absorption_ASTM_D570(printed part, duration not stated): 0.24%; powder_moisture: 0.23%; Vicat: 175 °C; min_layer_thickness=not on product page; printers=Fuse 1+ 30W, Fuse 1; page_biocompat_tag=Skin Contact, Mucosal Membrane Contact; TDS_biocompat_standards=ISO 10993-1, ISO 10993-10, ISO 10993-5; 24h_cube_weight_gain_%: water=0.1, salt_water=0.2, IPA=0.2, acetone=0.2, xylene=0.2; recipe_and_test_conditions_from_TDS_footnotes=\"conditioned at 50% relative humidity and 23 C for 7 days before testing.\"; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/683bfc0206057ef0/original/-ENUS-Nylon-12-GF-TDS.pdf ; https://formlabs.com/products/nylon-12-gf-powder/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Nylon 11 Powder",
+   "fields": "group=SLS; tensile_modulus: 1.6 GPa; UTS: 49 MPa; elongation_break(X/Y): 40%; flexural_modulus: 1.4 GPa; flexural_strength: 55 MPa; HDT@0.45MPa: 182 °C; HDT@1.8MPa: 46 °C; water_absorption_ASTM_D570(printed part, duration not stated): 0.07%; powder_moisture: 0.37%; Vicat: 189 °C; min_layer_thickness=not on product page; printers=Fuse 1+ 30W, Fuse 1; page_biocompat_tag=Skin Contact, Mucosal Membrane Contact; TDS_biocompat_standards=ISO 10993-1, ISO 10993-10, ISO 10993-5; 24h_cube_weight_gain_%: water=0.1, salt_water=0.1, IPA=0.1, acetone=0.1, xylene=0.1; recipe_and_test_conditions_from_TDS_footnotes=\"conditioned at 50% relative humidity and 23 C for 7 days before testing.\"; note=only powder with a bio-based claim; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/151bd67a83b2334f/original/-ENUS-Nylon-11-TDS.pdf ; https://formlabs.com/products/nylon-11-powder/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Nylon 11 CF Powder",
+   "fields": "group=SLS; tensile_modulus: X=5.3 GPa | Y=2.8 GPa | Z=1.6 GPa; UTS: X=69 MPa | Y=52 MPa | Z=38 MPa; elongation_break: X=9% | Y=15% | Z=5%; flexural_modulus: X=4.2 GPa | Y=4.2 GPa (blank cell in TDS; merged with previous column only verified for Rigid 10K) | Z=4.2 GPa (blank cell in TDS; merged with previous column only verified for Rigid 10K); flexural_strength: X=110 MPa | Y=110 MPa (blank cell in TDS; merged with previous column only verified for Rigid 10K) | Z=110 MPa (blank cell in TDS; merged with previous column only verified for Rigid 10K); HDT@0.45MPa: X=188 °C | Y=188 °C (blank cell in TDS; merged with previous column only verified for Rigid 10K) | Z=188 °C (blank cell in TDS; merged with previous column only verified for Rigid 10K); HDT@1.8MPa: X=178 °C | Y=178 °C (blank cell in TDS; merged with previous column only verified for Rigid 10K) | Z=178 °C (blank cell in TDS; merged with previous column only verified for Rigid 10K); Vicat: X=188 °C | Y=188 °C (blank cell in TDS; merged with previous column only verified for Rigid 10K) | Z=188 °C (blank cell in TDS; merged with previous column only verified for Rigid 10K); min_layer_thickness=not on product page; printers=Fuse 1+ 30W; page_biocompat_tag=Skin Contact, Mucosal Membrane Contact; TDS_biocompat_standards=ISO 10993-1, ISO 10993-10, ISO 10993-23, ISO 10993-5; 24h_cube_weight_gain_%: water=0.1, salt_water=0.2, IPA=0.2, acetone=0.2, xylene=0.2; recipe_and_test_conditions_from_TDS_footnotes=\"conditioned at 50% relative humidity and 23 C for 7 days before testing.\"; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/78601243ded7e922/original/-ENUS-Nylon-11-CF-TDS.pdf ; https://formlabs.com/products/nylon-11-cf-powder/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "TPU 90A Powder",
+   "fields": "group=SLS; UTS(X/Y): 8.7 MPa; UTS(Z): 7.2MPa; elongation_break(X/Y): 310%; elongation_break(Z): 110%; stress@50%(X/Y): 6.1 MPa; stress@50%(Z): 5.9 MPa; stress@100%(X/Y): 7.2 MPa; stress@100%(Z): 7.0 MPa; tear(X/Y): 66 kN/m; tear(Z): 39 kN/m; shore: 90A; density[Bulk Density (Sintered)]: 1.14 g/cm3; water_absorption_ASTM_D570(printed part, duration not stated): 0.89%; powder_moisture: 0.19%; compression_set[Compression Set (23°C)]: 20.5%; compression_set[Compression Set (70°C)]: 59.9%; Vicat: 94.3 °C; min_layer_thickness=not on product page; printers=Fuse 1+ 30W, Fuse 1; page_biocompat_tag=Skin Contact, Mucosal Membrane Contact; TDS_biocompat_standards=ISO 10993-1, ISO 10993-10, ISO 10993-23, ISO 10993-5; 24h_cube_weight_gain_%: water=0.9, salt_water=0.9, IPA=4.8, acetone=28.6, xylene=20.8; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/46427fb426628e6a/original/-ENUS-TPU-90A-TDS.pdf ; https://formlabs.com/products/tpu-90a-powder/ ; https://formlabs.com/support/solvent-compatibility/"
+  },
+  {
+   "name": "Polypropylene Powder (not on current catalogue)",
+   "fields": "group=SLS; tensile_modulus: 1640 MPa; UTS: 29 MPa; elongation_break(X/Y): 34 %; elongation_break(Z): 16 %; flexural_modulus: 1330 MPa; flexural_strength: 37 MPa; HDT@0.45MPa: 113 °C; HDT@1.8MPa: 58 °C; density[Bulk Density (powder)]: 0.33 g/cm3; density[Bulk Density (sintered)]: 0.89 g/cm3; water_absorption_ASTM_D570(printed part, duration not stated): 0.25 %; powder_moisture: 0.06 %; Vicat: 132 °C; TDS_biocompat_standards=ISO 10993-1, ISO 10993-10, ISO 10993-23, ISO 10993-5; 24h_cube_weight_gain_%: water=<0.1, salt_water=<0.1, IPA=<0.1, acetone=0.2, xylene=3; recipe_and_test_conditions_from_TDS_footnotes=\"conditioned at 232C, 5010% R.\"; note=TDS and solvent row exist; product page 404; catalogue counts 8 SLS materials without it; fetched=2026-11-12 (UTC, TDS/product pages 22:15Z, solvent page 22:14Z)",
+   "source": "https://media.formlabs.com/m/2308ddb72f7edcbc/original/-ENUS-Polypropylene-TDS.pdf ; https://formlabs.com/support/solvent-compatibility/"
+  }
+ ],
+ "findings": [
+  {
+   "claim": "Formlabs catalogue (materials page filter counts): 64 SLA and 8 SLS materials; per printer, Form 4=32, Form 4B=46, Form 4L=24, Form 4BL=37 materials; Fuse 1+ 30W=8, Fuse X1=1, Fuse 1=4. This differs from the earlier agent (Form 4 validated with 23 materials, 4B with 38, read through a page summariser); I could not reconcile the two, the filter may count materials differently.",
+   "source": "https://formlabs.com/products/materials/",
+   "confidence": "medium",
+   "value": "SLA=64; SLS=8; Form 4=32; Form 4B=46; Form 4L=24; Form 4BL=37",
+   "evidence_quote": "Print Technology SLA 64 SLS 8"
+  },
+  {
+   "claim": "Same page, printer filter counts.",
+   "source": "https://formlabs.com/products/materials/",
+   "confidence": "medium",
+   "value": "Form 4=32 Form 4B=46 Form 4L=24 Form 4BL=37; Fuse X1=1 Fuse 1+ 30W=8 Fuse 1=4",
+   "evidence_quote": "Form 4 32 Form 4B 46 Form 4L 24 Form 4BL 37"
+  },
+  {
+   "claim": "Form 4 layer thickness range 25-200 um (printer page); confirms the lower bound used for minimum printable layers. Fuse 110 um layer figure carried from the earlier agent, not re-fetched (Fuse product URLs I tried returned 404).",
+   "source": "https://formlabs.com/products/form-4/",
+   "confidence": "high",
+   "value": "25-200 um",
+   "evidence_quote": "Layer Thickness⁸ 25–200 µm"
+  },
+  {
+   "claim": "Polypropylene Powder has a TDS and a row in the solvent table, but no product page (HTTP 404 at /products/polypropylene-powder/) and the catalogue counts only 8 SLS materials, so it is not a currently sold Fuse powder. The earlier agent counted 9 powders including it. (The 404 is a fetch result, no page text to quote.)",
+   "source": "https://formlabs.com/products/materials/ ; https://formlabs.com/products/polypropylene-powder/",
+   "confidence": "medium",
+   "value": "SLS count 8 without PP; 8 = Nylon 12, 12 White, 12 Tough, 12 GF, 11, 11 CF, 11 Pro, TPU 90A",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Alpha resins (Alpha Black/Clear/Fast/Grey/Model/White) are Form Studio 1 resins; the product pages mark Form 4 as Incompatible (use Black Resin V5 instead) so they need Open Material Mode on a Form 4. Post-cured tensile modulus: Black 2240, Clear 2500, Fast 2540, Grey 2430, Model 2200, White 2190 MPa (max-strength post-cure); Shore D 65-74. The earlier agent noted them but did not tabulate them.",
+   "source": "https://formlabs.com/materials/tds/alpha-black-resin/ (and the five sibling TDS pages)",
+   "confidence": "high",
+   "value": "Black 2020/2240 MPa default/max-strength cure; Shore 72D",
+   "evidence_quote": "Form 4 Form 4 Incompatible Use Black Resin V5"
+  },
+  {
+   "claim": "Nylon 11 Pro Powder (TDS revision 1 Oct 2026): Fuse 1+ 30W only (nitrogen required); Fuse 1 incompatible; Fuse X1 available Q1/2027. Tensile modulus 1580 MPa, UTS 46 MPa, water absorption 0.4% (ASTM D570), density 1.03 g/cm3, Shore 75D.",
+   "source": "https://formlabs.com/materials/tds/nylon-11-pro-powder/",
+   "confidence": "high",
+   "value": "E=1580 MPa; water 0.4%; 75D",
+   "evidence_quote": "Fuse 1 Fuse 1 Incompatible N/A Fuse 1+ 30W Supported Yes Fuse X1 Fuse X1 Supported (Available in Q1/2027) Yes"
+  },
+  {
+   "claim": "Nylon 11 Pro water absorption on the TDS page is 0.4% by ASTM D570, against 0.07% for Nylon 11 Powder (older 2021 TDS); the two documents disagree about six-fold and neither states why (earlier agent saw the same).",
+   "source": "https://formlabs.com/materials/tds/nylon-11-pro-powder/ ; https://media.formlabs.com/m/151bd67a83b2334f/original/-ENUS-Nylon-11-TDS.pdf",
+   "confidence": "high",
+   "value": "0.4% vs 0.07%",
+   "evidence_quote": "Water Absorption (printed part) 0.4% ASTM D570"
+  },
+  {
+   "claim": "CONFIRMS and DEEPENS earlier finding: Flexible 80A Resin V2 gains +8% mass and +3% volume after 1 day in deionized water (-26 Shore A points) and +9% mass / +7% volume after 1 week (ASTM D471 slabs wiped dry). The TDS does not state the slab thickness. This is the only current Formlabs resin with swelling large enough for a hygromorph.",
+   "source": "https://media.formlabs.com/asset/af9d9268-d8c4-4019-9ccd-bd3af926c67e/-ENUS-Flexible-80A-V2-TDS.pdf",
+   "confidence": "high",
+   "value": "1 day: hardness -26, mass +8%, volume +3%, elongation 94%; 1 week: -27, +9%, +7%, elongation 101%, strength 88% (rendered page 6 read visually, same numbers)",
+   "evidence_quote": "Deionized Water 1 day -26 +8% +3% 94%"
+  },
+  {
+   "claim": "Same table, 1 week row for deionized water.",
+   "source": "https://media.formlabs.com/asset/af9d9268-d8c4-4019-9ccd-bd3af926c67e/-ENUS-Flexible-80A-V2-TDS.pdf",
+   "confidence": "high",
+   "value": "hardness -27; mass +9%; volume +7%; elongation 101%; tensile strength 88%",
+   "evidence_quote": "Deionized Water 1 week -27 +9% +7% 101% 88%"
+  },
+  {
+   "claim": "Method note: the Flexible 80A V2 test uses rectangular slabs evaluated immediately after wiping dry, a different method from the 1 cm cube used in the solvent table, so the two cannot be compared directly.",
+   "source": "https://media.formlabs.com/asset/af9d9268-d8c4-4019-9ccd-bd3af926c67e/-ENUS-Flexible-80A-V2-TDS.pdf",
+   "confidence": "high",
+   "value": "ASTM D471 slabs vs 1 cm cube 24 h",
+   "evidence_quote": "Rectangular slabs, used for hardness, mass, and volume change, are evaluated immediately after wiping dry without a conditioning period."
+  },
+  {
+   "claim": "CONTRADICTS (in part) the claim, in the task brief and in spec-resin-chemistry.json, that stock Formlabs resins gain under 1% mass in 24 h in water. True for the 1 cm cube test (all current resins 0.0-0.9%), but Flexible 80A V2 gains +8% by the TDS slab test. spec-resin-chemistry.json also lists \"Flexible 80A 0.7%\" with IPA 11.7%: that is the older V1 row of the cube table (IPA 11.7 matches the V1 TDS), not V2. For V2 the TDS gives +45% mass in IPA after 1 day.",
+   "source": "https://formlabs.com/support/solvent-compatibility/ ; https://media.formlabs.com/asset/af9d9268-d8c4-4019-9ccd-bd3af926c67e/-ENUS-Flexible-80A-V2-TDS.pdf",
+   "confidence": "high",
+   "value": "cube row Flexible 80A Resin (V1): water 0.7, IPA 11.7; V2 slab: water +8%, IPA +45%",
+   "evidence_quote": "Flexible 80A Resin 0.9 37.4 0.6 51.4 2.3 19.3 1 0.7 1.6 11.7 <0.1 0.1 0.5 10.7 0.6 28.6 13.6 0.7 64.1"
+  },
+  {
+   "claim": "Formlabs 24 h / 1 cm cube water uptake (column Water) for current Form 4 SLA resins ranges 0 to 0.9%: Tough 1000 0; Rigid 10K <0.1; Silicone 40A <0.1; Tough 2000 V2 0.19; Tough 1500 V2 0.21; Rigid 4000 0.7; Elastic/Flexible 50A V2 0.7; Grey V5 0.8; Clear V5 0.9. Only the legacy Elastic 50A V1 is higher (2.3%). Cube table columns: water is the 18th value of each row.",
+   "source": "https://formlabs.com/support/solvent-compatibility/",
+   "confidence": "high",
+   "value": "Clear V5 water=0.9; Tough 1000 water=0; Rigid 10K water=<0.1",
+   "evidence_quote": "Clear Resin V5 0.9 5.1 0.7 0.3 0.1 1.1 0.1 0.9 <0.1 0.3 0.2 0.2 0.8 0.7 0.8 0.5 0.5 0.9 <0.1"
+  },
+  {
+   "claim": "Tough 1000 row: water 0 (18th value), IPA 6.9 (10th value).",
+   "source": "https://formlabs.com/support/solvent-compatibility/",
+   "confidence": "high",
+   "value": "water=0; IPA=6.9",
+   "evidence_quote": "Tough 1000 Resin 0.2 30.4 0 38.9 0.7 6.9 0.1 0.2 39.8 6.9 0.1 0 0.2 5 0.2 7.3 7 0 62.7"
+  },
+  {
+   "claim": "CONFIRMS earlier finding: Elastic 50A V2 takes 39.2% IPA (10th value), 43.4% acetone, 163.9% xylene (last value) and 0.7% water in 24 h; Rigid 10K takes <0.1% IPA and <0.1% water. IPA contrast 39.1 percentage points.",
+   "source": "https://formlabs.com/support/solvent-compatibility/",
+   "confidence": "high",
+   "value": "Elastic 50A V2 IPA=39.2 water=0.7; Rigid 10K IPA=<0.1",
+   "evidence_quote": "Elastic 50A Resin V2 1.5 43.4 0.6 133.1 7.9 31.4 3.9 0.9 15.6 39.2 0.4 0.7 0.6 41.2 0.7 45.6 43.6 0.7 163.9"
+  },
+  {
+   "claim": "Rigid 10K cube row (all <=0.6%).",
+   "source": "https://formlabs.com/support/solvent-compatibility/",
+   "confidence": "high",
+   "value": "water <0.1; IPA <0.1; salt water 0.1",
+   "evidence_quote": "Rigid 10K Resin <0.1 <0.1 0.1 0.1 0.1 0.4 0.2 <0.1 0 <0.1 <0.1 0.2 0.1 0.6 0.1 0.2 0.4 <0.1 <0.1"
+  },
+  {
+   "claim": "Naming: Formlabs now sells Flexible 50A Resin; its product page links data-sheet id elastic50av2, its image alt text reads \"Flexible 50A Resin V2\", the TDS file is named Flexible-50A-V1-TDS, and the solvent page still calls the same numbers \"Elastic 50A Resin V2\". Treat Flexible 50A = Elastic 50A V2.",
+   "source": "https://formlabs.com/products/flexible-50a-resin/",
+   "confidence": "medium",
+   "value": "Shore 44A green / 55A post-cured; UTS 3.4 MPa",
+   "evidence_quote": "product=elastic50av2"
+  },
+  {
+   "claim": "CONFIRMS and UPGRADES earlier low-confidence finding: Grey V5 Type IV tensile bars in deionized water: 1 day mass 101.38%, modulus 88.63%, strength 89.21%, elongation 105.36% of unexposed; 1 week mass 103.23%, modulus 65.29%, strength 67.62%, elongation 83.53%. The earlier agent could only read this from a scrambled column order; in the older 13-page staging TDS (not the current 2-page Clear V5 TDS) the cells are clean and labelled \"DI Water\".",
+   "source": "https://formlabs-media.formlabs.com/filer_public/dd/7f/dd7f3de9-55ae-4c82-ac52-408a4b5df64d/clear_resin_v5_tds___formlabs.pdf",
+   "confidence": "high",
+   "value": "1 week DI water: +3.23% mass, modulus 65.29%",
+   "evidence_quote": "DI Water 65.29% 67.62% 83.53% 103.23%"
+  },
+  {
+   "claim": "1-day DI water row of the same table; the document states results are from Grey V5.",
+   "source": "https://formlabs-media.formlabs.com/filer_public/dd/7f/dd7f3de9-55ae-4c82-ac52-408a4b5df64d/clear_resin_v5_tds___formlabs.pdf",
+   "confidence": "high",
+   "value": "mass 101.38%; modulus 88.63%",
+   "evidence_quote": "DI Water 88.63% 89.21% 105.36% 101.38%"
+  },
+  {
+   "claim": "Water uptake of SLS powders, ASTM D570 on printed parts (duration not stated): Nylon 12 White 1.40%, TPU 90A 0.89%, Nylon 12 0.66%, Nylon 11 Pro 0.4%, Nylon 12 Tough 0.30%, Polypropylene 0.25%, Nylon 12 GF 0.24%, Nylon 11 0.07%. On the 1 cm cube 24 h test the same Nylon 12 White gains 0.1% (column Water, 18th value), so the D570 figure is 14 times the cube figure for the same powder.",
+   "source": "https://media.formlabs.com/m/7643d18452021a4d/original/-ENUS-Nylon-12-White-TDS.pdf ; https://formlabs.com/support/solvent-compatibility/",
+   "confidence": "high",
+   "value": "Nylon 12 White: D570 1.40% vs cube 0.1%",
+   "evidence_quote": "Water Absorption (printed part) 1.40%"
+  },
+  {
+   "claim": "Nylon 12 White cube row (water 0.1).",
+   "source": "https://formlabs.com/support/solvent-compatibility/",
+   "confidence": "high",
+   "value": "water=0.1",
+   "evidence_quote": "Nylon 12 White 0.2 0.2 0.2 0.2 1.3 1 1.7 0.1 0.3 0.2 2.2 2 0.1 1.9 0.1 4.8 1.1 0.1 0.2"
+  },
+  {
+   "claim": "Wash-step hazard and strong-stimulus option: Flexible 50A swells 39.2% in IPA in 24 h and Flexible 80A V2 +45% mass / +113% volume in IPA after 1 day (slab). Any elastomer bilayer will curl during an IPA wash; IPA or ethanol is a far stronger actuator than humidity, but also a wash/process hazard.",
+   "source": "https://formlabs.com/support/solvent-compatibility/ ; https://media.formlabs.com/asset/af9d9268-d8c4-4019-9ccd-bd3af926c67e/-ENUS-Flexible-80A-V2-TDS.pdf",
+   "confidence": "high",
+   "value": "Flexible 80A V2 IPA 1 day: mass +45%, volume +113%",
+   "evidence_quote": "IPA 1 day -32 +45% +113% 95%"
+  },
+  {
+   "claim": "CONFIRMS: Rigid 10K tensile modulus 7.5 GPa green, 10 GPa after 70 C 60 min post-cure, 11 GPa for the media-blasted state (ASTM D638-14). The blank cell under the 70+90 C state is a merged cell (rendered page checked): the 10 GPa value and the 1% elongation span the 70 C and 70+90 C columns, so the earlier agent was right to read 10 GPa for both. Product page lists 11 GPa and elongation 0.7%; the TDS says 1.7% for the 88 MPa state (earlier agent flagged this).",
+   "source": "https://media.formlabs.com/m/522eb50e6c8ac0e3/original/-ENUS-Rigid-10K-TDS.pdf",
+   "confidence": "high",
+   "value": "E: 7.5 / 10 / (10) / 11 GPa; UTS 55/65/53/88 MPa",
+   "evidence_quote": "Tensile Modulus 7.5 GPa 10 GPa 11 GPa"
+  },
+  {
+   "claim": "Silicone 40A publishes no tensile modulus; post-cured stress at 50% elongation 0.4 MPa, 100% 1 MPa, UTS 5 MPa, elongation 230%, Shore 40A, resilience 34%. Own estimate: secant modulus 0.4/0.5 = 0.8 MPa (a lower bound: for an ideal neo-Hookean rubber the secant at 50% strain is (1.5-1/1.5^2)/(3x0.5)=0.704 of the small-strain modulus, so about 1.1 MPa).",
+   "source": "https://media.formlabs.com/m/2e6bb2b3d645b427/original/-ENUS-Silicone-40A-TDS.pdf",
+   "confidence": "medium",
+   "value": "stress@50%=0.4 MPa; secant 0.8 MPa; neo-Hookean-corrected about 1.1 MPa (own calculation)",
+   "evidence_quote": "Stress at 50% elongation 0.4 MPa 58 psi"
+  },
+  {
+   "claim": "Disagreement: Silicone 40A glass transition -107 C in the TDS vs -110 C on the product page.",
+   "source": "https://media.formlabs.com/m/2e6bb2b3d645b427/original/-ENUS-Silicone-40A-TDS.pdf ; https://formlabs.com/products/silicone-40a-resin/",
+   "confidence": "high",
+   "value": "-107 C (TDS) vs -110 C (page)",
+   "evidence_quote": "Glass Transition Temperature -107 °C"
+  },
+  {
+   "claim": "Product-page side of the Tg disagreement.",
+   "source": "https://formlabs.com/products/silicone-40a-resin/",
+   "confidence": "high",
+   "value": "-110 C",
+   "evidence_quote": "Glass Transition Temperature (Tg) -110 °C"
+  },
+  {
+   "claim": "Alumina 4N Resin: the printed green part has flexural modulus 24.5 MPa; after furnace sintering Young modulus is 390 GPa (TDS) - a 16,000-fold change (390000/24.5). The product page text says 380 GPa; the TDS says 390 GPa.",
+   "source": "https://media.formlabs.com/m/35a40632d8faa55d/original/-ENUS-Alumina-4N-TDS.pdf",
+   "confidence": "high",
+   "value": "green 24.5 MPa; sintered 390 GPa (page text 380 GPa)",
+   "evidence_quote": "Young's Modulus 4, 5 390 GPa"
+  },
+  {
+   "claim": "Product-page text for Alumina 4N modulus.",
+   "source": "https://formlabs.com/products/ceramic-alumina-4n-resin/",
+   "confidence": "high",
+   "value": "380 GPa",
+   "evidence_quote": "modulus of 380 GPa"
+  },
+  {
+   "claim": "Shore hardness: Tough 1000 56D green / 68D post-cured; Flexible 50A 44 green / 55 post-cured (A scale); Flexible 80A V2 68A / 83A (TDS row garbled in text extraction, product page \"83A 80A*\").",
+   "source": "https://media.formlabs.com/ (TDS) ; https://formlabs.com/products/flexible-80a-resin/",
+   "confidence": "high",
+   "value": "Tough 1000 56D/68D; Flexible 50A 44/55 A",
+   "evidence_quote": "Shore D Hardness 56D 68D"
+  },
+  {
+   "claim": "Flexible 80A V2 product-page Shore A entry.",
+   "source": "https://formlabs.com/products/flexible-80a-resin/",
+   "confidence": "medium",
+   "value": "83A (80A*)",
+   "evidence_quote": "Hardness (Shore A) 83A 80A*"
+  },
+  {
+   "claim": "Nylon 12 tensile modulus: TDS 1850 MPa; the product page headline says 1900 MPa (spec-resin-chemistry.json used 1900, spec-formlabs-materials.json 1850). Both are Formlabs numbers; I use the TDS value.",
+   "source": "https://media.formlabs.com/m/2a02034348060e54/original/-ENUS-Nylon-12-TDS.pdf",
+   "confidence": "high",
+   "value": "1850 vs 1900 MPa",
+   "evidence_quote": "Tensile Modulus 1850 MPa"
+  },
+  {
+   "claim": "Product-page side of the Nylon 12 modulus disagreement.",
+   "source": "https://formlabs.com/products/nylon-12-powder-10/",
+   "confidence": "high",
+   "value": "1900 MPa",
+   "evidence_quote": "Tensile Modulus 1900.0 MPa"
+  },
+  {
+   "claim": "Post-cure recipes are printed in TDS footnotes, not on product pages (which only link to Form Cure settings). Tough 1000 and Tough 2000 V2: Form 4, 100 um, wash 10+10 / 10+5 min in >=99% IPA in Form Wash V2, post-cure 70 C 12 min in Form Cure V2.",
+   "source": "https://media.formlabs.com/ (Tough 1000 TDS https://formlabs-media.formlabs.com/datasheets/25011071-TDS-ENUS-0.pdf)",
+   "confidence": "high",
+   "value": "70 C, 12 min, Form Cure V2",
+   "evidence_quote": "post-cured at 70 C for 12 minutes in a Form Cure V2"
+  },
+  {
+   "claim": "Silicone 40A is post-cured at 60 C for 30 min submerged in water.",
+   "source": "https://media.formlabs.com/m/2e6bb2b3d645b427/original/-ENUS-Silicone-40A-TDS.pdf",
+   "confidence": "high",
+   "value": "60 C 30 min under water",
+   "evidence_quote": "post-cured at 60C for 30 minutes submerged in water in a Form Cure"
+  },
+  {
+   "claim": "Flexible 80A V2 post-cure: room temperature 5 min in water then 80 C 5 min in air in a Form Cure V2 L.",
+   "source": "https://media.formlabs.com/asset/af9d9268-d8c4-4019-9ccd-bd3af926c67e/-ENUS-Flexible-80A-V2-TDS.pdf",
+   "confidence": "high",
+   "value": "RT 5 min in water + 80 C 5 min in air",
+   "evidence_quote": "post-cured at room temperature for 5 minutes in water and 80C for 5 minutes in air in a Form Cure V2 L"
+  },
+  {
+   "claim": "Rigid 4000 post-cure: Form Cure 15 min at 80 C. Rigid 10K: 60 min at 70 C (+ optional 125 min at 90 C thermal). Clear/Grey/Black/White V5: 5 min room temperature or 15 min at 60 C. High Temp: 60 min 60 C, or 120 min 80 C plus 180 min 160 C oven.",
+   "source": "https://media.formlabs.com/m/4f8db0ba395cd2de/original/-ENUS-Rigid-4000-TDS.pdf",
+   "confidence": "high",
+   "value": "Rigid 4000: 80 C 15 min",
+   "evidence_quote": "post-cured with a Form Cure for 15 minutes at 80 C"
+  },
+  {
+   "claim": "Several \"current Form 4\" resins have TDS numbers measured on older printers: Rigid 10K and Rigid 4000 (Form 3), Durable and High Temp (Form 2); Tough 1000, Tough 2000 V2, Clear/Grey V5 were measured on a Form 4.",
+   "source": "https://media.formlabs.com/m/522eb50e6c8ac0e3/original/-ENUS-Rigid-10K-TDS.pdf",
+   "confidence": "high",
+   "value": "Rigid 10K test printer: Form 3",
+   "evidence_quote": "A ll testing specimens were printed using Form 3."
+  },
+  {
+   "claim": "SDS section 3 shows the Form 4 SLA resins are all (meth)acrylate photopolymers: Flexible 80A V2 methacrylate monomers 25-40% plus aliphatic polyurethane; Rigid 10K urethane dimethacrylate 15-25%; Tough 1000, Tough 1500 V2, Clear/Grey V5, Rigid 4000, Durable, ESD, Flexible 50A likewise methacrylate / urethane dimethacrylate. Same radical chain-growth chemistry, so these can co-cure. Silicone 40A is different: polysiloxane crosslinker 5-10% plus a TPO-L type photoinitiator.",
+   "source": "SDS PDFs listed in D:/Users/ashenoy00000/delphi-work/data/formlabs-tds/MANIFEST.tsv (sds/ folder), e.g. https://media.formlabs.com/asset/f2f45c46-fcda-43f9-a290-3d2a8c0af980/-ENUS-Safety-Data-Sheet-Flexible-80A-Resin-V2.pdf",
+   "confidence": "high",
+   "value": "Flexible 80A V2: methacrylate monomer(s) 25-40%",
+   "evidence_quote": "Methacrylate monomer(s) 25-40"
+  },
+  {
+   "claim": "Silicone 40A SDS composition (polysiloxane crosslinker).",
+   "source": "https://media.formlabs.com/m/32e7870f5d5cb04a/original/-ENUS-Safety-Data-Sheet-Silicone-40A-Resin.pdf",
+   "confidence": "high",
+   "value": "polysiloxane crosslinker 5-10%",
+   "evidence_quote": "Polysiloxane crosslinker 5-10"
+  },
+  {
+   "claim": "Rigid 10K SDS composition (urethane dimethacrylate).",
+   "source": "https://media.formlabs.com/m/3cc2feae0929233/original/-ENUS-Safety-Data-Sheet-Rigid-10K-Resin.pdf",
+   "confidence": "high",
+   "value": "urethane dimethacrylate 15-25%",
+   "evidence_quote": "Urethane Dimethacrylate 15-25"
+  },
+  {
+   "claim": "Adhesion evidence is thin. Formlabs itself says its resins can be used as glue (405 nm laser pen) - this supports resin-on-resin bonding within the acrylate family.",
+   "source": "https://formlabs.com/blog/advanced-3dp-techniques/",
+   "confidence": "medium",
+   "value": "official Formlabs blog statement, no strength data",
+   "evidence_quote": "Formlabs resins can behave like glue when exposed to UV light."
+  },
+  {
+   "claim": "Community forum (anecdotal, 2021): a user who printed Durable and Elastic 50A parts reports that silicone glue did not work and planned to bond with Elastic resin instead. This is the only adhesion evidence found for a flexible/rigid acrylate pair, and it says nothing about Silicone 40A resin on acrylate resin: no source found for that pair.",
+   "source": "https://forum.formlabs.com/t/gluing-elastic-50a-and-durable-resins-together-two-different-resins-in-general/31779",
+   "confidence": "low",
+   "value": "anecdote, no test data",
+   "evidence_quote": "I tried gluing them with goop (silicone glue) - doesn’t work."
+  },
+  {
+   "claim": "RANKING (a) modulus contrast, SLA pairs, top 6. Method (script pairs.py, saved): 19 materials = 12 Form 4-family SLA resins with full TDS plus 7 Fuse powders, 171 unordered pairs. (a) modulus contrast = ratio of post-cured tensile moduli; elastomers have no published modulus, so secant = stress at 50% elongation / 0.5 (own estimate: Flexible 80A V2 5.8, Flexible 50A 1.8, Silicone 40A 0.8, TPU 90A 12.2 MPa). (b) swelling contrast = absolute difference of 24 h water mass gain in percentage points (1 cm cube table; Flexible 80A V2 uses its +8% slab value; \"<x\" read as x). (c) adhesion class 3 = both resins are (meth)acrylate photopolymers on the same Form 4 (SDS), 1 = polysiloxane vs acrylate, SLA vs SLS, or two powders (no co-print). Combined = sum of the three tie-averaged ranks (lower is better).",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-all-resins/pairs.py (output pairs.json)",
+   "confidence": "medium",
+   "value": "Rigid 10K + Silicone 40A (E ratio 12500, water gap 0 pp, IPA gap 5.8 pp, adhesion class 1) | Rigid 10K + Flexible 50A (E ratio 5555.56, water gap 0.6 pp, IPA gap 39.1 pp, adhesion class 3) | Rigid 4000 + Silicone 40A (E ratio 5125, water gap 0.6 pp, IPA gap 5.5 pp, adhesion class 1) | High Temp + Silicone 40A (E ratio 3500, water gap 0.9 pp, IPA gap 4.9 pp, adhesion class 1) | Clear V5 + Silicone 40A (E ratio 3437.5, water gap 0.8 pp, IPA gap 5.6 pp, adhesion class 1) | Grey V5 + Silicone 40A (E ratio 3343.75, water gap 0.7 pp, IPA gap 5.6 pp, adhesion class 1)",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "RANKING (a) modulus contrast using only published moduli (no elastomers): Rigid 10K 10000 MPa vs Tough 1000 932 MPa = 10.7x; vs Durable 1000 MPa = 10x; vs Tough 2000 V2 1800 MPa = 5.6x; Nylon 11 CF X-direction 5300 MPa vs Nylon 12 Tough 1450 MPa = 3.7x (powders).",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-all-resins/pairs.py",
+   "confidence": "high",
+   "value": "10000/932=10.73; 10000/1000=10; 10000/1800=5.56; 5300/1450=3.66",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "RANKING (b) swelling contrast (water, 24 h), top 6 pairs, all involve Flexible 80A V2 (+8%) against a resin with <=0.7% cube uptake. Indicative only: slab and cube tests differ and a thick cube is still diffusion-limited at 24 h.",
+   "source": "pairs.py",
+   "confidence": "low",
+   "value": "Tough 1000 + Flexible 80A V2 (E ratio 160.69, water gap 8 pp, IPA gap 4.8 pp, adhesion class 3) | Rigid 10K + Flexible 80A V2 (E ratio 1724.14, water gap 7.9 pp, IPA gap 11.6 pp, adhesion class 3) | Flexible 80A V2 + Silicone 40A (E ratio 7.25, water gap 7.9 pp, IPA gap 5.8 pp, adhesion class 1) | Flexible 80A V2 + Nylon 12 (E ratio 318.97, water gap 7.9 pp, IPA gap 11.5 pp, adhesion class 1) | Flexible 80A V2 + Nylon 11 (E ratio 275.86, water gap 7.9 pp, IPA gap 11.6 pp, adhesion class 1) | Flexible 80A V2 + Nylon 12 Tough (E ratio 250, water gap 7.9 pp, IPA gap 11.4 pp, adhesion class 1)",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "RANKING (b) swelling contrast with IPA as stimulus, SLA, top 5: all pair Flexible/Elastic 50A (+39.2%) with a rigid resin (<=0.4% IPA).",
+   "source": "pairs.py",
+   "confidence": "medium",
+   "value": "Rigid 10K + Flexible 50A (E ratio 5555.56, water gap 0.6 pp, IPA gap 39.1 pp, adhesion class 3) | Clear V5 + Flexible 50A (E ratio 1527.78, water gap 0.2 pp, IPA gap 38.9 pp, adhesion class 3) | Grey V5 + Flexible 50A (E ratio 1486.11, water gap 0.1 pp, IPA gap 38.9 pp, adhesion class 3) | Rigid 4000 + Flexible 50A (E ratio 2277.78, water gap 0 pp, IPA gap 38.8 pp, adhesion class 3) | High Temp + Flexible 50A (E ratio 1555.56, water gap 0.3 pp, IPA gap 38.2 pp, adhesion class 3)",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "RANKING (c) adhesion compatibility: all 55 pairs among the 11 acrylate SLA resins are class 3 (shared (meth)acrylate chemistry on one printer). Every Silicone 40A pair, every SLA+SLS pair and every powder pair is class 1: no co-print, and no bonding evidence found. Evidence for class 3 is chemistry (SDS) plus a Formlabs blog statement, not a peel or shear test.",
+   "source": "pairs.py + SDS texts",
+   "confidence": "low",
+   "value": "class 3 = 55 pairs among the 11 acrylate SLA resins; no measured bond strength exists in any source read",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "COMBINED RANKING of bilayer pairs (sum of ranks a+b+c, top 10): 1. Rigid 10K + Flexible 80A V2 (E ratio 1724.14, water gap 7.9 pp, IPA gap 11.6 pp, adhesion class 3) || 2. Rigid 4000 + Flexible 80A V2 (E ratio 706.9, water gap 7.3 pp, IPA gap 11.3 pp, adhesion class 3) || 3. Tough 2000 V2 + Flexible 80A V2 (E ratio 310.34, water gap 7.81 pp, IPA gap 7.49 pp, adhesion class 3) || 4. Grey V5 + Flexible 80A V2 (E ratio 461.21, water gap 7.2 pp, IPA gap 11.4 pp, adhesion class 3) || 5. Clear V5 + Flexible 80A V2 (E ratio 474.14, water gap 7.1 pp, IPA gap 11.4 pp, adhesion class 3) || 6. Tough 1000 + Flexible 80A V2 (E ratio 160.69, water gap 8 pp, IPA gap 4.8 pp, adhesion class 3) || 7. High Temp + Flexible 80A V2 (E ratio 482.76, water gap 7 pp, IPA gap 10.7 pp, adhesion class 3) || 8. Tough 1500 V2 + Flexible 80A V2 (E ratio 251.72, water gap 7.79 pp, IPA gap 5.16 pp, adhesion class 3) || 9. Durable + Flexible 80A V2 (E ratio 172.41, water gap 7 pp, IPA gap 6.6 pp, adhesion class 3) || 10. Rigid 10K + Flexible 50A (E ratio 5555.56, water gap 0.6 pp, IPA gap 39.1 pp, adhesion class 3)",
+   "source": "pairs.py",
+   "confidence": "low",
+   "value": "best pair: Rigid 10K + Flexible 80A V2 (rank-sum 49.5); next: Rigid 4000, Tough 2000 V2, Grey V5, Clear V5, Tough 1000 each with Flexible 80A V2. Silicone 40A pairs rank low only because adhesion is unknown.",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "BILAYER GEOMETRY (own calculation, scripts pairs.py): using the project-record law kappa = f(m,n) d_eps / h with ceiling 1.5 at m=n^(-1/2) (re-checked numerically: max f over a grid = 1.5), Flexible 80A V2 as swelling layer (d_eps = 1.03^(1/3)-1 = 0.0099 at 1 day, 1.07^(1/3)-1 = 0.0228 at 1 week, assuming isotropic swelling and an inert partner) and the 0.2 mm minimum wall for the thinner layer: partner Tough 1000: optimum thickness ratio 12.676, h=2.735 mm, kappa=5.43 /m (1 d), 12.51 /m (1 wk); Rigid 10K: ratio 41.523, h=8.505 mm, kappa=1.75 /m; Flexible 50A: ratio 0.557, h=0.559 mm, kappa=26.57 /m (1 d), 61.21 /m (1 wk); Silicone 40A: ratio 0.371, h=0.739 mm, kappa=20.11 /m (1 d), 46.3 /m (1 wk). Consequence: with a very stiff partner the optimum needs an active layer 8 mm thick (Rigid 10K), so the practical pairs are the soft ones. Caveats: modulus of Flexible 80A V2 falls as it swells (-26 Shore A), the slab thickness behind the 1-day figure is unstated, Flexible 50A and Silicone 40A uptake in the slab test is unknown (only cube values), thick layers swell slower.",
+   "source": "pairs.py",
+   "confidence": "low",
+   "value": "kappa at optimum: Silicone 40A 20.1, Flexible 50A 26.6, Tough 1000 5.4, Rigid 10K 1.75 per metre (1 day)",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "THE TEN BEST USABLE MATERIALS for a bilayer proof of concept (Form 4 non-medical resins first, two Fuse powders last): 1. Flexible 80A Resin V2: swelling (active) layer: +8% mass / +3% volume in water in 1 day, 83A, elongation 230%, tear 28 kN/m; same acrylate family as everything rigid on Form 4; weakness: slab test only, softens 26 Shore A points || 2. Rigid 10K Resin: stiffest passive layer: 10-11 GPa, water <0.1%, HDT 238 C at 0.45 MPa, min layer 50 um; brittle (1-1.7%) and the Lean optimum then needs a very thick soft layer || 3. Tough 1000 Resin: best general passive layer: E 932 MPa, 180% elongation, water 0.0% (cube), measured on a Form 4, 70 C 12 min cure; best honest E contrast (160x secant) to Flexible 80A V2 || 4. Flexible 50A Resin (ex Elastic 50A V2): soft partner in the same chemistry: 55A, water 0.7%, but IPA 39.2%; E contrast only about 3x to Flexible 80A V2, which gives the best printable curvature (kappa 26.6 /m at optimum) if its slab swelling is low || 5. Silicone 40A Resin: inert soft layer: water <0.1%, ISO 10993-5/-10/-23 listed, Tg -107 C; but polysiloxane chemistry, Form 4/4B only, 100 um minimum layer, and no bonding evidence to acrylates || 6. Tough 2000 Resin V2: stiffer tough passive layer: 1800 MPa, water 0.19%, Form 4 data, same cure as Tough 1000 || 7. Clear Resin V5 (Grey V5 equivalent): only rigid resin with a measured slow water uptake: +3.23% mass and modulus down to 65% after 1 week (Grey V5); 25 um layers; transparent, useful as a visible active layer or window || 8. Durable Resin: hinge-class resin: 1.0 GPa, 55% elongation, IPA 5.1%, water <1% (coarse), 50 um layers; cheap compliant partner || 9. Nylon 11 Powder (Fuse): only material with a bio-based claim (no percentage given); E 1.6 GPa, 40% elongation, D570 water 0.07% (older TDS) vs 0.4% (Pro TDS); the natural SLS structural partner; no co-print with resins || 10. TPU 90A Powder (Fuse): soft SLS partner: 90A, 310% elongation, water 0.89%; flexible hinge or skin in powder; runner-up Nylon 12 Powder (1850 MPa, most data). Runners-up: Rigid 4000 (4.1 GPa, 0.7% water), Grey V5, Tough 1500 V2, High Temp (HDT 238 C after 160 C cure), Nylon 12 Powder. Not recommended for the build: BioMed line (Form 4B/4BL only, medical), Alpha resins (Form Studio 1 only), Alumina 4N (needs a furnace, brittle ceramic).",
+   "source": "all TDS and product pages in the table rows",
+   "confidence": "medium",
+   "value": "selection is my judgement from the stated criteria: Form 4 availability, published full data, contrast, shared chemistry, biocompatibility",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "CONFIRMS earlier finding: Nylon 11 Powder carries a bio-based claim in its TDS (no percentage or feedstock stated); the product page also calls it \"our legacy\" bio-based material. No bio-based claim was found in any other TDS text or product page read in this run (text search of all 54 TDS texts and 57 product pages).",
+   "source": "https://formlabs.com/products/nylon-11-powder/ ; https://media.formlabs.com/m/151bd67a83b2334f/original/-ENUS-Nylon-11-TDS.pdf",
+   "confidence": "high",
+   "value": "bio-based, percentage not given",
+   "evidence_quote": "Nylon 11 Powder is a high performance, bio-based nylon material"
+  },
+  {
+   "claim": "Product-page wording for Nylon 11 Powder.",
+   "source": "https://formlabs.com/products/nylon-11-powder/",
+   "confidence": "high",
+   "value": "legacy; bio-based",
+   "evidence_quote": "Nylon 11 Powder is our legacy strong, highly ductile bio-based material"
+  }
+ ],
+ "key_claims": [
+  {
+   "claim": "Flexible 80A Resin V2 gains +8% mass and +3% volume in 1 day in deionized water and +9% / +7% in 1 week (ASTM D471 slabs); it is the only current Formlabs resin with swelling large enough to drive a hygromorph, and it contradicts a blanket \"under 1% in 24 h\" for stock resins.",
+   "source": "https://media.formlabs.com/asset/af9d9268-d8c4-4019-9ccd-bd3af926c67e/-ENUS-Flexible-80A-V2-TDS.pdf",
+   "evidence_quote": "Deionized Water 1 day -26 +8% +3% 94%"
+  },
+  {
+   "claim": "Every other Form 4-family resin gains 0.0-0.9% mass in water in Formlabs own 24 h 1 cm cube test (Clear V5 0.9, Tough 1000 0.0, Rigid 10K <0.1); no humid-air swelling or diffusivity exists for any of them.",
+   "source": "https://formlabs.com/support/solvent-compatibility/",
+   "evidence_quote": "Clear Resin V5 0.9 5.1 0.7 0.3 0.1 1.1 0.1 0.9 <0.1 0.3 0.2 0.2 0.8 0.7 0.8 0.5 0.5 0.9 <0.1"
+  },
+  {
+   "claim": "Elastic/Flexible 50A takes 39.2% IPA in 24 h against under 0.1% for Rigid 10K (earlier finding confirmed): the largest solvent-swelling contrast between two Form 4 resins of the same chemistry.",
+   "source": "https://formlabs.com/support/solvent-compatibility/",
+   "evidence_quote": "Elastic 50A Resin V2 1.5 43.4 0.6 133.1 7.9 31.4 3.9 0.9 15.6 39.2 0.4 0.7 0.6 41.2 0.7 45.6 43.6 0.7 163.9"
+  },
+  {
+   "claim": "All Form 4 SLA resins except Silicone 40A are (meth)acrylate photopolymers per their SDS (co-curable, so bilayer bonding is plausible); Silicone 40A is polysiloxane and no source supports its bonding to acrylates. No measured bond strength between any two Formlabs materials exists in the sources read.",
+   "source": "Safety Data Sheets (sds/ folder in MANIFEST.tsv)",
+   "evidence_quote": "Methacrylate monomer(s) 25-40"
+  }
+ ],
+ "recommendations": [
+  "Print a coupon set before any design work: Flexible 80A V2 strips (0.2, 0.5, 1 mm) bonded or co-printed to Tough 1000, Flexible 50A, Silicone 40A and Rigid 10K, soaked in water at 23 C and in 60/90% RH air; weigh and measure length and curvature at 1, 6, 24, 168 h. This replaces every estimated number in this report.",
+  "Ask Formlabs (or test) the slab thickness behind the +8%/+3% result and run the same slab test on Flexible 50A, Tough 1000 and Rigid 10K so that swelling contrast is measured on one method.",
+  "Treat Silicone 40A as a high-risk partner: run a peel test of Flexible 80A V2 or Tough 1000 cured against cured Silicone 40A before committing.",
+  "Fuse route: no co-printing; if a powder bilayer is wanted, bond Nylon 11 and TPU 90A with an adhesive and test it; Nylon 11 is the only bio-based claim, ask Formlabs for the percentage.",
+  "Beyond stock resins (Open Material Mode): the earlier agent found PEG-acrylate hydrogel resins swell 3.5-74% linearly (Maennel 2020, DLP printer, not Formlabs); that is the route to a much larger curvature; not re-examined here.",
+  "Keep the IPA wash step in mind: elastomer bilayers will curl in it; design the wash time and fixture accordingly."
+ ],
+ "reproduce": [
+  {
+   "what": "Fetch index pages, one old TDS and the bonding pages",
+   "command_or_url": "bash D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-all-resins/fetch_pages.sh",
+   "expected": "materials.html ~1.55 MB, solvent.html ~0.33 MB, datasheets.html ~1.12 MB in scratch/bm-formlabs-all-resins (sizes drift if Formlabs edits pages; fetched 2026-11-12)"
+  },
+  {
+   "what": "Parse the solvent-compatibility table",
+   "command_or_url": "python -I parse_solvent.py <scratch>/solvent.html <scratch>/solvent.json",
+   "expected": "48 rows; Tough 1000 water=0, Elastic 50A Resin V2 IPA=39.2, Rigid 10K IPA=<0.1"
+  },
+  {
+   "what": "Build the data-sheet index",
+   "command_or_url": "python -I build_index.py <scratch>/datasheets.html <scratch>/ds_index.json",
+   "expected": "3580 records, 84 products"
+  },
+  {
+   "what": "Download product pages and English TDS (re-runnable, skips existing)",
+   "command_or_url": "python -I fetch_all.py",
+   "expected": "57 pages; 118 new files, about 41 MB in data/formlabs-tds; MANIFEST.tsv holds URL, size, sha256, time"
+  },
+  {
+   "what": "Safety data sheets for 18 key materials",
+   "command_or_url": "python -I fetch_sds.py ; python -I sds_comp.py",
+   "expected": "Section 3 lists: Flexible 80A V2 methacrylate monomer(s) 25-40; Silicone 40A polysiloxane crosslinker 5-10"
+  },
+  {
+   "what": "PDF to text and table reconstruction (poppler pdftotext; PyMuPDF 1.28.2 via the legacy fitz import)",
+   "command_or_url": "bash convert_pdfs.sh ; python -E -P tds_dump.py ; python -I build_materials.py ; python -I parse_all.py",
+   "expected": "54 table dumps; materials.json and products.json"
+  },
+  {
+   "what": "Rank pairs and compute geometry",
+   "command_or_url": "python -I pairs.py",
+   "expected": "prints max f = 1.5; top pair Rigid 10K + Flexible 80A V2 (rank-sum 49.5); kappa_opt 20.11 /m for Flexible 80A V2 + Silicone 40A"
+  },
+  {
+   "what": "Build table and final JSON (checks every quote verbatim against the saved sources)",
+   "command_or_url": "python -I build_table.py ; python -E -P build_final_b.py",
+   "expected": "writes agents2/bm-formlabs-all-resins.json; fails if any evidence_quote is not found"
+  },
+  {
+   "what": "Spot-check by eye",
+   "command_or_url": "render page 2 of rigid10k__910.pdf and page 6 of flexible-80a-resin-v2__3462.pdf (PyMuPDF get_pixmap)",
+   "expected": "Rigid 10K: 10 GPa and 1% cells span two columns; Flexible 80A V2 deionized water 1 day: -26, +8%, +3%"
+  },
+  {
+   "what": "Tools and versions",
+   "command_or_url": "Python 3.14, PyMuPDF 1.28.2, poppler pdftotext, curl; user-agent delphi-research/0.1",
+   "expected": "no login, no email or account sent to any service"
+  }
+ ],
+ "citations": [
+  {
+   "authors": "Timoshenko, S.",
+   "year": 1925,
+   "title": "Analysis of Bi-Metal Thermostats",
+   "doi_or_arxiv": "10.1364/josa.11.000233",
+   "verified": true,
+   "venue": "Journal of the Optical Society of America 11",
+   "used_for": "origin of the bilayer-curvature formula whose Lean-checked form (ceiling 3/2 at m^2 n = 1) is applied in the geometry calculation; the formula itself is taken from the project record, not re-derived here",
+   "how_verified": "Crossref https://api.crossref.org/works/10.1364/JOSA.11.000233 returned title, year 1925 and author Timoshenko in this run"
+  },
+  {
+   "authors": "Maennel, M. J.; Fischer, C.; Thiele, J.",
+   "year": 2020,
+   "title": "A Non-Cytotoxic Resin for Micro-Stereolithography for Cell Cultures of HUVECs",
+   "doi_or_arxiv": "10.3390/mi11030246",
+   "verified": true,
+   "venue": "Micromachines (PMC7143370)",
+   "used_for": "pointer only: source of the PEG-acrylate swelling figures quoted by the earlier agent (not re-read in this run)",
+   "how_verified": "Europe PMC REST search PMCID:PMC7143370 returned this DOI, title, authors and year in this run"
+  }
+ ],
+ "could_not_find": [
+  "Any humid-air (relative humidity) swelling strain or water diffusion coefficient for any Formlabs resin or powder: none in any TDS, product page or the solvent table.",
+  "Slab thickness of the Flexible 80A V2 ASTM D471 test, and the same slab test (mass and volume) for any other resin; the cube table reports mass only, never volume.",
+  "A published tensile modulus for Flexible 80A V2, Flexible 50A, Silicone 40A, TPU 90A or the BioMed flex resins: all secant values here are my estimates from stress at 50% elongation.",
+  "Any measured adhesion (peel or shear) between two Formlabs materials, or Formlabs guidance on printing a second resin onto a cured part; only a blog statement that resins act as glue and anecdotal forum posts. Nothing for Silicone 40A against acrylates. I did not re-search for a Formlabs multi-material statement; the earlier agent found none.",
+  "Minimum layer thickness on the product page for Tough 1000, Tough 1500 V2, Tough 2000 V2, Grey/Black/White V5, Flexible 80A V2, Color Base, BioMed Clear-less cases and the Alpha resins (TDS data at 100 um only; Form 4 range 25-200 um confirmed). Fuse 110 um layer not re-fetched; Fuse printer product URLs returned 404.",
+  "Density for most resins (published only for Flexible 80A V2 1.09, ESD 1.116, Tough 1000/1500 V2/2000 V2 1.07-1.12, Clear V5 1.21 in the older TDS, TPU 90A 1.14, Nylon 11 Pro 1.03, Polypropylene 0.89 sintered); Shore D missing for Rigid 10K, Rigid 4000, Durable, V5 resins and High Temp in current TDS.",
+  "Mass-change tables of the Tough 1000 / Tough 1500 V2 / Tough 2000 V2 ASTM D543 pages: only relative modulus/strength columns exist and their text extraction is scrambled; I did not use them.",
+  "Dental resins (Dental LT, denture, surgical guide etc.) were deliberately not tabulated; Castable Wax 40, Ceramic Resin and True Cast have almost no mechanical data in their TDS.",
+  "The Fuse 1+ and Form 4 pages give counts of materials that I could not reconcile with the earlier agent (23 vs 32 for Form 4).",
+  "A bio-based percentage for Nylon 11; biocompatibility outcomes beyond the standard names listed on the TDS; the TDS for Nylon 11 Pro lists no biocompatibility standard in the page text I read.",
+  "The older 13-page Clear V5 TDS I used for the Grey V5 immersion table is a staging PDF; the current TDS is 2 pages without it, so I cannot say whether Formlabs still stands behind those numbers."
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-all-resins/fetch_pages.sh",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-all-resins/parse_solvent.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-all-resins/build_index.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-all-resins/fetch_all.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-all-resins/fetch_sds.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-all-resins/sds_comp.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-all-resins/convert_pdfs.sh",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-all-resins/tds_tables.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-all-resins/tds_dump.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-all-resins/build_materials.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-all-resins/parse_product.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-all-resins/parse_all.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-all-resins/show_materials.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-all-resins/pairs.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-all-resins/build_table.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-all-resins/corpora.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-all-resins/build_final.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-all-resins/build_final_b.py"
+ ]
+}

@@ -1,0 +1,569 @@
+{
+ "label": "bm-bioinspired-generative-design",
+ "topic": "Generative and agentic design tools that could sit in the pipeline (Bioinspired123D, SciAgents, other open tools) and where a verified-law filter (Timoshenko ceiling, hollow-tube, Murray) could remove candidates before printing",
+ "summary": "Bioinspired123D (Luu and Buehler, 2026; Apache-2.0 code, weights on Hugging Face) turns a text prompt into a Blender Python script. It has 12 base scripts in three families (helical, cellular, tubular), a 3B-parameter finetuned model (Llama-3.2-3B-Instruct base) and an image-only vision-model critic. It outputs Blender geometry; the authors exported STL by hand and printed in ABS, PLA and PETG on FDM machines. The repo has no STL exporter, no units, no moduli, no layer or bilayer concept, and no manufacturability check (the paper says minimum feature size, overhang and build volume 'are not explicitly enforced'). Its validation is a script-generation benchmark (base 0%, base+retrieval 18%, finetuned 54%, finetuned+retrieval 60%), not a physical measurement. SciAgents (Ghafarollahi and Buehler 2024; Apache-2.0) is different: it takes keywords, walks a knowledge graph with an AutoGen/AG2 agent team and outputs a text research hypothesis (README example: 8,100 words). It emits no geometry. Other open tools: Marom/Buehler CategoryTheoryDesign (Apache-2.0; Grasshopper plus Python, Timoshenko bilayer to G-code, 4 FFF specimens measured, no resin or SLA profile); Silkworm (Grasshopper to G-code, no licence declared, last push 2015); two ETH-lineage truss inverse-design codes (MIT; output nodes and connectivity); svVascularize (Murray exponent 3.0 as a built-in growth parameter, tube solids); LLMto3D and C33D (LLM to Rhino/Grasshopper code or STEP). None of the tools surveyed applies a proven law as a hard pre-print filter. The nearest thing is the 'verify' step of CategoryTheoryDesign, which checks two evaluations of the same Timoshenko formula against each other within a tolerance (epsilon 0.05), not against a ceiling. The data-flow recommended here puts a 'law gate' between candidate generation and STL export: candidates.json goes to the project's existing lean/eliminate/eliminate.mjs, which already writes a three-state ledger (eliminated, consistent, cannot-rule) and Lean certificates. What exists: the ceiling theorem (HygromorphCeilingCheck.lean), HollowTube.lean and MurrayCubic.lean, and the eliminate.mjs machinery. What must be written: constraint entries and rules_out wrappers for these three laws (grep finds no bilayer, hollow-tube or Murray constraint in lean/constraints.json), an extractor from generator output to candidates.json, a physical-units and materials layer (none of the generators has one), a mesh/printer check, and a Formlabs path (PreForm takes STL, OBJ, 3MF, STEP, not G-code). I wrote and ran a Python prototype of the gate on 9 synthetic candidates: it eliminates 4, leaves 3 consistent (not ruled out, not shown feasible) and returns 2 'cannot rule'; it is not Lean-checked and its candidates are not measurements. I confirmed the ceiling numerically (max f = 1.5 over a 121x121 log grid, exact 3/2 at m^2 n = 1) and the earlier '34 percent' loss for equal layers at n = 10 (33.6 percent). A critical gap for the filter: no hygroscopic strain d_eps exists for any Formlabs resin (earlier record), so the Timoshenko gate can only be applied in normalised form (kappa*h/d_eps <= 1.5) until coupons give d_eps.",
+ "lay_summary": "Some new AI tools can turn a sentence like 'a spiral plywood-like structure' into a 3D shape that can be printed. We looked at the main ones and found that none of them knows any physics: they check that the shape looks right, not that it obeys a law of mechanics. Another tool reads the scientific literature and proposes research ideas as text, so it cannot make a shape at all. We propose a simple checkpoint between the AI and the printer, like a bouncer at a door: before anything is printed, a short program asks whether each design breaks a proven rule, for example 'no two-layer strip can bend more than a fixed amount'. Designs that break a rule are thrown out for free, saving resin and printing time. Most of the pieces for the bouncer already exist in the project; what is missing is the plumbing that carries the AI's shapes to it and the real material numbers it needs.",
+ "findings": [
+  {
+   "claim": "Bioinspired123D takes a natural-language prompt and outputs executable Blender Python scripts (parametric geometry), not meshes, G-code or Grasshopper files.",
+   "source": "https://arxiv.org/abs/2603.29592 (export.arxiv.org API, fetched 2026-11-12; data/bm-bioinspired-gen/arxiv_bioinspired123d.xml)",
+   "confidence": "high",
+   "value": "output = Blender Python script; 12 base scripts; 4,558 training samples",
+   "evidence_quote": "Bioinspired3D, a compact language model finetuned to translate natural language design cues into Blender Python scripts encoding smooth, biologically inspired geometries."
+  },
+  {
+   "claim": "The finetuned model is Llama-3.2-3B-Instruct with LoRA; weights are hosted on Hugging Face (lamm-mit/Bioinspired3D), whose card lists no licence tag of its own (Llama base-model terms presumably apply; unverified background).",
+   "source": "https://arxiv.org/html/2603.29592 ; https://huggingface.co/api/models/lamm-mit/Bioinspired3D (data/bm-bioinspired-gen/hf_b123d.json)",
+   "confidence": "medium",
+   "value": "3B parameters, LoRA rank 64",
+   "evidence_quote": "we finetune the base model Llama-3.2-3B-Instruct using a low-rank adaptation (LoRA) strategy"
+  },
+  {
+   "claim": "Bioinspired123D code is public under Apache-2.0 (GitHub licence field and a 11,357-byte LICENSE in the tree). Created 2025-10-23, last push 2026-04-22, 2 stars.",
+   "source": "https://api.github.com/repos/lamm-mit/Bioinspired123D (gh_b123d_repo.json, gh_b123d_tree.json)",
+   "confidence": "high",
+   "value": "Apache-2.0",
+   "evidence_quote": "'spdx_id': 'Apache-2.0'"
+  },
+  {
+   "claim": "The generator's design space is tiny and dimensionless: 12 base scripts in three families, with parameters such as num_plies 5-15, rotation 3-20 degrees, cell thickness 0.1-0.3, 9-25 tubules with radius 0.05-0.1. No physical units, no materials, no moduli, no bilayer.",
+   "source": "https://raw.githubusercontent.com/lamm-mit/Bioinspired123D/main/data/raw/biodataset_basecodes.csv (parsed with python -I; 13 rows incl. header)",
+   "confidence": "high",
+   "value": "num_plies 5-15; rotation 3-20 deg; thickness 0.1-0.3; num_tubules 9-25; radius 0.05-0.1 (Blender units, scale undefined)",
+   "evidence_quote": "Choose num_tubules from 9-25 (whole numbers only), ellipticity from 1-2, radius from 0.05-0.1."
+  },
+  {
+   "claim": "Printing in the Bioinspired123D paper was done by manually exporting STL from Blender and printing on FDM machines in ABS, PLA and PETG; no Formlabs resin or powder was used.",
+   "source": "https://arxiv.org/html/2603.29592 (Sec. 2.4/4.8; data/bm-bioinspired-gen/arxiv_2603.29592.txt)",
+   "confidence": "high",
+   "value": "STL; Stratasys F120 (ABS, SR-30 support); Bambu X1C (PLA, PETG)",
+   "evidence_quote": "Most black-colored samples were fabricated on a Stratasys F120 using ABS material with SR-30 dissolvable support. Remaining samples were printed on a Bambu X1C using either white PLA (Elegoo) or black PETG."
+  },
+  {
+   "claim": "No STL export code is in the repo scripts I read (blender_exec.py, nodes.py, qualitycheck.py, vlm_critic.py, utils.py, graph_agent.py, llm_bio3d.py, state.py, pipelines.py, both inference notebooks): grep for stl_export/export_mesh/.stl returned nothing. The inference code renders PNGs only. This is a search of 11 of the 30 or so code files, not the whole tree.",
+   "source": "data/bm-bioinspired-gen/b123d_*.py and b123d_*.ipynb; command: grep -n -i -E 'stl_export|export_mesh|\\.stl' b123d_*.py b123d_*.ipynb",
+   "confidence": "medium",
+   "value": "0 hits",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Printer limits are not enforced in Bioinspired123D; the authors propose mesh-level checks inside the loop as future work. This is the explicit hook where a law gate fits.",
+   "source": "https://arxiv.org/html/2603.29592 (Sec. 2.4 end)",
+   "confidence": "high",
+   "value": "min feature size, overhang, build volume not enforced",
+   "evidence_quote": "printer-specific constraints such as minimum feature size, overhang limits, and build-volume restrictions are not explicitly enforced during generation."
+  },
+  {
+   "claim": "The paper proposes mesh-level manufacturability checks after each Blender execution, feeding the Refinement Agent.",
+   "source": "https://arxiv.org/html/2603.29592",
+   "confidence": "high",
+   "value": "future work",
+   "evidence_quote": "mesh-level checks performed after each Blender execution could identify violations of fabrication limits, which would be used by the Refinement Agent to adjust geometric parameters in subsequent iterations."
+  },
+  {
+   "claim": "The vision-language critic judges a rendered PNG for match quality and a 'physical stability' label (stable/unstable); there is no quantitative physical law in the critic prompt.",
+   "source": "https://raw.githubusercontent.com/lamm-mit/Bioinspired123D/main/notebooks/scripts/inference/vlm_critic.py",
+   "confidence": "high",
+   "value": "binary label from an image",
+   "evidence_quote": "2. Physical stability: \"stable\" | \"unstable\""
+  },
+  {
+   "claim": "Validation of Bioinspired123D is on a script-generation benchmark, not against physical measurement: base model 0%, base with retrieval 18%, finetuned 54%, finetuned with retrieval 60%. The abstract says 'near fourfold'; the body says 'more than three fold' (60/18 = 3.3; base alone is 0 so a ratio to it is undefined). The two statements disagree in wording.",
+   "source": "https://arxiv.org/html/2603.29592 (Sec. 2.3; abstract at export.arxiv.org)",
+   "confidence": "high",
+   "value": "0 / 18 / 54 / 60 percent benchmark score; ratio 60/18 = 3.33 (own arithmetic)",
+   "evidence_quote": "the finetuned model achieves a score of 54%, which further increases to 60% when combined with retrieval."
+  },
+  {
+   "claim": "Bioinspired123D's printed examples are shown as photographs only; I found no mechanical test or comparison of properties for them. The mechanistic link is qualitative (output compared with literature schematics).",
+   "source": "https://arxiv.org/html/2603.29592 (Sec. 2.4, Fig. 6 text)",
+   "confidence": "medium",
+   "value": "no stiffness/strength data found",
+   "evidence_quote": "generates a 3D structure that qualitatively aligns with known structural schematics reported in prior literature."
+  },
+  {
+   "claim": "SciAgents takes keywords, uses a knowledge graph plus multi-agent LLMs, and outputs a text research hypothesis document; it produces no geometry, STL or G-code. Needs OpenAI and Semantic Scholar APIs.",
+   "source": "https://raw.githubusercontent.com/lamm-mit/SciAgentsDiscovery/main/README.md (gh_sci_readme.md)",
+   "confidence": "high",
+   "value": "example output 8,100 words of text",
+   "evidence_quote": "the system produces detailed, well-organized documentation of research development with multiple pages and detailed text (the example shown here includes 8,100 words)"
+  },
+  {
+   "claim": "SciAgents code is public. GitHub reports Apache-2.0 and the tree has LICENSE.txt (11,357 bytes). 642 stars, last push 2025-05-10. A search-engine summary suggested the licence was unconfirmed; the GitHub API contradicts that.",
+   "source": "https://api.github.com/repos/lamm-mit/SciAgentsDiscovery (gh_sci_repo.json, gh_sci_tree.json)",
+   "confidence": "high",
+   "value": "Apache-2.0",
+   "evidence_quote": "'spdx_id': 'Apache-2.0'"
+  },
+  {
+   "claim": "SciAgents depends on a separate package, GraphReasoning (Apache-2.0 per GitHub, last push 2024-07-19), and on paid/third-party APIs.",
+   "source": "https://api.github.com/repos/lamm-mit/GraphReasoning ; SciAgents README",
+   "confidence": "high",
+   "value": "Apache-2.0",
+   "evidence_quote": "(a) OpenAI and (b) Semantic Scholar APIs are required to run the codes."
+  },
+  {
+   "claim": "SciAgents is validated as a hypothesis generator (case studies); the abstract describes no physical measurement. I did not read the paper body, so a measurement inside it cannot be excluded.",
+   "source": "https://arxiv.org/abs/2409.05556 (export API)",
+   "confidence": "medium",
+   "value": "none found in abstract",
+   "evidence_quote": "Applied to biologically inspired materials, SciAgents reveals hidden interdisciplinary relationships that were previously considered unrelated"
+  },
+  {
+   "claim": "Marom/Buehler CategoryTheoryDesign is Apache-2.0 (re-verified), runs in Rhino 8 Grasshopper with Python scripts and outputs printer-ready G-code for FFF; the README says a new process such as SLA needs a new S_*.py replacing the bilayer expression and a new machine_*.py; no SLA profile exists.",
+   "source": "https://api.github.com/repos/lamm-mit/CategoryTheoryDesign ; https://raw.githubusercontent.com/lamm-mit/CategoryTheoryDesign/main/gh_scripts/README.md (ctd_gh_scripts_README.md)",
+   "confidence": "high",
+   "value": "Apache-2.0; pushed 2026-08-02",
+   "evidence_quote": "Wire them together in Rhino 8 Grasshopper to run the full pipeline from a biological hierarchy through to printer-ready G-code and deformed-shape visualizations."
+  },
+  {
+   "claim": "CategoryTheoryDesign has a pre-print verify step, but it compares two evaluations of the same Timoshenko coefficient (spec vs art) within epsilon, plus a process-window check. It does not test against the 3/2 ceiling. Physical validation: four FFF strips on a Bambu X1C, n = 3-4, per project record.",
+   "source": "https://raw.githubusercontent.com/lamm-mit/CategoryTheoryDesign/main/gh_scripts/README.md (Verification section); D:/Users/ashenoy00000/delphi-work/agents/spec-marom-buehler-deep.json",
+   "confidence": "high",
+   "value": "tolerance epsilon = 0.05 (project record)",
+   "evidence_quote": "`spec.py` receives `A_target` from the Art branch and computes its own Timoshenko coefficient `C_geom (spec)` from the process parameters"
+  },
+  {
+   "claim": "Silkworm (Grasshopper/Rhino to G-code) declares no licence: GitHub's licence field is null and no LICENSE file is among 61 tree entries. Last push 2015-06-21; installation means compiling in Visual Studio. This sharpens the earlier record's 'licence not confirmed'. Without a licence default copyright applies (general legal background, unverified).",
+   "source": "https://api.github.com/repos/ProjectSilkworm/Silkworm (+/license returned 404) ; README via api.github.com/repos/ProjectSilkworm/Silkworm/readme",
+   "confidence": "high",
+   "value": "licence: none declared; stars 63",
+   "evidence_quote": "Silkworm is a plugin that translates Grasshopper and Rhino geometry into GCode for 3d printing."
+  },
+  {
+   "claim": "Formlabs PreForm opens mesh and CAD files (STL, OBJ, 3MF, STEP in its table); G-code from Silkworm-type tools is not the route to a Form 4 or Fuse 1+. I read the format list through a page summariser, not the raw table.",
+   "source": "https://formlabs.com/support/Opening-a-model-in-PreForm/ (WebFetch 2026-11-12)",
+   "confidence": "medium",
+   "value": "STL, OBJ, 3MF, STEP",
+   "evidence_quote": "PreForm can open 3D models in following formats:"
+  },
+  {
+   "claim": "Bastek et al. InvertibleTrussDesign (MIT): input is a target anisotropic stiffness tensor in Voigt notation (CSV); output is nodal positions and connectivities (not STL or G-code); the repo states predicted stiffnesses were verified with an in-house finite element framework. Experimental printing validation not checked by me.",
+   "source": "https://api.github.com/repos/jhbastek/InvertibleTrussDesign (README, gh_jhbastek_InvertibleTrussDesign_readme.txt)",
+   "confidence": "high",
+   "value": "MIT; 31 stars; last push 2024-10-17",
+   "evidence_quote": "converts it into a list of nodal position and connectivities for further postprocessing."
+  },
+  {
+   "claim": "Zheng et al. UnifyingTrussDesignSpace (MIT): VAE plus property predictor with gradient-based inverse design of truss lattices; README lists no STL/G-code output; experimental validation not checked by me.",
+   "source": "https://api.github.com/repos/li-zhengz/UnifyingTrussDesignSpace (README)",
+   "confidence": "medium",
+   "value": "MIT; 22 stars; last push 2025-09-08",
+   "evidence_quote": "inverse design of structures with desired properties using gradient-based optimization."
+  },
+  {
+   "claim": "svVascularize (Stanford SimVascular group) grows vascular trees with a built-in Murray exponent defaulting to 3.0 and has solid-tube export code; it is a generator that enforces Murray by construction rather than a filter. GitHub licence field is NOASSERTION, but Copyright-Notice.txt carries a permissive MIT-style grant. The solid export file extension was not confirmed (code builds watertight tube unions).",
+   "source": "https://raw.githubusercontent.com/SimVascular/svVascularize/main/svv/tree/data/data.py ; .../Copyright-Notice.txt ; https://api.github.com/repos/SimVascular/svVascularize",
+   "confidence": "high",
+   "value": "murray_exponent = 3.0",
+   "evidence_quote": "self.murray_exponent = 3.0"
+  },
+  {
+   "claim": "LLMto3D: multi-agent LLM that writes Rhino.Geometry code inside Rhino/Grasshopper and adds sliders. Both GitHub repos found (cdml-lab/LLMto3D, batelhi/LLMto3D) declare no licence; the paper says complex out-of-distribution designs remain a challenge and printability is not guaranteed by text-to-3D models in general.",
+   "source": "https://cdml-lab.github.io/LLMto3D ; https://api.github.com/repos/cdml-lab/LLMto3D",
+   "confidence": "medium",
+   "value": "licence: none declared",
+   "evidence_quote": "The second agent translates the description into code using the Rhino.Geometry coding library in the Rhino3D-Grasshopper modeling environment."
+  },
+  {
+   "claim": "C33D is an Apache-2.0 browser CAD agent whose output is a typed node graph on OpenCascade, exportable to STEP; research preview, not bioinspired-specific.",
+   "source": "https://api.github.com/repos/3esign/c33d (README)",
+   "confidence": "high",
+   "value": "Apache-2.0; last push 2026-08-20",
+   "evidence_quote": "producing robust B-Rep solids exportable directly to **STEP** for manufacturing or 3D printing."
+  },
+  {
+   "claim": "Hsu, Yang, Buehler 2022 (APL Materials) is an earlier language-to-architected-material pipeline (VQGAN plus CLIP to images to periodic 3D architectures) that was FDM-printed; code availability not checked.",
+   "source": "https://api.crossref.org/works/10.1063/5.0082338 (abstract field)",
+   "confidence": "medium",
+   "value": "CC-BY 4.0 paper",
+   "evidence_quote": "translated into 3D architectures that are then 3D printed using fused deposition modeling into materials with varying rigidity."
+  },
+  {
+   "claim": "The project already has an elimination engine: eliminate.mjs reads candidates.json and writes a ledger with three states and Lean certificates. Present at delphisci/lean/eliminate/eliminate.mjs (61,252 bytes, sha256 146cd55e...). The earlier laws-biomaterial.json said the generator was 'not in this repository'; it is present in this delphisci tree (that statement may have referred to the leanbio upstream).",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/eliminate/eliminate.mjs and README.md (read only)",
+   "confidence": "high",
+   "value": "3 states: eliminated / consistent / cannot-rule",
+   "evidence_quote": "Checks candidates against the formalised constraints and writes a ledger with three states per (candidate, constraint): eliminated, consistent, cannot-rule."
+  },
+  {
+   "claim": "lean/constraints.json has no constraint for Timoshenko, bilayer, hygromorph, Murray or hollow-tube (grep -i returned nothing); its quantities are cube-law, flight, physiology and genotype quantities. So the three laws cannot yet be called through eliminate.mjs.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/constraints.json (sha256 8bf0074c...); command: grep -n -i -E 'timoshenko|bilayer|hygromorph|murray|hollowtube' constraints.json eliminate/eliminate.mjs",
+   "confidence": "high",
+   "value": "0 matches",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "The ceiling theorem sits in tracks/lean/HygromorphCeilingCheck.lean as a copy that carries the two definitions and is meant to be pasted into lean/ThompsonLaws/Hygromorphs.lean; the earlier law inventory lists 'Rules-out wrappers for the theorems that already exist' as missing.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/lean/HygromorphCeilingCheck.lean (sha256 ffd4b3b6...); D:/Users/ashenoy00000/delphi-work/agents/laws-biomaterial.json",
+   "confidence": "high",
+   "value": "theorem timoshenkoCoefficient_le : coefficient <= 3/(2h)",
+   "evidence_quote": "theorem timoshenkoCoefficient_le (h m n : ℝ) (hh : 0 < h) (hm : 0 < m) (hn : 0 < n) : timoshenkoCoefficient h m n ≤ 3 / (2 * h)"
+  },
+  {
+   "claim": "Own check of the project's ceiling: over a 121x121 log grid (m, n from 1e-3 to 1e3) the maximum of h*coefficient is exactly 1.5, reached at m^2 n = 1; exact Fraction arithmetic at m=1/k, n=k^2 for k=1,2,3,5,10 gives 3/2. Equal layers at n=10 give 0.99585, a loss of 33.6 percent against 1.5. This confirms the earlier record's '34 percent'.",
+   "source": "Own calculation: D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-bioinspired-generative-design/law_filter_prototype.py (sweep_ceiling); output scratch/bm-bioinspired-generative-design/filter_ledger.json. Arithmetic: 6*4/(12+11*1.1) = 24/24.1 = 0.99585; 1 - 0.99585/1.5 = 0.3361.",
+   "confidence": "high",
+   "value": "max f = 1.5; loss 33.6 %",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Prototype gate result (Python, not Lean-checked, synthetic candidates): 9 candidates give 4 eliminated, 3 consistent, 2 cannot-rule; one of the consistent ones is a junction, because 1^3 = 1 vs 2*0.8^3 = 1.024 (2.4 percent off, inside the 10 percent tolerance). A normalised curvature of 1.53, from the earlier beech retro-calculation, comes out 'cannot rule' because it exceeds 1.5 by 2 percent, below the 10 percent input tolerance.",
+   "source": "Own run of law_filter_prototype.py (exit 0); beech 1.53 value from D:/Users/ashenoy00000/delphi-work/agents/scout-biomaterial.json",
+   "confidence": "high",
+   "value": "tolerance 0.10; ceiling check uses exact rationals",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Hollow-tube law inputs for a gate: mass at fixed bending stiffness is rho*sqrt(4 pi I)*mu(k) with mu(k) = (1 - k^2 + q k^2)/sqrt(1 - k^4); interior optimum k* = sqrt(1-q), mu(k*) = sqrt(q(2-q)); with wall floor t/R >= lambda the optimum is min(sqrt(1-q), 1-lambda). Form 4 supported-wall floor 0.2 mm (project record).",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents/laws-biomaterial.json (HollowTube.lean entries); D:/Users/ashenoy00000/delphi-work/agents/spec-formlabs-materials.json (0.2 mm wall)",
+   "confidence": "high",
+   "value": "k* = sqrt(1-q)",
+   "evidence_quote": "An interior critical point exists iff 0 < q < 1; it is k* = sqrt(1 - q), the unique global minimiser, with mu(k*) = sqrt(q(2 - q))."
+  },
+  {
+   "claim": "Gap that blocks an absolute Timoshenko gate: no hygroscopic expansion coefficient or diffusivity for any Formlabs resin exists in the record, so kappa <= 1.5*d_eps/h cannot be evaluated in absolute units; only the normalised kappa*h/d_eps <= 1.5 can, once d_eps is measured on coupons. I found nothing in this survey to contradict that earlier finding.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents/spec-resin-chemistry.json (could_not_find) ; spec-formlabs-materials.json",
+   "confidence": "high",
+   "value": "d_eps unknown",
+   "evidence_quote": ""
+  }
+ ],
+ "key_claims": [
+  {
+   "claim": "None of the surveyed generators (Bioinspired123D, SciAgents, CategoryTheoryDesign, Silkworm, truss codes) applies a proven law as a hard pre-print filter; Bioinspired123D explicitly does not enforce printer limits and its critic is image-based.",
+   "source": "https://arxiv.org/html/2603.29592 ; https://raw.githubusercontent.com/lamm-mit/Bioinspired123D/main/notebooks/scripts/inference/vlm_critic.py",
+   "evidence_quote": "printer-specific constraints such as minimum feature size, overhang limits, and build-volume restrictions are not explicitly enforced during generation."
+  },
+  {
+   "claim": "Bioinspired123D outputs Blender scripts and has a dimensionless, material-free parameter space (12 base scripts); STL was exported by hand and printed on FDM machines, so a layer assigning units, materials and layer structure must be written before any bilayer or tube law can act on it.",
+   "source": "https://raw.githubusercontent.com/lamm-mit/Bioinspired123D/main/data/raw/biodataset_basecodes.csv ; https://arxiv.org/html/2603.29592",
+   "evidence_quote": "selected designs generated by Bioinspired3D and Bioinspired123D were exported from Blender as STL files and fabricated via 3D printing."
+  },
+  {
+   "claim": "The project already owns the elimination machinery (eliminate.mjs, three-state ledger, Lean certificates) and the three law statements, but lean/constraints.json has no entry for any of them, so the missing piece is constraint entries and rules_out wrappers plus an extractor, not a new engine.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/eliminate/eliminate.mjs ; lean/constraints.json",
+   "evidence_quote": "Checks candidates against the formalised constraints and writes a ledger with three states per (candidate, constraint): eliminated, consistent, cannot-rule."
+  },
+  {
+   "claim": "Formlabs printers are fed STL/OBJ/3MF/STEP through PreForm, so Grasshopper/Silkworm G-code pipelines (the Mamou-Mani route) do not reach a Form 4 or Fuse 1+ without a new export module; CategoryTheoryDesign's README says a new process needs its own S_*.py and machine_*.py and no SLA profile exists.",
+   "source": "https://formlabs.com/support/Opening-a-model-in-PreForm/ ; https://raw.githubusercontent.com/lamm-mit/CategoryTheoryDesign/main/gh_scripts/README.md",
+   "evidence_quote": "PreForm can open 3D models in following formats:"
+  }
+ ],
+ "table": [
+  {
+   "name": "Bioinspired123D / Bioinspired3D (MIT, Luu and Buehler 2026)",
+   "fields": "input=text prompt (+ optional BioinspiredLLM prompt); output=Blender Python script, renders PNG, STL by manual export; code=public; licence=Apache-2.0; weights=HF lamm-mit/Bioinspired3D (base Llama-3.2-3B-Instruct); validation=script benchmark 0/18/54/60 percent (base/base+RAG/finetuned/finetuned+RAG), no mechanical test found; physics_in_loop=none (image critic); material_units=none",
+   "source": "https://github.com/lamm-mit/Bioinspired123D ; https://arxiv.org/abs/2603.29592"
+  },
+  {
+   "name": "SciAgents (MIT, Ghafarollahi and Buehler 2024)",
+   "fields": "input=keywords + knowledge graph; output=text hypothesis document (example 8,100 words); code=public; licence=Apache-2.0 (GitHub API; LICENSE.txt 11357 bytes); depends=GraphReasoning, AG2, OpenAI + Semantic Scholar APIs; geometry_output=none; validation=case studies, no measurement seen in abstract",
+   "source": "https://github.com/lamm-mit/SciAgentsDiscovery ; https://arxiv.org/abs/2409.05556"
+  },
+  {
+   "name": "CategoryTheoryDesign (Marom, Tibbits, Zardini, Buehler 2026)",
+   "fields": "input=Grasshopper panels (material coefficients, RH, T, layer thickness); output=G-code (FFF, Bambu X1C), deformed-shape viz; code=public; licence=Apache-2.0; validation=4 strips n=3-4 e.g. 35.3 +/- 3.1 deg measured vs 36.4 predicted (project record); verify_step=spec vs art Timoshenko within epsilon 0.05; SLA_profile=none",
+   "source": "https://github.com/lamm-mit/CategoryTheoryDesign ; D:/Users/ashenoy00000/delphi-work/agents/spec-marom-buehler-deep.json"
+  },
+  {
+   "name": "Silkworm (Grasshopper to G-code plugin)",
+   "fields": "input=Grasshopper/Rhino geometry; output=G-code; code=public (source, compile in Visual Studio); licence=none declared; last_push=2015-06-21; stars=63; validation=none found; Mamou-Mani relevance=named in project record as their toolchain",
+   "source": "https://github.com/ProjectSilkworm/Silkworm"
+  },
+  {
+   "name": "InvertibleTrussDesign (Bastek et al., PNAS 2022)",
+   "fields": "input=target 6x6 stiffness (Voigt CSV); output=nodes + connectivity list; code=public; licence=MIT; validation=in-house FE (per README); experiment=not checked; stars=31",
+   "source": "https://github.com/jhbastek/InvertibleTrussDesign ; doi:10.1073/pnas.2111505119"
+  },
+  {
+   "name": "UnifyingTrussDesignSpace (Zheng et al., Nat. Commun. 2023)",
+   "fields": "input=target stiffness via gradient-based inverse design in VAE latent space; output=truss structure (no STL stated); code=public; licence=MIT; validity_score=reported for 1000 random samples; stars=22",
+   "source": "https://github.com/li-zhengz/UnifyingTrussDesignSpace ; doi:10.1038/s41467-023-42068-x"
+  },
+  {
+   "name": "svVascularize (Stanford SimVascular, Zenodo 10.5281/zenodo.15151168)",
+   "fields": "input=domain + flow parameters; output=vascular trees, centrelines, watertight tube solids; murray_exponent=3.0 default; code=public (pip install svv); licence=permissive text in Copyright-Notice.txt, GitHub NOASSERTION; Murray=by construction (not a filter)",
+   "source": "https://github.com/SimVascular/svVascularize"
+  },
+  {
+   "name": "LLMto3D (Hizmi et al.)",
+   "fields": "input=text; output=Rhino.Geometry code in Grasshopper with sliders; code=public repos; licence=none declared; validation=qualitative; printability=not enforced",
+   "source": "https://cdml-lab.github.io/LLMto3D ; https://github.com/cdml-lab/LLMto3D"
+  },
+  {
+   "name": "C33D (3esign)",
+   "fields": "input=chat; output=typed node graph, OpenCascade B-rep, STEP export; code=public; licence=Apache-2.0; status=research preview",
+   "source": "https://github.com/3esign/c33d"
+  },
+  {
+   "name": "Text2VP (Feng and Yan, arXiv 2407.07732)",
+   "fields": "input=text; output=Grasshopper visual-programming workflow; code=not found by name search; licence=unknown",
+   "source": "https://arxiv.org/abs/2407.07732"
+  }
+ ],
+ "dataflow": "NOTE: this schema has no dedicated field, so the data-flow is in recommendations[0..] and below. Named files; E = exists, W = must be written. (1) brief.md [W, one page: stimulus, layer materials, printer Form 4 or Fuse 1+, wall floor 0.2 mm]. (2) SciAgents or a human writes hypothesis.md [E]; Bioinspired123D writes cand_NNN.py + render_NNN.png [E]; CategoryTheoryDesign Grasshopper writes bilayer parameters [E, FFF only]. (3) extract_params.py [W]: runs each cand_NNN.py in headless Blender, reads parameters and the mesh, applies materials.json [W: Formlabs moduli, wall floor, d_eps once measured; moduli exist in spec-formlabs-materials.json, d_eps does not] and writes candidates.json in the eliminate.mjs schema {candidates:[{id, problem, description, source, accepts[], commits{}}]}. (4) lean/constraints.json + lean/Delphi/Constraints.lean [W: entries and *_rules_out wrappers for timoshenko ceiling, hollow tube, Murray junction, each with 'accepts' assumption flags]. (5) node lean/eliminate/eliminate.mjs candidates.json --out ledger.json --lean Certificates/EliminationsBiomaterial.lean [E]: writes ledger.json (eliminated/consistent/cannot-rule) and EliminationsBiomaterial.lean certificates. (6) survivors.json = candidates whose verdict is not 'eliminated' [W, 10 lines]. (7) export_stl.py [W]: Blender export of survivors to cand_NNN.stl, plus mesh_check.py [W: watertight, wall >= 0.2 mm, overhang 5 mm, per Form 4 design spec]. (8) PreForm [E, external] opens STL/OBJ/3MF; Form 4 prints one resin per job so a bilayer is two prints bonded (project record). (9) coupons.csv [W]: measured curvature vs time and humidity feed back as d_eps and as the test of the ceiling.",
+ "recommendations": [
+  "Insert the law gate between candidate generation and STL export, as in the data-flow above: cand_NNN.py -> extract_params.py -> candidates.json -> lean/eliminate/eliminate.mjs -> ledger.json -> survivors.json -> export_stl.py -> PreForm. Reuse eliminate.mjs rather than writing a second engine; the prototype law_filter_prototype.py is a throwaway to show the three-state logic.",
+  "Write, in this order: (a) paste HygromorphCeiling into lean/ThompsonLaws/Hygromorphs.lean and add bilayer_curvature_rules_out; (b) hollow_tube and murray_junction rules_out wrappers; (c) three constraint entries in lean/constraints.json with explicit assumption flags (Euler-Bernoulli strip, linear elastic, perfect bond, uniform eigenstrain; laminar volume-cost for Murray; fixed bending stiffness for the tube) so candidates that do not commit to them read 'cannot rule', never 'passes'. All of this is outside the read-only scope of this task and is a proposal only.",
+  "Do not rely on Bioinspired123D as the bilayer generator: it has no layers, units or materials. Use it, if at all, for the tubular and cellular families, where a hollow-tube or wall-floor gate can act once Blender units are mapped to millimetres; ask the authors or inspect the 12 base scripts for the unit convention (not determined here).",
+  "For the Mamou-Mani Grasshopper route, add a Formlabs output module to CategoryTheoryDesign (new S_sla.py replacing the bilayer expression, new machine module that writes two STL/3MF parts instead of G-code), after checking its Apache-2.0 NOTICE obligations. Do not build on Silkworm: no licence and last updated 2015.",
+  "Run the gate in normalised form (kappa*h/d_eps <= 1.5 with a 10 percent d_eps tolerance, as in the prototype) until coupon measurements give d_eps for the chosen resin pair; otherwise the Timoshenko check cannot be evaluated in absolute units.",
+  "Expect the gate to be weak early: a candidate with unknown d_eps, or one that does not state its assumptions, lands in 'cannot rule'. Log the fraction of cannot-rule outcomes; if it stays above half, the gate is not yet saving prints."
+ ],
+ "reproduce": [
+  {
+   "what": "Fetch Bioinspired123D, SciAgents, GraphReasoning repo metadata, trees and READMEs; arXiv and Crossref records (records url, date, bytes, sha256 into MANIFEST.tsv)",
+   "command_or_url": "bash D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-bioinspired-generative-design/fetch.sh",
+   "expected": "10 rows in D:/Users/ashenoy00000/delphi-work/data/bm-bioinspired-gen/MANIFEST.tsv; gh_b123d_repo.json shows license Apache-2.0; gh_sci_repo.json shows Apache-2.0. Needs curl, python 3 and internet; GitHub values (stars, pushed_at) will drift."
+  },
+  {
+   "what": "Fetch the other open-tool repos (Silkworm, two truss codes, svVascularize, LLMto3D, C33D)",
+   "command_or_url": "bash D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-bioinspired-generative-design/fetch2.sh",
+   "expected": "Silkworm license null, no LICENSE blob in tree (61 entries); truss codes MIT; C33D Apache-2.0; svVascularize NOASSERTION"
+  },
+  {
+   "what": "Fetch the individual files quoted (paper HTML, vlm_critic.py, basecodes CSV, svv data.py, CategoryTheoryDesign README) and check the quoted sentences are in the paper text",
+   "command_or_url": "bash D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-bioinspired-generative-design/fetch3.sh",
+   "expected": "five lines printed 'True <quote>' at the end"
+  },
+  {
+   "what": "Verify every DOI and arXiv id cited (Crossref, DataCite, export.arxiv.org)",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-bioinspired-generative-design/verify_citations.py",
+   "expected": "CROSSREF lines with titles matching the citations list; ARXIV 2603.29592 = Bioinspired123D; 2409.05556 = SciAgents; 2407.07732 = Text2VP; the last Crossref search (Schreiner) may hit HTTP 429 and is not used. Python 3.14 used."
+  },
+  {
+   "what": "Run the law-gate prototype and the ceiling sweep",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-bioinspired-generative-design/law_filter_prototype.py",
+   "expected": "max_f_over_grid 1.5; exact_f_at_m2n_eq_1 all '3/2'; loss_vs_optimum_pct 33.61; verdict lines: bilayer-too-curly eliminated, bilayer-beech-1.53 cannot-rule, tube-lighter-than-possible eliminated, tube-wall-too-thin eliminated, junction-area-preserving eliminated, junction-no-model cannot-rule; exit code 0. Writes scratch/bm-bioinspired-generative-design/filter_ledger.json"
+  },
+  {
+   "what": "Re-check that lean/constraints.json has no bilayer, hollow-tube or Murray constraint, and that eliminate.mjs exists (read-only)",
+   "command_or_url": "grep -n -i -E 'timoshenko|bilayer|hygromorph|murray|hollowtube' D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/constraints.json ; sha256sum D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/eliminate/eliminate.mjs",
+   "expected": "grep prints nothing; sha256 146cd55e15363fade0615f079d25a86d3b6c4d38578bc3e4231b8d9854f0d8e0 (repo may change). The Lean ceiling proof itself was NOT re-run by me (project record: kernel-checked)."
+  }
+ ],
+ "citations": [
+  {
+   "authors": "Luu R.K., Buehler M.J.",
+   "year": 2026,
+   "title": "Bioinspired123D: Generative 3D Modeling System for Bioinspired Structures",
+   "doi_or_arxiv": "10.1088/3050-287X/ae61d1 ; arXiv:2603.29592",
+   "venue": "AI for Science",
+   "verified": true,
+   "how_verified": "Crossref returned the title (AI for Science, 2026, author Luu) and export.arxiv.org returned arXiv 2603.29592 with the same title; full HTML read",
+   "used_for": "All Bioinspired123D claims"
+  },
+  {
+   "authors": "Ghafarollahi A., Buehler M.J.",
+   "year": 2024,
+   "title": "SciAgents: Automating Scientific Discovery Through Bioinspired Multi-Agent Intelligent Graph Reasoning",
+   "doi_or_arxiv": "10.1002/adma.202413523 ; arXiv:2409.05556",
+   "venue": "Advanced Materials",
+   "verified": true,
+   "how_verified": "Crossref returned the title (Advanced Materials 2024) and export.arxiv.org returned arXiv 2409.05556; abstract read, body not read",
+   "used_for": "SciAgents inputs, outputs and licence"
+  },
+  {
+   "authors": "Bastek J.-H., Kumar S., Telgen B., Glaesener R.N., Kochmann D.M.",
+   "year": 2022,
+   "title": "Inverting the structure-property map of truss metamaterials by deep learning",
+   "doi_or_arxiv": "10.1073/pnas.2111505119",
+   "venue": "PNAS",
+   "verified": true,
+   "how_verified": "Crossref returned title; Crossref lists issued year 2021 (online) while the repo README cites 2022 for the issue; DOI is the same",
+   "used_for": "Truss inverse-design code"
+  },
+  {
+   "authors": "Zheng L. et al.",
+   "year": 2023,
+   "title": "Unifying the design space and optimizing linear and nonlinear truss metamaterials by generative modeling",
+   "doi_or_arxiv": "10.1038/s41467-023-42068-x",
+   "venue": "Nature Communications",
+   "verified": true,
+   "how_verified": "Crossref returned title and first author Zheng, 2023; title matches the repo README link",
+   "used_for": "Truss generative-modeling code"
+  },
+  {
+   "authors": "Feng G., Yan W.",
+   "year": 2024,
+   "title": "Text2VP: Generative AI for Visual Programming and Parametric Modeling",
+   "doi_or_arxiv": "arXiv:2407.07732",
+   "venue": "arXiv",
+   "verified": true,
+   "how_verified": "export.arxiv.org returned id 2407.07732 with this title and authors; abstract/body not read",
+   "used_for": "Listing only (LLM to Grasshopper workflow)"
+  },
+  {
+   "authors": "Hsu Y.-C., Yang Z., Buehler M.J.",
+   "year": 2022,
+   "title": "Generative design, manufacturing, and molecular modeling of 3D architected materials based on natural language input",
+   "doi_or_arxiv": "10.1063/5.0082338",
+   "venue": "APL Materials",
+   "verified": true,
+   "how_verified": "Crossref bibliographic search returned this DOI; Crossref work record fetched and abstract read",
+   "used_for": "Earlier language-to-architected-material pipeline"
+  },
+  {
+   "authors": "Sexton Z.A., Rutsche D., Herrmann J.E., Hudson A.R. et al.",
+   "year": 2025,
+   "title": "svVascularize: Initial Release of SVV Package",
+   "doi_or_arxiv": "10.5281/zenodo.15151168",
+   "venue": "Zenodo",
+   "verified": true,
+   "how_verified": "DataCite API returned this title and creators, publicationYear 2025",
+   "used_for": "Citation for the Murray-law vascular generator"
+  },
+  {
+   "authors": "Murray C.D.",
+   "year": 1926,
+   "title": "The Physiological Principle of Minimum Work",
+   "doi_or_arxiv": "10.1073/pnas.12.3.207",
+   "venue": "PNAS",
+   "verified": true,
+   "how_verified": "Crossref returned title and author Murray, 1926; paper not read",
+   "used_for": "Origin of the Murray branching law (metadata only)"
+  },
+  {
+   "authors": "Timoshenko S.",
+   "year": 1925,
+   "title": "Analysis of Bi-Metal Thermostats",
+   "doi_or_arxiv": "10.1364/josa.11.000233",
+   "venue": "J. Opt. Soc. Am. 11",
+   "verified": true,
+   "how_verified": "Crossref returned title and author in this run; paper not read",
+   "used_for": "Bilayer curvature formula (metadata only)"
+  },
+  {
+   "authors": "Marom L., Tibbits S., Zardini G., Buehler M.J.",
+   "year": 2026,
+   "title": "A category-theoretic framework from biological mechanics to engineered stimulus-response systems",
+   "doi_or_arxiv": "10.1016/j.jmps.2026.106780 ; arXiv:2604.26367",
+   "venue": "J. Mech. Phys. Solids 216, 106780",
+   "verified": true,
+   "how_verified": "Crossref and export.arxiv.org both resolved in this run; repo README (not the paper body) read by me; paper body read by the earlier agent",
+   "used_for": "CategoryTheoryDesign pipeline context"
+  }
+ ],
+ "glossary": [
+  {
+   "term": "Blender",
+   "plain": "Free 3D modelling software that can be driven by Python scripts."
+  },
+  {
+   "term": "Grasshopper",
+   "plain": "A visual-programming add-on for the Rhino 3D program that architects use to make parametric shapes."
+  },
+  {
+   "term": "STL",
+   "plain": "A simple 3D file format that stores a surface as triangles; most printers accept it."
+  },
+  {
+   "term": "G-code",
+   "plain": "Line-by-line movement instructions for a filament or pellet printer; Formlabs printers do not use it."
+  },
+  {
+   "term": "PreForm",
+   "plain": "Formlabs' free program that prepares a 3D file for their printers."
+  },
+  {
+   "term": "LLM",
+   "plain": "A large language model, an AI that writes text or code."
+  },
+  {
+   "term": "Agentic",
+   "plain": "A setup where several AI programs take turns, check and repair each other's work."
+  },
+  {
+   "term": "Knowledge graph",
+   "plain": "A map of concepts joined by labelled links, built here from scientific papers."
+  },
+  {
+   "term": "Timoshenko bilayer",
+   "plain": "The standard formula for how far a strip of two glued layers bends when one layer swells more than the other."
+  },
+  {
+   "term": "Ceiling of 3/2",
+   "plain": "The proven maximum bend: curvature can never exceed 1.5 times the swelling difference divided by total thickness."
+  },
+  {
+   "term": "Hollow-tube bending efficiency",
+   "plain": "How little material a tube needs for a given stiffness when part of its middle is empty."
+  },
+  {
+   "term": "Murray branching",
+   "plain": "A rule that the cube of a parent channel's radius equals the sum of the cubes of its two daughters' radii."
+  },
+  {
+   "term": "Lean kernel",
+   "plain": "The small program that checks a computer-written mathematical proof step by step."
+  },
+  {
+   "term": "Certificate",
+   "plain": "A small machine-checked proof that one specific design breaks a specific law."
+  },
+  {
+   "term": "Eliminated / consistent / cannot-rule",
+   "plain": "The three answers of the filter: provably impossible; not ruled out; or not enough information to say."
+  },
+  {
+   "term": "Modulus",
+   "plain": "How stiff a material is."
+  },
+  {
+   "term": "d_eps (eigenstrain mismatch)",
+   "plain": "The difference in swelling between the two layers of a strip."
+  },
+  {
+   "term": "FFF / FDM",
+   "plain": "Printing by squeezing melted plastic filament through a nozzle."
+  },
+  {
+   "term": "SLA",
+   "plain": "Printing by shining light into a vat of liquid resin to harden it layer by layer."
+  },
+  {
+   "term": "SLS",
+   "plain": "Printing by melting plastic powder with a laser."
+  },
+  {
+   "term": "RAG (retrieval-augmented generation)",
+   "plain": "Giving the AI a few relevant example documents to read before it answers."
+  },
+  {
+   "term": "LoRA",
+   "plain": "A cheap way to retrain a small slice of a large AI model."
+  },
+  {
+   "term": "Watertight mesh",
+   "plain": "A 3D surface with no holes, so a slicer can tell inside from outside."
+  }
+ ],
+ "could_not_find": [
+  "Any generative or agentic tool that applies a machine-checked or even closed-form physical law as a hard pre-print filter. The search was a handful of web queries plus GitHub API lookups, so this is probable, not proven.",
+  "Mechanical or physical-property validation of Bioinspired123D outputs (stiffness, strength). The paper shows photographs; I read the text by keyword search and may have missed a figure caption.",
+  "The Blender-unit-to-millimetre convention of Bioinspired123D's 12 base scripts, and whether any script already sets wall thickness in physical units. I read parameter ranges only.",
+  "Whether Bioinspired123D has an STL exporter anywhere in the repo: I searched 11 code/notebook files, not the full tree.",
+  "SciAgents paper body (Advanced Materials 2024); only the abstract, README and code tree were read, so any experimental validation inside it is unchecked.",
+  "Experimental validation, STL/G-code export and printing evidence for InvertibleTrussDesign and UnifyingTrussDesignSpace (README level only; PNAS and Nat. Commun. papers not read).",
+  "The solid-export file format of svVascularize, and whether its Murray exponent can be set per branch.",
+  "Whether Silkworm builds against Rhino 8 today; the repo was last pushed in 2015. A licence statement outside GitHub (food4rhino) was not checked.",
+  "Code for Text2VP (name search found nothing) and licences for the two LLMto3D repos beyond GitHub's null field.",
+  "The Lean ceiling proof was not re-run in this task (project record says kernel-checked; I only read the file and confirmed the inequality numerically). Free-RAM check was not needed since no heavy command ran; C: had 6.5 GB and D: 11 GB free at start.",
+  "Schreiner and Buxbaum constrained-constructive-optimisation DOI: Crossref returned HTTP 429, so that reference is not cited.",
+  "A Formlabs statement that PreForm cannot import G-code; I only found the list of formats it can open, via a page summariser, and did not copy the raw table."
+ ],
+ "contradictions_with_earlier_files": [
+  "laws-biomaterial.json said the elimination generator lean/eliminate/ 'is therefore absent here'. In D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/eliminate/ eliminate.mjs (61,252 bytes) exists now; the earlier statement likely referred to upstream/leanbio. Not a disagreement about the laws.",
+  "spec-marom-buehler-deep.json: 'Licence not confirmed' for Silkworm. Deepened: GitHub reports no licence and the tree has no LICENSE file, so it is unlicensed as far as can be seen, and it was last pushed in 2015.",
+  "spec-bilayer-physics.json: 'equal layers at n=10 costs 34 percent' is confirmed as 33.6 percent (24/24.1 = 0.99585; 1 - 0.99585/1.5)."
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-bioinspired-generative-design/fetch.sh",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-bioinspired-generative-design/fetch2.sh",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-bioinspired-generative-design/fetch3.sh",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-bioinspired-generative-design/verify_citations.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-bioinspired-generative-design/law_filter_prototype.py"
+ ]
+}

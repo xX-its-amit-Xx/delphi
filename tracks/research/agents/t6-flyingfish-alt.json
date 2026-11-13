@@ -1,0 +1,597 @@
+{
+ "label": "t6-flyingfish-alt",
+ "topic": "Track 6 alternatives and neighbours: other systems that could play the flying-fish role in the elimination-certificate framework, and the strongest competing explanation",
+ "summary": "Law set 1.8.1 is current in the application repo (registry/lawsets/current.json); the glide lemmas (glide_range_le, glide_range_le_groundEffect, vmin_le, wind_glide_rules_out, glide_range_rules_out, vmin_rules_out, aerobic_flight_rules_out) all exist there; I ran no Lean. The strongest competing explanation for the main phenomenon (long flying-fish flights) is thrust-supported surface taxiing, not a longer pure glide. Davenport 2003 argues the accepted 'extended ballistic leap' model of how flight evolved is flawed and taxiing in half-beak-like ancestors came first; Davenport 1994 describes free flight 'prolonged by further taxiing'; Chen 2026 CFD finds large caudal thrust and lift while taxiing. The library already knows this: Flight.lean says taxiing thrust is outside the glide bound 'which is why the field glide distances exceed the bound', and the registry holds an unformalised proposed law taxiing-thrust 1.0.0. So the chosen glide energy-height certificate cannot fairly judge field distances that include taxiing; it can only judge a single thrust-free glide. Eight alternatives or neighbours are assessed (flying snake, gliding mammals, Draco lizards, flying squid, ballistic-jumper fishes as a negative control, Alsomitra seed with a CC BY CFD dataset, a bat ground-effect dataset, engineered tail-beat gliders). The cheapest and best companion is the flying snake: a thrust-free drop of 9.62 m with 3-D tracked glides. My own arithmetic (scripts/t6-flyingfish-alt/snake_bound.py) gives a range bound of 12.2 m with the 2-D section L/D of 2.7 after subtracting kinetic energy at 10 m/s, against an observed mean 10.14 m (sd 2.69): consistent on average, but mean+1 sd (12.83 m) exceeds it, so whole-animal L/D would be needed before any verdict. Recommendation: keep the flying fish as the host system but restrict its certificate to thrust-free glides; add the snake as a no-thrust control and formalise taxiing-thrust as the rival model to run alongside; use squirrel non-equilibrium glides only as a scope test of the lift=weight hypothesis.",
+ "lay_summary": "A flying fish does not just glide; before and during a flight it beats its tail on the water, which can push it along and lengthen the flight. One respected researcher argues that this tail-on-water skimming, not leaping, is how flying fish first learned to fly. Our test asks whether a claimed flight distance is more than a pure glide could give from the height and speed available. That test is fair for a fish only if the tail is not pushing. A flying snake is a cleaner test case: it drops from a branch 9.6 metres up with nothing pushing it, so the same sums apply without argument. We should keep the fish, add the snake as a fair-play check, and write down the tail-push idea as a rival to be tested rather than ignored.",
+ "glossary": [
+  {
+   "term": "glide",
+   "plain": "Moving forward through air while falling slowly, with no engine or flapping pushing the animal."
+  },
+  {
+   "term": "lift-to-drag ratio (L/D)",
+   "plain": "How many metres forward a glider can travel per metre it drops, in steady flight."
+  },
+  {
+   "term": "taxiing",
+   "plain": "Skimming along the water surface with the tail beating in the water while the fins are held out, before or between glides."
+  },
+  {
+   "term": "ballistic leap",
+   "plain": "A jump that follows a simple arc under gravity, with the wings giving no real lift."
+  },
+  {
+   "term": "ground effect",
+   "plain": "The drag reduction a wing gets when flying very close to a surface such as the sea."
+  },
+  {
+   "term": "elimination certificate",
+   "plain": "A short machine-checked proof that a claimed design or number contradicts a proved law, so it can be thrown out."
+  },
+  {
+   "term": "non-equilibrium glide",
+   "plain": "A glide in which speed and lift keep changing, so lift does not equal weight at each instant."
+  },
+  {
+   "term": "law set 1.8.1",
+   "plain": "The frozen version of the project's list of proved and candidate laws that verdicts are stamped against."
+  },
+  {
+   "term": "Reynolds number",
+   "plain": "A number that says whether a flow is smooth or turbulent for a given size and speed."
+  },
+  {
+   "term": "CFD",
+   "plain": "Computer simulation of air or water flow."
+  },
+  {
+   "term": "patagium",
+   "plain": "The skin membrane that serves as a gliding wing in some mammals and lizards."
+  },
+  {
+   "term": "negative control",
+   "plain": "A case where the test should give the 'no' answer, used to show the test is not saying yes to everything."
+  }
+ ],
+ "table": [
+  {
+   "name": "Flying snake Chrysopelea paradisi (Socha 2005; Holden 2014; Socha 2011)",
+   "fields": "drop_height=9.62 m; horizontal_distance=10.14+-2.69 m (mean+-sd, 14 glides); airspeed_reached=10.0+-0.9 m/s; sink_speed=6.4+-0.8 m/s; min_glide_angle=28+-10 deg (min recorded 13 deg); section_max_L/D=2.7 (2-D water tunnel, Re 3000-15000); thrust=none; bound_with_KE_at_L/D2.7=12.21 m (own calc); raw data public=not found",
+   "source": "https://doi.org/10.1242/jeb.01579 ; https://doi.org/10.1242/jeb.090902"
+  },
+  {
+   "name": "Northern flying squirrel Glaucomys sabrinus and Malayan colugo (Bahlman 2013; Byrnes 2008)",
+   "fields": "glide_type=non-equilibrium (lift exceeds weight); 3-D videography 60-125 fps; colugo propulsive take-off impulse rises with glide distance; numeric L/D=could not read from abstract; raw data public=not found",
+   "source": "https://doi.org/10.1098/rsif.2012.0794 ; https://doi.org/10.1098/rspb.2007.1684"
+  },
+  {
+   "name": "Flying lizards Draco dussumieri / D. volans (Khandelwal and Hedrick 2022; Buffa 2024)",
+   "fields": "mocap arena=7 cameras; AoA range up to 55 deg without catastrophic lift loss; near-maximal L/D held mid-glide; CFD=70 3-D simulations and 240 trajectory calculations; numeric L/D=could not read from abstract",
+   "source": "https://doi.org/10.1038/s41598-022-05739-1 ; https://doi.org/10.1088/1748-3190/ad1dbb"
+  },
+  {
+   "name": "Flying squid, Ommastrephidae (Muramatsu 2013)",
+   "fields": "phases=launching, jetting, gliding, diving; thrust=jet propulsion; data=sequential photographs of young squid at 35.57N 146.32E on 2011-07-25; numeric speeds=not in abstract",
+   "source": "https://doi.org/10.1007/s00227-013-2169-9"
+  },
+  {
+   "name": "Ballistic jumpers: hatchetfish Gasteropelecidae (Wiest 1995) and guppy (Soares and Bierman 2013) - negative control",
+   "fields": "hatchetfish: trajectories consistent with projectile motion, 200 frames/s video; guppy: spontaneous jumps several body lengths; L/D=none relevant; expected certificate verdict=consistent with ballistic, not a glide",
+   "source": "https://doi.org/10.1111/j.1469-7998.1995.tb02733.x ; https://doi.org/10.1371/journal.pone.0061617"
+  },
+  {
+   "name": "Alsomitra macrocarpa seed glider (Azuma 1987) with Cranfield CFD dataset",
+   "fields": "thrust=none (plant seed); dataset=Cranfield 10.57996/cran.ceres-2893, licence CC BY 4.0, size field empty; profiles=5 (flat plate, round-edged, round-leading-edge, modified 1.5% Fauvel reflexed, Javan Cucumber cambered); Azuma abstract=not read",
+   "source": "https://doi.org/10.57996/cran.ceres-2893 ; https://doi.org/10.1016/s0022-5193(87)80001-2"
+  },
+  {
+   "name": "Bat ground-effect power dataset (Johansson 2018, Dryad)",
+   "fields": "licence=CC0 1.0; size=6,747,705,573 bytes (over the 150 MB cap, not downloaded); finding=29% less aerodynamic power in ground effect, twice predicted; regime=flapping, power not drag",
+   "source": "https://doi.org/10.5061/dryad.0859ks3 ; https://doi.org/10.1016/j.cub.2018.09.011"
+  },
+  {
+   "name": "Engineered tail-beat-supported glider (Nguyen and Park 2023) and own printed glider (design file third test)",
+   "fields": "abstract=not available to me; title only verified; role=tests taxiing/tail-beat thrust on a body with known mass and area",
+   "source": "https://doi.org/10.1016/j.oceaneng.2023.115745"
+  },
+  {
+   "name": "Competing explanation: thrust-supported taxiing (Davenport 1994, 2003; Chen 2026)",
+   "fields": "CL_taxiing=2.15 vs CL_glide=0.57 (CFD, ratio 3.77 own calc); caudal thrust coefficient taxiing=1.22 vs deep-water swimming=-3.79; caudal fin lift share while taxiing >60%; pectoral lift share in glide=85%; tail beat up to 50 beats/s; library status=taxiing-thrust 1.0.0 proposed, not formalised",
+   "source": "https://doi.org/10.1063/5.0347662 ; https://doi.org/10.1046/j.1095-8649.2003.00041.x ; https://doi.org/10.1007/bf00044128"
+  }
+ ],
+ "findings": [
+  {
+   "claim": "Davenport 2003 argues the accepted model that flight in flying fishes evolved by extension of ballistic leaps is flawed, and proposes lift-supported surface taxiing in half-beaks with enlarged pectoral fins (enhanced by ground effect) as an essential preliminary step.",
+   "source": "https://doi.org/10.1046/j.1095-8649.2003.00041.x (Europe PMC / Crossref abstract fetched 2026-11-12)",
+   "confidence": "high",
+   "evidence_quote": "These data indicate that the accepted model of evolution of flight in flying fishes (by extension of ballistic leaps) is flawed; it is proposed that evolution of lift‐supported surface taxiing in half‐beaks"
+  },
+  {
+   "claim": "Davenport 1994 describes take-off by taxiing with the tail beating in the water at up to 50 beats per second, and a free flight that may be prolonged by further taxiing.",
+   "source": "https://link.springer.com/article/10.1007/bf00044128 (page fetched 2026-11-12, sha256 d2df42e0b72c5a187a24e338c6a0666d7495447d5c2f00b851eaf88e0f7d9989)",
+   "confidence": "high",
+   "evidence_quote": "accelerate to take-off speed by taxiing with the lateral fins expanded and the tail beating in the water at up to 50 beats s -1 , and enter a free flight that may be prolonged by further taxiing."
+  },
+  {
+   "claim": "Davenport 1994 concludes flying fish fly mainly to escape predators (dolphin-fishes and ommastrephid squid) and says an alternative energy-conservation hypothesis is rejected; other ideas such as migration between food-poor and food-rich areas have limited support.",
+   "source": "https://link.springer.com/article/10.1007/bf00044128 (same fetch)",
+   "confidence": "high",
+   "evidence_quote": "Flying fish probably fly mainly to escape from predators, particularly dolphin-fishes ( Coryphaena hippurus ) and ommastrephid squid. An alternative hypothesis of energy conservation is rejected"
+  },
+  {
+   "claim": "Davenport 1994 estimates ground effect gives significant drag reduction below about 0.5 m height for a 0.3 m standard-length flying fish.",
+   "source": "https://link.springer.com/article/10.1007/bf00044128 (same fetch)",
+   "confidence": "high",
+   "evidence_quote": "significant reduction of drag by ground effect will take place at heights below about 0.5 m, prolonging flights and helping take-off."
+  },
+  {
+   "claim": "A 2026 CFD study of a four-winged flying fish finds the caudal fin makes substantial thrust while taxiing (CT about 1.22) where deep-water swimming gives a negative value (about -3.79), and lift while taxiing (CL about 2.15) is far above aerial gliding (CL about 0.57); the caudal fin supplies over 60% of lift when taxiing and the pectoral fins 85% in glide. These are simulation results, not measurements.",
+   "source": "https://doi.org/10.1063/5.0347662 (abstract via Crossref/Europe PMC, 2026-11-12)",
+   "confidence": "medium",
+   "evidence_quote": "free-surface taxiing exhibits a markedly higher lift (CL≈2.15) compared to aerial gliding (CL≈0.57)."
+  },
+  {
+   "claim": "The ratio of the CFD lift coefficients taxiing vs gliding is 2.15/0.57 = 3.77 (own arithmetic).",
+   "source": "scripts/t6-flyingfish-alt/snake_bound.py last line",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "The application repo's Flight.lean states the glide bound excludes ground effect, updraft and taxiing thrust, and that this is why the field glide distances exceed the bound.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/Delphi/Flight.lean line 35",
+   "confidence": "high",
+   "evidence_quote": "(ground effect, updraft and taxiing thrust are outside, which is why the field glide distances exceed the bound)"
+  },
+  {
+   "claim": "The registry in the application repo carries taxiing-thrust 1.0.0 as status proposed, class gap, with no Lean module or theorem.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/laws/taxiing-thrust.json",
+   "confidence": "high",
+   "evidence_quote": "not formalised: no model of tail-beat thrust in lean/; the glide bound shows it is needed"
+  },
+  {
+   "claim": "Current law set in the application repo is 1.8.1 (59 laws listed in lawset-1.8.1.json); flight-climb-glide-law 1.0.0 and perturb-wind-glide 1.0.0 are accepted, the four disc-* flying-fish laws are candidate (one, disc-heterurus-mass-exponent, contested).",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/lawsets/current.json and lawset-1.8.1.json (my listing script output)",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "In the application repo, glide_range_le is Flight.lean:115, glide_range_le_groundEffect Flight.lean:128, vmin_le Scaling.lean:136, wind_glide_rules_out Perturb.lean:342, and vmin_rules_out, aerobic_flight_rules_out and glide_range_rules_out are at Constraints.lean lines 243, 316 and 324.",
+   "source": "grep of D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/Delphi/*.lean",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "glide_range_le requires Lift = W and no thrust, giving x <= h * LDmax; the Lean docstring says it is for a steady glide with no thrust and lift equal to weight.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/Delphi/Flight.lean lines 112-119",
+   "confidence": "high",
+   "evidence_quote": "With no thrust, lift equal to weight, `L/D ≤ (L/D)_max` and the potential energy `W h` spent on drag work `D x` plus non-negative losses, the horizontal distance is at most `h (L/D)_max`."
+  },
+  {
+   "claim": "Flying snakes (Chrysopelea paradisi) jumped from a branch 9.62 m high; 14 glides from different individuals were tracked in 3-D; mean horizontal distance 10.14 m (sd 2.69), airspeed reached 10.0 m/s (sd 0.9), sinking speed 6.4 m/s, horizontal speed 8.1 m/s, minimum glide angle 28 deg (sd 10) with minimum recorded 13 deg.",
+   "source": "https://doi.org/10.1242/jeb.01579 (Europe PMC abstract, 2026-11-12)",
+   "confidence": "high",
+   "evidence_quote": "Snakes traveled a horizontal distance of 10.14+/-2.69 m (mean +/-s.d.) while reaching an airspeed of 10.0+/-0.9 m s(-1), sinking speed of 6.4+/-0.8 m s(-1)"
+  },
+  {
+   "claim": "The snake body cross-section (straight model, water tunnel, Re 3000-15000) gave maximum lift coefficient 1.9 and maximum L/D 2.7; the authors say 3-D effects and aerial undulation need more complex models, so 2.7 is not a whole-animal polar.",
+   "source": "https://doi.org/10.1242/jeb.090902 (Europe PMC abstract, 2026-11-12)",
+   "confidence": "high",
+   "evidence_quote": "The snake's cross-sectional shape produced a maximum lift coefficient of 1.9 and maximum lift-to-drag ratio of 2.7"
+  },
+  {
+   "claim": "Own calculation: with h = 9.62 m, L/D 2.7, x <= h*L/D = 25.97 m; subtracting kinetic height v^2/2g = 10.0^2/19.62 = 5.097 m at the reported 10.0 m/s gives x <= (9.62-5.097)*2.7 = 12.21 m; with L/D = cot(13 deg) = 4.331 the same bound is 19.59 m. Observed mean 10.14 m is under all of these; mean + 1 sd = 12.83 m exceeds the 12.21 m figure. The 10.0 m/s is the speed 'reached', not shown to be the final speed, and the 2-D L/D is not a whole-animal value, so this is an illustration, not a certificate verdict.",
+   "source": "scripts/t6-flyingfish-alt/snake_bound.py and snake_bound_result.json",
+   "confidence": "medium",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Northern flying squirrels do not glide at equilibrium: velocities and force coefficients change continuously and lift exceeds weight, so the lift = weight hypothesis of glide_range_le does not hold for short inter-tree glides.",
+   "source": "https://doi.org/10.1098/rsif.2012.0794 (Europe PMC abstract)",
+   "confidence": "high",
+   "evidence_quote": "flying squirrels do not glide at equilibrium, and instead demonstrate continuously changing velocities, forces and force coefficients, and generate more lift than needed to balance body weight."
+  },
+  {
+   "claim": "Malayan colugos increase the propulsive take-off impulse to achieve longer glides, i.e. launch thrust also exists in mammal gliders.",
+   "source": "https://doi.org/10.1098/rspb.2007.1684 (Europe PMC abstract)",
+   "confidence": "high",
+   "evidence_quote": "colugos increase the propulsive impulse to affect longer glides."
+  },
+  {
+   "claim": "Draco dussumieri in a seven-camera field mocap arena held near-maximal L/D during mid-glide by changing body pitch, and kept lift up to and over 55 deg angle of attack.",
+   "source": "https://doi.org/10.1038/s41598-022-05739-1 (Europe PMC abstract)",
+   "confidence": "high",
+   "evidence_quote": "the lizards maintained a near maximal lift-to-drag ratio throughout their mid-glide by changing body pitch to control AoA"
+  },
+  {
+   "claim": "Oceanic squid (Ommastrephidae) flight involves jet propulsion, lift and posture control, not simple gliding; it is thrust-powered in the air, so a no-thrust bound does not apply by design.",
+   "source": "https://doi.org/10.1007/s00227-013-2169-9 (Springer page meta description, fetched 2026-11-12, sha256 3ebf7c08b8099f694aee7d6ffb73ced25ce8f2560773decda34415431efc0dc6)",
+   "confidence": "high",
+   "evidence_quote": "flight of squid is not simple gliding after incidental exit from the water, but involves jet propulsion, generation of lift force and control of different body postures in different flight phases"
+  },
+  {
+   "claim": "Freshwater hatchetfish take off by a stereotyped pectoral abduction plus C-start and follow projectile trajectories; the authors conclude active flight is unlikely and the behaviour is a jump (a modified startle response).",
+   "source": "https://doi.org/10.1111/j.1469-7998.1995.tb02733.x (Europe PMC abstract)",
+   "confidence": "high",
+   "evidence_quote": "the analysis indicates that active flight in the gasteropelecids is unlikely. Rather, the mechanism produces a jump, a modified startle response"
+  },
+  {
+   "claim": "Guppies jump spontaneously several body lengths into the air; authors suggest the behaviour evolved for dispersal. Useful as a second ballistic control with high-speed video.",
+   "source": "https://doi.org/10.1371/journal.pone.0061617 (Europe PMC abstract)",
+   "confidence": "high",
+   "evidence_quote": "Fish jump from a still position by slowly backing up while using its pectoral fins, followed by strong body trusts which lead to launching into the air several body lengths."
+  },
+  {
+   "claim": "Daubenton's bats use 29% less aerodynamic power in ground effect than out of it, twice the predicted saving, measured by wake-based power; the Dryad dataset is CC0 and 6,747,705,573 bytes. This is flapping flight and power, not glide drag, so it does not directly validate delta = 0.09 to 0.14.",
+   "source": "https://doi.org/10.1016/j.cub.2018.09.011 (Europe PMC abstract); https://api.datacite.org/dois/10.5061/dryad.0859ks3 (sizes and rightsList)",
+   "confidence": "high",
+   "evidence_quote": "Daubenton's bats utilize 29% less aerodynamic power when flying in compared to out of ground effect, which is twice the predicted savings."
+  },
+  {
+   "claim": "The Cranfield dataset 'Data supporting An Introductory CFD Investigation into Passive Low Reynolds Number Flight of Alsomitra macrocarpa Seeds' is licensed CC BY 4.0 and covers five wing profiles; DataCite lists no size.",
+   "source": "https://api.datacite.org/dois/10.57996/cran.ceres-2893",
+   "confidence": "high",
+   "evidence_quote": "Low Reynolds number (Re) aerodynamics and longitudinal stability are investigated using computational fluid dynamics (CFD) to examine the influence of wing cross-sectional geometry on Alsomitra macrocarpa-inspired gliders."
+  },
+  {
+   "claim": "Parallel genetics: Daane 2021 found convergent genetic signatures for larger paired fins and aerial gliding in 35 flying-fish and relatives, with lat4a and kcnh2a regulating fin proportion; Moreno 2024 found Emx2 regulation underlies the patagium in marsupial gliders. Gliding membranes in mammals are therefore a genetics-level neighbour of the disc-flying-fish-fin-ratio-gap law.",
+   "source": "https://doi.org/10.1016/j.cub.2021.08.054 ; https://doi.org/10.1038/s41586-024-07305-3 (abstracts)",
+   "confidence": "high",
+   "evidence_quote": "Emx2 is a critical upstream regulator of patagium development."
+  },
+  {
+   "claim": "Zenodo record 8382768 holds Deng et al. 2019 as a 1,550,487-byte PDF under licence cc-by-4.0 (Zenodo API, 2026-11-12).",
+   "source": "https://zenodo.org/api/records/8382768",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Davenport 1992 (Exocoetus obtusirostris) reports wing loading rising with standard length (b = 1.236), fin area b = 1.834, mass b = 2.981, and the cap that pectoral fin length cannot exceed 78-79% of standard length; these are the numbers the disc-* laws are compared against.",
+   "source": "https://www.cambridge.org/core/journals/journal-of-the-marine-biological-association-of-the-united-kingdom (page fetched 2026-11-12, sha256 934357779e82eeab47abc5345086c9dedf538b9348d91cb5587c61be87a8da89)",
+   "confidence": "high",
+   "evidence_quote": "Exocoetus obtusirostris shows negatively allometric growth in relation to standard length in terms of body mass (b =2·981), and lateral fin area (b =1·834)."
+  },
+  {
+   "claim": "Searches of DataCite (resource-type dataset) for flying fish, Exocoetidae, flying snake, Chrysopelea, Draco, colugo, squid flight and gliding mammals returned no public raw glide-trajectory dataset for any of those animals; the only relevant open sets were the bat and Alsomitra sets above.",
+   "source": "scripts/t6-flyingfish-alt/dc.py outputs, run 2026-11-12",
+   "confidence": "medium",
+   "evidence_quote": ""
+  }
+ ],
+ "key_claims": [
+  {
+   "claim": "The strongest rival to 'long flights are long pure glides' is thrust-supported surface taxiing, and the existing certificate's lemma explicitly excludes it, so field distances can legitimately exceed the glide bound without any law being wrong.",
+   "source": "Flight.lean line 35; registry/laws/taxiing-thrust.json; https://doi.org/10.1046/j.1095-8649.2003.00041.x; https://doi.org/10.1007/bf00044128",
+   "evidence_quote": "(ground effect, updraft and taxiing thrust are outside, which is why the field glide distances exceed the bound)"
+  },
+  {
+   "claim": "Davenport 2003 holds the accepted ballistic-leap route to flight is flawed and taxiing-in-half-beaks came first.",
+   "source": "https://doi.org/10.1046/j.1095-8649.2003.00041.x",
+   "evidence_quote": "These data indicate that the accepted model of evolution of flight in flying fishes (by extension of ballistic leaps) is flawed"
+  },
+  {
+   "claim": "The flying snake is the cheapest thrust-free companion: 9.62 m drop, 14 tracked glides, mean 10.14 m horizontal; with the 2-D L/D of 2.7 and kinetic height subtracted my bound is 12.21 m, so no elimination on average, but the L/D is not whole-animal and the upper tail exceeds it.",
+   "source": "https://doi.org/10.1242/jeb.01579 ; https://doi.org/10.1242/jeb.090902 ; scripts/t6-flyingfish-alt/snake_bound.py",
+   "evidence_quote": "Snakes traveled a horizontal distance of 10.14+/-2.69 m (mean +/-s.d.) while reaching an airspeed of 10.0+/-0.9 m s(-1)"
+  },
+  {
+   "claim": "No public raw trajectory dataset for any gliding animal in this list was found, so every alternative that needs fresh numbers has a data-acquisition cost; only the Alsomitra CFD set (CC BY 4.0) and the oversized bat set (CC0, 6.7 GB) are open.",
+   "source": "DataCite searches; https://api.datacite.org/dois/10.57996/cran.ceres-2893 ; https://api.datacite.org/dois/10.5061/dryad.0859ks3",
+   "evidence_quote": ""
+  }
+ ],
+ "recommendations": [
+  "KEEP the flying fish as the host system for Track 6. It is the only candidate with a measured polar (Park and Choi 2010), the ground-effect lemma, the four disc-* laws and the Daane 2021 genetic link already in the library. Replace nothing.",
+  "RESTRICT what its certificate claims: a verdict of 'eliminated' applies to a single thrust-free glide only. A field distance that may include taxiing must return 'cannot rule', and that rule should be written in the pre-registration, because Flight.lean already says taxiing thrust is outside the bound.",
+  "RUN ALONGSIDE (1): a flying-snake certificate (Socha 2005, h = 9.62 m, Holden 2014 L/D). It is thrust-free with a known start, needs one new candidate file and no new Lean. Treat the 2.7 as a section value; add a whole-animal L/D source or report 'cannot rule'. Stamp with law set 1.8.1 and the Lean commit.",
+  "RUN ALONGSIDE (2): formalise taxiing-thrust (currently proposed, not formalised) as the rival model, with a minimal thrust-energy term, so 'glide only' and 'glide plus taxiing' are two competing certificates on the same field distances. Inputs available: Chen 2026 coefficients (simulation), Davenport 1994 tail-beat rate (up to 50 per second).",
+  "USE AS A SCOPE TEST (3): northern flying squirrel non-equilibrium glides (Bahlman 2013) to check whether lift = weight can be dropped; if raw glides can be obtained, this is the real test of the lemma's hypothesis. Needs raw data, which is not public as far as I found.",
+  "USE AS NEGATIVE CONTROL (4): hatchetfish and guppy jumps must come out as ballistic, never as eliminated glides; this checks the certificate does not say yes to everything. Cost: choose a projectile-motion model, small.",
+  "DO NOT RUN: flying squid (thrust-powered by design, only photographs, no speed numbers read) and the 6.7 GB bat set (flapping power, over the 150 MB cap); cite them as scope limits. The Alsomitra CFD set is a cheap optional engineered-body cross-check only after a size check, since its listed size is empty.",
+  "LAW SET: the earlier law-mapper used 1.6.0; the application repo is 1.8.1 and should be the stamp for anything new."
+ ],
+ "reproduce": [
+  {
+   "what": "Confirm current law set and the lemma locations",
+   "command_or_url": "cat D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/lawsets/current.json ; grep -n \"theorem glide_range_le\\|theorem vmin_le\\|theorem glide_range_rules_out\\|theorem wind_glide_rules_out\" D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/Delphi/*.lean",
+   "expected": "version 1.8.1; Flight.lean:115,128; Scaling.lean:136; Constraints.lean:324; Perturb.lean:342"
+  },
+  {
+   "what": "Read the taxiing exclusion and the proposed law",
+   "command_or_url": "sed -n 33,37p D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/Delphi/Flight.lean ; grep -n '\"why\"\\|\"status\"' D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/laws/taxiing-thrust.json",
+   "expected": "line 35 names taxiing thrust as outside the bound; status proposed"
+  },
+  {
+   "what": "Fetch abstracts (Crossref + Europe PMC) for the cited DOIs (python 3.14, standard library only)",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-alt/abstracts.py 10.1046/j.1095-8649.2003.00041.x 10.1063/5.0347662 10.1242/jeb.01579 10.1242/jeb.090902 10.1098/rsif.2012.0794 10.1111/j.1469-7998.1995.tb02733.x 10.1038/s41598-022-05739-1",
+   "expected": "Printed abstracts matching the quoted sentences; writes scratch/t6-flyingfish-alt/abstracts.json (overwritten each run)"
+  },
+  {
+   "what": "Springer pages for Davenport 1994 and Muramatsu 2013",
+   "command_or_url": "curl -sL -A delphi-research/0.1 https://doi.org/10.1007/bf00044128 and https://doi.org/10.1007/s00227-013-2169-9",
+   "expected": "HTML of 305,402 and 298,572 bytes containing the 13-point abstract and the meta description (content may drift)"
+  },
+  {
+   "what": "Snake range bound arithmetic",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-alt/snake_bound.py",
+   "expected": "x_over_h_observed 1.054; bound_no_KE_LD2.7 25.974; KE_height_at_10ms_m 5.097; bound_with_KE_LD2.7 12.213; bound_with_KE_LD13deg 19.592; CL taxiing/gliding 3.772"
+  },
+  {
+   "what": "Dataset metadata (DataCite)",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-alt/dcget.py 10.5061/dryad.0859ks3 10.57996/cran.ceres-2893",
+   "expected": "bat set: CC0, 6747705573 bytes; Cranfield set: CC BY 4.0, no size listed"
+  },
+  {
+   "what": "Dataset searches that found no raw glide trajectory data",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-alt/dc.py \"flying fish\" \"Exocoetidae\" \"Chrysopelea\" \"Draco volans\" \"flying lemur colugo\" \"gliding squid flight\"",
+   "expected": "No flying-fish, snake, Draco, colugo or squid trajectory dataset (DataCite indexes change over time)"
+  },
+  {
+   "what": "Lean was not run for this task",
+   "command_or_url": "n/a",
+   "expected": "The snake figures are arithmetic, not compiled certificates; a reviewer wanting a certificate must write a candidate file for lean/eliminate."
+  }
+ ],
+ "citations": [
+  {
+   "authors": "Davenport J",
+   "year": 2003,
+   "title": "Allometric constraints on stability and maximum size in flying fishes: implications for their evolution",
+   "doi_or_arxiv": "10.1046/j.1095-8649.2003.00041.x",
+   "verified": true,
+   "how_verified": "Crossref works API search hit and Europe PMC core record with abstract fetched 2026-11-12",
+   "used_for": "Strongest competing explanation: taxiing before gliding; ballistic-leap model flawed",
+   "venue": "Journal of Fish Biology"
+  },
+  {
+   "authors": "Davenport J",
+   "year": 1994,
+   "title": "How and why do flying fish fly?",
+   "doi_or_arxiv": "10.1007/bf00044128",
+   "verified": true,
+   "how_verified": "Crossref search hit; doi.org to Springer returned 200, abstract points 1-13 read",
+   "used_for": "Taxiing prolongs flight; predator escape; energy conservation rejected; ground effect height",
+   "venue": "Reviews in Fish Biology and Fisheries"
+  },
+  {
+   "authors": "Davenport J",
+   "year": 1992,
+   "title": "Wing-loading, stability and morphometric relationships in flying fish (Exocoetidae) from the North-eastern Atlantic",
+   "doi_or_arxiv": "10.1017/s0025315400048761",
+   "verified": true,
+   "how_verified": "Crossref search hit; Cambridge page via doi.org returned 200 and abstract read",
+   "used_for": "Allometry exponents behind disc-* laws",
+   "venue": "Journal of the Marine Biological Association of the UK"
+  },
+  {
+   "authors": "Fish FE",
+   "year": 1990,
+   "title": "Wing design and scaling of flying fish with regard to flight performance",
+   "doi_or_arxiv": "10.1111/j.1469-7998.1990.tb04009.x",
+   "verified": true,
+   "how_verified": "Crossref search hit only (publisher page returned 403, abstract not read)",
+   "used_for": "Listed as unread background source for flying-fish wing scaling; no claim rests on it",
+   "venue": "Journal of Zoology"
+  },
+  {
+   "authors": "Park H, Choi H",
+   "year": 2010,
+   "title": "Aerodynamic characteristics of flying fish in gliding flight",
+   "doi_or_arxiv": "10.1242/jeb.046052",
+   "verified": true,
+   "how_verified": "Crossref search hit and Europe PMC abstract fetched 2026-11-12",
+   "used_for": "Chosen system's measured polar",
+   "venue": "Journal of Experimental Biology"
+  },
+  {
+   "authors": "Deng J, Zhang L, Liu Z, Mao X",
+   "year": 2019,
+   "title": "Numerical prediction of aerodynamic performance for a flying fish during gliding flight",
+   "doi_or_arxiv": "10.1088/1748-3190/ab23e6",
+   "verified": true,
+   "how_verified": "Crossref works API and Zenodo API (record 8382768, cc-by-4.0, 1,550,487 bytes) fetched 2026-11-12",
+   "used_for": "Open full text in the chosen system",
+   "venue": "Bioinspiration and Biomimetics"
+  },
+  {
+   "authors": "Chen et al.",
+   "year": 2026,
+   "title": "Flow mechanisms of flying fish during free-surface taxiing",
+   "doi_or_arxiv": "10.1063/5.0347662",
+   "verified": true,
+   "how_verified": "Crossref search hit and Europe PMC abstract fetched 2026-11-12",
+   "used_for": "CFD thrust and lift while taxiing (rival model inputs)",
+   "venue": "Physics of Fluids"
+  },
+  {
+   "authors": "Socha JJ, O'Dempsey T, LaBarbera M",
+   "year": 2005,
+   "title": "A 3-D kinematic analysis of gliding in a flying snake, Chrysopelea paradisi",
+   "doi_or_arxiv": "10.1242/jeb.01579",
+   "verified": true,
+   "how_verified": "Crossref and Europe PMC abstract fetched 2026-11-12",
+   "used_for": "Snake drop height, distance, speeds, glide angles",
+   "venue": "Journal of Experimental Biology"
+  },
+  {
+   "authors": "Holden D, Socha JJ, Cardwell ND, Vlachos PP",
+   "year": 2014,
+   "title": "Aerodynamics of the flying snake Chrysopelea paradisi: how a bluff body cross-sectional shape contributes to gliding performance",
+   "doi_or_arxiv": "10.1242/jeb.090902",
+   "verified": true,
+   "how_verified": "Crossref and Europe PMC abstract fetched 2026-11-12",
+   "used_for": "Section maximum L/D 2.7 and CL 1.9",
+   "venue": "Journal of Experimental Biology"
+  },
+  {
+   "authors": "Socha JJ",
+   "year": 2011,
+   "title": "Gliding Flight in Chrysopelea: Turning a Snake into a Wing",
+   "doi_or_arxiv": "10.1093/icb/icr092",
+   "verified": true,
+   "how_verified": "Crossref and Europe PMC abstract fetched 2026-11-12",
+   "used_for": "Snake glide review, gap-crossing as precursor to gliding",
+   "venue": "Integrative and Comparative Biology"
+  },
+  {
+   "authors": "Bahlman JW, Swartz SM, Riskin DK, Breuer KS",
+   "year": 2013,
+   "title": "Glide performance and aerodynamics of non-equilibrium glides in northern flying squirrels (Glaucomys sabrinus)",
+   "doi_or_arxiv": "10.1098/rsif.2012.0794",
+   "verified": true,
+   "how_verified": "Crossref and Europe PMC abstract fetched 2026-11-12",
+   "used_for": "Non-equilibrium glides test the lift = weight hypothesis",
+   "venue": "Journal of the Royal Society Interface"
+  },
+  {
+   "authors": "Byrnes G, Lim NT, Spence AJ",
+   "year": 2008,
+   "title": "Take-off and landing kinetics of a free-ranging gliding mammal, the Malayan colugo (Galeopterus variegatus)",
+   "doi_or_arxiv": "10.1098/rspb.2007.1684",
+   "verified": true,
+   "how_verified": "Crossref and Europe PMC abstract fetched 2026-11-12",
+   "used_for": "Propulsive take-off impulse in a mammal glider",
+   "venue": "Proceedings of the Royal Society B"
+  },
+  {
+   "authors": "Khandelwal PC, Hedrick TL",
+   "year": 2022,
+   "title": "Combined effects of body posture and three-dimensional wing shape enable efficient gliding in flying lizards",
+   "doi_or_arxiv": "10.1038/s41598-022-05739-1",
+   "verified": true,
+   "how_verified": "Crossref and Europe PMC abstract fetched 2026-11-12",
+   "used_for": "Draco field mocap glides",
+   "venue": "Scientific Reports"
+  },
+  {
+   "authors": "Buffa et al. (Buffa, Salaun, Cinnella)",
+   "year": 2024,
+   "title": "Influence of posture during gliding flight in the flying lizard Draco volans",
+   "doi_or_arxiv": "10.1088/1748-3190/ad1dbb",
+   "verified": true,
+   "how_verified": "Crossref and Europe PMC abstract fetched 2026-11-12",
+   "used_for": "Draco CFD and trajectory simulations",
+   "venue": "Bioinspiration and Biomimetics"
+  },
+  {
+   "authors": "Muramatsu K, Yamamoto J, Abe T, Sekiguchi K, Hoshi N, Sakurai Y",
+   "year": 2013,
+   "title": "Oceanic squid do fly",
+   "doi_or_arxiv": "10.1007/s00227-013-2169-9",
+   "verified": true,
+   "how_verified": "Crossref search hit (first four authors listed by Crossref: Muramatsu, Yamamoto, Abe, Sekiguchi); Springer page returned 200 with abstract in meta description",
+   "used_for": "Thrust-powered aerial flight in squid",
+   "venue": "Marine Biology"
+  },
+  {
+   "authors": "Wiest FC",
+   "year": 1995,
+   "title": "The specialized locomotory apparatus of the freshwater hatchetfish family Gasteropelecidae",
+   "doi_or_arxiv": "10.1111/j.1469-7998.1995.tb02733.x",
+   "verified": true,
+   "how_verified": "Crossref and Europe PMC abstract fetched 2026-11-12",
+   "used_for": "Ballistic jumpers as negative control",
+   "venue": "Journal of Zoology"
+  },
+  {
+   "authors": "Soares D, Bierman HS",
+   "year": 2013,
+   "title": "Aerial jumping in the Trinidadian guppy (Poecilia reticulata)",
+   "doi_or_arxiv": "10.1371/journal.pone.0061617",
+   "verified": true,
+   "how_verified": "Crossref and Europe PMC abstract fetched 2026-11-12",
+   "used_for": "Second ballistic-jump control",
+   "venue": "PLoS ONE"
+  },
+  {
+   "authors": "Azuma A",
+   "year": 1987,
+   "title": "Flight of a samara, Alsomitra macrocarpa",
+   "doi_or_arxiv": "10.1016/s0022-5193(87)80001-2",
+   "verified": true,
+   "how_verified": "Crossref search hit only (title and year); abstract not read",
+   "used_for": "Existence of the classic seed-glider analysis; no claim rests on its content",
+   "venue": "Journal of Theoretical Biology"
+  },
+  {
+   "authors": "Cranfield University dataset",
+   "year": 2026,
+   "title": "Data supporting An Introductory CFD Investigation into Passive Low Reynolds Number Flight of Alsomitra macrocarpa Seeds",
+   "doi_or_arxiv": "10.57996/cran.ceres-2893",
+   "verified": true,
+   "how_verified": "DataCite API record fetched 2026-11-12 (CC BY 4.0, no size listed)",
+   "used_for": "Open engineered-body or seed CFD set",
+   "venue": "Cranfield CERES"
+  },
+  {
+   "authors": "Johansson LC, Jakobsen L, Hedenstrom A",
+   "year": 2018,
+   "title": "Flight in Ground Effect Dramatically Reduces Aerodynamic Costs in Bats",
+   "doi_or_arxiv": "10.1016/j.cub.2018.09.011",
+   "verified": true,
+   "how_verified": "Crossref and Europe PMC abstract fetched 2026-11-12; dataset record 10.5061/dryad.0859ks3 fetched from DataCite",
+   "used_for": "Independent ground-effect measurement in a mammal",
+   "venue": "Current Biology"
+  },
+  {
+   "authors": "Daane JM, Blum N, Lanni J, Boldt H, et al.",
+   "year": 2021,
+   "title": "Modulation of bioelectric cues in the evolution of flying fishes",
+   "doi_or_arxiv": "10.1016/j.cub.2021.08.054",
+   "verified": true,
+   "how_verified": "Crossref and Europe PMC abstract fetched 2026-11-12",
+   "used_for": "Genetic basis of fin proportion in flying fishes",
+   "venue": "Current Biology"
+  },
+  {
+   "authors": "Moreno JA, Dudchenko O, Feigin CY, Mereby S, et al.",
+   "year": 2024,
+   "title": "Emx2 underlies the development and evolution of marsupial gliding membranes",
+   "doi_or_arxiv": "10.1038/s41586-024-07305-3",
+   "verified": true,
+   "how_verified": "Crossref and Europe PMC abstract fetched 2026-11-12",
+   "used_for": "Genetic parallel in mammal gliders",
+   "venue": "Nature"
+  },
+  {
+   "authors": "Nguyen, Park",
+   "year": 2023,
+   "title": "Feasibility study on mimicking the tail-beating supported gliding flight of flying fish",
+   "doi_or_arxiv": "10.1016/j.oceaneng.2023.115745",
+   "verified": true,
+   "how_verified": "Crossref search hit (title and authors only); abstract not available",
+   "used_for": "Existence of an engineered tail-beat-supported glider study; no claim rests on its content",
+   "venue": "Ocean Engineering"
+  },
+  {
+   "authors": "Khandelwal PC, Zakaria MA, Socha JJ",
+   "year": 2023,
+   "title": "A Year at the Forefront of Gliding Locomotion",
+   "doi_or_arxiv": "10.1242/bio.059973",
+   "verified": true,
+   "how_verified": "Crossref and Europe PMC abstract fetched 2026-11-12",
+   "used_for": "Review pointing to gliding as sensing, morphology and environment dependent",
+   "venue": "Biology Open"
+  }
+ ],
+ "could_not_find": [
+  "Any public raw glide-trajectory dataset (distance, speed, height per glide) for flying fish, flying snakes, Draco, colugos, flying squirrels or squid. DataCite dataset searches by animal name returned none (only GBIF occurrence downloads and unrelated sets). Each alternative that needs fresh numbers therefore needs data acquisition from authors or digitising figures.",
+  "Whole-animal L/D for the flying snake. Only the 2-D cross-section 2.7 (Holden 2014) and glide angles (Socha 2005) were in the abstracts; the snake range figures in this report are an illustration, not a certificate.",
+  "Fish 1990 abstract (publisher returned 403), Azuma 1987 abstract, Nguyen and Park 2023 abstract: titles verified only, no claims rest on their content.",
+  "Numeric L/D and distances for Draco, colugo and flying squirrel: abstracts give no numbers and I did not obtain the full texts.",
+  "Muramatsu 2013 flight speeds or distances: the abstract has none and the full text was not opened.",
+  "The bat ground-effect dataset was not downloaded: 6,747,705,573 bytes exceeds the 150 MB per-dataset cap; I did not inspect its file list.",
+  "A table of the Chen 2026 coefficients beyond its abstract; these are simulation results and I could not check them against measurements.",
+  "No Lean was run (rule: one process, headroom); free space when checked was C: 3.6 GB and D: 9.3 GB, which passed the thresholds, but no step needed Lean. No compiled certificate exists for any alternative.",
+  "I did not re-fetch Makiguchi 2013 or Park and Choi full text; those numbers remain as in the earlier scout and designer files.",
+  "Whether the snake or Draco drop experiments end at a speed different from the quoted 10.0 m/s, which changes the kinetic-energy subtraction."
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-alt/cr_search.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-alt/epmc.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-alt/dc.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-alt/dcget.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-alt/abstracts.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-alt/snake_bound.py"
+ ]
+}

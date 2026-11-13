@@ -1,0 +1,969 @@
+{
+ "label": "t4-glide-deep",
+ "topic": "Track 4 deep literature: passive-glide surrogate, 3D-printed double-winged autorotating fruits and the published blade-element model",
+ "summary": "SCOPE. System: 3D-printed double-winged autorotating fruits (Fauli, Rabault, Carlson, Oslo) plus their blade-element model. Question: does a body or fin constraint (here: fixed wing mass and length, only curvature free) set how slowly a passive body can sink, and can a published model say how before anything is built? Note the limit: a spinning fruit is a SINK-RATE surrogate, not a forward glide. For forward glide the closest model is the quasi-steady plate glider (Li 2022; Pomerenk and Ristroph 2025), covered in section 6.\n\n1. THE SCIENCE FROM THE GROUND UP\n1.1 A body falling through air or water speeds up until drag and lift on it balance its weight; then it moves at a steady terminal speed. [A: definition]\n1.2 Most of the weight a surface can hold up comes from how much fluid it pushes down. A big light wing falls slowly. The simple rule: speed U goes as the square root of (weight / swept area), called wing loading. [D: momentum argument stated in Fauli 2019 and Rabault 2019; M: wild fruits follow it as groups]\n1.3 A wing that spins (autorotates) keeps moving through the fluid even while the body drops slowly, so its wing tips meet fast flow and give lift. Near the axis the lift tilts forward and pushes the spin; near the tip drag brakes it. Spin settles where these torques cancel. [D: blade-element argument, PRE section 'Blade element model']\n1.4 Why a spinning wing lifts more than a flat plate: a stable vortex sits on its leading edge and adds lift (the leading-edge vortex, LEV). [M: robotic-model flow measurements, Lentink 2009 abstract]\n1.5 Two dimensionless numbers describe the motion. Reynolds number Re = U L / nu compares inertia to viscosity; Strouhal number St = f L / U compares spin speed to sink speed. A water tank can imitate air if Re and St match. Fruits: Re about 2400-14000, St 0.35-0.82. [M: PRE Table I; D: I recomputed Re and found one table entry (14000) does not follow from its own speed range (12000)]\n1.6 The blade-element model cuts each wing into thin strips. Each strip sees a wind made from the sink speed and the spin speed, at an angle of attack; lift and drag coefficients from earlier robot-wing work give the force. Setting total vertical force = weight and total spin torque = 0 gives U and f. Because the coefficients do not depend on Re in this model, torque balance fixes St from geometry alone, and U goes as the square root of weight. [D: PRE; M: measured St is constant per geometry within about 5 percent (PRE); an earlier agent reported U-squared linear in lead mass with R-squared 0.992-0.997 in 10 of 11 series, which I did not recheck]\n1.7 The geometry knob is the fold angle KL (wing length times curvature, radians). Too flat: wing tips lie at a steep angle and make little lift. Too curled: the lifting part moves toward the axis where the wind is slow. In between is a minimum sink speed. [D/M: PRE, PRL] The base angle psi (wing root tilt from vertical) moves the optimum: larger psi, smaller best KL. [M: tank optimum about 2.3 at psi=0, about 1.2 at psi=35]\n\n2. WHAT IS ESTABLISHED WITH NUMBERS\n- Tank optimum fold angle about 2.3 (psi=0) and about 1.2 (psi=35) [M, PRE]. Re-read from the public data file at the 2.16 g lead key: psi=35 speed 0.0676 (KL 1.20), 0.0674 (1.33), 0.0693 (1.50), 0.0710 (1.71), 0.126 m/s (KL 0.06); psi=0: 0.1011 m/s at KL 2.31 against 0.1137 (1.71), 0.1258 (3.00), 0.1678 (0.92) [M, own script analyze_repo.py].\n- Model optimum: KL 2.05 (psi=0), 1.80 (psi=15), 1.31 (psi=35); minimum Re 4709, 4352, 3900 [M: stored model files]. The psi=15 case has never been run in a tank, as far as I found.\n- Wild whirling fruits have mean fold angle 1.8 with 10 percent image error, n=27 [M, PRL], i.e. equal to the model optimum for psi=15 (1.80) and above the one for psi=35 (1.31); the paper does not report each fruit's base angle, so the match is not tested per fruit.\n- Maple-type samaras: printed copies match natural descent within one standard deviation (1.28 vs 1.10 m/s), descent factor DF about 3 [M, Nave 2021]; my recomputation gives DF 2.82 (natural) and 3.17 (printed) at assumed air density 1.225 kg/m3 [D].\n- Plate glider: maximum glide ratio 3.8 at centre of equilibrium about 0.22 chord [M: model output reported by Pomerenk and Ristroph; this is a model number, not an experiment]; arctan(1/3.8) = 14.7 deg [D].\n- Field dispersal of 13 dipterocarp species from a 30 m tower: median 4 m, 90 percent within 10.5 m [M, Smith 2015].\n\n3. KEY EXPERIMENTS AND MODELS IN ORDER\n1973 Norberg: momentum theorem plus blade-element analysis of single-winged fruits; flat-plate tests at Re about 2000 show pitch stability for centre of mass 27-35 percent of chord behind the leading edge [M, abstract only]. 1986 Augspurger: terminal velocities of wind-dispersed fruits of neotropical trees (the dataset the dipterocarp work leans on; not read). 1987 Azuma and Okuno: Alsomitra seed flight (not read; its 0.3-0.7 m/s glide descent rate is quoted second-hand). 1997 Yasuda and Azuma: autorotation boundary (not read). 1999 Dickinson, Lehmann, Sane: three unsteady mechanisms of insect wings (delayed stall, rotational circulation, wake capture). 2004 Wang, Birch, Dickinson: 2D computation versus robotic-wing forces, the source of the CL, CD fits the fruit model reuses. 2009 Lentink et al.: LEV on dynamically scaled maple and hornbeam seeds. 2010 Ulrich et al.: robotic samara. 2014 Looy and Stevenson: autorotating seeds in Permian conifers. 2015 Smith et al.: field dispersal of dipterocarps. 2015 Sunada et al.: lift-drag ratio controls descent factor. 2019 Fauli et al. and Rabault et al.: the system studied here. 2021 Nave et al.: printed maple samaras. 2022 Li et al.: plate with moving centre of mass flutters, tumbles, glides, dives. 2023 Jung and Rezgui: blade-element-momentum model of samaras with LEV lift models. 2024-2025: origami fruits with folding and flexibility (Cai et al., not read), number of wings (Liu et al.), linden stalk (Cazaubiel and Carlson), falling bent plates (Loo and Alben), plate equilibria and stability (Pomerenk and Ristroph).\n\n4. WHAT IS CONTESTED OR UNRESOLVED (both sides stated)\n(a) Lift law. The Letter (PRL) says CL = 2 sin(alpha) adjusted for intermediate Re; the long paper (PRE) and the code use a hovering-wing fit CL = 0.225 + 1.58 sin(2.13 alpha - 7.2 deg). The code's own comment says the formula in the source paper may have a sign error. A stall-type parametrization in the PRE supplement gives reasonable Re but worse St. [M]\n(b) The model is partly tuned. The authors halve the published drag to match experiment (PRE), and the 'mass loading' of 1.2 g in the model is not the lead key in the data (2.16 g), so absolute speed is not independently predicted. [M]\n(c) Between-angle offset. Model best-speed ratio psi=0 over psi=35 is 4709/3900 = 1.21; tank data give 0.1011/0.0676 = 1.50 [D]. An earlier agent found the same disagreement with a different method (design-glide.json: 1.22 vs 1.40-1.50).\n(d) Lab range. Table I says Re up to 14000; its own speed range gives 12000 [D]. Unknown which is right.\n(e) Error bars in the paper are 5 standard deviations and n is 3 at psi=35; the minimum is flat over KL 1.2-1.5 so the optimum location is uncertain by at least 0.2-0.3 [D from the data file].\n(f) Is slowest descent what selection favours? Smith 2015 finds dispersal distance depends on wing loading and wind, but the simple drift model (wind x height / sink speed) over-predicts the fitted-model distances by 4.1-8.0 times (median 6.9) [D from Smith Table 3; the tabulated drift model uses regression descent speeds from Augspurger 1986 and a constant wind]. Fold angle has not been linked to field dispersal.\n(g) LEV lift model for rotating wings: normal-force versus Polhamus forms are both used (Jung and Rezgui 2023, abstract only).\n\n5. OPEN PROBLEMS\nBlade-element model with induced inflow (no public version tested); full 3D numerical flow for double-winged fruit at Re 2000-14000; psi=15 and psi=55 and pitch variations (the PRE-fixed pitch 15 deg and camber 2.5 deg are 'inspired by' wild fruits but could not be measured, they dry and curl); flexibility (Cai 2024, not read); stalk and centre-of-mass control of the onset of autorotation (Cazaubiel and Carlson 2025, preprint); relation of fold angle to field dispersal; stability of the autorotating state at large psi (coning, tumbling).\n\n6. FORWARD-GLIDE LINK (the body/fin constraint proper)\nFor a surrogate that must glide forward, the best-supported model is the 2D quasi-steady plate glider of Li 2022 / Pomerenk and Ristroph 2025: centre of equilibrium about 0.1-0.3 chord glides, beyond about 0.3 dives, max glide ratio 3.8 [M model output]; it is 2D and tested for slenderness 0.001-0.1 [M]. Engineered Javan-cucumber-inspired gliders reached 9.5-13.6 deg glide angles = glide ratios 4.1-6.0 [D from Wiesemuller Table 2]. I found no raw public trajectories for either.\n\n7. LAW LIBRARY (set 1.8.1, read only)\nflight-climb-glide-law (glide range <= h x (L/D)max; hash identical to 1.6.0), perturb-wind-glide (needs horizontal airspeed > 0), [claim id withheld] (vmin_le), flight-allometry-law, scaling laws. None covers autorotation. vmin_le applied naively to a samara with the model's peak CL 1.805 is violated (1.37 vs 1.10 m/s) because an autorotating wing is not in steady freestream flight: the law must not be used as a cut here without an effective CL,max near the descent factor 2.8-3.2 [D]. Law E1 is flying-fish only and internally inconsistent (2.981 - 1.834 = 1.147 vs 1.236). A wind-drift identity range = w h / s survives (22 m for h=30, w=1.72, s=2.35) but is loose by about 5.7x for the species tested [D].\n\n8. WHAT THIS ADDS TO THE EARLIER SCOUT, DESIGNER AND LAW-MAPPER\nNewer literature (2024-2025); field-ecology anchor (Smith 2015) with a computed bound-looseness; the 14000 vs 12000 Re discrepancy; the CL-law disagreement between the two papers; samara descent factor recomputed; law set 1.8.1 check (flight laws unchanged from 1.6.0) and the vmin_le scope failure; E1 inconsistency; independent re-reading of the public data.",
+ "lay_summary": "Some tree fruits have two curved wings and spin like a helicopter blade as they fall, which slows their fall so wind can carry them away. Researchers in Oslo 3D-printed copies of such fruits and dropped them in a tall tank of water, where the flow behaves like fast air. They found that the wings fall slowest when they are curved by a particular amount, and that real tropical fruits are curved by about that amount. A simple computer model that cuts each wing into thin strips predicts this best curve fairly well, but it is partly tuned and it misses the size of the change when the wing root is tilted. Think of a sycamore seed: too flat and it plummets, too curled and its lifting part sits near the middle where the air is slow. This is a test of how slowly something can sink, not how far it can glide sideways, and the field data show real fruits land much closer to the tree than a simple wind-drift sum predicts.",
+ "findings": [
+  {
+   "id": "A1",
+   "claim": "The experiments drop 3D-printed double-winged fruits, fully immersed, in a water tank 1.2 m tall and 25 cm in diameter; side video at 30 Hz.",
+   "source": "https://arxiv.org/abs/1811.12221 (doi:10.1103/physreve.100.013108)",
+   "confidence": "high",
+   "value": "1.2 m x 0.25 m; 30 Hz; 864x480 px",
+   "evidence_quote": "Experiments were performed in a cylindrical water tank of a height 1.2 m and a diameter 25 cm."
+  },
+  {
+   "id": "A2",
+   "claim": "Printing was stereolithography on a Formlabs Form 2, about 5 h per batch of 3 fruits; parts were washed in isopropanol, UV cured and polished.",
+   "source": "https://arxiv.org/abs/1811.12221 (doi:10.1103/physreve.100.013108)",
+   "confidence": "high",
+   "value": "5 h / 3 fruits",
+   "evidence_quote": "The synthetic fruits are produced by using the Form 2 3D-printer from Formlabs [42], relying on the stereolithography technique with a print time of about 5 hours for a batch of 3 fruits."
+  },
+  {
+   "id": "A3",
+   "claim": "Constraint built into the design: the length of the curved part of each wing is fixed (6 cm) and the fold angle KL can be changed while keeping total wing mass constant; wing pitch fixed at 15 deg, extra camber angle of attack 2.5 deg; base angle psi set to 0 or 35 deg only.",
+   "source": "https://arxiv.org/abs/1811.12221 (doi:10.1103/physreve.100.013108)",
+   "confidence": "high",
+   "value": "L=0.06 m; pitch 15 deg; camber offset 2.5 deg; psi in {0,35} deg",
+   "evidence_quote": "The length L of the curved part of the wing is kept constant and equal to 6 cm."
+  },
+  {
+   "id": "A4",
+   "claim": "Repetitions: ten drops per fruit at psi=0, three at psi=35, and the plotted error bars are five standard deviations (unusually wide).",
+   "source": "https://arxiv.org/abs/1811.12221 (doi:10.1103/physreve.100.013108)",
+   "confidence": "high",
+   "value": "n=10 (psi=0), n=3 (psi=35); bars = 5 sd",
+   "evidence_quote": "Each experiment is repeated ten times for  = 0 and three times for  = 35. All the reported data points are average values and the error bars is five times the standard deviation."
+  },
+  {
+   "id": "A5",
+   "claim": "Experiment, psi=0: descent speed is lowest near fold angle KL about 2.3 (11 fruits released together at equal weight, stroboscopic image).",
+   "source": "https://arxiv.org/abs/1811.12221 (doi:10.1103/physreve.100.013108)",
+   "confidence": "high",
+   "value": "KL_opt(exp, psi=0) ~ 2.3",
+   "evidence_quote": "shows that the minimum terminal descent velocity is around KL  2.3, in accordance with predictions of the blade element model"
+  },
+  {
+   "id": "A6",
+   "claim": "Experiment, psi=35: the optimum fold angle drops to about 1.2.",
+   "source": "https://arxiv.org/abs/1811.12221 (doi:10.1103/physreve.100.013108)",
+   "confidence": "high",
+   "value": "KL_opt(exp, psi=35) ~ 1.2",
+   "evidence_quote": "we notice that the optimal fold angle has decreased, with a minimum terminal descent velocity obtained near KL  1.2."
+  },
+  {
+   "id": "A7",
+   "claim": "Blade-element model at psi=0 puts the minimum at KL about 2.0 (so the model optimum sits below the measured 2.3).",
+   "source": "https://arxiv.org/abs/1811.12221 (doi:10.1103/physreve.100.013108)",
+   "confidence": "high",
+   "value": "KL_opt(BEM, psi=0) ~ 2.0; repo file min Re at KL 2.05",
+   "evidence_quote": "For  = 0 a minimal U is identified for KL  2.0 and as we further increase KL > 2.0 the descent velocity starts to increase."
+  },
+  {
+   "id": "A8",
+   "claim": "Strouhal number St = f L / U is constant for a given geometry whatever the weight (model: zero-moment line is a straight line in the Re-St plane); measured St ranged 0.35-0.82 with about 5 percent error.",
+   "source": "https://arxiv.org/abs/1811.12221 (doi:10.1103/physreve.100.013108)",
+   "confidence": "high",
+   "value": "St 0.35-0.82; error ~5 percent",
+   "evidence_quote": "In Fig. 10 the level line for zero total moment is straight, corresponding to a constant Strouhal number St, only determined by the geometry of the fruit wings."
+  },
+  {
+   "id": "A9",
+   "claim": "The classical scaling U ~ sqrt(weight / swept area) does not collapse the data across different fold angles, so geometry matters beyond swept area.",
+   "source": "https://arxiv.org/abs/1811.12221 (doi:10.1103/physreve.100.013108)",
+   "confidence": "high",
+   "value": "see derived C: relative effective force coefficient 1.00 / 1.06 / 0.78 for KL 1.71 / 2.31 / 3.0",
+   "evidence_quote": "where we see that Eqn. (1) does not collapse the data onto a single curve with respect to the scale curvature KL"
+  },
+  {
+   "id": "A10",
+   "claim": "The drag coefficient in the blade-element model is a tuned quantity: the authors halve the published drag to match their experiments.",
+   "source": "https://arxiv.org/abs/1811.12221 (doi:10.1103/physreve.100.013108)",
+   "confidence": "high",
+   "value": "drag divisor 2.0 in repo lift_drag_coefficients.py",
+   "evidence_quote": "we reduce the value of the drag coefficient to obtain good agreement with our experiments"
+  },
+  {
+   "id": "A11",
+   "claim": "The lift and drag curves in the shipped code are the Wang-Birch-Dickinson (2004) hovering-wing fits, CL = 0.225 + 1.58 sin(2.13 alpha - 7.2 deg); the code author notes a possible sign error in the paper they were copied from.",
+   "source": "repo model/lift_drag_coefficients.py",
+   "confidence": "high",
+   "value": "CL(alpha)=0.225+1.58 sin(2.13 alpha-7.2 deg); CD=(1.92-1.55 cos(2.04 alpha-9.82 deg))/2",
+   "evidence_quote": "return(0.225 + 1.58 * np.sin(2.13 * np.pi / 180 * alpha_degrees - 7.2 * np.pi / 180))"
+  },
+  {
+   "id": "A12",
+   "claim": "DISAGREEMENT between the two papers on the lift law: the Letter (PRL) says the model uses the classical thin-airfoil relation CL = 2 sin(alpha) adjusted for intermediate Reynolds number; the long paper (PRE) and the shipped code use the Wang et al. hovering-wing fit. Both are said to give the same optimum fold angle.",
+   "source": "https://arxiv.org/abs/1902.08038 (doi:10.1103/physrevlett.122.024501) versus https://arxiv.org/abs/1811.12221 (doi:10.1103/physreve.100.013108)",
+   "confidence": "medium",
+   "value": "PRL: CL=2 sin(alpha); PRE/code: CL=0.225+1.58 sin(...)",
+   "evidence_quote": "adjusted for intermediate Reynolds numbers [44]."
+  },
+  {
+   "id": "A13",
+   "claim": "The Letter imposes an explicit design constraint: the plant is assumed to have a fixed budget of material, so wing area, thickness and chord are held constant while only curvature changes.",
+   "source": "https://arxiv.org/abs/1902.08038 (doi:10.1103/physrevlett.122.024501)",
+   "confidence": "high",
+   "value": "wing area, thickness, chord fixed",
+   "evidence_quote": "We impose this constraint by fixing the wing area and keeping its thickness and chord constant."
+  },
+  {
+   "id": "A14",
+   "claim": "Wild fruits: fold angles measured from images of dried sepals of 27 wild fruits (numbered 1-27 in the figure) average KL = 1.8 with a stated image-measurement error of 10 percent (error bar 0.18), close to the model and tank optimum.",
+   "source": "https://arxiv.org/abs/1902.08038 (doi:10.1103/physrevlett.122.024501)",
+   "confidence": "medium",
+   "value": "mean KL = 1.8 +/- 0.18 (n=27, 10 percent measurement error)",
+   "evidence_quote": "which is illustrated by the errorbar from mean(KL) = 1.8"
+  },
+  {
+   "id": "A15",
+   "claim": "The Letter concludes that geometries close to the lift-optimal fold angle are found in nature, by selection or chance; it explicitly does not test base angle against fold angle across species.",
+   "source": "https://arxiv.org/abs/1902.08038 (doi:10.1103/physrevlett.122.024501)",
+   "confidence": "medium",
+   "value": "wild vs optimum: qualitative",
+   "evidence_quote": "Through selection or chance, we see that geometries close to our optimal theoretical and experimental lift performance have evolved in nature."
+  },
+  {
+   "id": "A16",
+   "claim": "Laboratory regime was matched to wild fruits in Reynolds and Strouhal number, not in speed: lab U 0.04-0.2 m/s in water versus 1.2-2.4 m/s in air for dipterocarp fruits.",
+   "source": "https://arxiv.org/abs/1811.12221 (doi:10.1103/physreve.100.013108)",
+   "confidence": "high",
+   "value": "lab: L 0.06 m, nu 1e-6 m2/s, Re 2400-14000; wild: L 0.035-0.08 m, nu 1.5e-5, Re 2800-12700",
+   "evidence_quote": "The typical length of the sepals of wild fruits is estimated as L = Aw/2, where Aw is the wing area reported in [36]."
+  },
+  {
+   "id": "A17",
+   "claim": "DERIVED: the table upper Reynolds number does not follow from its own speed range: 0.2 m/s x 0.06 m / 1e-6 m2/s = 12000, not 14000. The lower end (2400) and the three wild-fruit rows (2800, 5700, 12700) do follow (rows recomputed 2800, 5667, 12800).",
+   "source": "script derived.py block A",
+   "confidence": "high",
+   "value": "12000 vs 14000 stated",
+   "evidence_quote": ""
+  },
+  {
+   "id": "A18",
+   "claim": "MEASURED (re-read from the shipped data file, 2.16 g lead key, psi=35, n=3 each): mean descent speed 0.126 (KL 0.06), 0.0888 (0.60), 0.0737 (0.92), 0.0676 (1.20), 0.0674 (1.33), 0.0693 (1.50), 0.0710 (1.71) m/s; flat minimum over KL 1.2-1.33.",
+   "source": "script analyze_repo.py on https://github.com/jerabaul29/EffectFoldAngleAutorotatingSeeds (MIT; zip sha256 c9c2d661...1b); model/all_results_experiments.pkl",
+   "confidence": "high",
+   "value": "U_min = 0.0674 m/s at KL 1.33 (0.0676 at KL 1.20)",
+   "evidence_quote": ""
+  },
+  {
+   "id": "A19",
+   "claim": "MEASURED (same file, psi=0, 2.16 g key, n=10 each): 0.1678 (KL 0.92), 0.1137 (1.71), 0.1011 (2.31), 0.1258 (3.00) m/s; minimum at KL 2.31 of the four values tested (coarse grid).",
+   "source": "script analyze_repo.py on https://github.com/jerabaul29/EffectFoldAngleAutorotatingSeeds (MIT; zip sha256 c9c2d661...1b); model/all_results_experiments.pkl",
+   "confidence": "high",
+   "value": "U_min = 0.1011 m/s at KL 2.31",
+   "evidence_quote": ""
+  },
+  {
+   "id": "A20",
+   "claim": "MODEL (repo model files): minimum Reynolds number 4709 at KL 2.05 (psi=0), 4352 at KL 1.80 (psi=15, never tested in a tank), 3900 at KL 1.31 (psi=35), for the 1.2 g model loading; Re -> U with nu = 1e-6, L = 0.06 gives 0.0785, 0.0725, 0.0650 m/s.",
+   "source": "script analyze_repo.py on https://github.com/jerabaul29/EffectFoldAngleAutorotatingSeeds (MIT; zip sha256 c9c2d661...1b); model_data_psi_0.pkl, model_data_camber_psi_15.0.pkl, model_data_psi_35.pkl",
+   "confidence": "high",
+   "value": "KL_opt(BEM) 2.05 / 1.80 / 1.31 for psi 0 / 15 / 35",
+   "evidence_quote": ""
+  },
+  {
+   "id": "A21",
+   "claim": "DERIVED: the model puts the ratio of best speeds at psi=0 versus psi=35 at 4709/3900 = 1.21, while the tank data give 0.1011/0.0676 = 1.50 (different loading keys: model 1.2 g, data 2.16 g, so this compares shape not absolute value). The model captures the within-angle curve but not the between-angle offset.",
+   "source": "script derived.py block B",
+   "confidence": "medium",
+   "value": "model 1.21 vs data 1.50",
+   "evidence_quote": ""
+  },
+  {
+   "id": "A22",
+   "claim": "The data and code are public under the MIT licence.",
+   "source": "repo LICENSE.txt",
+   "confidence": "high",
+   "value": "MIT",
+   "evidence_quote": "MIT License"
+  },
+  {
+   "id": "A23",
+   "claim": "Open-access fact used as the claimed motivation: double-winged conifer seeds from the Permian (about 270 Ma) existed, but single-winged forms now outnumber them in the same family.",
+   "source": "https://arxiv.org/abs/1811.12221 (doi:10.1103/physreve.100.013108) (secondary: citing Stevenson et al. 2015)",
+   "confidence": "low",
+   "value": "~270 Ma",
+   "evidence_quote": "Fossils from voltzian conifers dating back to the late early to middle Permian (ca. 270 Ma) are found to be double-winged [19]."
+  },
+  {
+   "id": "B1",
+   "claim": "3D-printed maple samaras (fused filament, PLA) reproduce natural samara descent within one standard deviation in still air: natural Norway maple 1.10 +/- 0.24 m/s, printed 1.28 +/- 0.17 m/s.",
+   "source": "https://arxiv.org/abs/2010.12553 (doi:10.3390/biomimetics6020023)",
+   "confidence": "high",
+   "value": "natural 1.10 +/- 0.24; printed 1.28 +/- 0.17 m/s (lab, 3.05 m drop)",
+   "evidence_quote": "The mean properties of the 3D-printed Norway maple seeds fall within one standard deviation of their natural counterparts"
+  },
+  {
+   "id": "B2",
+   "claim": "The printed samaras were much heavier than the natural ones (183.6 mg versus 102.4 mg) yet matched descent speed, because they also had larger wing loading and a matched centre of mass (27.7 versus 28.5 percent of length).",
+   "source": "https://arxiv.org/abs/2010.12553",
+   "confidence": "high",
+   "value": "mass 183.6 +/- 2.3 vs 102.4 +/- 30.8 mg; W/S 3.18 vs 2.09 N/m2; CoM 27.7 vs 28.5 %",
+   "evidence_quote": "The artificial Norway maple seeds were found to be substantially heavier"
+  },
+  {
+   "id": "B3",
+   "claim": "Natural and printed samaras both have a descent factor DF of about 3, the dimensionless efficacy in Lentink et al. v = sqrt(W/S / (0.5 rho DF)).",
+   "source": "https://arxiv.org/abs/2010.12553",
+   "confidence": "high",
+   "value": "DF ~ 3",
+   "evidence_quote": "From the observed behaviors, the natural and artificial samaras both showed approximately equivalent descent factors"
+  },
+  {
+   "id": "B4",
+   "claim": "DERIVED: recomputing DF = 2 (W/S) / (rho v^2) from the Nave Table 1 means gives 2.82 (natural) and 3.17 (printed) with rho = 1.225 kg/m3 (unverified background). DF is the effective vertical-force coefficient on wing area.",
+   "source": "script derived.py block D",
+   "confidence": "medium",
+   "value": "DF 2.82 / 3.17",
+   "evidence_quote": ""
+  },
+  {
+   "id": "B5",
+   "claim": "Wind-field windage coefficient: natural Norway samaras travelled furthest with the wind but most variably (windage 0.87 +/- 0.39 versus printed 0.78 +/- 0.33).",
+   "source": "https://arxiv.org/abs/2010.12553",
+   "confidence": "medium",
+   "value": "windage 0.87 +/- 0.39 vs 0.78 +/- 0.33",
+   "evidence_quote": "show that the natural samara has the highest mean windage, corresponding to the longest flights during both high wind and low wind experimental trials"
+  },
+  {
+   "id": "B6",
+   "claim": "Why samaras fall slowly: a stable leading-edge vortex (LEV) on the upper wing surface gives unexpectedly high lift (dynamically scaled robotic models, 3D flow measurements).",
+   "source": "https://doi.org/10.1126/science.1174196 (Europe PMC abstract)",
+   "confidence": "high",
+   "value": "qualitative",
+   "evidence_quote": "Our results indicate that these seeds attain high lift by generating a stable leading-edge vortex (LEV) as they descend."
+  },
+  {
+   "id": "B7",
+   "claim": "A vortex on the upper surface of an autorotating seed raises vertical force; analysis of flight data and falling model rotors shows the lift-to-drag ratio governs the descent factor more strongly than the vertical-force coefficient.",
+   "source": "https://doi.org/10.1016/j.jtbi.2015.08.027 (Europe PMC abstract)",
+   "confidence": "medium",
+   "value": "qualitative",
+   "evidence_quote": "revealed that the lift-drag ratio affects the descent factor more strongly than the vertical force coefficient."
+  },
+  {
+   "id": "B8",
+   "claim": "Pitch stability of a samara blade: in flat-plate tests at Reynolds number about 2000, pitch stability holds when the centre of mass is 27-35 percent of chord behind the leading edge; real samara blades have it near one third.",
+   "source": "https://doi.org/10.1111/j.1469-185x.1973.tb01569.x (Crossref abstract)",
+   "confidence": "medium",
+   "value": "27-35 % chord",
+   "evidence_quote": "pitch stability prevails when the C. M. (centre of mass) is located 27"
+  },
+  {
+   "id": "B9",
+   "claim": "Blade-element-momentum models of samara autorotation exist and have been validated against wind-tunnel flight data; the choice of lift model for the vortex-lift region (normal-force versus Polhamus) is itself a modelling question.",
+   "source": "https://doi.org/10.3390/aerospace10050414 (Crossref abstract)",
+   "confidence": "medium",
+   "value": "qualitative",
+   "evidence_quote": "a numerical Blade Element-Momentum model (BEM) of the autorotating samara encompassing different lift profiles was developed and validated against a comprehensive set of samara flight data"
+  },
+  {
+   "id": "B10",
+   "claim": "Number of wings matters: clipping wings off a multi-winged (Tristellateia) seed raises wing loading, descent speed and spin rate, and makes unsteady rotation more likely.",
+   "source": "https://doi.org/10.1063/5.0244050 (Crossref abstract)",
+   "confidence": "medium",
+   "value": "qualitative",
+   "evidence_quote": "reducing the wings number leads to larger wing loadings, larger stable descending velocities, and larger spinning rates"
+  },
+  {
+   "id": "B11",
+   "claim": "Follow-up by the same group (preprint, 2025): in linden diaspores a stalk at least about half the wing span is needed for steady autorotation; autorotation roughly halves the descent speed compared with tumbling.",
+   "source": "https://arxiv.org/abs/2508.05106",
+   "confidence": "medium",
+   "value": "stalk >= ~0.5 span; descent speed x0.5",
+   "evidence_quote": "Autorotation is crucial because it reduces the descent velocity of the diaspore by a factor two and as such increases the flight time."
+  },
+  {
+   "id": "B12",
+   "claim": "The stalk result is a second centre-of-mass control on autorotation: the torque from the offset between centre of mass and aerodynamic centre drives tumbling unless a long lever arm damps it.",
+   "source": "https://arxiv.org/abs/2508.05106",
+   "confidence": "medium",
+   "value": "qualitative",
+   "evidence_quote": "For steady autorotation to occur, the length of the stalk should be larger than about half of the span"
+  },
+  {
+   "id": "B13",
+   "claim": "Inviscid vortex-sheet simulation of falling plates (preprint, 2025): for V-shaped (bent) plates, at low density more bend stabilises fluttering, at high density less bend stabilises autorotation.",
+   "source": "https://arxiv.org/abs/2503.22606",
+   "confidence": "medium",
+   "value": "qualitative",
+   "evidence_quote": "At small densities, increasing the bending angle stabilizes the falling motion into fluttering, while at large densities, decreasing the bending angle stabilizes the falling motion into autorotation."
+  },
+  {
+   "id": "B14",
+   "claim": "Insect-wing aerodynamics supplies the force-coefficient fits used by the blade-element fruit model: the robotic-wing study found computed drag matched experiments and lift matched in two of three kinematic cases.",
+   "source": "https://doi.org/10.1242/jeb.00739 (Europe PMC abstract)",
+   "confidence": "medium",
+   "value": "qualitative",
+   "evidence_quote": "In all cases, the computed drag compares well with the experiments."
+  },
+  {
+   "id": "B15",
+   "claim": "Quasi-steady plate glider model (Li et al. 2022; extended by Pomerenk and Ristroph 2025): the maximum glide ratio is 3.8, reached with the centre of equilibrium near 0.22 chord (about the quarter-chord point); pancaking at 0 and diving at 0.3 and beyond give no glide.",
+   "source": "https://arxiv.org/abs/2408.08864 (doi:10.1017/jfm.2025.10275)",
+   "confidence": "high",
+   "value": "max glide ratio 3.8 at 0.22 chord (angle 14.7 deg by arctan(1/3.8))",
+   "evidence_quote": "a maximal value of  = 3.8 is seen near  = 0.22, i.e., around the quarter-chord point"
+  },
+  {
+   "id": "B16",
+   "claim": "Li et al. 2022 is described by its follow-up as the state of the art for the two-dimensional quasi-steady plate model; periodic modes (fluttering, tumbling, bounding) give way to steady gliding then diving as the centre of mass moves toward one edge.",
+   "source": "https://doi.org/10.1017/jfm.2022.89 (Crossref abstract) and https://arxiv.org/abs/2408.08864",
+   "confidence": "high",
+   "value": "qualitative",
+   "evidence_quote": "Periodic modes such as fluttering, tumbling and bounding give way to steady gliding and then downward diving as the CoM is increasingly displaced towards one edge."
+  },
+  {
+   "id": "B17",
+   "claim": "LIMIT: the plate model assumes aerodynamic coefficients independent of thickness (thin-plate limit) and two-dimensional motion; tested against experiments only for slenderness ratio 0.001 to 0.1.",
+   "source": "https://arxiv.org/abs/2408.08864",
+   "confidence": "high",
+   "value": "slenderness 0.001-0.1",
+   "evidence_quote": "The work of Li et al. (2022) showed that such a model yields good agreement with experiments for"
+  },
+  {
+   "id": "B18",
+   "claim": "Engineered seed-inspired gliders (Javan cucumber template, 1.25-1.75 g) glided at measured angles of 9.5, 10.3, 13.6 and 12.5 degrees (designs 1 to 4), i.e. glide ratios of 6.0, 5.5, 4.1, 4.5 by 1/tan(angle); simulated angles ran 10.6-12.7 degrees.",
+   "source": "https://doi.org/10.3389/frobt.2022.1011793 (PMC9659746) and script derived.py block E",
+   "confidence": "medium",
+   "value": "angles 9.49/10.32/13.58/12.53 deg experiment",
+   "evidence_quote": "Design 1 8.31 6.28 10.62 9.49 Design 2 7.77 6.21 10.60 10.32 Design 3 7.78 6.55 11.55 13.58 Design 4 7.85 7.16 12.67 12.53"
+  },
+  {
+   "id": "B19",
+   "claim": "SECONDARY ONLY: the Javan cucumber seed (Alsomitra) is quoted as gliding at a descent rate of 0.3-0.7 m/s, attributed to Azuma and Okuno 1987; the original paper was not readable here.",
+   "source": "https://doi.org/10.3389/frobt.2022.1011793 citing doi:10.1016/s0022-5193(87)80001-2",
+   "confidence": "low",
+   "value": "0.3-0.7 m/s",
+   "evidence_quote": "capable of gliding at a descent rate of 0.3"
+  },
+  {
+   "id": "B20",
+   "claim": "Field release of over 650 dipterocarp fruits from a 30 m tower (13 species): dispersal is local; half of all fruits land within 4 m and 90 percent within 10.5 m of the release point (mean maximum wind 1.72 m/s).",
+   "source": "https://doi.org/10.1002/ece3.1469 (PMC4485961)",
+   "confidence": "high",
+   "value": "50 percent <4 m; 90 percent <10.5 m; 30 m release; wind 1.72 m/s",
+   "evidence_quote": "Fifty percent of all released fruits dispersed less than 4 m, and 90% were recovered within a horizontal distance of 10.5 m of the release point"
+  },
+  {
+   "id": "B21",
+   "claim": "Dispersal distance rises with inverse wing loading (wing area / mass, IWL) and with wind speed, mostly at high wind.",
+   "source": "https://doi.org/10.1002/ece3.1469",
+   "confidence": "high",
+   "value": "IWL 0-44.6 cm2/g across 13 species",
+   "evidence_quote": "Horizontal seed dispersal distances increased with IWL, especially at high wind speeds."
+  },
+  {
+   "id": "B22",
+   "claim": "The simple ballistic drift model (distance = wind x height / descent speed) over-predicts the measured dispersal: authors report their fitted model gives lower distances than the ballistic one.",
+   "source": "https://doi.org/10.1002/ece3.1469",
+   "confidence": "high",
+   "value": "see B23",
+   "evidence_quote": "The mean dispersal distances predicted using the LMM developed in this study (Table 3 ) are lower than those predicted by the simple ballistic model"
+  },
+  {
+   "id": "B23",
+   "claim": "DERIVED from Smith Table 3 (12 species, 30 m, 1.72 m/s): ballistic distance divided by fitted-model distance is 4.1 to 8.0 (median 6.9); example row D. humeratus: ballistic 21.93 m versus 4.25 m fitted (measured median 3.84 m in Table 1).",
+   "source": "script derived.py block F on the Europe PMC XML (sha256 506cfbbb...cff)",
+   "confidence": "high",
+   "value": "ratio 4.1-8.0, median 6.9",
+   "evidence_quote": "Dipterocarpus humeratus 9.29 (± 0.27) 326.37 4.25 21.93"
+  },
+  {
+   "id": "B24",
+   "claim": "Dipterocarp fruits are called poor dispersers despite large wings, and wing loading is the standard single predictor; the water-tank fold-angle work targets descent speed, not distance, so the link from fold angle to field dispersal has not been measured.",
+   "source": "https://doi.org/10.1002/ece3.1469",
+   "confidence": "medium",
+   "value": "gap",
+   "evidence_quote": "Dipterocarp dispersal is generally considered to be poor given their large, gyration-dispersed fruits."
+  },
+  {
+   "id": "C1",
+   "claim": "Law set 1.8.1 pins flight-climb-glide-law (accepted, physical, v1.0.0): no-thrust steady glide from height h covers at most h*(L/D)max; with drag cut by a fraction delta near a surface, at most h*(L/D)max/(1-delta). Its content hash 6ac1beea70e5 is identical in the older leanbio copy (1.6.0), so the earlier law-mapper conclusions for this law stand.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/laws/flight-climb-glide-law.json",
+   "confidence": "high",
+   "value": "hash 6ac1beea70e5...; constraints C15, C16",
+   "evidence_quote": "A steady glide with no thrust, lift equal to weight and L/D ≤ (L/D)max from height h covers at most h (L/D)max horizontally"
+  },
+  {
+   "id": "C2",
+   "claim": "perturb-wind-glide (accepted, v1.0.0, constraint P4b): ground range of a steady glide in a tailwind w is (u+w)h/s = (L/D)h(1+w/u). Its Lean theorem requires horizontal airspeed u > 0, so it does not apply directly to a vertical autorotator; with u = 0 only the kinematic identity range = w h / s remains.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/Delphi/Perturb.lean",
+   "confidence": "high",
+   "value": "range = (u+w) h / s",
+   "evidence_quote": "the glide lasts `h / s` and covers `(u + w) h / s`, which is"
+  },
+  {
+   "id": "C3",
+   "claim": "DERIVED: the autorotator drift identity w h / s with h = 30 m, w = 1.72 m/s and s = 2.35 m/s (the descent speed implied by the ballistic row for D. humeratus) is 22 m, matching the tabulated 21.93 m; the measured median is 3.84 m, so the law-derived bound is respected but loose by about 5.7x for that species (21.93/3.84).",
+   "source": "script derived.py blocks F and G",
+   "confidence": "medium",
+   "value": "22.0 m bound vs 3.84 m measured median",
+   "evidence_quote": ""
+  },
+  {
+   "id": "C4",
+   "claim": "DERIVED SCOPE TEST: the registry law vmin_le (v >= sqrt(2W/(rho S CL,max)), [claim id withheld]) applied naively with S = wing area and the repo model peak CL = 1.805 gives a minimum speed 1.37 m/s for the natural maple samara (W/S = 2.09 N/m2), above the measured 1.10 m/s; for the printed one 1.70 versus 1.28 m/s. The law is about steady freestream lift; an autorotating wing sees far higher local flow, so it must not be used as a cut on autorotation without an effective CL,max of about 2.8-3.2 (the DF values).",
+   "source": "script derived.py block I; law file registry/laws/[claim id withheld].json",
+   "confidence": "medium",
+   "value": "vmin 1.37 vs 1.10 m/s; 1.70 vs 1.28 m/s",
+   "evidence_quote": ""
+  },
+  {
+   "id": "C5",
+   "claim": "Law E1 (accepted, Exocoetidae only) holds within-species flying-fish exponents: mass 2.981, fin area 1.834, wing loading 1.236. Its own text warns these are separate regressions that are NOT mutually consistent (2.981 - 1.834 = 1.147 versus 1.236). So the minimum-speed exponent (bW-bS)/2 the earlier law-mapper quoted is 0.5735 from the first two but 0.618 (= 1.236/2) from the fitted wing loading, both versus 0.5 for isometry. It is a fish statement and does not transfer to a fruit surrogate.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/laws/E1.json",
+   "confidence": "high",
+   "value": "(2.981-1.834)/2 = 0.5735; 1.236/2 = 0.618",
+   "evidence_quote": "NOT mutually consistent: 2.981 - 1.834 = 1.147 against the fitted 1.236."
+  },
+  {
+   "id": "C6",
+   "claim": "Law set 1.8.1 is the current set (previous 1.8.0); the three flight laws above (flight-climb-glide-law, perturb-wind-glide, [claim id withheld]) have the same content hashes in 1.6.0, so 1.8.1 adds no new glide or autorotation law. No law in the registry covers autorotation, descent factor or blade-element balance.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/lawsets/lawset-1.8.1.json; grep of registry/laws/*.json for autorot|samara|descent",
+   "confidence": "medium",
+   "value": "no autorotation law",
+   "evidence_quote": "\"version\": \"1.8.1\""
+  }
+ ],
+ "key_claims": [
+  {
+   "claim": "In 3D-printed double-winged fruits dropped in water, terminal descent speed has a minimum at an intermediate fold angle KL: about 2.3 at base angle 0 and about 1.2 at base angle 35 deg (shipped data re-read: 0.1011 m/s at KL 2.31 for psi=0; 0.0674-0.0676 m/s at KL 1.2-1.33 for psi=35).",
+   "source": "https://arxiv.org/abs/1811.12221 ; data: github.com/jerabaul29/EffectFoldAngleAutorotatingSeeds (analyze_repo.py)",
+   "evidence_quote": "we notice that the optimal fold angle has decreased, with a minimum terminal descent velocity obtained near KL  1.2."
+  },
+  {
+   "claim": "The blade-element model is partly tuned, not parameter-free: the published drag is halved to match tank data, and the model loading (1.2 g) differs from the data key (2.16 g); the model also gives a psi=0/psi=35 best-speed ratio of 1.21 where the data give 1.50.",
+   "source": "https://arxiv.org/abs/1811.12221 ; derived.py block B",
+   "evidence_quote": "we reduce the value of the drag coefficient to obtain good agreement with our experiments"
+  },
+  {
+   "claim": "Wild whirling fruits have mean fold angle 1.8 (10 percent image error, 27 fruits), at the model optimum for base angle 15 deg; the base angle of each fruit is not reported.",
+   "source": "https://arxiv.org/abs/1902.08038",
+   "evidence_quote": "which is illustrated by the errorbar from mean(KL) = 1.8"
+  },
+  {
+   "claim": "A simple wind-drift bound (distance = wind x height / sink speed) is respected but loose for real dipterocarp fruits: 4.1-8.0 times (median 6.9) above the fitted field distances, so slow descent alone does not set dispersal distance.",
+   "source": "https://doi.org/10.1002/ece3.1469 (PMC4485961 Table 3); derived.py block F",
+   "evidence_quote": "Dipterocarpus humeratus 9.29 (± 0.27) 326.37 4.25 21.93"
+  }
+ ],
+ "table": [
+  {
+   "name": "Fruit tank experiment, psi=35, 2.16 g key, n=3",
+   "fields": "KL=0.06 U=0.1257 m/s; KL=0.60 U=0.0888; KL=0.92 U=0.0737; KL=1.20 U=0.0676; KL=1.33 U=0.0674; KL=1.50 U=0.0693; KL=1.71 U=0.0710; St at KL 1.20 = 0.54",
+   "source": "https://github.com/jerabaul29/EffectFoldAngleAutorotatingSeeds model/all_results_experiments.pkl (MIT)"
+  },
+  {
+   "name": "Fruit tank experiment, psi=0, 2.16 g key, n=10",
+   "fields": "KL=0.92 U=0.1678 m/s; KL=1.71 U=0.1137; KL=2.31 U=0.1011; KL=3.00 U=0.1258; St at KL 2.31 = 0.83",
+   "source": "https://github.com/jerabaul29/EffectFoldAngleAutorotatingSeeds model/all_results_experiments.pkl"
+  },
+  {
+   "name": "Blade-element model minima (1.2 g model loading)",
+   "fields": "psi=0: Re_min=4709 at KL=2.05 (U=0.0785 m/s); psi=15: Re_min=4352 at KL=1.80 (U=0.0725 m/s, no tank test); psi=35: Re_min=3900 at KL=1.31 (U=0.0650 m/s); U=Re*1e-6/0.06",
+   "source": "repo model/model_data_psi_0.pkl, model_data_camber_psi_15.0.pkl, model_data_psi_35.pkl; analyze_repo.py"
+  },
+  {
+   "name": "Lab versus wild regime (Fauli Table I)",
+   "fields": "lab f=0.4-2.4 Hz L=0.06 m U=0.04-0.2 m/s nu=1e-6 m2/s St=0.35-0.82 Re=2400-14000 (recomputed top 12000); S. argentifolia L=0.035 m U=1.2 m/s Re=2800; S. johorensis L=0.05 m U=1.7 m/s Re=5700; S. mecistopterix L=0.08 m U=2.4 m/s Re=12700",
+   "source": "https://arxiv.org/abs/1811.12221"
+  },
+  {
+   "name": "Maple samara, natural vs 3D-printed Norway maple (Nave Table 1)",
+   "fields": "mass 102.4+/-30.8 vs 183.6+/-2.3 mg; length 5.65 vs 5.00 cm; CoM 28.5 vs 27.7 percent; W/S 2.09 vs 3.18 N/m2; lab descent 1.10 vs 1.28 m/s; field descent 1.03 vs 1.29 m/s; windage 0.87 vs 0.78; DF(recomputed) 2.82 vs 3.17",
+   "source": "https://arxiv.org/abs/2010.12553"
+  },
+  {
+   "name": "Plate glider (Li 2022 model, Pomerenk 2025)",
+   "fields": "max glide ratio=3.8 at centre-of-equilibrium offset 0.22 chord; angle=14.7 deg; dive at offset >=0.3; slenderness tested 0.001-0.1",
+   "source": "https://arxiv.org/abs/2408.08864"
+  },
+  {
+   "name": "Seed-inspired engineered gliders (Wiesemuller 2022 Table 2)",
+   "fields": "experiment angle D1=9.49 D2=10.32 D3=13.58 D4=12.53 deg; glide ratio=6.0, 5.5, 4.1, 4.5; mass 1.25-1.75 g",
+   "source": "https://doi.org/10.3389/frobt.2022.1011793 (PMC9659746)"
+  },
+  {
+   "name": "Dipterocarp field release, 30 m tower (Smith 2015)",
+   "fields": "D. humeratus IWL=9.29 cm2/g median=3.84 m 90th=7.94 m ballistic=21.93 m fitted=4.25 m; S. argentifolia IWL=44.60 median=8.20 m ballistic=54.53 m fitted=7.90 m; pooled 50 percent <4 m, 90 percent <10.5 m, wind 1.72 m/s",
+   "source": "https://doi.org/10.1002/ece3.1469 Tables 1 and 3"
+  },
+  {
+   "name": "Ballistic over-prediction, 12 species",
+   "fields": "ratio ballistic/fitted min=4.1 median=6.9 max=8.0 (derived)",
+   "source": "derived.py block F"
+  },
+  {
+   "name": "Linden stalk preprint (Cazaubiel and Carlson 2025)",
+   "fields": "natural stalk=3.75 cm; stalk needed >= about 0.5 x wing span; autorotation halves descent speed; Re about 4000",
+   "source": "https://arxiv.org/abs/2508.05106"
+  },
+  {
+   "name": "Registry laws touching the track (set 1.8.1)",
+   "fields": "flight-climb-glide-law v1.0.0 accepted hash 6ac1beea70e5 (C15,C16); perturb-wind-glide v1.0.0 (P4b); [claim id withheld] v1.0.0 (C9,C10); E1 Exocoetidae only; no autorotation law",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/lawsets/lawset-1.8.1.json"
+  }
+ ],
+ "recommendations": [
+  "Build the psi=15 and psi=55 fruits only after freezing both the blade-element prediction and the disk-area rival (see design-glide.json); this report shows the model already misses the psi=0 to psi=35 offset (1.21 versus 1.50), so a psi=15 test is a real discrimination, not a rubber stamp.",
+  "Weigh each fruit immersed and record lead mass, so the unresolved 1.2 g versus 2.16 g loading question is removed before analysis.",
+  "Do not use vmin_le as an elimination rule on any autorotating body without declaring an effective CL,max near the descent factor (about 3); treat law hits there as scope warnings.",
+  "Anchor any ecology claim to Smith 2015: slow descent is necessary but the field bound is loose by about 7x, so claim descent speed, not dispersal distance.",
+  "Check law E1 before reusing its exponents: its own text says they are not mutually consistent (1.147 vs 1.236), and it is fish-only.",
+  "Re-fetch the 2024-2025 papers (Cai, Liu, Cazaubiel) when a licence-clean full text exists; the stalk result may add a second knob (centre of mass) worth a test."
+ ],
+ "reproduce": [
+  {
+   "what": "Download every external file with URL, size and sha256 (skips existing)",
+   "command_or_url": "bash D:/Users/ashenoy00000/delphi-work/agents2/scripts/t4-glide-deep/fetch_all.sh",
+   "expected": "table of 10 files; repo.zip 3065098 bytes sha256 c9c2d6617b12...551b; smith2015.xml 96868 bytes sha256 506cfbbb6587...cff; 1811.12221.pdf 3146306 bytes sha256 695a826495a6...caf (GitHub zip is a branch snapshot, so its hash can change if the repo is pushed to)"
+  },
+  {
+   "what": "Re-read tank data and stored model minima (Python 3.14, numpy 2.5.3; restricted unpickler)",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents2/scripts/t4-glide-deep/analyze_repo.py",
+   "expected": "psi=0 KL=2.31 U=0.1011 f=1.398; psi=35 KL=1.20 U=0.0676, KL=1.33 U=0.0674; model min Re 4709 (KL 2.05), 4352 (1.80), 3900 (1.31)"
+  },
+  {
+   "what": "All own calculations (Re check, ratio 1.21 vs 1.50, descent factor, glide angles, dispersal bound ratios, CL peak, vmin_le scope test)",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents2/scripts/t4-glide-deep/derived.py",
+   "expected": "lab high 12000 (table 14000); 1.50 vs 1.21; DF 2.82 and 3.17; ballistic/fitted 4.1-8.0 median 6.9; max CL 1.805; vmin 1.37 vs 1.10 m/s"
+  },
+  {
+   "what": "Verify DOIs on Crossref and fetch Europe PMC abstracts",
+   "command_or_url": "python cr_fetch.py <doi ...> ; python epmc_abs.py <doi ...>   (in the scripts folder; generic User-Agent)",
+   "expected": "OK lines with title and year; cache in agents2/scratch/t4-glide-deep/crossref.json and epmc.json"
+  },
+  {
+   "what": "Rebuild the report and re-check every evidence quote against the stored source text",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents2/scripts/t4-glide-deep/build.py",
+   "expected": "writes agents2/t4-glide-deep.json; fails loudly if any quote is not found verbatim"
+  },
+  {
+   "what": "Check the law claims",
+   "command_or_url": "read D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/laws/{flight-climb-glide-law,perturb-wind-glide,[claim id withheld],E1}.json and lean/Delphi/Perturb.lean (glide_ground_range), and grep -il -E \"autorot|samara\" lean/registry/laws",
+   "expected": "content hash 6ac1beea70e5 for flight-climb-glide-law (same in upstream leanbio 1.6.0); no grep hit for autorotation"
+  },
+  {
+   "what": "Not reproducible here",
+   "command_or_url": "blade-element model re-run (Python 2.7 code) and all tank experiments",
+   "expected": "not re-run; stored model outputs were re-read instead. Original tank drops need a Formlabs printer and a 1.2 m tank."
+  }
+ ],
+ "citations": [
+  {
+   "authors": "Fauli RA, Rabault J, Carlson A",
+   "year": 2019,
+   "title": "Effect of wing fold angles on the terminal descent velocity of double-winged autorotating seeds, fruits, and other diaspores",
+   "doi_or_arxiv": "10.1103/physreve.100.013108 ; arXiv:1811.12221",
+   "verified": true,
+   "used_for": "main system; full text read",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched; arXiv PDF downloaded and read in full (sha256 695a8264...)",
+   "venue": "Phys Rev E 100, 013108"
+  },
+  {
+   "authors": "Rabault J, Fauli RA, Carlson A",
+   "year": 2019,
+   "title": "Curving to Fly: Synthetic Adaptation Unveils Optimal Flight Performance of Whirling Fruits",
+   "doi_or_arxiv": "10.1103/physrevlett.122.024501 ; arXiv:1902.08038",
+   "verified": true,
+   "used_for": "wild fold angle, constraint, lift law; full text read",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched; arXiv PDF read in full (sha256 5c4c086f...)",
+   "venue": "Phys Rev Lett 122, 024501"
+  },
+  {
+   "authors": "Pomerenk O, Ristroph L",
+   "year": 2025,
+   "title": "Aerodynamic equilibria and flight stability of plates at intermediate Reynolds numbers",
+   "doi_or_arxiv": "10.1017/jfm.2025.10275 ; arXiv:2408.08864",
+   "verified": true,
+   "used_for": "plate glider glide ratio 3.8 at 0.22 chord; model limits; large parts read",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched; arXiv PDF read (sha256 e04a215b...)",
+   "venue": "J Fluid Mech 1014"
+  },
+  {
+   "authors": "Li H, Goodwill T, Wang ZJ, Ristroph L",
+   "year": 2022,
+   "title": "Centre of mass location, flight modes, stability and dynamic modelling of gliders",
+   "doi_or_arxiv": "10.1017/jfm.2022.89",
+   "verified": true,
+   "used_for": "plate model origin; abstract read only",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched (abstract included)",
+   "venue": "J Fluid Mech 937"
+  },
+  {
+   "authors": "Nave GK Jr, Hall N, Somers K, Davis B, Gruszewski H, Powers C, Collver M, Schmale DG III, Ross SD",
+   "year": 2021,
+   "title": "Wind Dispersal of Natural and Biomimetic Maple Samaras",
+   "doi_or_arxiv": "10.3390/biomimetics6020023 ; arXiv:2010.12553",
+   "verified": true,
+   "used_for": "printed vs natural samaras, descent factor; full text read",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched; arXiv PDF read (sha256 54426f54...)",
+   "venue": "Biomimetics 6(2), 23"
+  },
+  {
+   "authors": "Smith, Bagchi, Ellens, Kettle, Burslem, Maycock et al. (8 authors; first six family names from Crossref)",
+   "year": 2015,
+   "title": "Predicting dispersal of auto-gyrating fruit in tropical trees: a case study from the Dipterocarpaceae",
+   "doi_or_arxiv": "10.1002/ece3.1469",
+   "verified": true,
+   "used_for": "field dispersal numbers; full text read (PMC XML)",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched; Europe PMC full-text XML PMC4485961 fetched (sha256 506cfbbb...).",
+   "venue": "Ecology and Evolution 5"
+  },
+  {
+   "authors": "Cazaubiel A, Carlson A",
+   "year": 2025,
+   "title": "The seed-carrying stalk of the linden diaspore ensures autorotating flight",
+   "doi_or_arxiv": "arXiv:2508.05106",
+   "verified": true,
+   "used_for": "stalk and centre-of-mass control of autorotation (preprint); full text read",
+   "how_verified": "arXiv export API search returned the id and title; PDF read (sha256 6dbcc5e2...). No DOI found (Crossref search returned none).",
+   "venue": "arXiv physics.bio-ph"
+  },
+  {
+   "authors": "Loo YJ, Alben S",
+   "year": 2025,
+   "title": "Falling plates with leading-edge vortex shedding",
+   "doi_or_arxiv": "arXiv:2503.22606",
+   "verified": true,
+   "used_for": "bent plates stabilise fluttering or autorotation (preprint); abstract and introduction read",
+   "how_verified": "arXiv export API search returned the id and title; PDF downloaded (sha256 2c650e18...)",
+   "venue": "arXiv physics.flu-dyn"
+  },
+  {
+   "authors": "Wiesemuller F, Meng Z, Hu Y, Farinha A, Govdeli Y, Nguyen PH, Nystrom G, Kovac M",
+   "year": 2022,
+   "title": "Transient bio-inspired gliders with embodied humidity responsive actuators for environmental sensing",
+   "doi_or_arxiv": "10.3389/frobt.2022.1011793",
+   "verified": true,
+   "used_for": "seed-inspired glider angles; Alsomitra rate (secondary); excerpts read",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched; Europe PMC full text PMC9659746 fetched (sha256 3caf3a37...)",
+   "venue": "Front Robot AI"
+  },
+  {
+   "authors": "Lentink D, Dickson WB, van Leeuwen JL, Dickinson MH",
+   "year": 2009,
+   "title": "Leading-Edge Vortices Elevate Lift of Autorotating Plant Seeds",
+   "doi_or_arxiv": "10.1126/science.1174196",
+   "verified": true,
+   "used_for": "LEV mechanism; abstract read only",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched; Europe PMC abstract fetched (epmc_abs.py)",
+   "venue": "Science 324, 1438"
+  },
+  {
+   "authors": "Norberg RA",
+   "year": 1973,
+   "title": "Autorotation, self-stability, and structure of single-winged fruits and seeds (samaras) with comparative remarks on animal flight",
+   "doi_or_arxiv": "10.1111/j.1469-185x.1973.tb01569.x",
+   "verified": true,
+   "used_for": "classic blade-element and stability theory; abstract read only",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched (abstract included)",
+   "venue": "Biological Reviews 48, 561"
+  },
+  {
+   "authors": "Wang ZJ, Birch JM, Dickinson MH",
+   "year": 2004,
+   "title": "Unsteady forces and flows in low Reynolds number hovering flight: two-dimensional computations vs robotic wing experiments",
+   "doi_or_arxiv": "10.1242/jeb.00739",
+   "verified": true,
+   "used_for": "source of CL, CD fits in the fruit model; abstract read only",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched; Europe PMC abstract fetched",
+   "venue": "J Exp Biol 207, 449"
+  },
+  {
+   "authors": "Dickinson MH, Lehmann F-O, Sane SP",
+   "year": 1999,
+   "title": "Wing Rotation and the Aerodynamic Basis of Insect Flight",
+   "doi_or_arxiv": "10.1126/science.284.5422.1954",
+   "verified": true,
+   "used_for": "delayed stall, rotational circulation, wake capture; abstract read only",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched (abstract included)",
+   "venue": "Science 284, 1954"
+  },
+  {
+   "authors": "Sunada S, Ide A, Hoshino Y, Okamoto M",
+   "year": 2015,
+   "title": "A study of autorotating plant seeds",
+   "doi_or_arxiv": "10.1016/j.jtbi.2015.08.027",
+   "verified": true,
+   "used_for": "lift-drag ratio controls descent factor; abstract read only",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched; Europe PMC abstract fetched",
+   "venue": "J Theor Biol 386, 55"
+  },
+  {
+   "authors": "Jung BK, Rezgui D",
+   "year": 2023,
+   "title": "Sectional Leading Edge Vortex Lift and Drag Coefficients of Autorotating Samaras",
+   "doi_or_arxiv": "10.3390/aerospace10050414",
+   "verified": true,
+   "used_for": "BEM-momentum samara model; abstract read only (publisher page returned access denied)",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched (abstract included)",
+   "venue": "Aerospace 10(5), 414"
+  },
+  {
+   "authors": "Liu C, Zeng L-F, Li J, Shao X",
+   "year": 2025,
+   "title": "Effects of wings number on the flight performance of autorotating seeds",
+   "doi_or_arxiv": "10.1063/5.0244050",
+   "verified": true,
+   "used_for": "wing number effect; abstract read only",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched (abstract included)",
+   "venue": "Physics of Fluids"
+  },
+  {
+   "authors": "Lentink D, Dickinson MH",
+   "year": 2009,
+   "title": "Biofluiddynamic scaling of flapping, spinning and translating fins and wings",
+   "doi_or_arxiv": "10.1242/jeb.022251",
+   "verified": true,
+   "used_for": "dimensionless numbers for spinning wings (angular, centripetal, Rossby); abstract read only",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched; Europe PMC abstract fetched",
+   "venue": "J Exp Biol 212, 2691"
+  },
+  {
+   "authors": "Ulrich ER, Pines DJ, Humbert JS",
+   "year": 2010,
+   "title": "From falling to flying: the path to powered flight of a robotic samara nano air vehicle",
+   "doi_or_arxiv": "10.1088/1748-3182/5/4/045009",
+   "verified": true,
+   "used_for": "robotic samara prior art; abstract read only",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched; Europe PMC abstract fetched",
+   "venue": "Bioinspir Biomim 5, 045009"
+  },
+  {
+   "authors": "Azuma A, Okuno Y",
+   "year": 1987,
+   "title": "Flight of a samara, Alsomitra macrocarpa",
+   "doi_or_arxiv": "10.1016/s0022-5193(87)80001-2",
+   "verified": true,
+   "used_for": "pointer only; NOT read (number quoted second-hand via Wiesemuller)",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched",
+   "venue": "J Theor Biol 129, 263"
+  },
+  {
+   "authors": "Yasuda K, Azuma A",
+   "year": 1997,
+   "title": "The Autorotation Boundary in the Flight of Samaras",
+   "doi_or_arxiv": "10.1006/jtbi.1996.0299",
+   "verified": true,
+   "used_for": "pointer only; NOT read",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched",
+   "venue": "J Theor Biol 185"
+  },
+  {
+   "authors": "Varshney K, Chang S, Wang ZJ",
+   "year": 2011,
+   "title": "The kinematics of falling maple seeds and the initial transition to a helical motion",
+   "doi_or_arxiv": "10.1088/0951-7715/25/1/c1",
+   "verified": true,
+   "used_for": "pointer only; NOT read (Crossref year 2011 is online date; the print volume is 2012)",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched",
+   "venue": "Nonlinearity 25, C1"
+  },
+  {
+   "authors": "Lee SJ, Lee EJ, Sohn MH",
+   "year": 2014,
+   "title": "Mechanism of autorotation flight of maple samaras (Acer palmatum)",
+   "doi_or_arxiv": "10.1007/s00348-014-1718-4",
+   "verified": true,
+   "used_for": "pointer only; NOT read",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched",
+   "venue": "Exp Fluids 55, 1718"
+  },
+  {
+   "authors": "Viola IM, Nakayama N",
+   "year": 2022,
+   "title": "Flying seeds",
+   "doi_or_arxiv": "10.1016/j.cub.2022.02.029",
+   "verified": true,
+   "used_for": "review pointer only; NOT read (Crossref has no abstract)",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched",
+   "venue": "Current Biology"
+  },
+  {
+   "authors": "Cai J-F et al.",
+   "year": 2024,
+   "title": "Folding angle and wing flexibility influence the flight performance of origami winged fruits",
+   "doi_or_arxiv": "10.1007/s11071-024-09618-4",
+   "verified": true,
+   "used_for": "pointer only; NOT read (no abstract available)",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched",
+   "venue": "Nonlinear Dynamics"
+  },
+  {
+   "authors": "Smith JR et al.",
+   "year": 2016,
+   "title": "Predicting the terminal velocity of dipterocarp fruit",
+   "doi_or_arxiv": "10.1111/btp.12316",
+   "verified": true,
+   "used_for": "pointer only; NOT read",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched",
+   "venue": "Biotropica 48, 154"
+  },
+  {
+   "authors": "Augspurger CK",
+   "year": 1986,
+   "title": "Morphology and dispersal potential of wind-dispersed diaspores of neotropical trees",
+   "doi_or_arxiv": "10.1002/j.1537-2197.1986.tb12048.x",
+   "verified": true,
+   "used_for": "pointer only; NOT read",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched",
+   "venue": "Am J Bot 73, 353"
+  },
+  {
+   "authors": "Looy CV, Stevenson R",
+   "year": 2014,
+   "title": "Earliest Occurrence of Autorotating Seeds in Conifers: The Permian (Kungurian-Roadian) Manifestation",
+   "doi_or_arxiv": "10.1086/676973",
+   "verified": true,
+   "used_for": "pointer only; NOT read; title tail as returned by Crossref",
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> fetched this run (cr_fetch.py), title and authors matched",
+   "venue": "Int J Plant Sci"
+  },
+  {
+   "authors": "Patnaik S, Kanishk",
+   "year": 2021,
+   "title": "Design optimization of monoblade autorotating pods to exhibit an unconventional descent technique using Glauert's modeling",
+   "doi_or_arxiv": "arXiv:2107.00738",
+   "verified": true,
+   "used_for": "BEM-theory design of a single-wing pod; abstract read only",
+   "how_verified": "arXiv export API search returned the id; PDF downloaded",
+   "venue": "IMECE2021-69936"
+  }
+ ],
+ "could_not_find": [
+  "Full text of the older primary papers (Norberg 1973, Azuma and Okuno 1987, Yasuda and Azuma 1997, Lentink 2009, Wang 2004, Dickinson 1999, Li 2022, Lee 2014, Varshney 2011): paywalled or blocked to a scripted client (publisher pages returned 403/404; MDPI returned Access Denied, not worked around). Only abstracts were read for these, so their numbers are not used as load-bearing.",
+  "Honest count against the brief (12 primary sources read for real): full or near-full text read for 7 (Fauli 2019, Rabault 2019, Pomerenk and Ristroph 2025, Nave 2021, Smith 2015, Cazaubiel and Carlson 2025, Wiesemuller 2022 excerpts) plus the repository code and data; abstract-level only for 11 more. The 12-full-text target was NOT met.",
+  "Fresh air-density and lead-density values: 1.225 kg/m3 used in derived.py is unverified background; nothing load-bearing rests on it except DF 2.82/3.17 and the vmin_le scope test.",
+  "The letter (PRL) Supplemental Material with per-species fold angles; so the base angle of each wild fruit and any fold-versus-base-angle relation could not be tested.",
+  "Any tank or field test at base angle 15 deg, base angle 55 deg or other wing pitch; none found in the 2024-2025 literature I could read (Cai 2024 origami fruits was not readable).",
+  "Raw trajectories of plate gliders (Li 2022) or Alsomitra (Azuma and Okuno); the 3.8 glide ratio is model output, not a measurement.",
+  "Which lead-mass key in the data matches the model 1.2 g loading; the model code is Python 2.7 and was not re-run (this run re-read stored model outputs only).",
+  "Crossref search was rate-limited (429) for several queries, so some candidate papers were not looked up (e.g. other samara CFD papers).",
+  "Headroom: RAM 34.8 percent free, C: 5.5 GB, D: 9.4 GB at start; downloads 54 MB total in data/t4-glide-*; no Lean process was run (not needed: law files were read as text)."
+ ],
+ "glossary": [
+  {
+   "term": "autorotation",
+   "plain": "spinning of a falling wing driven only by the air or water flowing past it, like a sycamore seed"
+  },
+  {
+   "term": "terminal velocity / terminal descent speed",
+   "plain": "the steady speed a falling body reaches when drag and lift balance its weight"
+  },
+  {
+   "term": "wing loading",
+   "plain": "weight divided by wing (or swept) area; low means floaty"
+  },
+  {
+   "term": "swept area / disk area",
+   "plain": "the area of the circle the spinning wing tips trace"
+  },
+  {
+   "term": "fold angle KL",
+   "plain": "wing length times its curvature, in radians; how much the wing curls from root to tip"
+  },
+  {
+   "term": "base angle psi",
+   "plain": "tilt of the wing root away from vertical"
+  },
+  {
+   "term": "blade-element model",
+   "plain": "a calculation that cuts a wing into thin strips, finds the force on each, and adds them up"
+  },
+  {
+   "term": "lift and drag coefficients",
+   "plain": "numbers saying how much sideways (lift) and backward (drag) force a wing strip makes at a given angle"
+  },
+  {
+   "term": "angle of attack",
+   "plain": "angle between the wing strip and the oncoming flow"
+  },
+  {
+   "term": "Reynolds number (Re)",
+   "plain": "a ratio showing whether inertia or stickiness (viscosity) dominates the flow"
+  },
+  {
+   "term": "Strouhal number (St)",
+   "plain": "spin rate times wing length divided by sink speed; how far the wing turns per unit of fall"
+  },
+  {
+   "term": "leading-edge vortex (LEV)",
+   "plain": "a small whirl of air stuck to the front top edge of a wing that adds lift"
+  },
+  {
+   "term": "diaspore / seed dispersal unit",
+   "plain": "a seed or fruit together with whatever wings or hairs help it travel"
+  },
+  {
+   "term": "descent factor DF",
+   "plain": "a dimensionless measure of how well a seed holds itself up; here equal to 2 x wing loading / (air density x speed squared)"
+  },
+  {
+   "term": "glide ratio (L/D)",
+   "plain": "distance travelled forward per unit height lost"
+  },
+  {
+   "term": "centre of mass / centre of equilibrium",
+   "plain": "the balance point of the weight (corrected for buoyancy in water)"
+  },
+  {
+   "term": "quasi-steady model",
+   "plain": "a force model that uses only the body's current position and speed, not the history of the flow"
+  },
+  {
+   "term": "dynamic similarity",
+   "plain": "matching Re and St so a water test imitates an air flight"
+  },
+  {
+   "term": "stereolithography (SLA)",
+   "plain": "printing by curing liquid resin with light"
+  },
+  {
+   "term": "IWL (inverse wing loading)",
+   "plain": "wing area divided by mass"
+  },
+  {
+   "term": "ballistic drift model",
+   "plain": "distance = wind speed x drop height / sink speed"
+  },
+  {
+   "term": "measured / derived / assumed",
+   "plain": "measured: a source reports it or I re-read it from a data file; derived: my arithmetic, script named; assumed: an input nobody measured"
+  },
+  {
+   "term": "Lean law set",
+   "plain": "the project's library of machine-checked statements used to rule out impossible designs"
+  },
+  {
+   "term": "sha256",
+   "plain": "a fingerprint of a file; any change to the file changes it"
+  },
+  {
+   "term": "dipterocarp",
+   "plain": "a family of tall tropical forest trees with two- to five-winged fruits"
+  },
+  {
+   "term": "preprint",
+   "plain": "a paper posted before peer review"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t4-glide-deep/fetch_all.sh",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t4-glide-deep/analyze_repo.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t4-glide-deep/derived.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t4-glide-deep/cr_fetch.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t4-glide-deep/cr_search.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t4-glide-deep/epmc_abs.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t4-glide-deep/arxiv_q.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t4-glide-deep/sources.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t4-glide-deep/findings_a.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t4-glide-deep/findings_b.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t4-glide-deep/text_blocks.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t4-glide-deep/build.py"
+ ]
+}

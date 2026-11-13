@@ -1,0 +1,510 @@
+{
+ "label": "t1-reporter-alt",
+ "topic": "Track 1 alternatives and neighbours",
+ "summary": "Keep the chosen system (threshold-steepness separability in RBS-variant Cello repressor gates) and run ONE alternative alongside it: the RBS-tuned lac-repressor induction library of Garcia & Phillips 2011 / Razo-Mejia et al. 2018 (MIT-licensed flow_master.csv, 250 KB, now on D:). I refit it myself with a 4-parameter Hill curve. Across six RBS variants (repressor copies 11 to 870 per cell), the half-maximal IPTG (EC50) moves 4.94-fold at operator O1 and 17.47-fold at O2, while the Hill coefficient stays at 1.37-1.54 (O1) and 1.46-1.69 (O2): maximum pairwise relative difference 0.116 and 0.150, and none of 15 pairs per operator has non-overlapping 95% bootstrap CIs. At the weak operator O3 the curves are too flat for n to be determined (n 0.87-1.89, CIs wide), so that case is uninformative, not supportive. This is an independent system and a different input axis (inducer, not repressor synthesis), so it supports the idea that RBS-tuned repressor level shifts the threshold without a detectable steepness change, but it does not confirm the Cello claim itself. Seven further candidates are costed in the table (Reg-Seq, Kosuri 12,563 promoter x RBS library, Marionette, Buchler-Cross yeast sequestration, Qian resource-competition cascades, EMOPEC Shine-Dalgarno library, Ozbudak translation-vs-transcription noise) plus the two the scout already had. The strongest published competing explanation is molecular titration/sequestration (Buchler & Louis 2008; Buchler & Cross 2009), which says steepness itself depends on repressor abundance and so predicts that an RBS change should change n; resource competition (Qian 2017) is the second. Two corrections to the earlier law-mapper: law set 1.8.1 no longer contains Delphi/Turing.lean or the turing-ddi-linear-condition law (replaced by candidate turing-ddi 1.1.0 with proofs in registry/proposals/turing-ddi/law.lean), and 1.8.1 still has no Hill-type or reporter law (gene-regulatory-dynamics is still a placeholder gap).",
+ "lay_summary": "The main plan tests whether turning a gene's 'volume knob' (a DNA switch that sets how much repressor protein is made) shifts when a genetic switch flips without changing how sharply it flips. I looked for other experiments that could test the same idea. The best one is a long-running set of bacteria where scientists tuned how many repressor molecules each cell makes, then slowly added a chemical and watched the glow. Re-analysing their public spreadsheet, the point where the glow turned on moved five to seventeen times, yet the sharpness of the turn-on barely changed. A rival idea says the sharpness should change when the amount of repressor changes, so the main plan is a fair fight. I recommend keeping the main plan and adding this second data set as a cross-check.",
+ "glossary": [
+  {
+   "term": "RBS (ribosome binding site)",
+   "plain": "a short DNA stretch that sets how much protein is made from a gene"
+  },
+  {
+   "term": "Hill coefficient (n)",
+   "plain": "a number saying how sharp an on/off switch is; higher means sharper"
+  },
+  {
+   "term": "threshold (K, EC50)",
+   "plain": "the input level at which the switch is halfway between off and on"
+  },
+  {
+   "term": "repressor",
+   "plain": "a protein that turns a gene off by sitting on its DNA"
+  },
+  {
+   "term": "operator",
+   "plain": "the DNA spot the repressor sits on; O1 binds strongly, O3 weakly"
+  },
+  {
+   "term": "IPTG",
+   "plain": "a chemical that releases the lac repressor from DNA, turning the gene on"
+  },
+  {
+   "term": "fold change",
+   "plain": "gene output with repressor divided by output without it"
+  },
+  {
+   "term": "bootstrap confidence interval",
+   "plain": "a range found by re-running the analysis on shuffled copies of the data to see how much the answer wobbles"
+  },
+  {
+   "term": "titration (sequestration)",
+   "plain": "one protein soaking up another so nothing happens until the soaker is used up, which makes the switch very sharp"
+  },
+  {
+   "term": "resource competition",
+   "plain": "genes sharing a cell's limited protein-making machinery, so adding one gene slows others"
+  },
+  {
+   "term": "Lean law set",
+   "plain": "the project's list of statements that a proof checker has verified"
+  },
+  {
+   "term": "holdout",
+   "plain": "data kept unseen until a prediction is frozen, so the test is honest"
+  }
+ ],
+ "findings": [
+  {
+   "claim": "Candidate A1 (recommended to run alongside): RBS-tuned lac repressor, 6 RBS variants with repressor copy numbers 11, 30, 62, 130, 610, 870 per cell, 3 operators (O1, O2, O3), 13 IPTG levels 0 to 5000 uM; flow_master.csv has 2858 rows including auto/delta controls.",
+   "source": "D:/Users/ashenoy00000/delphi-work/data/mwc-induction/flow_master.csv (from https://raw.githubusercontent.com/RPGroup-PBoC/mwc_induction/master/_site/data/flow_master.csv, fetched 2026-11-12, 254369 bytes, sha256 9dc4ab10cc5f2d644d8822dce12eccef43d48502b024be43e8b377759282a896)",
+   "confidence": "high",
+   "value": "2858 rows; R=11-870",
+   "evidence_quote": "date,username,operator,binding_energy,rbs,repressors,IPTG_uM,mean_YFP_A,mean_YFP_bgcorr_A,fold_change_A"
+  },
+  {
+   "claim": "The publication branch carries a byte-identical flow_master.csv, so the master-branch file is the published data.",
+   "source": "https://raw.githubusercontent.com/RPGroup-PBoC/mwc_induction/publication/data/flow_master.csv (sha256 computed on fetched bytes, 2026-11-12)",
+   "confidence": "high",
+   "value": "sha256 9dc4ab10...a896 on both branches",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Licence of the lac dataset repo is MIT.",
+   "source": "https://api.github.com/repos/RPGroup-PBoC/mwc_induction",
+   "confidence": "high",
+   "value": "MIT",
+   "evidence_quote": "\"spdx_id\": \"MIT\""
+  },
+  {
+   "claim": "Own Hill refit, operator O1: EC50 rises from 39.8 uM (R=11) to 196.6 uM (R=870), a 4.94-fold shift (log2 2.30); Hill n spans 1.37-1.54, max pairwise relative difference 0.116; 0 of 15 pairs have non-overlapping 95% bootstrap CIs.",
+   "source": "scripts/t1-reporter-alt/mwc_hill_refit.py then mwc_summary.py; output scratch/t1-reporter-alt/mwc_hill_refit.json (sha256 0c14cbf178902b5a7f3298d5e1873bcf183ad5a2562c5a04f24c4efc27982280)",
+   "confidence": "medium",
+   "value": "EC50 fold 4.94; n 1.37-1.54; dn max 0.116",
+   "evidence_quote": "O1 EC50 range 39.8-196.6 uM, fold 4.94 (log2 2.30) | n range 1.37-1.54, (max-min)/mean = 0.118"
+  },
+  {
+   "claim": "Own Hill refit, operator O2: EC50 rises from 8.9 uM to 155.9 uM (17.47-fold, log2 4.13); n spans 1.46-1.69; max pairwise relative difference 0.150, i.e. exactly at the 0.15 bound the scout froze; 0 of 15 pairs have non-overlapping CIs.",
+   "source": "same scripts; scratch/t1-reporter-alt/mwc_summary.txt",
+   "confidence": "medium",
+   "value": "EC50 fold 17.47; n 1.46-1.69; dn max 0.150",
+   "evidence_quote": "O2 EC50 range 8.9-155.9 uM, fold 17.47 (log2 4.13) | n range 1.46-1.69, (max-min)/mean = 0.149"
+  },
+  {
+   "claim": "Own Hill refit, operator O3 (weak): n is not identifiable (0.87-1.89, individual CIs as wide as 0.32-6.00 hitting the bound) because the amplitude of the curve is only 0.058-0.827; this operator neither supports nor refutes steepness invariance.",
+   "source": "same scripts; mwc_hill_refit.json rows for O3",
+   "confidence": "medium",
+   "value": "n 0.87-1.89",
+   "evidence_quote": "O3 EC50 range 0.6-23.3 uM, fold 40.07 (log2 5.32) | n range 0.87-1.89, (max-min)/mean = 0.855"
+  },
+  {
+   "claim": "In the lac data the plateau (fold change at saturating IPTG) falls as repressor copy number rises (O1 fitted plateau 1.034 at R=11 vs 0.437 at R=870), so an RBS change is NOT a pure translation of the curve along log-input here: dynamic range also changes. Cello's ymax/ymin should therefore be checked within families too.",
+   "source": "mwc_hill_refit.json fc_plateau column",
+   "confidence": "medium",
+   "value": "plateau 1.03 -> 0.44 (O1)",
+   "evidence_quote": "O1 RBS1L 870 132 0.005 0.437 0.431 196.6 (160.9-247.3) 1.42 (1.15-1.88)"
+  },
+  {
+   "claim": "Caveat on A1: the input axis differs from Cello gates. In the lac system RBS sets repressor copies and the input is an inducer that binds the repressor (allosteric MWC); in a Cello gate the input promoter drives repressor synthesis. So A1 tests 'RBS-tuned repressor level leaves n unchanged', not the Cello log-translation law itself.",
+   "source": "reasoning from paper abstracts (Razo-Mejia 2018, Nielsen 2016) and the CSV columns",
+   "confidence": "high",
+   "evidence_quote": "first predicting the behavior of strains that span a large range of repressor copy numbers and DNA binding strengths and then constructing and measuring their response."
+  },
+  {
+   "claim": "Garcia & Phillips 2011 used a collection of strains with a large variation in repressor copy number to test the simple-repression input-output function.",
+   "source": "https://doi.org/10.1073/pnas.1015616108 via Europe PMC abstract",
+   "confidence": "high",
+   "evidence_quote": "using the mathematical description of these regulatory motifs as a predictive tool to determine the number of repressors in a collection of strains with a large variation in repressor copy number"
+  },
+  {
+   "claim": "Razo-Mejia 2018 derive analytic expressions for EC50 and dynamic range from an MWC model, i.e. the thermodynamic framework gives a published number-making model for A1 (so A1 can be scored by prediction, not only descriptively).",
+   "source": "https://doi.org/10.1016/j.cels.2018.02.004 via Europe PMC abstract",
+   "confidence": "high",
+   "evidence_quote": "enables us to derive analytic expressions for key properties such as the dynamic range and [EC50]."
+  },
+  {
+   "claim": "STRONGEST COMPETING EXPLANATION (1): molecular titration / sequestration generates steepness from abundance, so threshold AND steepness both depend on how much repressor/inhibitor is made; it predicts that an RBS change moves n, contrary to the chosen law. Shown experimentally in yeast with apparent Hill coefficients up to 12.",
+   "source": "https://doi.org/10.1038/msb.2009.30 via Europe PMC abstract",
+   "confidence": "high",
+   "evidence_quote": "both the threshold and the degree of ultrasensitivity depend upon the abundance of the inhibitor, exactly as we observed experimentally."
+  },
+  {
+   "claim": "Theory behind competing explanation (1): ultrasensitivity from titration is set mainly by the dissociation constant and the repressor concentration.",
+   "source": "https://doi.org/10.1016/j.jmb.2008.09.079 via Europe PMC abstract",
+   "confidence": "high",
+   "evidence_quote": "The ultrasensitive nature of the input-output response is mainly determined by two parameters: the dimer dissociation constant and the repressor concentration."
+  },
+  {
+   "claim": "COMPETING EXPLANATION (2): resource competition makes gene-expression cassettes non-modular; RBS and DNA copy number change circuit shape through shared ribosomes/polymerases, so an RBS-driven shift can be a load effect.",
+   "source": "https://doi.org/10.1021/acssynbio.6b00361 via Europe PMC abstract",
+   "confidence": "high",
+   "evidence_quote": "These coefficients lead to nonregulatory interactions among genes that reshape the circuit's behavior."
+  },
+  {
+   "claim": "COMPETING EXPLANATION (3), titration of repressor by extra binding sites: transcription-factor demand from other sites/copies changes the effective dose-response, a thermodynamic-model prediction tested experimentally.",
+   "source": "https://doi.org/10.1016/j.cell.2014.02.022 via Europe PMC abstract",
+   "confidence": "medium",
+   "evidence_quote": "we characterize the interplay between TF copy number and the demand for that TF."
+  },
+  {
+   "claim": "Candidate A2, Reg-Seq (RPGroup-PBoC/RegSeq, MIT): massively parallel mutation scanning that returns binding-energy matrices; gives a mechanism-level (energy) separability test but is not a dose-response; GitHub reports repo size 324656 KB (about 317 MB), above the 150 MB cap, so NOT downloaded.",
+   "source": "https://api.github.com/repos/RPGroup-PBoC/RegSeq ; https://raw.githubusercontent.com/RPGroup-PBoC/RegSeq/master/README.md ; tree listing master (largest files 32 MB sequencing files)",
+   "confidence": "high",
+   "value": "repo size field 324656 KB",
+   "evidence_quote": "energy matrices that characterize, in k_BT units, the binding strength of transcription factors to their target sites"
+  },
+  {
+   "claim": "Candidate A3, Kosuri 2013: 12,563 promoter x RBS combinations with DNA, RNA and protein read out; a ready test of whether the promoter axis and the RBS axis are separable (multiplicative) but each construct is a single state, no dose-response. The data-file location was NOT verified.",
+   "source": "https://doi.org/10.1073/pnas.1301301110 via Europe PMC abstract",
+   "confidence": "medium",
+   "evidence_quote": "RNA and protein expression were within twofold of expected levels 80% and 64% of the time, respectively."
+  },
+  {
+   "claim": "Kosuri 2013 also reports the failure tail of composability: the worst 5% of constructs deviated by 13-fold, which bounds how strictly any 'RBS acts independently' law can hold.",
+   "source": "https://doi.org/10.1073/pnas.1301301110 via Europe PMC abstract",
+   "confidence": "high",
+   "evidence_quote": "the worst 5% of constructs deviated from prediction by 13-fold on average"
+  },
+  {
+   "claim": "Candidate A4, Marionette: 12 directed-evolution-optimised sensors with >100-fold induction; useful because dose-response shape was engineered (both K and n moved by selection) - a counter-example source - but there is no RBS series. Raw data location not found.",
+   "source": "https://doi.org/10.1038/s41589-018-0168-3 via Europe PMC abstract",
+   "confidence": "medium",
+   "evidence_quote": "a set of 12 high-performance sensors that exhibit >100-fold induction with low background and cross-reactivity."
+  },
+  {
+   "claim": "Candidate A5, Buchler & Cross 2009 yeast sequestration circuit: the system in which the competing law is shown; gives a designed case where n SHOULD change with abundance (a positive control for the test's power). Values only in figures; not machine-readable here.",
+   "source": "https://doi.org/10.1038/msb.2009.30",
+   "confidence": "medium",
+   "evidence_quote": "converts a graded transcriptional response into a sharply ultrasensitive response, with apparent Hill coefficients up to 12."
+  },
+  {
+   "claim": "Candidate A6, Qian et al. 2017 activation-cascade library: resource demand explicitly tuned (RBS, copy number); gives the confound test (does load, not RBS, explain shifts) at the cost of building a load model; supplementary data availability not verified.",
+   "source": "https://doi.org/10.1021/acssynbio.6b00361 ; Crossref relation lists supplement 10.1021/acssynbio.6b00361.s001",
+   "confidence": "medium",
+   "evidence_quote": "we create a library of genetic activation cascades in E. coli bacteria, where we explicitly tune the resource demand by each gene."
+  },
+  {
+   "claim": "Candidate A7, EMOPEC (Bonde 2016): Shine-Dalgarno sequence to protein-level map; gives a validated RBS-strength predictor so 'RBS strength' becomes a number, but no dose-response. Code mirror found on GitHub (micked/EMOPEC, no licence field) but data not downloaded.",
+   "source": "https://doi.org/10.1038/nmeth.3727 via Europe PMC; GitHub search 2026-11-12",
+   "confidence": "medium",
+   "evidence_quote": "Measured protein levels for 91% of our designed sequences were within twofold of the desired target level."
+  },
+  {
+   "claim": "Candidate A8, Ozbudak 2002 (B. subtilis): transcription and translation rates varied independently for one reporter; gives the noise-side counter-check, since single-cell noise is NOT invariant to translation rate, which matches the scout's observation that output noise varies within a Cello family. Values in figures only.",
+   "source": "https://doi.org/10.1038/ng869 via Europe PMC abstract",
+   "confidence": "medium",
+   "evidence_quote": "increased translational efficiency is the predominant source of increased phenotypic noise."
+  },
+  {
+   "claim": "Burden measurement: a capacity monitor can assay the burden imposed by constructs, so a growth/burden covariate could be read alongside any gate library to test competing explanation (2).",
+   "source": "https://doi.org/10.1038/nmeth.3339 via Europe PMC abstract",
+   "confidence": "medium",
+   "evidence_quote": "We identify construct designs with reduced burden that predictably outperformed less efficient designs, despite having equivalent output."
+  },
+  {
+   "claim": "Previously scouted neighbour, mismatch-CRISPRi (2,973 measured variants, 31 parent guides; MIT; 198,090 bytes joined_reps.tsv per the scout): a graded knockdown dial, with the scout's own note that relgfp runs from -0.583 to 1.214. Not re-fetched by me; numbers are the scout's.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents/scout-reporter.json (candidate 2); paper https://doi.org/10.1016/j.cels.2020.09.009",
+   "confidence": "medium",
+   "evidence_quote": "Essential genes are the hubs of cellular networks, but lack"
+  },
+  {
+   "claim": "Cello itself reports insulation of gates as a design requirement, which is the premise that RBS-variant gates are comparable across contexts.",
+   "source": "https://doi.org/10.1126/science.aac7341 via Europe PMC abstract",
+   "confidence": "high",
+   "evidence_quote": "Reliable circuit design requires the insulation of gates from genetic context, so that they function identically when used in different circuits."
+  },
+  {
+   "claim": "Law set 1.8.1 is current (version 1.8.1, pins 59 laws, created 2026-11-01, commit 7c10fef8); the earlier law-mapper used 1.6.0.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/lawsets/current.json and lawset-1.8.1.json",
+   "confidence": "high",
+   "value": "59 laws",
+   "evidence_quote": "\"version\": \"1.8.1\","
+  },
+  {
+   "claim": "gene-regulatory-dynamics is still version 1.0.0, status proposed, class gap, with no Lean module or theorem in 1.8.1; no Hill, sigmoid or titration law exists in lean/Delphi or the registry laws.",
+   "source": "lean/registry/laws/gene-regulatory-dynamics.json; grep for hill/sigmoid/titrat/steepness over lean/Delphi found only Altitude.lean",
+   "confidence": "high",
+   "evidence_quote": "not formalised: the map records links (expressed in, required for, sufficient for), not dynamics; the Studio may only propagate an edit to every linked node (G2)"
+  },
+  {
+   "claim": "CORRECTION to the earlier law-mapper: lean/Delphi/Turing.lean and the law turing-ddi-linear-condition (with WellMixedStable, no_instability_of_equal_diffusivity) are no longer in the 1.8.1 tree. The Turing law is now turing-ddi 1.1.0 (candidate, non-binding), with its Lean proof at lean/registry/proposals/turing-ddi/law.lean (90 lines, sha256 9e86d829949f3e5bd4522c26f9fefc0a1eed5f4bc39e14b17b7bce85019c6e17); grep for WellMixedStable in .lean files returned nothing.",
+   "source": "lean/registry/lawsets/lawset-1.8.1.json; lean/registry/laws/turing-ddi.json; lean/registry/CHANGELOG.md",
+   "confidence": "high",
+   "evidence_quote": "the four genuine discovery candidates (turing-ddi, kimura-heterozygosity, maynardsmith-hawk-dove, fisher-kpp-speed) stay candidate and stay non-binding."
+  },
+  {
+   "claim": "Lean implication for the track: the law to propose (as a successor of gene-regulatory-dynamics) must carry the competing explanations as named hypotheses (no titration regime; no resource coupling), because titration is the mechanism that would make n depend on abundance.",
+   "source": "synthesis of the above",
+   "confidence": "medium",
+   "evidence_quote": ""
+  }
+ ],
+ "key_claims": [
+  {
+   "claim": "In an independent, public, RBS-tuned repressor library (lac, six RBS variants, 11 to 870 repressors per cell) my own Hill refit shows the threshold moves 4.9-fold (O1) and 17.5-fold (O2) while Hill n changes by at most 0.116 and 0.150 relative, with no pair separable at 95%; O3 is uninformative.",
+   "source": "scripts/t1-reporter-alt/mwc_hill_refit.py + mwc_summary.py on flow_master.csv (sha256 9dc4ab10...a896)",
+   "evidence_quote": "O2 EC50 range 8.9-155.9 uM, fold 17.47 (log2 4.13) | n range 1.46-1.69, (max-min)/mean = 0.149"
+  },
+  {
+   "claim": "The strongest published rival says steepness depends on abundance (molecular titration), so an RBS change should move n, not just K; the chosen test can therefore fail for a principled reason.",
+   "source": "https://doi.org/10.1038/msb.2009.30",
+   "evidence_quote": "both the threshold and the degree of ultrasensitivity depend upon the abundance of the inhibitor, exactly as we observed experimentally."
+  },
+  {
+   "claim": "The lac plateau falls with repressor copy number (O1 fitted plateau 1.03 to 0.44), so an RBS change is not a pure log-axis translation of the whole curve; Cello ymax/ymin need the same within-family check.",
+   "source": "scratch/t1-reporter-alt/mwc_hill_refit.json",
+   "evidence_quote": "O1 RBS1L 870 132 0.005 0.437 0.431 196.6 (160.9-247.3) 1.42 (1.15-1.88)"
+  },
+  {
+   "claim": "Law set 1.8.1 has no Hill or reporter law (gene-regulatory-dynamics still a gap) and no longer contains the Turing lemmas the earlier law-mapper cited, so any reporter law is new, not a modification of something proved.",
+   "source": "lean/registry/laws/gene-regulatory-dynamics.json; lean/registry/lawsets/lawset-1.8.1.json",
+   "evidence_quote": "not formalised: the map records links (expressed in, required for, sufficient for), not dynamics; the Studio may only propagate an edit to every linked node (G2)"
+  }
+ ],
+ "recommendations": [
+  "KEEP the chosen system. It is the only candidate where the design change (RBS in front of the repressor) acts on the same axis as the claim, with raw 250-bin histograms and untouched held-out libraries. I did not open Eco1C2G2T2 or any other holdout, so the freeze is intact.",
+  "RUN ALONGSIDE: the lac RBS library (A1) as a second, independent system. Cost: near zero (data on D:, refit takes about 2 minutes). Freeze before looking at any further operator or condition: 'n varies by at most 0.15 relative across RBS variants when curve amplitude exceeds 0.7'. Note that O2 already sits exactly at 0.150, so choose the bound and the amplitude cut-off on O1 only and score O2 and any other library as holdout; state that I have now seen both.",
+  "Add the titration model (Buchler-Louis / Buchler-Cross) as the named rival in the freeze file with its own falsifiable prediction: n increases or decreases systematically with repressor abundance within a family (trend test), versus the separability claim of no trend. The lac result is currently a mild point against a large titration effect in simple repression, not against titration in general.",
+  "Add a burden covariate (growth rate or capacity monitor, Ceroni 2015 style) to any new wet or dry leg to separate resource competition from RBS-specific effects. Cost: one extra readout per construct.",
+  "Check ymax and ymin within each Cello family, because the lac data show plateau moving with repressor level; the present freeze only tests K and n.",
+  "Low-priority extras: Kosuri 2013 for promoter-by-RBS separability (needs data-file location found first), mismatch-CRISPRi as already planned by the scout, and Reg-Seq only if a mechanistic energy-level leg is wanted (317 MB repo: fetch single files).",
+  "Lean: target the successor of gene-regulatory-dynamics at version 1.8.1; do not rely on Delphi.Turing.* names."
+ ],
+ "table": [
+  {
+   "name": "A1 Lac repressor, RBS-tuned copy number x 3 operators x 13 IPTG levels (Garcia & Phillips 2011; Razo-Mejia 2018)",
+   "fields": "organism=E. coli; repressors_per_cell=11,30,62,130,610,870; operators=O1,O2,O3; IPTG_uM=0 to 5000 (13 levels); rows=2858; size_bytes=254369; licence=MIT; refit_EC50_fold_O1=4.94; refit_EC50_fold_O2=17.47; refit_n_range_O1=1.37-1.54; refit_n_range_O2=1.46-1.69; gives=independent system, MWC number-making model, plateau-vs-R test; cost=about 2 min compute, different input axis (inducer)",
+   "source": "https://github.com/RPGroup-PBoC/mwc_induction ; https://doi.org/10.1016/j.cels.2018.02.004"
+  },
+  {
+   "name": "A2 Reg-Seq promoter mutation scanning (Belliveau 2018, preprint 10.1101/239335)",
+   "fields": "readout=binding energy matrices in kBT; licence=MIT; repo_size_KB=324656; largest_files_MB=32; gives=mechanism-level energy additivity; cost=317 MB repo (over cap, fetch single files), no dose-response, heavy sequencing pipeline",
+   "source": "https://github.com/RPGroup-PBoC/RegSeq"
+  },
+  {
+   "name": "A3 Kosuri 2013 promoter x RBS library",
+   "fields": "constructs=12563; readouts=DNA,RNA,protein; within_2fold_RNA_pct=80; within_2fold_protein_pct=64; worst5pct_deviation_fold=13; gives=test of promoter/RBS separability at scale; cost=data location unverified, single state per construct",
+   "source": "https://doi.org/10.1073/pnas.1301301110"
+  },
+  {
+   "name": "A4 Marionette 12 sensors",
+   "fields": "sensors=12; induction_fold=>100; gives=engineered dose-responses where K and n both moved (counter-example source); cost=raw data not located, no RBS series, scout scored it 5",
+   "source": "https://doi.org/10.1038/s41589-018-0168-3"
+  },
+  {
+   "name": "A5 Yeast bZIP sequestration circuit (Buchler & Cross 2009)",
+   "fields": "apparent_hill_max=12; design_change=inhibitor abundance; gives=positive control where n must change with abundance, the rival law; cost=values only in figures",
+   "source": "https://doi.org/10.1038/msb.2009.30"
+  },
+  {
+   "name": "A6 Resource-competition activation cascades (Qian 2017)",
+   "fields": "design_change=RBS and DNA copy number tuned for resource demand; gives=confound test for load; cost=supplement availability unverified, needs a load model",
+   "source": "https://doi.org/10.1021/acssynbio.6b00361"
+  },
+  {
+   "name": "A7 EMOPEC Shine-Dalgarno library (Bonde 2016)",
+   "fields": "within_2fold_pct=91; gives=numeric RBS-strength predictor; cost=no dose-response, data not downloaded",
+   "source": "https://doi.org/10.1038/nmeth.3727"
+  },
+  {
+   "name": "A8 Translation vs transcription noise (Ozbudak 2002)",
+   "fields": "organism=B. subtilis; design_change=transcription and translation rates varied independently; gives=noise counter-check; cost=figures only",
+   "source": "https://doi.org/10.1038/ng869"
+  },
+  {
+   "name": "Scout carry-over: mismatch-CRISPRi (Hawkins 2020)",
+   "fields": "variants_measured=2973; parent_guides=31; licence=MIT; joined_reps_bytes=198090 (scout figures, not re-fetched); gives=graded dial, cross-species holdout; cost=noisy range -0.583 to 1.214",
+   "source": "https://github.com/traeki/mismatch_crispri ; https://doi.org/10.1016/j.cels.2020.09.009"
+  },
+  {
+   "name": "Chosen system: Cello Eco1C1G1T1 RBS-variant repressor gates",
+   "fields": "gates=20; histograms=12 inputs x 250 bins; size_bytes=4834067; licence=Apache-2.0; designer_calibration_max_dn=0.1587 (designer's figure, not re-computed here); gives=same-axis design change plus raw histograms plus untouched holdouts; cost=RBS variants pre-screened for good behaviour (selection bias)",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C1G1T1.UCF.json"
+  }
+ ],
+ "reproduce": [
+  {
+   "what": "Fetch the lac data and verify the hash",
+   "command_or_url": "curl -sL -A delphi-research/0.1 -o flow_master.csv https://raw.githubusercontent.com/RPGroup-PBoC/mwc_induction/master/_site/data/flow_master.csv ; sha256sum flow_master.csv",
+   "expected": "254369 bytes; 9dc4ab10cc5f2d644d8822dce12eccef43d48502b024be43e8b377759282a896 (same bytes at .../publication/data/flow_master.csv)"
+  },
+  {
+   "what": "Refit Hill curves with bootstrap (Python 3.14.2, numpy 2.5.3, scipy 1.18.1; takes about 2-3 minutes, seed 1, B=300)",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents2/scripts/t1-reporter-alt/mwc_hill_refit.py D:/Users/ashenoy00000/delphi-work/data/mwc-induction/flow_master.csv OUT.json",
+   "expected": "18 rows, e.g. 'O1 HG104 11 132 0.043 1.034 0.991 39.8 (36.4-44.5) 1.54 (1.34-1.78)'; saved copy sha256 0c14cbf178902b5a7f3298d5e1873bcf183ad5a2562c5a04f24c4efc27982280"
+  },
+  {
+   "what": "Summarise EC50 fold and n spread",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents2/scripts/t1-reporter-alt/mwc_summary.py OUT.json",
+   "expected": "O1 fold 4.94, dn max 0.116; O2 fold 17.47, dn max 0.150; O3 n 0.87-1.89"
+  },
+  {
+   "what": "Re-verify citations (Crossref title search, then Europe PMC abstracts)",
+   "command_or_url": "python -I scripts/t1-reporter-alt/crossref_lookup.py hits.json ; python -I scripts/t1-reporter-alt/epmc_abstracts.py epmc.json <DOIs>",
+   "expected": "each DOI in the citations list returned with matching title and year; abstracts are the source of every quoted sentence"
+  },
+  {
+   "what": "Check law set status",
+   "command_or_url": "cat lean/registry/lawsets/current.json ; grep -rl WellMixedStable lean --include=*.lean",
+   "expected": "version 1.8.1; no .lean file matches"
+  }
+ ],
+ "citations": [
+  {
+   "authors": "Garcia et al.",
+   "year": 2011,
+   "title": "Quantitative dissection of the simple repression input-output function",
+   "venue": "PNAS",
+   "doi_or_arxiv": "10.1073/pnas.1015616108",
+   "verified": true,
+   "how_verified": "Crossref title search 2026-11-12 returned this DOI/title/year; Europe PMC returned the abstract",
+   "used_for": "A1 design: repressor copy-number series"
+  },
+  {
+   "authors": "Razo-Mejia et al.",
+   "year": 2018,
+   "title": "Tuning Transcriptional Regulation through Signaling: A Predictive Theory of Allosteric Induction",
+   "venue": "Cell Systems",
+   "doi_or_arxiv": "10.1016/j.cels.2018.02.004",
+   "verified": true,
+   "how_verified": "Crossref search plus Europe PMC abstract",
+   "used_for": "A1 data source and number-making model"
+  },
+  {
+   "authors": "Brewster et al.",
+   "year": 2014,
+   "title": "The Transcription Factor Titration Effect Dictates Level of Gene Expression",
+   "venue": "Cell",
+   "doi_or_arxiv": "10.1016/j.cell.2014.02.022",
+   "verified": true,
+   "how_verified": "Crossref search plus Europe PMC abstract",
+   "used_for": "competing explanation (3)"
+  },
+  {
+   "authors": "Buchler et al.",
+   "year": 2008,
+   "title": "Molecular Titration and Ultrasensitivity in Regulatory Networks",
+   "venue": "J Mol Biol",
+   "doi_or_arxiv": "10.1016/j.jmb.2008.09.079",
+   "verified": true,
+   "how_verified": "Crossref search plus Europe PMC abstract",
+   "used_for": "competing explanation (1) theory"
+  },
+  {
+   "authors": "Buchler et al.",
+   "year": 2009,
+   "title": "Protein sequestration generates a flexible ultrasensitive response in a genetic network",
+   "venue": "Mol Syst Biol",
+   "doi_or_arxiv": "10.1038/msb.2009.30",
+   "verified": true,
+   "how_verified": "Crossref search plus Europe PMC abstract",
+   "used_for": "competing explanation (1) experiment; candidate A5"
+  },
+  {
+   "authors": "Qian et al.",
+   "year": 2017,
+   "title": "Resource Competition Shapes the Response of Genetic Circuits",
+   "venue": "ACS Synth Biol",
+   "doi_or_arxiv": "10.1021/acssynbio.6b00361",
+   "verified": true,
+   "how_verified": "Crossref direct fetch api.crossref.org/works/10.1021/acssynbio.6b00361 (issued 2017-04-03); Europe PMC abstract",
+   "used_for": "competing explanation (2); candidate A6"
+  },
+  {
+   "authors": "Meyer et al.",
+   "year": 2019,
+   "title": "Escherichia coli Marionette strains with 12 highly optimized small-molecule sensors",
+   "venue": "Nat Chem Biol",
+   "doi_or_arxiv": "10.1038/s41589-018-0168-3",
+   "verified": true,
+   "how_verified": "Crossref search plus Europe PMC abstract (Crossref lists year 2018 online)",
+   "used_for": "candidate A4"
+  },
+  {
+   "authors": "Kosuri et al.",
+   "year": 2013,
+   "title": "Composability of regulatory sequences controlling transcription and translation in Escherichia coli",
+   "venue": "PNAS",
+   "doi_or_arxiv": "10.1073/pnas.1301301110",
+   "verified": true,
+   "how_verified": "Crossref search plus Europe PMC abstract",
+   "used_for": "candidate A3"
+  },
+  {
+   "authors": "Bonde et al.",
+   "year": 2016,
+   "title": "Predictable tuning of protein expression in bacteria",
+   "venue": "Nat Methods",
+   "doi_or_arxiv": "10.1038/nmeth.3727",
+   "verified": true,
+   "how_verified": "Crossref search plus Europe PMC abstract",
+   "used_for": "candidate A7"
+  },
+  {
+   "authors": "Ozbudak et al.",
+   "year": 2002,
+   "title": "Regulation of noise in the expression of a single gene",
+   "venue": "Nat Genet",
+   "doi_or_arxiv": "10.1038/ng869",
+   "verified": true,
+   "how_verified": "Crossref title search returned DOI 10.1038/ng869 issued 2002-04-22; Europe PMC abstract",
+   "used_for": "candidate A8"
+  },
+  {
+   "authors": "Ceroni et al.",
+   "year": 2015,
+   "title": "Quantifying cellular capacity identifies gene expression designs with reduced burden",
+   "venue": "Nat Methods",
+   "doi_or_arxiv": "10.1038/nmeth.3339",
+   "verified": true,
+   "how_verified": "Crossref search plus Europe PMC abstract",
+   "used_for": "burden covariate"
+  },
+  {
+   "authors": "Nielsen et al.",
+   "year": 2016,
+   "title": "Genetic circuit design automation",
+   "venue": "Science",
+   "doi_or_arxiv": "10.1126/science.aac7341",
+   "verified": true,
+   "how_verified": "Crossref search plus Europe PMC abstract",
+   "used_for": "chosen system"
+  },
+  {
+   "authors": "Hawkins et al.",
+   "year": 2020,
+   "title": "Mismatch-CRISPRi Reveals the Co-varying Expression-Fitness Relationships of Essential Genes in Escherichia coli and Bacillus subtilis",
+   "venue": "Cell Systems",
+   "doi_or_arxiv": "10.1016/j.cels.2020.09.009",
+   "verified": true,
+   "how_verified": "Crossref search plus Europe PMC abstract",
+   "used_for": "scout carry-over"
+  },
+  {
+   "authors": "Belliveau et al.",
+   "year": 2017,
+   "title": "A systematic approach for dissecting the molecular mechanisms of transcriptional regulation in bacteria (bioRxiv preprint)",
+   "venue": "bioRxiv",
+   "doi_or_arxiv": "10.1101/239335",
+   "verified": true,
+   "how_verified": "Crossref title search 2026-11-12 returned this DOI; the peer-reviewed version DOI was not checked",
+   "used_for": "candidate A2"
+  }
+ ],
+ "could_not_find": [
+  "Machine-readable data for Kosuri 2013 (GEO/supplement location), Marionette, Qian 2017 and Bonde 2016: not located in this run, so those candidates are costed from abstracts only.",
+  "Buchler & Cross 2009 and Ozbudak 2002 data are in figures; I could not read values.",
+  "I did not re-fetch or recompute any Cello UCF number (including the designer's dn 0.1587 for BM3R1); those figures are the designer's. I deliberately did not open Eco1C2G2T2 or other holdouts.",
+  "I did not read Cello's fitting code, so whether the Cello fit itself constrains n remains unchecked.",
+  "The lac refit uses a plain 4-parameter Hill, not the MWC model of the paper; EC50 at high repressor counts is partly extrapolated from a curve whose plateau is below 1, and replicate rows are pooled without day effects. A sensible next step is a joint fit with n shared across RBS variants and a likelihood-ratio test; not done.",
+  "The fold-change data are bootstrapped over rows within IPTG level only (300 resamples, seed 1); CIs are therefore approximate.",
+  "The peer-reviewed version of Reg-Seq (Belliveau 2018 PNAS) was not DOI-checked; only the bioRxiv preprint DOI is cited.",
+  "The earlier law-mapper's claim that the Turing file needed a 'WellMixedStable' constraint cannot be re-checked against 1.8.1; I only verified the names are absent."
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t1-reporter-alt/crossref_lookup.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t1-reporter-alt/epmc_abstracts.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t1-reporter-alt/mwc_hill_refit.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t1-reporter-alt/mwc_summary.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t1-reporter-alt/build_result.py"
+ ]
+}

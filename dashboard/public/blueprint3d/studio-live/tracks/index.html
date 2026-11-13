@@ -67,6 +67,18 @@
   .paper .wh{font-size:12.5px;color:#c9d5e5} .paper .q{font-size:12.5px;color:var(--dim);border-left:2px solid var(--edge);padding-left:9px;margin-top:4px;font-style:italic}
   .stat{display:flex;gap:22px;flex-wrap:wrap;margin:8px 0 2px} .stat div{font-size:12px;color:var(--faint)} .stat b{display:block;font-size:19px;color:var(--ink);font-variant-numeric:tabular-nums}
   .ask li{margin:6px 0;color:#e0c98a}
+  .plain{background:#0e1620;border:1px solid #243246;border-radius:12px;padding:12px 14px;margin:12px 0}
+  .plain h4{margin:0 0 2px;font-size:14px;letter-spacing:.2px} .plain .sub{color:var(--faint);font-size:12px;margin-bottom:8px}
+  .plain details{background:#111a26} .plain .lead2{font-size:15px;line-height:1.55;color:#e6edf6;margin:4px 0 8px;max-width:760px}
+  .steps2{counter-reset:s;list-style:none;margin:6px 0;padding:0}
+  .steps2 li{counter-increment:s;position:relative;padding:7px 0 7px 38px;border-bottom:1px solid #151c27}
+  .steps2 li:before{content:counter(s);position:absolute;left:0;top:6px;width:26px;height:26px;border-radius:50%;background:#16324f;color:#cfe3ff;display:grid;place-items:center;font-size:12px;font-weight:700}
+  .steps2 .pic{display:block;color:var(--faint);font-size:12.5px;margin-top:2px;font-style:italic}
+  .gl{display:grid;grid-template-columns:minmax(120px,200px) 1fr;gap:4px 14px;font-size:13px}
+  .gl dt{font-weight:600;color:#cfe3ff} .gl dd{margin:0;color:#c9d5e5}
+  pre.cmd{background:#080c12;border:1px solid var(--edge);border-radius:8px;padding:8px 10px;overflow-x:auto;font:12px ui-monospace,Consolas,monospace;color:#bfe8d4;margin:4px 0;white-space:pre-wrap;word-break:break-all}
+  .qa b{color:#e6edf6} .qa p{margin:3px 0 10px}
+  .grade{font-size:11px}
   @media (max-width:860px){.grid{grid-template-columns:1fr}.strategies{grid-template-columns:1fr}.bars{grid-template-columns:1fr}
     .tbl{display:block;overflow-x:auto}}
 </style>
@@ -92,6 +104,10 @@
 
 <h2>The biomaterials side <small>chemistry, physics, the printer, the partner</small></h2>
 <div id="specs"></div>
+
+<h2>The research fleet <small id="fleet-n">77 agents, grouped by what they studied</small></h2>
+<div class="note" id="fleet-note"></div>
+<div id="fleet"></div>
 
 <h2 id="corpus-h">The Buehler corpus</h2>
 <div id="corpus"></div>
@@ -140,6 +156,29 @@ function cites(list){
     ${c.used_for?`<div style="color:var(--faint);font-size:12px;margin-top:2px">used for: ${esc(c.used_for)}</div>`:''}</div>`).join('');
 }
 const sec=(h,s,body,open)=>`<details${open?' open':''}><summary><span class="h">${esc(h)}</span><span class="s">${s??''}</span></summary><div class="body">${body}</div></details>`;
+/* THE PLAIN-LANGUAGE BLOCK. Everything in it comes from `track.explain`, written for someone with no
+   science background and MEASURED at build time (reading grade and unexplained-term count are shown, not
+   claimed). Each part is a dropdown so a reader can skim the headline and open only what they want. */
+function layBlock(ex,title){
+  if(!ex) return `<div class="plain"><h4>In plain words</h4><div class="sub">the plain-language explanation for this track is still being written and checked</div></div>`;
+  const g=ex.reading?.grade, j=ex.reading?.unexplained_terms;
+  const gl=(ex.glossary??[]).map(x=>`<dt>${esc(x.term)}</dt><dd>${esc(x.plain)}</dd>`).join('');
+  let h=`<div class="plain"><h4>In plain words</h4>
+    <div class="sub">${g!=null?`reading level about grade ${Number(g).toFixed(1)} (measured) · ${j??0} unexplained terms · `:''}every claim below is tied to a source, and every number can be re-checked</div>${ex.reading?.reader_clarity!=null?`<div class="sub">a reader with no background rated it ${ex.reading.reader_clarity} out of 5 for clarity${ex.revised?' (after one revision)':''}${ex.reading.reader_unknown_words?.length?`; words they still stumbled on: ${esc(ex.reading.reader_unknown_words.slice(0,8).join(', '))}`:''}</div>`:''}
+    <p class="lead2">${esc(ex.one_line??'')}</p>`;
+  const parts=[];
+  if(ex.what) parts.push(sec('What are we doing?',esc(asText(ex.what).slice(0,80))+'…',`<p>${esc(asText(ex.what))}</p>`,true));
+  if(ex.why) parts.push(sec('Why does it matter?','',`<p>${esc(asText(ex.why))}</p>`));
+  if(ex.steps?.length) parts.push(sec('How, step by step',`${ex.steps.length} steps`,`<ol class="steps2">${ex.steps.map(x=>`<li>${esc(x.text??x)}${x.picture?`<span class="pic">${esc(x.picture)}</span>`:''}</li>`).join('')}</ol>`));
+  if(ex.wrong_if) parts.push(sec('What would prove us wrong?','we write this down before we look',`<p>${esc(asText(ex.wrong_if))}</p>`));
+  if(ex.could_go_wrong?.length) parts.push(sec('What could go wrong?',`${ex.could_go_wrong.length} things`,`<ul>${ex.could_go_wrong.map(x=>`<li>${esc(asText(x))}</li>`).join('')}</ul>`));
+  if(ex.questions?.length) parts.push(sec('Questions people ask',`${ex.questions.length}`,`<div class="qa">${ex.questions.map(q=>`<b>${esc(q.q)}</b><p>${esc(q.a)}</p>`).join('')}</div>`));
+  if(gl) parts.push(sec('Words used here',`${(ex.glossary??[]).length} terms`,`<dl class="gl">${gl}</dl>`));
+  if(ex.check_yourself?.length) parts.push(sec('Check it yourself',`${ex.check_yourself.length} steps`,
+    ex.check_yourself.map(c=>`<p style="margin:8px 0 2px">${esc(c.what)}</p><pre class="cmd">${esc(c.command??c.url??'')}</pre>${c.expect?`<div style="color:var(--faint);font-size:12px">you should see: ${esc(c.expect)}</div>`:''}`).join('')));
+  if(ex.sources?.length) parts.push(sec('Where this comes from',`${ex.sources.length} sources`,ex.sources.map(x=>`<div class="cite">${esc(x.cite??x.text??'')} ${x.id?idLink(x.id):''}</div>`).join('')));
+  return h+parts.join('')+'</div>';
+}
 const statusChip=s=>({designed:'ok',scouted:'warn','laws mapped':'warn',pending:'mute'}[s]??'mute');
 
 function renderCards(){
@@ -160,6 +199,8 @@ function show(n){
   const d=t.design, s=t.scout, L=t.laws;
   const syn=(D.synthesis?.tracks??[]).find(x=>x.n===n);
   let h=`<h3>Track ${t.n}: ${esc(t.title)}</h3><p class="lead">${esc(asText(syn?.verdict??d?.one_paragraph??s?.summary??'The agents assigned to this track have not reported yet.'))}</p>`;
+  h+=layBlock(t.explain);
+  (t.explain_more??[]).forEach(x=>{ h+=`<h4 style="margin:14px 0 4px">${esc(x.title??'')}</h4>`+layBlock(x); });
   if(syn?.why_it_matters) h+=`<div class="note">${esc(asText(syn.why_it_matters))}</div>`;
   if(syn?.next) h+=`<div class="note"><b>Next:</b> ${esc(asText(syn.next))}</div>`;
   if(d){
@@ -218,6 +259,40 @@ function renderSpecs(){
      <p><b>Citations</b></p>${cites(s.citations)}`)).join('');
 }
 
+const GROUP_TITLE={biomaterials:'Biomaterials: the proposal for the architecture contract','people-funding-clients':'People, funders and clients',
+  'leanbio-enhancers':'Lean for biology 1: how promoter-specific are enhancers?','leanbio-binding':'Lean for biology 2: why do binding-affinity models fall short?',
+  'track-1':'Track 1: reporter','track-2':'Track 2: patterns','track-3':'Track 3: lumen','track-4':'Track 4: glide','track-6':'Track 6: flying fish'};
+/* Every agent's return is a draft. Findings are shown with their quote, and the quote is labelled as the
+   agent's until a separate verifier has re-fetched the source (that pass has not run yet). */
+function verdictBlock(slug){
+  const v=D.verdicts?.by_agent?.[slug]; if(!v) return '';
+  const cls={supported:'ok',partly:'warn',not_supported:'bad',contradicted:'bad',could_not_fetch:'mute',not_checkable:'mute'};
+  return `<p><b>Re-checked by a separate verifier</b></p>`+(v.claims??[]).map(c=>`<div class="cite"><span class="chip ${cls[c.verdict]??'mute'}">${esc(c.verdict.replace(/_/g,' '))}</span> ${esc(c.claim)}
+    <div style="color:var(--faint);font-size:12px;margin-top:2px">${esc(c.note)}</div></div>`).join('');
+}
+function renderFleet(){
+  const F=D.fleet??[]; if(!F.length){ $('#fleet').innerHTML=''; return; }
+  const nf=F.reduce((a,x)=>a+(x.findings?.length??0),0), nc=F.reduce((a,x)=>a+(x.citations?.length??0),0);
+  $('#fleet-note').innerHTML=`${F.length} agents returned ${fmt(nf)} findings and ${fmt(nc)} citations. <b>Treat each as a draft.</b> A citation is marked “resolved” only when a separate script confirmed the identifier and title; a quote is the agent’s own words until a second agent re-fetches the source.`;
+  const V=D.verdicts?.tally; if(V) $('#fleet-note').innerHTML+=` A second set of skeptical verifiers re-fetched the key claims: ${V.supported??0} supported, ${V.partly??0} partly (with the difference stated), ${V.contradicted??0} contradicted, ${V.could_not_fetch??0} could not be fetched.`;
+  const X=D.extraExplain??[]; const exHtml=X.map(x=>`<h3 style="margin:18px 0 6px">${esc(GROUP_TITLE[x.group]??x.group)}: in plain words</h3>`+layBlock(x)).join('');
+  const order=Object.keys(GROUP_TITLE), by={};
+  F.forEach(a=>(by[a.group]??=[]).push(a));
+  $('#fleet').innerHTML=exHtml+order.filter(g=>by[g]).map(g=>`<h3 style="margin:18px 0 6px">${esc(GROUP_TITLE[g])}</h3>`+by[g].map(a=>a.error?'':
+    sec(a.topic??a.slug,`${a.findings?.length??0} findings · ${a.citations?.length??0} citations`,
+     `${a.lay_summary?`<div class="plain"><h4>In plain words</h4><p>${esc(asText(a.lay_summary))}</p></div>`:''}
+      <p>${esc(asText(a.summary))}</p>
+      ${a.recommendations?.length?`<p><b>Recommendations</b></p><ul>${a.recommendations.map(x=>`<li>${esc(asText(x))}</li>`).join('')}</ul>`:''}
+      ${a.table?.length?`<div class="scroll"><table class="tbl"><tr><th>name</th><th>properties</th><th>source</th></tr>${a.table.map(r=>`<tr><td><b>${esc(r.name)}</b></td><td>${esc(asText(r.fields))}</td><td>${idLink(r.source)}</td></tr>`).join('')}</table></div>`:''}
+      <div class="scroll"><table class="tbl"><tr><th>finding</th><th>value</th><th>confidence</th><th>source</th></tr>${(a.findings??[]).map(f=>`<tr><td>${esc(f.claim)}${f.evidence_quote?`<div class="q">“${esc(f.evidence_quote)}” <span class="chip mute">agent’s quote</span></div>`:''}</td><td><b>${esc(asText(f.value))}</b></td>
+        <td><span class="chip ${/high/i.test(f.confidence)?'ok':/low/i.test(f.confidence)?'bad':'warn'}">${esc(f.confidence)}</span></td><td>${idLink(f.source)}</td></tr>`).join('')}</table></div>
+      ${a.reproduce?.length?`<p><b>Reproduce it</b></p>${a.reproduce.map(r=>`<pre class="cmd">${esc(asText(r))}</pre>`).join('')}`:''}
+      ${a.glossary?.length?`<p><b>Words used</b></p><dl class="gl">${a.glossary.map(x=>`<dt>${esc(x.term)}</dt><dd>${esc(x.plain??x.definition??'')}</dd>`).join('')}</dl>`:''}
+      ${a.could_not_find?.length?`<div class="note warn"><b>Could not find:</b><ul style="margin:4px 0 0;padding-left:18px">${a.could_not_find.map(x=>`<li>${esc(asText(x))}</li>`).join('')}</ul></div>`:''}
+      ${verdictBlock(a.slug)}
+      <p><b>Citations</b></p>${cites(a.citations)}`)).join('')).join('');
+}
+
 let fTrack=0,fTheme='',fText='',fMin=1;
 function renderCorpus(){
   const C=D.corpus; if(!C||C.error){ $('#corpus').innerHTML=`<div class="note warn">${esc(C?.error??'no corpus')}</div>`; return; }
@@ -252,7 +327,7 @@ if(D){
   $('#lede').textContent=`Four candidate routes for the paper, one contracting route, and the existing flying-fish framework. ${done} of ${D.tracks.length} tracks have a frozen-prediction design; law set ${D.lawset??'—'}.`;
   const c=D.citations;
   $('#built').textContent=`built ${D.built} · ${fmt(c.total)} citations from the track agents, ${fmt(c.independently_resolved)} resolved independently, ${fmt(c.failed_to_resolve)} failed, ${fmt(c.not_yet_checked)} unchecked`;
-  renderCards(); renderSpecs(); renderCorpus();
+  renderCards(); renderSpecs(); renderFleet(); renderCorpus();
   $('#ask').innerHTML=(D.open_for_amit??[]).map(x=>`<li>${esc(x)}</li>`).join('');
   show(D.tracks.find(t=>t.design)?.n??5);
 }

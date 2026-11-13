@@ -23,11 +23,14 @@ FILES=("$@")
 echo "toolchain: $(cat "$ROOT/lean/lean-toolchain")   mathlib: $(grep -A4 '"name": "mathlib"' "$ROOT/lean/lake-manifest.json" | grep '"rev"' | head -1 | tr -d ' ,')"
 status=0
 for f in "${FILES[@]}"; do
+  # the Lean run happens from lean/, so a relative path must be made absolute first
+  case "$f" in /*|[A-Za-z]:*) ;; *) f="$(cd "$(dirname "$f")" && pwd)/$(basename "$f")" ;; esac
   out="$(cd "$ROOT/lean" && lake env lean "$f" 2>&1)"
   errs=$(printf '%s\n' "$out" | grep -c "error")
   sorrys=$(printf '%s\n' "$out" | grep -c "sorryAx")
   asked=$(grep -c '^#print axioms' "$f")
-  printed=$(printf '%s\n' "$out" | grep -c "depends on axioms")
+  # Lean says "depends on axioms: [...]" or, for an axiom-free theorem, "does not depend on any axioms"
+  printed=$(printf '%s\n' "$out" | grep -cE "depends on axioms|does not depend on any axioms")
   printf '%-52s errors=%s sorryAx=%s axiom-lines=%s/%s\n' "$(basename "$f")" "$errs" "$sorrys" "$printed" "$asked"
   if [ "$errs" -ne 0 ] || [ "$sorrys" -ne 0 ] || [ "$asked" -ne "$printed" ]; then
     status=1

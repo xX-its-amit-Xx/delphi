@@ -1,0 +1,61 @@
+{
+"label": "t3-lumen-law",
+"topic": "Track 3 (lumen geometry) mapped against law set 1.8.1, with one new checked Lean law",
+"summary": "Against law set 1.8.1 only physiology-laplace (accepted, Delphi.Physiology.laplace_pressure_limit) is a lumen-mechanics law; perturb-pressure, the scaling laws, turing-ddi and fisher-kpp-speed bear weakly. The Plateau, hexagon, Murray and Thompson-cell modules cited by the older map exist only in the upstream 1.6.0 tree and are absent from the application repo, whose own failed-theorem records say they were never compiled. New easy law lumen-area-ceiling (apical-length ceiling on normalised lumen area) written in LumenAreaCeiling.lean: first check FAILED (one linarith error, sorryAx in 3 theorems); after one fix check.sh reported errors=0, sorryAx=0, ALL CHECKED. The planar isoperimetric inequality is a named hypothesis, not proved.",
+"lay_summary": "We checked which proven rules in our library say anything about the hollow inside a ball of cells, like the air space in a tiny water balloon. Only one does: how much pressure a thin wall can hold before it tears. Some rules the earlier survey counted are not in the current library at all. So we wrote one new rule and had the proof checker confirm it. It says that if you know how many cells ring the hollow and how long each cell's inner edge is, the hollow's area cannot exceed a fixed limit, like a fixed length of fence that can only enclose so much ground. Our first proof attempt failed; the second passed.",
+"glossary": [
+{"term":"lumen","plain":"the hollow space inside a tube or ball of cells"},
+{"term":"Lean","plain":"a program that checks mathematical proofs line by line"},
+{"term":"isoperimetric quotient","plain":"a number from 0 to 1 saying how close an outline is to a perfect circle"},
+{"term":"law set","plain":"a numbered, frozen list of rules the project accepts"},
+{"term":"placeholder law","plain":"a listed rule that has no proof attached yet"},
+{"term":"sorryAx","plain":"the marker Lean leaves when a proof has a gap"}
+],
+"table": [
+{"name":"physiology-laplace","fields":"status=accepted; module=lean/Delphi/Physiology.lean; theorem=Delphi.Physiology.laplace_pressure_limit; also=sphereWallStress_mono,hoop_pressure_limit; constraints=[]","source":"D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/laws/physiology-laplace.json"},
+{"name":"perturb-pressure","fields":"status=candidate; module=lean/Delphi/Hydrostatics.lean; theorem=Delphi.Hydro.closed_bladder_rules_out; structure=Delphi.Hydro.WaterColumn; fit=weak (gas not liquid lumen)","source":"lean/registry/laws/perturb-pressure.json"},
+{"name":"scaling-area-law","fields":"status=accepted; module=lean/Delphi/Scaling.lean; theorem=Delphi.areaLaw_ratio; fit=weak","source":"lean/registry/laws/scaling-area-law.json"},
+{"name":"scaling-strength-law","fields":"status=accepted; module=lean/Delphi/Scaling.lean; theorem=Delphi.breakLoad_ratio; fit=weak","source":"lean/registry/laws/scaling-strength-law.json"},
+{"name":"scaling-bending-law","fields":"status=accepted; module=lean/Delphi/Scaling.lean; theorem=Delphi.bendingStress_ratio_body; fit=weak","source":"lean/registry/laws/scaling-bending-law.json"},
+{"name":"thompson1917-ch03-07","fields":"status=accepted; module=lean/Delphi/Thompson.lean; theorem=Delphi.cubeLaw_loglog_exponent; fit=weak","source":"lean/registry/laws/thompson1917-ch03-07.json"},
+{"name":"thompson1917-ch02-10","fields":"status=accepted; module=lean/Delphi/Scaling.lean; theorem=Delphi.vmin_ratio; fit=marginal","source":"lean/registry/laws/thompson1917-ch02-10.json"},
+{"name":"turing-ddi","fields":"status=candidate; module=lean/registry/proposals/turing-ddi/law.lean; theorem=Delphi.LeanBio.Round2.TuringDDI.turing_instability; fit=marginal","source":"lean/registry/laws/turing-ddi.json"},
+{"name":"fisher-kpp-speed","fields":"status=candidate; module=lean/registry/proposals/fisher-kpp-speed/law.lean; theorem=Delphi.LeanBio.Round2.KppSpeed.kpp_min_speed; fit=marginal","source":"lean/registry/laws/fisher-kpp-speed.json"},
+{"name":"NEW lumen-area-ceiling (proposed, unregistered)","fields":"file=D:/Users/ashenoy00000/delphi-work/agents2/scripts/t3-lumen-law/LumenAreaCeiling.lean; theorems=Delphi.Track3.ipq_identity,area_ceiling,lumen_area_rules_out,ceiling_strictMono_la,ceiling_strictMono_N,rules_out_example; check=errors 0, sorryAx 0","source":"D:/Users/ashenoy00000/delphi-work/agents2/scratch/t3-lumen-law/check.log"}
+],
+"findings": [
+{"claim":"Law set 1.8.1 pins 59 laws; 14 have no lean_ref.theorem (placeholders): aspect-ratio-induced-drag, disc-flying-fish-fin-ratio-gap, disc-heterurus-mass-exponent, disc-measured-wing-loading-band, disc-pectoral-length-allometry, elastic-similarity, fick-principle (structure only), fin-length-ratio, gene-regulatory-dynamics, gill-o2-uptake, muscle-power-premise (retired), taxiing-thrust, test-loop-only-density-sanity (retired), walking-pendulum-speed. None bears on lumens.","source":"scripts/t3-lumen-law/count_placeholders.py over lean/registry/lawsets/lawset-1.8.1.json and registry/laws/*.json","confidence":"high","evidence_quote":""},
+{"claim":"physiology-laplace 1.0.0 (accepted, physical, bootstrap-grandfathered) is the only accepted law on lumen mechanics; constraints is empty and flyingFishAudit is cannot-evaluate 5, so no check uses it.","source":"lean/registry/laws/physiology-laplace.json","confidence":"high","evidence_quote":"A radius, a wall thickness and a wall strength: none exists in this project for any fish, so the bound is proved with no instance."},
+{"claim":"Delphi/Audit.lean lines 143-145 now print axioms for laplace_pressure_limit, sphereWallStress_mono and hoop_pressure_limit; the older map said no such line existed (it read the upstream tree).","source":"lean/Delphi/Audit.lean","confidence":"high","evidence_quote":"#print axioms Delphi.Physiology.laplace_pressure_limit"},
+{"claim":"perturb-pressure 2.0.0 (candidate): Delphi.Hydro.closed_bladder_rules_out with structure Delphi.Hydro.WaterColumn in lean/Delphi/Hydrostatics.lean. Boyle gas law; only the hydrostatic term transfers to liquid lumens.","source":"lean/registry/laws/perturb-pressure.json; lean/Delphi/Hydrostatics.lean","confidence":"high","evidence_quote":""},
+{"claim":"The modules the older map relied on (Delphi.CellGeometry, ThompsonLaws.Cells, ThompsonLaws.MurrayCubic, Delphi.Turing, Delphi.Crystals) are NOT in the application repo at 1.8.1: Delphi.lean does not import them and lean/ has no ThompsonLaws directory. They exist only in upstream/leanbio (1.6.0), which also has 11 extra registry law files (plateau-*, hexagon-of-120, twelve-pentagons, turing-ddi-linear-condition, bragg-cubic-ratio, etc.).","source":"directory listings and diff of lean/Delphi and lean/registry/laws, application repo vs D:/Users/ashenoy00000/delphi-work/upstream/leanbio/lean","confidence":"high","evidence_quote":""},
+{"claim":"The application repo records the Thompson cell results as failed/never compiled (ft-thompson-cell-contact-angles, ft-thompson-biconcave-corpuscle, ft-thompson-plateau-rayleigh-beads; attempted=false). This disagrees with the upstream tree where the older map found them compiled. I did not re-run either.","source":"lean/registry/open-questions/failed/ft-thompson-*.json","confidence":"medium","evidence_quote":"NEVER COMPILED: Lean has not checked this statement. abandoned for lack of lake-lock time, not for any difficulty found."},
+{"claim":"1.6.0 to 1.8.1 added fisher-kpp-speed, kimura-heterozygosity, maynardsmith-hawk-dove, turing-ddi, development-growth-asymptote and test-loop-only-density-sanity (retired in 1.8.1); no lumen-related law was added. 53 to 59 pinned.","source":"lean/registry/CHANGELOG.md","confidence":"high","evidence_quote":"added `turing-ddi` 1.1.0 (biological, candidate)"},
+{"claim":"Missing in 1.8.1 for this track: Young-Laplace in surface-tension form, junction/Plateau angle law, lumen volume dynamics, lumen data-map/isoperimetric law, and a Laplace *_rules_out constraint (physiology-laplace constraints is empty).","source":"grep of lean/Delphi/Constraints.lean and lean/registry/laws; physiology-laplace.json","confidence":"high","evidence_quote":""},
+{"claim":"Older map missed or got wrong: (a) modules it cites are not in 1.8.1; (b) Audit.lean now covers Laplace; (c) 1.8.1 changes (turing-ddi, fisher-kpp-speed) it could not list; (d) it counted the 11 upstream-only law files as 'candidates' though they are absent from the application registry; (e) it proposed no law in the data-map (cell number, apical length, IPQ) layer that the redesigned test depends on.","source":"agents/laws-lumen.json versus the 1.8.1 listing","confidence":"high","evidence_quote":""},
+{"claim":"LumenAreaCeiling.lean: first check FAILED (1 error, linarith at area_ceiling, line 72; sorryAx in area_ceiling, lumen_area_rules_out, rules_out_example). After rewriting the division step it reported errors=0 sorryAx=0 axiom-lines=6/6 ALL CHECKED, with one unused-variable warning (line 62).","source":"scratch/t3-lumen-law/check.log; toolchain leanprover/lean4:v4.35.0","confidence":"high","evidence_quote":"ALL CHECKED: no errors, no sorryAx"}
+],
+"key_claims": [
+{"claim":"In law set 1.8.1 the only accepted lumen-mechanics law is physiology-laplace (Delphi.Physiology.laplace_pressure_limit); the cell-geometry and Thompson modules of the older map are not part of the application repo.","source":"lean/registry/lawsets/lawset-1.8.1.json; lean/Delphi.lean","evidence_quote":"A radius, a wall thickness and a wall strength: none exists in this project for any fish, so the bound is proved with no instance."},
+{"claim":"14 of 59 pinned laws are placeholders with no theorem.","source":"scripts/t3-lumen-law/count_placeholders.py","evidence_quote":""},
+{"claim":"area_ceiling: 0<AL, 0<p, 0<N, 0<A0, ipq AL p <= 1 implies normArea AL A0 <= ceiling N (apicalLen p N A0), with ipq A p = 4*pi*A/p^2, normArea = AL/A0, apicalLen = p/(N*sqrt A0), ceiling N la = (N*la)^2/(4*pi). Passes check.sh. The isoperimetric inequality is a named hypothesis hIPQ, not proved.","source":"D:/Users/ashenoy00000/delphi-work/agents2/scripts/t3-lumen-law/LumenAreaCeiling.lean; scratch/t3-lumen-law/check.log","evidence_quote":"ALL CHECKED: no errors, no sorryAx"}
+],
+"recommendations": [
+"Register lumen-area-ceiling as a candidate, naming the isoperimetric inequality in scope.assumed.",
+"Add a Laplace rules_out wrapper to Constraints.lean (still missing in 1.8.1).",
+"Decide whether upstream CellGeometry/ThompsonLaws should be ported to the application repo; its failed-theorem records say never compiled."
+],
+"reproduce": [
+{"what":"count placeholders in 1.8.1","command_or_url":"python -I D:/Users/ashenoy00000/delphi-work/agents2/scripts/t3-lumen-law/count_placeholders.py","expected":"59 laws; 14 placeholders"},
+{"what":"check the new Lean file (Lean v4.35.0, Mathlib from repo .lake, elan in C:/Temp/elan)","command_or_url":"bash D:/Users/ashenoy00000/delphi-work/agents2/scripts/t3-lumen-law/run.sh","expected":"errors=0 sorryAx=0 axiom-lines=6/6; ALL CHECKED: no errors, no sorryAx; one unused-variable warning"}
+],
+"citations": [],
+"could_not_find": [
+"No external citations fetched this run; Vasquez et al. 2021 (doi 10.1038/s41467-021-25050-3) is only referenced via design-lumen.json and not re-verified here, so not listed as verified.",
+"Data-map definitions (la = p/(N sqrt A0), a = AL/A0, IPQ = 4 pi AL/p^2) are transcribed from design-lumen.json, not re-read from the paper.",
+"The planar isoperimetric inequality is assumed (hypothesis hIPQ), not derived in Lean.",
+"check.sh output hides per-theorem axiom lists on success; I saw only the count of zero sorryAx and 6/6 axiom lines. Axiom lists were visible only on the failed first run.",
+"I did not run lake build on the application repo or Audit.lean, and did not re-run the upstream cell-geometry modules.",
+"The ceiling is circular as a test of a lumen's own la (ipq_identity shows this); its use is as a data-quality and design-space bound, not a held-out prediction."
+]
+}

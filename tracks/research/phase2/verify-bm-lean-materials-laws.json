@@ -1,0 +1,30 @@
+{
+ "label": "verify-bm-lean-materials-laws",
+ "claims": [
+  {
+   "claim": "Reuss <= Voigt is kernel-checked for two phases (with equality case f(1-f)(E1-E2)^2 = 0) and for n phases, with only the three standard axioms.",
+   "verdict": "supported",
+   "source_says": "theorem reuss_le_voigt ... reussN s w E ≤ voigtN s w E; reuss_eq_voigt_iff: ↔ f * (1 - f) * (E₁ - E₂) ^ 2 = 0; axioms log: depends on axioms: [propext, Classical.choice, Quot.sound]",
+   "note": "Statements match the Lean file as written; the axiom log lists only the three standard axioms for all five theorems (Lean not re-run, per instructions)."
+  },
+  {
+   "claim": "Euler buckling strip: load strictly increases with thickness, strictly decreases with length, scales as t^3 and 1/L^2, critical stress depends on t/(K L) only; statements about the formula, not a derivation.",
+   "verdict": "supported",
+   "source_says": "eulerStrip_strictMono_thickness, eulerStrip_strictAnti_length, thickness_scaling s^3, length_scaling /s^2, criticalStress = π^2 E (t/(K L))^2/12; header: 'here P_cr is a definition'.",
+   "note": "Each plain-words statement matches its theorem; axiom log shows only standard axioms for all eight."
+  },
+  {
+   "claim": "The check gate is not vacuous: a sorry file fails with sorryAx and exit 1, while the three real files exit 0.",
+   "verdict": "supported",
+   "source_says": "NegativeControl.lean errors=1 sorryAx=1 ... depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] FAILED exit=1; the three real files: ALL CHECKED, exit=0.",
+   "note": "The control also fails on a noncomputable error, but sorryAx is listed, so the gate catches the sorry as claimed."
+  },
+  {
+   "claim": "Mathlib at the pinned revision has no materials vocabulary (0 files for Voigt, Reuss, buckling, Young's modulus, Laman, rigidity matrix).",
+   "verdict": "supported",
+   "source_says": "I re-ran mathlib_grep.sh: Laman -> 0 files, Voigt -> 0 files, Reuss -> 0 files, buckling -> 0 files, Young's modulus -> 0 files, rigidity matrix -> 0 files.",
+   "note": "Reproduced by re-running the script; the saved mathlib_grep_out.txt is truncated to three lines and lacks these zeros, but the claim holds."
+  }
+ ],
+ "overall": "All four key claims hold. I read the Lean sources and axiom logs and re-ran the Mathlib grep, which gave 0 files for every materials term. I did not re-run Lean. The saved mathlib_grep_out.txt omits the zero-hit lines, so the agent's quoted evidence for the last claim is incomplete even though the claim is true."
+}

@@ -1,0 +1,332 @@
+{
+ "label": "t1-reporter-data",
+ "topic": "Track 1 data and reproducibility: Cello UCF libraries for threshold-steepness separability",
+ "summary": "Downloaded three Cello UCF libraries (Eco1C1G1T1 4,834,067 B; Eco2C1G5T1 46,518 B; SC1C1G1T1 1,744,232 B; git blob SHA-1 of each matches GitHub's tree listing) and ran analyse.py and refit.py. All design-reporter pair numbers reproduced exactly (BM3R1 dn 0.1587, S 12.01; 6 pairs with Kfold>=2; phage 933W dn 0.2124 S 6.74; yeast LexA dn 0.2604 S 4.68; SrpR S1 terminator differs; yeast CI/CI434 cassettes identical). One count differs: the design says 9 strict calibration pairs but its own list, and the data, give 10. A first run of the P3 cytometry refit (not previously reported) gives Pearson r = 0.972 between refit and shipped n, max refit dn 0.1115, and finds 10 of 20 gates with small non-monotone upticks at the highest input levels, which the design's day-2 exclusion rule would have dropped. Holdout libraries Eco1C2G2T2, Eco2C1G3T1 and Bth1C1G1T1 were deliberately NOT downloaded by me; only sizes and blob SHAs from the GitHub tree are recorded.",
+ "lay_summary": "Synthetic biologists build tiny genetic switches that turn a gene off when another is on, like a dimmer that goes from bright to dark as you turn a knob. Two numbers describe each dimmer: where the knob must sit for the light to halve, and how sharply it flips. An earlier team claimed you can change the first number a lot without changing the second, by tweaking only one DNA 'volume dial' on the switch. I downloaded the public tables of measured switches and re-ran the sums. Every pair-by-pair number the earlier team quoted came out the same, except they counted nine matching pairs where there are really ten. I also re-estimated the sharpness myself from the raw cell measurements, and it agreed closely with the published values.",
+ "glossary": [
+  {
+   "term": "Hill function",
+   "plain": "A smooth S-shaped curve that describes how an output falls (or rises) as an input grows."
+  },
+  {
+   "term": "threshold K",
+   "plain": "The input level at which the output is half way between its high and low values."
+  },
+  {
+   "term": "steepness n",
+   "plain": "How abruptly the curve flips; bigger n is a sharper switch."
+  },
+  {
+   "term": "RBS",
+   "plain": "A short DNA stretch that sets how strongly a gene is turned into protein."
+  },
+  {
+   "term": "UCF",
+   "plain": "A JSON file that lists the parts and measured switch curves of a Cello library."
+  },
+  {
+   "term": "repressor gate",
+   "plain": "A genetic switch where one protein shuts off a gene's output."
+  },
+  {
+   "term": "sha256",
+   "plain": "A fingerprint of a file; any change to the file changes it."
+  },
+  {
+   "term": "Pearson r",
+   "plain": "A number from -1 to 1 saying how closely two lists of numbers rise and fall together."
+  },
+  {
+   "term": "dn",
+   "plain": "Relative difference in steepness between two gates: |n1-n2| divided by their average."
+  },
+  {
+   "term": "Kfold",
+   "plain": "How many times bigger the larger threshold is than the smaller."
+  },
+  {
+   "term": "S",
+   "plain": "The separability index log2(Kfold)/dn: octaves of threshold shift per unit of steepness drift."
+  },
+  {
+   "term": "holdout",
+   "plain": "Data kept unseen until the test is frozen so it cannot be tuned to."
+  }
+ ],
+ "findings": [
+  {
+   "claim": "Eco1C1G1T1 downloaded; bytes and sha256 recorded; git blob SHA matches the GitHub tree entry",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C1G1T1.UCF.json",
+   "confidence": "high",
+   "value": "4834067 B; sha256 c702d6b9b11bcd3c4fb9f7a77d24af1b549cecf3e7184b3a36692873735cd6f0; fetched 2026-11-12",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Eco2C1G5T1 downloaded",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco2C1G5T1.UCF.json",
+   "confidence": "high",
+   "value": "46518 B; sha256 252502184b94c3726c9ce47413f7cc443f49fd0e9d12366fd4740647aa4485ba",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "SC1C1G1T1 downloaded",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/SC1C1G1T1.UCF.json",
+   "confidence": "high",
+   "value": "1744232 B; sha256 ec14df192975fe89065f8f0f125c7a1f40c5f7f7fb08d12207afc03150a8d180",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "The UCF ships the Hill response as the transfer function",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C1G1T1.UCF.json",
+   "confidence": "high",
+   "value": "",
+   "evidence_quote": "\"equation\": \"ymin + (ymax - ymin) / (1.0 + (x / K)^n)\""
+  },
+  {
+   "claim": "Design number REPRODUCED: BM3R1 B1/B2 dn=0.1587, Kfold=3.750, S=12.01 (mine = design's)",
+   "source": "analyse.py section 1 output",
+   "confidence": "high",
+   "value": "dn 0.1587; Kfold 3.750; S 12.01",
+   "evidence_quote": "B1_BM3R1 B2_BM3R1 n=3.4/2.9 K=0.04/0.15 ... dn=0.1587 kfold=3.750 S=12.01"
+  },
+  {
+   "claim": "Design number REPRODUCED: max dn over strict calibration pairs = 0.1587, so the scout's 0.15 bound is false on its own library",
+   "source": "analyse.py section 1",
+   "confidence": "high",
+   "value": "0.1587 > 0.15",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Design number REPRODUCED: 6 pairs with Kfold>=2, min finite S=12.01",
+   "source": "analyse.py section 1",
+   "confidence": "high",
+   "value": "6 pairs; 12.01",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Design count DIFFERS: it says 9 strict pairs but its own dn list has 10 entries and the data give 10 (all differ at an rbs part). In-scope after Kfold>=2 is 6 in both.",
+   "source": "analyse.py section 1",
+   "confidence": "high",
+   "value": "design 9; mine 10",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Design number REPRODUCED: phage 933W R8/R9 dn=0.2124 Kfold=2.696 S=6.74",
+   "source": "analyse.py section 2",
+   "confidence": "high",
+   "value": "0.2124; 2.696; 6.74",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Design numbers REPRODUCED: Lambda R1/R2 dn 0.0755 S 25.28; P2 R13/R14 0.1967 S 12.08; R13/R15 0.0533 S 72.96; R14/R15 0.1438 S 10.51",
+   "source": "analyse.py section 2",
+   "confidence": "high",
+   "value": "",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Design number REPRODUCED: yeast LexA P1/P2 dn=0.2604 Kfold=2.325 S=4.68, the only in-scope yeast pair",
+   "source": "analyse.py section 3",
+   "confidence": "high",
+   "value": "0.2604; 2.325; 4.68",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Design claim REPRODUCED: yeast CI and CI434 gate pairs have identical cassettes (same_cassette=True) so are out of scope",
+   "source": "analyse.py section 3",
+   "confidence": "high",
+   "value": "CI dn 0.3969 and CI434 dn 0.0154 are not RBS-only pairs",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Design claim REPRODUCED: S1_SrpR cassette ends in ECK120019600, S2-S4 in ECK120029600; S1 vs S4 Kfold = 10.00",
+   "source": "analyse.py section 1",
+   "confidence": "high",
+   "value": "",
+   "evidence_quote": "('RiboJ10','S1','SrpR','ECK120019600') vs ('RiboJ10','S4','SrpR','ECK120029600') kfold=10.00"
+  },
+  {
+   "claim": "Design claim REPRODUCED: Eco1C1G1T1 values are quantised to 1-2 significant figures in the file text (B1_BM3R1 K 0.04, n 3.4; S1_SrpR K 0.01); Eco2C1G5T1 ships 9 digits",
+   "source": "analyse.py section 4",
+   "confidence": "high",
+   "value": "",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Eco1C1G1T1 has 20 cytometry tables, 12 input levels each",
+   "source": "analyse.py section 5; mono.py",
+   "confidence": "high",
+   "value": "20 gates x 12 levels",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "NEW (P3 first run): refit n (log-space least squares on histogram median, multi-start) vs shipped n: Pearson r=0.972 over 20 gates; ratio fit/shipped min 0.76 median 1.00 max 1.15; none outside factor 1.5",
+   "source": "refit.py",
+   "confidence": "medium",
+   "value": "r 0.972; design threshold r>=0.80",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "NEW: refit dn over the 10 strict pairs: max 0.1115 (S2/S3 SrpR), none above 0.25; shipped max was 0.1587",
+   "source": "refit.py",
+   "confidence": "medium",
+   "value": "0.1115",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "NEW: log K refit vs shipped Pearson r=0.903; refit K is often lower (e.g. A1_AmtR 0.034 vs 0.07), so absolute K values are NOT reproduced by this fit",
+   "source": "refit.py",
+   "confidence": "medium",
+   "value": "r 0.903",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "NEW design risk: 10 of 20 gates have non-monotone histogram medians (upticks 0.2 to 28.5 percent at the highest inputs); the design's day-2 rule to exclude non-monotone gates would remove B1 and B3 BM3R1, P1 and P3 PhlF, Q1 QacR, S1 SrpR, hence most strict pairs. The rule needs a tolerance.",
+   "source": "mono.py",
+   "confidence": "high",
+   "value": "L1_LitR last-step ratio 1.285; F1_AmeR 1.207",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Holdouts recorded, not downloaded: Eco1C2G2T2 2610885 B blob ed9d31cf07b96747d950b0c458d7e61896bf883f; Eco2C1G3T1 864264 B a4c081bdc962fe820928f9c935672c6b85e448e9; Bth1C1G1T1 15251526 B cddeed929f3aaa8bf8e9ce92f9be3fe2ac571a5f",
+   "source": "https://api.github.com/repos/CIDARLAB/Cello-v2-1-Core/git/trees/main?recursive=1",
+   "confidence": "high",
+   "value": "",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Citation resolves: Genetic circuit design automation, Science, 2016-04",
+   "source": "https://api.crossref.org/works/10.1126/science.aac7341",
+   "confidence": "high",
+   "value": "",
+   "evidence_quote": ""
+  }
+ ],
+ "key_claims": [
+  {
+   "claim": "Calibration pair numbers (max dn 0.1587, min finite S 12.01 on 6 in-scope pairs) reproduce exactly from the downloaded Eco1C1G1T1 file; the scout's 0.15 bound fails.",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C1G1T1.UCF.json",
+   "evidence_quote": "B1_BM3R1 B2_BM3R1 n=3.4/2.9 K=0.04/0.15 ... dn=0.1587 kfold=3.750 S=12.01"
+  },
+  {
+   "claim": "The only in-scope yeast pair is LexA P1/P2 (dn 0.2604); CI and CI434 pairs have identical cassettes.",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/SC1C1G1T1.UCF.json",
+   "evidence_quote": "LexA P1_LexA P2_LexA n=2.94/3.82 K=0.123/0.286 one_pos=True type=rbs ... dn=0.2604 kfold=2.325 S=4.68 in_scope=True"
+  },
+  {
+   "claim": "First P3 refit from shipped histograms agrees with shipped n (r=0.972, max strict-pair dn 0.1115), but 10/20 gates are non-monotone so the exclusion rule needs a tolerance.",
+   "source": "refit.py output; D:/Users/ashenoy00000/delphi-work/agents2/scripts/t1-reporter-data/",
+   "evidence_quote": "Pearson r(n_fit, n_ship) = 0.972"
+  }
+ ],
+ "table": [
+  {
+   "name": "Eco1C1G1T1.UCF.json",
+   "fields": "bytes=4834067; sha256=c702d6b9b11bcd3c4fb9f7a77d24af1b549cecf3e7184b3a36692873735cd6f0; fetched=2026-11-12; role=calibration; path=D:/Users/ashenoy00000/delphi-work/data/cello-ucf/",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C1G1T1.UCF.json"
+  },
+  {
+   "name": "Eco2C1G5T1.UCF.json",
+   "fields": "bytes=46518; sha256=252502184b94c3726c9ce47413f7cc443f49fd0e9d12366fd4740647aa4485ba; role=seen-not-holdout",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco2C1G5T1.UCF.json"
+  },
+  {
+   "name": "SC1C1G1T1.UCF.json",
+   "fields": "bytes=1744232; sha256=ec14df192975fe89065f8f0f125c7a1f40c5f7f7fb08d12207afc03150a8d180; role=seen-not-holdout",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/SC1C1G1T1.UCF.json"
+  },
+  {
+   "name": "tree.json",
+   "fields": "bytes=38782; sha256=f76000796519ff4842d54b01f50a4677a4ea2ff7cf030f56c8f8b57356ce2cf4; truncated=False",
+   "source": "https://api.github.com/repos/CIDARLAB/Cello-v2-1-Core/git/trees/main?recursive=1"
+  },
+  {
+   "name": "Reproduction: BM3R1 B1/B2",
+   "fields": "design dn=0.1587 S=12.01; mine dn=0.1587 S=12.01; status=reproduced",
+   "source": "analyse.py"
+  },
+  {
+   "name": "Reproduction: calibration max dn",
+   "fields": "design 0.1587; mine 0.1587; status=reproduced",
+   "source": "analyse.py"
+  },
+  {
+   "name": "Reproduction: strict pair count",
+   "fields": "design 9; mine 10; status=differs (design miscounted)",
+   "source": "analyse.py"
+  },
+  {
+   "name": "Reproduction: 933W R8/R9",
+   "fields": "design dn=0.2124 S=6.74; mine same; status=reproduced",
+   "source": "analyse.py"
+  },
+  {
+   "name": "Reproduction: yeast LexA",
+   "fields": "design dn=0.2604 S=4.68; mine same; status=reproduced",
+   "source": "analyse.py"
+  },
+  {
+   "name": "Refit P3 (new)",
+   "fields": "r_n=0.972; max_dn=0.1115; r_logK=0.903; nonmonotone_gates=10/20",
+   "source": "refit.py"
+  }
+ ],
+ "reproduce": [
+  {
+   "what": "Download three libraries plus tree listing (curl)",
+   "command_or_url": "mkdir -p data/cello-ucf && cd data/cello-ucf && for f in Eco1C1G1T1 Eco2C1G5T1 SC1C1G1T1; do curl -sSL -A delphi-research/0.1 -o $f.UCF.json https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/$f.UCF.json; done; curl -sSL -A delphi-research/0.1 -o tree.json 'https://api.github.com/repos/CIDARLAB/Cello-v2-1-Core/git/trees/main?recursive=1'",
+   "expected": "byte sizes 4834067, 46518, 1744232. The main branch may change later; then sizes and hashes differ."
+  },
+  {
+   "what": "Verify hashes",
+   "command_or_url": "sha256sum *.UCF.json",
+   "expected": "c702d6b9..., 25250218..., ec14df19..."
+  },
+  {
+   "what": "Pair analysis (Python 3.14.2, stdlib only)",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents2/scripts/t1-reporter-data/analyse.py D:/Users/ashenoy00000/delphi-work/data/cello-ucf",
+   "expected": "git_blob_sha1_matches_tree True x3; max dn over strict pairs = 0.1587; 933W dn=0.2124; LexA dn=0.2604"
+  },
+  {
+   "what": "Cytometry refit (numpy 2.5.3, scipy 1.18.1; use -P not -I so site-packages load)",
+   "command_or_url": "python -P D:/Users/ashenoy00000/delphi-work/agents2/scripts/t1-reporter-data/refit.py D:/Users/ashenoy00000/delphi-work/data/cello-ucf/Eco1C1G1T1.UCF.json",
+   "expected": "Pearson r(n_fit, n_ship) = 0.972; count dn>0.25: 0 max dn 0.1115 (writes refit_out.json to cwd)"
+  },
+  {
+   "what": "Monotonicity check",
+   "command_or_url": "python -P D:/Users/ashenoy00000/delphi-work/agents2/scripts/t1-reporter-data/mono.py D:/Users/ashenoy00000/delphi-work/data/cello-ucf/Eco1C1G1T1.UCF.json",
+   "expected": "10 gates listed with upticks"
+  }
+ ],
+ "citations": [
+  {
+   "authors": "Nielsen AAK et al. (author list not read from the Crossref response)",
+   "year": 2016,
+   "title": "Genetic circuit design automation",
+   "doi_or_arxiv": "10.1126/science.aac7341",
+   "verified": true,
+   "venue": "Science",
+   "used_for": "Source of the Eco1C1G1T1 library",
+   "how_verified": "Fetched https://api.crossref.org/works/10.1126/science.aac7341 in this run; returned title 'Genetic circuit design automation', Science, 2016-04"
+  }
+ ],
+ "could_not_find": [
+  "Did not download holdouts Eco1C2G2T2, Eco2C1G3T1, Bth1C1G1T1 on purpose (pre-registration). Files for the first two already exist under data/t1-deep (seen in a directory listing, not opened) and the scout's scratch holds Eco1C2G2T2, so the 'untouched' status in the design is already compromised and should be disclosed.",
+  "Earlier scout and laws numbers were not individually re-checked beyond what design-reporter restates; law set 1.8.1 was not used here.",
+  "No bootstrap CIs for refit n. Histogram 'output' values assumed to be counts per bin.",
+  "python -I blocks site-packages here, so the refit needs -P and numpy/scipy.",
+  "Cause of the design's '9 pairs' count not known (likely miscount)."
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t1-reporter-data/analyse.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t1-reporter-data/refit.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t1-reporter-data/mono.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scratch/t1-reporter-data/mk.py"
+ ],
+ "recommendations": [
+  "Fix the strict-pair count to 10 in PREREG.",
+  "Replace the exclude-non-monotone-gates rule with a tolerance before freezing.",
+  "Disclose that holdout files were already opened by the scout and possibly t1-deep.",
+  "Add bootstrap CIs; run the refit on holdouts only after the freeze."
+ ]
+}

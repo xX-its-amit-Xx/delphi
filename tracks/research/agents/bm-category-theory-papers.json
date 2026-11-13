@@ -1,0 +1,719 @@
+{
+ "label": "bm-category-theory-papers",
+ "topic": "Category theory for materials: Marom-Tibbits-Zardini-Buehler and the Atoms to Swarms spine",
+ "summary": "IN PLAIN LANGUAGE. The paper treats each size level of a material (a fibre, a layer, a strip, a whole pine-cone scale) as a small machine that takes in a stimulus such as humidity and changes shape. Each step that rolls a fine level up into a coarser one is a 'morphism'. A morphism 'preserves dynamics' if letting the fine machine run and then summarising gives the same result as summarising first and then letting the coarse machine run. The authors chain five such levels for the pine cone, swap the biological numbers for printable-plastic numbers, and print four bending and twisting strips whose measured angles land within one standard deviation of prediction. PRECISELY. Objects of Dyn are triples (X,E,f) with xdot=f(x,e); morphisms are smooth pairs (alpha,alpha_E) with d(alpha)_x f(x,e) = g(alpha(x),alpha_E(e)) (eq 4). Only the pine cone is instantiated: fibre relaxation law (eq 6), lamina average (eq 8), two-lamina stack with cos^2/sin^2 projection (eq 13-14), element curvature kappa=C_geom*d_eps with the Timoshenko coefficient (eq 15-16), organ angle theta=L*kappa (eq 18). Wheat awns, seed pods, the flytrap and nacre get one motivating sentence and no equation or parameter, so the brief's premise for them is wrong (confirming the earlier agent). No numeric tau, chi or m0 is given in the paper; the only numbers live in Grasshopper material panels, which I decoded (PA6-GF E=2850 MPa, PA612-CF15 5140, PLA 3500, PLA-CF 6000, plus pine_sclereid E=30 MPa and pine_sclerenchyma E=650 MPa). PROVED vs EXPERIMENT. On paper the authors prove only structural facts (Dyn is a category by the chain rule; F, pi, E are functors; several scale maps are morphisms), many of them definitional; they say plainly that model fidelity 'remains empirical'. The experiment is four strips (n=3,3,4,3), equilibrium angles only, no time data. WHAT THE CODE COMPUTES: closed-form equilibrium algebra (eps=chi*du, Timoshenko, angle=degrees(kappa*L)); Nat and Art run identical code on different panels; alpha_1 is run with N=1; 'verified' is a 5-percent tolerance and window check, not the simulation condition; the twist reuses the bending coefficient. I reproduced one of four Table 3 predictions (41.3 degrees at du=1.0) and give the implied step for the others (0.53, 92.4 K, 71.1 K). NEW HERE. I compiled the Lean files this session (no errors, standard axioms only). The Timoshenko ceiling f<=3/2 with equality at m^2 n=1 is machine-checked and is not in the paper; the paper's printed pairs sit at 97.8 to 98.2 percent of it. I found two unstated hypotheses behind the paper's alpha_geom proposition (equal relaxation times and equal laminar moisture) and a scalar proof that no change of coordinates can turn one relaxation time into another, so 'F is parameter substitution' needs a time-rescaling. From Atoms to Swarms (Buehler, ChemRxiv 2026-05-07) is an Account that calls category theory 'a vocabulary, not a source of theorems'; only its abstract was readable (HTTP 403 on the body). Ranked formalisation targets and the joint-paper additions are in findings and recommendations.",
+ "lay_summary": "Think of a pine cone scale as a tiny machine: when the air gets damp it bends, and the paper describes that machine as a stack of simple steps from a single fibre up to the whole scale. The authors use a branch of mathematics to say that each step must respect how the thing changes in time, and then they print plastic strips that bend or twist in water or heat. Their strips matched the predicted angles, but they only measured the final bend, not how fast it happens, and they did not check the maths with a computer. We re-ran the computer proof checker on our own results and it passed: it proves that no two-layer strip can bend more than a fixed amount, and the authors' strips are already about 98 percent of the way to that limit. We also found two quiet conditions the authors' argument needs, and the code does not test the key rule at all. A joint paper could add a design that a checked theorem rejects, a timing test, and a version for resin and powder printers.",
+ "findings": [
+  {
+   "claim": "Bibliographic identity: Marom, Tibbits, Zardini, Buehler; arXiv v1 29 Apr 2026, v2 20 Aug 2026 (cond-mat.soft primary); journal version J. Mech. Phys. Solids vol 216, article 106780, issued 2026-10 (Crossref). Confirms the earlier agent (spec-marom-buehler-deep.json).",
+   "source": "https://arxiv.org/html/2604.26367v2",
+   "confidence": "high",
+   "value": "arXiv:2604.26367v2; doi:10.1016/j.jmps.2026.106780",
+   "evidence_quote": "arXiv:2604.26367v2 [cond-mat.soft] 20 Aug 2026"
+  },
+  {
+   "claim": "PLAIN: the paper treats a living or engineered material as a 'machine with a dial and a response'. Each OBJECT is one such machine at one length scale (a single fibre, a layer, a strip, a whole scale). A MORPHISM is a rule that turns the fine-scale machine into the coarse-scale one (for example averaging many fibres into one layer). 'Preserves dynamics' means: let the fine machine run for a moment and then summarise it, or summarise first and then let the coarse machine run, and you get the same answer.",
+   "source": "https://arxiv.org/html/2604.26367v2",
+   "confidence": "high",
+   "evidence_quote": "evolving at the fine scale and then mapping through"
+  },
+  {
+   "claim": "PRECISE: an object of Dyn is a triple S=(X,E,f): X a finite-dimensional state space, E a finite-dimensional stimulus space, f the law, with dynamics xdot = f(x,e). (Appendix A.2 upgrades X and E to smooth manifolds and f to a smooth map X x E -> TX.)",
+   "source": "https://arxiv.org/html/2604.26367v2",
+   "confidence": "high",
+   "value": "S=(X,E,f); xdot=f(x,e)",
+   "evidence_quote": "is the governing law that determines how the state evolves under a given stimulus"
+  },
+  {
+   "claim": "PRECISE: a morphism (alpha, alpha_E): (X,E,f)->(Y,F,g) is a pair of smooth maps satisfying the simulation condition d(alpha)_x(f(x,e)) = g(alpha(x), alpha_E(e)) for all (x,e) (paper eq 4 / A.11). 'Preserve dynamics' means exactly this identity; the authors gloss it as 'the map commutes with time evolution'.",
+   "source": "https://arxiv.org/html/2604.26367v2",
+   "confidence": "high",
+   "value": "d alpha_x (f(x,e)) = g(alpha(x), alpha_E(e))",
+   "evidence_quote": "In words, the map commutes with time evolution"
+  },
+  {
+   "claim": "Composition is component-wise and the simulation condition is closed under it; the proof is the chain rule (Appendix A.2). Nat and Art are defined as FULL subcategories of Dyn whose objects 'arise from natural or biological mechanisms' / 'are realized as engineered or fabricated systems': membership is a label, not a mathematical predicate.",
+   "source": "https://arxiv.org/html/2604.26367v2",
+   "confidence": "high",
+   "evidence_quote": "is the full subcategory whose objects are realized as engineered or fabricated systems"
+  },
+  {
+   "claim": "Only ONE biological system is instantiated, the pine cone, as five objects F_fib -> L_lam -> T_tis -> S_elem -> O_org. Wheat awns, the Venus flytrap and nacre are one-sentence motivation (Sec. 1, Sec. 3) with NO equation or parameter; chiral seed pods appear once, in Case II, as the motivation for the twist mismatch. So the premise that the paper gives equations and parameters for awns, pods and the flytrap is false (confirms the earlier agent).",
+   "source": "https://arxiv.org/html/2604.26367v2",
+   "confidence": "high",
+   "value": "pine cone: 5 objects; awns/pods/flytrap/nacre: 0 equations",
+   "evidence_quote": "Each of these can be represented as a chain of objects in"
+  },
+  {
+   "claim": "Pine-cone fibre scale (eq 5-6): state (m, eps_L, eps_T) in R^3, stimulus u = relative humidity, first-order relaxation m' = -(m - m_eq(u))/tau_m, eps_L' = -(eps_L - chi_L (m - m0))/tau_L, eps_T' = -(eps_T - chi_T (m - m0))/tau_T. I searched the whole text: no numerical value of tau_m, tau_L, tau_T, chi_L, chi_T, m0 or m_eq(u) is given anywhere (script check_no_numbers.py).",
+   "source": "https://arxiv.org/html/2604.26367v2",
+   "confidence": "high",
+   "value": "no numeric parameter values in paper text",
+   "evidence_quote": "We model the dynamics as a first-order relaxation toward equilibrium"
+  },
+  {
+   "claim": "Lamina scale (eq 8-9): alpha_1 averages N fibre states; the lamina law has the same relaxation form. Only the uniform case (all fibres same parameters and orientation) is treated; heterogeneous fibres are deferred to a presheaf formulation.",
+   "source": "https://arxiv.org/html/2604.26367v2",
+   "confidence": "high",
+   "evidence_quote": "the fibers within a lamina share the same constitutive parameters and the same orientation"
+  },
+  {
+   "claim": "Tissue scale (eq 11-14): X_tis = X_lam^M, laminae evolve independently; effective strain along the tissue axis eps = eps_L cos^2(phi) + eps_T sin^2(phi); for M=2 the reduction beta_thk returns the mismatch eps_1 - eps_2.",
+   "source": "https://arxiv.org/html/2604.26367v2",
+   "confidence": "high",
+   "evidence_quote": "Each lamina evolves independently under the shared humidity input"
+  },
+  {
+   "claim": "Element scale (eq 15-17): kappa = C_geom * delta_eps_thk with the Timoshenko coefficient C_geom = (1/h) 6(1+mu)^2 / [3(1+mu)^2 + (1+mu n)(mu^2 + 1/(mu n))], mu = h1/h2, n = E1/E2, h = h1+h2; element law with a mismatch relaxation time tau_Delta (no value given). This is the 'f(m,n)' of the project record with h*C_geom = f.",
+   "source": "https://arxiv.org/html/2604.26367v2",
+   "confidence": "high",
+   "value": "kappa = C_geom * d_eps",
+   "evidence_quote": "the Timoshenko bilayer formula [33] gives the intrinsic curvature as"
+  },
+  {
+   "claim": "Organ scale (eq 18): opening angle of a clamped scale of uniform curvature, theta(L) = integral of kappa ds = L*kappa; organ = K independent elements; observable = mean opening angle. No new constitutive law at this scale.",
+   "source": "https://arxiv.org/html/2604.26367v2",
+   "confidence": "high",
+   "value": "theta = L*kappa",
+   "evidence_quote": "No new constitutive laws are introduced at this scale."
+  },
+  {
+   "claim": "PROVED BY CONSTRUCTION (on paper, Appendix A): Dyn is a category; Nat/Art are full subcategories; a reduction compatible with the dynamics induces a unique quotient dynamics (A.4, flat-space argument only needs well-definedness); alpha_geom (with geometry adjoined at zero dynamics) and alpha_3 are morphisms; Spec, Comp are categories; F, pi, E are functors. Most are definitional: pi sends every Spec morphism to an identity because Spec morphisms are DEFINED as pi-preserving; F is conjugation by chosen diffeomorphisms that are 'typically identities'.",
+   "source": "https://arxiv.org/html/2604.26367v2",
+   "confidence": "high",
+   "evidence_quote": "the maps $\\iota_{S}$ and $\\jmath_{S}$ are typically identities"
+  },
+  {
+   "claim": "LEFT TO EXPERIMENT, in the authors' words: verification is a claim about composition, not about any single model; model fidelity, material variability and fabrication tolerance 'remain empirical'. The paper's own concession is that some betas shown in the figures (strain components, curvature, mean opening angle) are 'terminal observables' that 'need not, by themselves, carry enough state to define closed dynamics', i.e. they are not Dyn morphisms.",
+   "source": "https://arxiv.org/html/2604.26367v2",
+   "confidence": "high",
+   "evidence_quote": "The fidelity of the models themselves, together with material variability and fabrication tolerances, remains empirical"
+  },
+  {
+   "claim": "Experiment: four bilayer strips (L=100 mm, w=10 mm, h1=h2=0.6 mm), multi-material FFF, measured at equilibrium only. Table 3 predicted vs measured (mean +/- s.d.): baseline hygro bend 36.4 vs 35.3+/-3.1 deg (n=3); Case I thermal bend 52.0 vs 55.7+/-4.2 (n=3); Case II hygro twist 41.3 vs 41.3+/-2.2 (n=4); Case III thermal twist 23.0 vs 23.3+/-2.5 (n=3). All within one s.d. of the mean.",
+   "source": "https://arxiv.org/html/2604.26367v2",
+   "confidence": "high",
+   "value": "n=3,3,4,3 specimens",
+   "evidence_quote": "All four predictions agree with the measured mean to within one standard deviation."
+  },
+  {
+   "claim": "The experimental validation is static: 'the deformed geometry was empirically measured at equilibrium'. No relaxation time is predicted or measured, so the DYNAMIC half of 'stimulus-response dynamical systems' (the tau's in eq 6, 9, 17) is untested by the paper.",
+   "source": "https://arxiv.org/html/2604.26367v2",
+   "confidence": "high",
+   "value": "0 time-resolved measurements",
+   "evidence_quote": "In all cases the deformed geometry was empirically measured at equilibrium."
+  },
+  {
+   "claim": "Case II (twist) uses a different pair of materials at +45 and -45 degrees (PA6-GF and PA612-CF), but eq 28 (delta_eps_12 = (eps_L1 - eps_T1) sin 2phi) is derived for an antisymmetric bilayer in which both layers share the same eps_L, eps_T. The paper says the twist curvature 'follows from plate theory for antisymmetric laminates' without giving the formula.",
+   "source": "https://arxiv.org/html/2604.26367v2",
+   "confidence": "high",
+   "evidence_quote": "the twist curvature $\\tau$ follows from plate theory for antisymmetric laminates"
+  },
+  {
+   "claim": "Case III (thermal twist) is presented as generated 'purely through composition' of the Case-I thermal fibre object and the Case-II twist reduction. This is the only composed case; the claim of |F_i|*|beta_j| verified candidates rests on 2x2 = 4 instances.",
+   "source": "https://arxiv.org/html/2604.26367v2",
+   "confidence": "high",
+   "value": "1 composed case of 4",
+   "evidence_quote": "Any library of validated constitutive laws"
+  },
+  {
+   "claim": "Future-work statement relevant to a joint paper: the authors propose the simulation condition as 'a type-level filter ... returning rejected candidates to the proposer with an explicit interface failure', but the paper shows only successes and no rejected candidate.",
+   "source": "https://arxiv.org/html/2604.26367v2",
+   "confidence": "high",
+   "value": "0 rejected candidates shown",
+   "evidence_quote": "returning rejected candidates to the proposer with an explicit interface failure"
+  },
+  {
+   "claim": "NEW (my derivation, checked numerically by closure_check.py, not stated in the paper): Proposition A.25 says alpha_geom is a Dyn morphism 'with the element dynamics defined as in the main text' because the element law is 'exactly' the pushforward. That holds ONLY IF tau_L = tau_T = tau_Delta (the fibre law eq 6 has separate tau_L, tau_T) AND the two laminae carry the same moisture m (then Delta_eps^0 is a function of the single m of eq 17; with m_A != m_B it depends on both). With tau_L=1, tau_T=5, two tissue states with the same (Delta_eps, m_A, m_B) had d(Delta_eps)/dt = -0.0095 and -0.0895, so no induced dynamics on (Delta_eps, m) exists and the compatibility condition A.15 fails. The paper states neither hypothesis.",
+   "source": "own calculation: agents2/scripts/bm-category-theory-papers/closure_check.py",
+   "confidence": "high (numeric counterexample, plain-python arithmetic)",
+   "value": "residual 1.7e-16 when tau_L=tau_T; dD/dt -0.0095 vs -0.0895 otherwise",
+   "evidence_quote": "This is exactly the element law used in Section 3."
+  },
+  {
+   "claim": "NEW (my derivation): 'F reduces to parameter substitution' cannot be literally true for the time constants. Condition A.42 asks for a diffeomorphism iota with d(iota)(f) = f'(iota, j). For one relaxation x' = -(x-a)/tau against x' = -(x-a')/tau', differentiate A.42 at the fixed point x=a: iota'(a)(-1/tau) = -iota'(a)/tau', and iota'(a) != 0 for a diffeomorphism, so tau = tau'. Hence swapping the biological tau for a printed filament's tau is NOT an instance of A.42 for any choice of iota (only chi, a and the coefficients can be absorbed by rescaling coordinates). Because Dyn has no time-rescaling morphism, 'same law, different parameters' leaves Dyn whenever the speed differs.",
+   "source": "own derivation (two lines, above); paper A.42 quoted",
+   "confidence": "high (elementary; scalar case; not machine-checked)",
+   "value": "tau' must equal tau",
+   "evidence_quote": "This condition expresses that the engineered object preserves the state-space organization and evolution law of the biological one up to relabeling and parameter substitution."
+  },
+  {
+   "claim": "Repo facts (GitHub API, fetched 2026-11-12): lamm-mit/CategoryTheoryDesign, Apache-2.0, created 2026-04-21, last push 2026-08-02, 32 stars; ct_design.gh (68,640 B) and ct_design.3dm, 41 Python scripts in gh_scripts/, four G-code files, four .mov videos, figures. Needs Rhino 8 + Grasshopper, and a Bambu X1 Carbon machine profile; there are no tests and no Lean or proof files.",
+   "source": "https://github.com/lamm-mit/CategoryTheoryDesign",
+   "confidence": "high",
+   "value": "41 scripts; 4 g-code; Apache-2.0",
+   "evidence_quote": "Apache License 2.0. See [LICENSE](LICENSE)."
+  },
+  {
+   "claim": "WHAT THE CODE COMPUTES (1/5): every script evaluates closed-form EQUILIBRIUM algebra; no ODE is integrated and no time constant exists anywhere in the code (grep for tau, relax, solve_ivp, odeint, simulation, commut returns nothing relevant). F_fib applies eps = coefficient * du at equilibrium.",
+   "source": "https://raw.githubusercontent.com/lamm-mit/CategoryTheoryDesign/main/gh_scripts/F_fib.py",
+   "confidence": "high",
+   "evidence_quote": "# apply f_fib at equilibrium"
+  },
+  {
+   "claim": "WHAT THE CODE COMPUTES (2/5): the Nat branch (F_fib, T_tis, S_elem, O_org) and the Art branch (F_fil, T_stack, S_print, O_obj) are the same code; they differ only in which material panels are wired in. So the 'functor F' is realised as a swap of input panels, exactly 'parameter substitution'. The paper agrees: 'They differ only in their input panels.'",
+   "source": "https://raw.githubusercontent.com/lamm-mit/CategoryTheoryDesign/main/gh_scripts/F_fil.py",
+   "confidence": "high",
+   "evidence_quote": "They differ only in their input panels."
+  },
+  {
+   "claim": "WHAT THE CODE COMPUTES (3/5): alpha_1 (averaging N fibres) is run with N=1, i.e. the identity; the averaging morphism of eq 8 is never exercised on more than one fibre.",
+   "source": "https://raw.githubusercontent.com/lamm-mit/CategoryTheoryDesign/main/gh_scripts/alpha_1.py",
+   "confidence": "high",
+   "value": "N=1",
+   "evidence_quote": "# N=1 averaging => identity. Emit lamina-indexed state."
+  },
+  {
+   "claim": "WHAT THE CODE COMPUTES (4/5): 'verified' in spec.py is a numerical tolerance test, not a check of the simulation condition. It passes when the Timoshenko coefficient and curvature recomputed from the discretised print (integer pass counts, effective modulus rho*E) are within epsilon (default 5 percent) of the design values AND speed and nozzle temperature sit inside per-material windows. Nothing in the repo tests d(alpha)(f) = g(alpha, alpha_E).",
+   "source": "https://raw.githubusercontent.com/lamm-mit/CategoryTheoryDesign/main/gh_scripts/spec.py",
+   "confidence": "high",
+   "value": "tolerance epsilon=0.05",
+   "evidence_quote": "verified = C_ok and k_ok and proc_ok"
+  },
+  {
+   "claim": "WHAT THE CODE COMPUTES (5/5): the twist response reuses the SAME Timoshenko bending coefficient: kappa_twist = C_geom * d_12, and the reported angle is degrees(kappa*L) for both bend and twist. The paper says the twist curvature 'follows from plate theory for antisymmetric laminates'; the repo does not implement a separate laminate calculation. Whether C_geom (a bending result for equal-width isotropic layers) is the right coefficient for an anisotropic +/-45 laminate is untested here (it would need the laminate stiffnesses, which the panels do not hold: one scalar E per material).",
+   "source": "https://raw.githubusercontent.com/lamm-mit/CategoryTheoryDesign/main/gh_scripts/S_elem.py",
+   "confidence": "medium-high (code read; physics adequacy not tested)",
+   "evidence_quote": "kappa_twist = C_geom * d_12"
+  },
+  {
+   "claim": "The tissue reducers carry the 'other' response as a labelled crosstalk: beta_twist reports delta_eps_thk as '(crosstalk)'. Because the printed twist specimens pair two different materials, the bend driver is non-zero. With the panel values at the full-humidity step that reproduces the paper's 41.3 degree twist (du=1.0) the repo's own formulas give a bend of 27.3 degrees alongside it; for thermal twist at the implied 71 K step, 17.0 degrees alongside 23.0 degrees of twist (reproduce_pipeline.py). The paper does not mention this coupling; it conflicts with the clean 'twist rather than bend' reading of eq 28. Not checked against the authors' videos.",
+   "source": "https://raw.githubusercontent.com/lamm-mit/CategoryTheoryDesign/main/gh_scripts/beta_twist.py",
+   "confidence": "medium (own calculation from repo formulas; unchecked against the specimens)",
+   "value": "bend crosstalk 27.3 deg (hygro), 17.0 deg (thermal)",
+   "evidence_quote": "delta_eps_thk = {:+.6f}  (crosstalk)"
+  },
+  {
+   "claim": "Material panels (decoded from the binary ct_design.gh by gh_panels.py; the earlier agent decoded the same strings): PA6-GF E=2850 MPa, chi_L=5.0e-3, chi_T=1.1e-2, alpha_L=1.0e-4, alpha_T=5.0e-3 per K; PA612-CF15 E=5140, chi_L=1.2e-3, chi_T=7.0e-3, alpha_L=3.0e-5, alpha_T=1.0e-4; PLA E=3500, alpha_L=6.8e-5, alpha_T=1.0e-4; PLA-CF E=6000, alpha_L=2.0e-5, alpha_T=8.0e-5. The PA6-GF alpha_T of 5.0e-3 per K (5000 ppm/K) looks implausible next to the other values but is not used in any printed case.",
+   "source": "https://raw.githubusercontent.com/lamm-mit/CategoryTheoryDesign/main/ct_design.gh",
+   "confidence": "high (decoded strings); medium (physical plausibility)",
+   "value": "see table",
+   "evidence_quote": "name=PA6-GF;E=2850;alpha_L=1.0e-4;alpha_T=5.0e-3;chi_L=5.0e-3;chi_T=1.1e-2;v_min=60;v_max=130;T_min=260;T_max=290;T_bed=90"
+  },
+  {
+   "claim": "The repo's own setup guide gives a DIFFERENT PA6-GF panel (chi_T=1.2e-2, v 30-60 mm/s, T_bed 80) and a different PLA-CF (alpha_L=1.0e-5, alpha_T=2.0e-4) from the panels inside ct_design.gh (chi_T=1.1e-2, v 60-130, T_bed 90; PLA-CF alpha_L=2.0e-5, alpha_T=8.0e-5). Two sources inside one repo disagree; I do not know which produced Table 3.",
+   "source": "https://raw.githubusercontent.com/lamm-mit/CategoryTheoryDesign/main/gh_scripts/GH_SETUP_GUIDE_CT.md",
+   "confidence": "high",
+   "value": "chi_T 1.2e-2 vs 1.1e-2",
+   "evidence_quote": "name=PA6-GF;E=2850;chi_L=5.0e-3;chi_T=1.2e-2;v_min=30;v_max=60;T_min=260;T_max=290;T_bed=80"
+  },
+  {
+   "claim": "The .gh file also holds NATURAL-side panels, which the paper never prints: pine_sclereid E=30 MPa, chi_L=0.02, chi_T=0.20; pine_sclerenchyma E=650 MPa, chi_L=0.01, chi_T=0.05; and 'bauhinia' (a chiral-pod genus) E=2000, chi_L=0.005, chi_T=0.18. These are the only pine-cone and seed-pod numbers in the whole package. They are used by the Nat branch for display; the printed cases use only the FFF panels. The modulus ratio they imply (30/650 = 0.046, inverse 21.7) differs from the n ~ 5 that the earlier agent quoted from Reyssat and Mahadevan 2009 (spec-hygromorph-4d.json; I did not re-read that paper).",
+   "source": "https://raw.githubusercontent.com/lamm-mit/CategoryTheoryDesign/main/ct_design.gh",
+   "confidence": "high (strings); low (which scale they represent)",
+   "value": "pine_sclereid E=30 MPa chi_T=0.20; pine_sclerenchyma E=650 MPa chi_T=0.05",
+   "evidence_quote": "name=pine_sclereid;E=30;alpha_L=5e-6;alpha_T=5e-5;chi_L=0.02;chi_T=0.20"
+  },
+  {
+   "claim": "REPRODUCTION (reproduce_pipeline.py, panels above, h1=h2=0.6 mm, L=10 cm, angle=degrees(C_geom*delta*L)): the 41.3 degree hygro-twist prediction is reproduced at du=1.000 (RH 0 to 100 percent). The other three are NOT reproduced at a physically sensible single step: hygro bend (G-code order 90/0) needs du=0.530, and the README's 0/90 order gives only 14.0 degrees per unit du in the opposite sign (cannot reach 36.4); thermal bend needs a 92.4 K step; thermal twist needs 71.1 K. A single 'boiling water' step cannot be both 92 K and 71 K, so the thermal pair is mutually inconsistent under these panels. This confirms the earlier agent (one of four reproduced) and gives the implied step for each.",
+   "source": "own calculation: agents2/scripts/bm-category-theory-papers/reproduce_pipeline.py",
+   "confidence": "medium-high (depends on panels, which disagree between guide and .gh)",
+   "value": "du_required: 0.530 / 92.4 K / 0.9993 / 71.1 K",
+   "evidence_quote": "Thermal actuation specimens (Cases I and III) were submerged in near boiling water."
+  },
+  {
+   "claim": "G-code headers disagree with the paper: hygro_bend.gcode records mat1 PA6-GF theta=90, mat2 PA612-CF15 theta=0 (paper: 0/90); its header kappa=0.0763 per cm over L=10 cm is 43.7 degrees, not 36.4; hygro_twist.gcode records kappa=-0.0763, the same magnitude as the bend although the two formulas differ by a factor 1.66 per unit step; both thermal files record kappa=0.0000.",
+   "source": "https://raw.githubusercontent.com/lamm-mit/CategoryTheoryDesign/main/g-code/hygro_bend.gcode",
+   "confidence": "high",
+   "value": "kappa 0.0763 1/cm -> 43.7 deg",
+   "evidence_quote": "; mat1=PA6-GF (theta=90deg)  mat2=PA612-CF15 (theta=0deg)"
+  },
+  {
+   "claim": "LEAN, re-run this session (2026-11-12, Lean v4.35.0 via tracks/lean/check.sh, project Mathlib): HygromorphCeilingCheck.lean compiled with errors=0, sorryAx=0 and all 5 theorems (amgm_step, timoshenkoCoefficient_le, timoshenkoCoefficient_eq_of_optimal, bilayerCurvature_optimal, bilayer_rules_out) depend only on propext, Classical.choice, Quot.sound. A scratch copy of upstream Hygromorphs.lean (untouched upstream) compiled with errors=0 and the 8 audited theorems have the same three axioms. The earlier agent only read the source; this is the first compile in this programme's agent record.",
+   "source": "agents2/scratch/bm-category-theory-papers/lean-ceiling.log and lean-run.log",
+   "confidence": "high",
+   "value": "errors=0; sorryAx=0",
+   "evidence_quote": "theorem timoshenkoCoefficient_le (h m n : ℝ) (hh : 0 < h) (hm : 0 < m) (hn : 0 < n) :"
+  },
+  {
+   "claim": "ALREADY MACHINE-CHECKED (Hygromorphs.lean, 356 lines): (a) a flat-space Dyn: StimulusResponseSystem (X normed space, E a bare Type, f : X -> E -> X), StimulusResponseHom with the simulation condition fderiv alpha x (f x e) = g (alpha x) (alphaE e), identity, comp_simulation (chain rule), id_comp, comp_id, comp_assoc, a Mathlib Category instance; (b) mapsSolutions: a morphism carries solution curves to solution curves, which the paper asserts only in words; (c) timoshenkoCoefficient = eq 16 and bilayerCurvature = eq 15, with linearity, sign, symmetric case kappa = 3/2 d_eps/h, and bilayerCurvature_ofEquilibrium, a derivation from force balance, moment balance and interface compatibility that the paper only cites; (d) axialStrain (eq 13), shearStrain, shearStrain_mismatch (eq 28) and axialStrain_mismatch (=0 for the same-material antisymmetric pair).",
+   "source": "https://github.com/lamm-mit/CategoryTheoryDesign (paper) vs upstream/leanbio/lean/ThompsonLaws/Hygromorphs.lean (local)",
+   "confidence": "high",
+   "evidence_quote": "simulation : ∀ x e, fderiv ℝ α x (S.f x e) = T.f (α x) (αE e)"
+  },
+  {
+   "claim": "ALREADY MACHINE-CHECKED (HygromorphCeilingCheck.lean, project record, re-run above): f <= 3/(2h) for all positive h, m, n, with equality when m^2 n = 1, and bilayer_rules_out: any claimed curvature above 1.5*d_eps/h is excluded. This is NOT in the paper. It is also the only theorem in the Lean set that REJECTS something, the 'explicit interface failure' the authors name as future work.",
+   "source": "tracks/lean/HygromorphCeilingCheck.lean",
+   "confidence": "high",
+   "value": "ceiling 3/(2h)",
+   "evidence_quote": "theorem bilayer_rules_out (h m n Δε κ_claimed : ℝ) (hh : 0 < h) (hm : 0 < m) (hn : 0 < n)"
+  },
+  {
+   "claim": "Lean DIFFERS from the paper's Dyn: X is a normed vector space (paper: smooth manifold, f into TX), E is a bare Type with alpha_E an arbitrary function (paper: smooth manifold, smooth map), alpha is only Differentiable and f has no regularity. The Lean statement is the flat-space case, which covers every example in the paper (all state spaces there are subsets of R^n). The file's own docstring says the normed space is 'standing in for the finite-dimensional manifold'.",
+   "source": "upstream/leanbio/lean/ThompsonLaws/Hygromorphs.lean",
+   "confidence": "high",
+   "evidence_quote": "(a real normed space, standing in for the finite-dimensional manifold)"
+  },
+  {
+   "claim": "In the Lean file but NOT in this paper: diffusive time h^2/D and the slowest heat-equation mode (diffusionMode_heat), the snap parameter L^4 kappa^2/h^2 with monotonicity lemmas, and the poroelastic time mu L^2/(k E). The paper has no diffusive or flytrap equation, so these Lean results cannot be 'the paper formalised'.",
+   "source": "upstream/leanbio/lean/ThompsonLaws/Hygromorphs.lean",
+   "confidence": "high",
+   "evidence_quote": "def snapParameter (L κ h : ℝ) : ℝ := L ^ 4 * κ ^ 2 / h ^ 2"
+  },
+  {
+   "claim": "NOT machine-checked anywhere I could find: Nat/Art as full subcategories; A.4 (compatible reduction induces unique dynamics); fibre relaxation law as an object; alpha_1 averaging, alpha_2 stacking, alpha_geom, alpha_3 as morphisms; the functor F and the natural transformation eta; eq 18 theta = L kappa; Spec, Comp, pi, E; any process-window statement; the thermal fibre object. (Searched the 356-line file and the two ceiling files by name; the claim-source file named in the header, key-claims.json, is absent from the local checkout.)",
+   "source": "upstream/leanbio/lean/ThompsonLaws/Hygromorphs.lean",
+   "confidence": "medium-high (absence from two files; other Lean files in the programme not searched)",
+   "evidence_quote": "Stimulus–response systems and simulation-preserving pairs form a category."
+  },
+  {
+   "claim": "'From Atoms to Swarms: The Categorical Spine of Multiscale Materials Modeling and Autonomous Discovery' is a single-author (Buehler) ChemRxiv preprint, DOI 10.26434/chemrxiv.15002850/v1, posted 2026-05-07 (Crossref). Wang and Buehler (arXiv 2606.01444) cite it, under the title 'From atoms to swarms: a category-theoretic spine for multiscale modeling and autonomous discovery', as 'ACS Accounts of Materials Research ... in press'. It is therefore an Account (review) of the group's own work, not a new theorem or experiment.",
+   "source": "https://api.crossref.org/works/10.26434/chemrxiv.15002850/v1 ; https://arxiv.org/html/2606.01444",
+   "confidence": "high",
+   "value": "posted 2026-05-07; reference-count 0 in Crossref",
+   "evidence_quote": "From atoms to swarms: a category-theoretic spine for multiscale modeling and autonomous discovery. ACS Accounts of Materials Research."
+  },
+  {
+   "claim": "I could read ONLY the abstract (Crossref). The ChemRxiv full text and public API returned HTTP 403 behind a Cloudflare challenge, which I did not try to bypass; Europe PMC has no record; no arXiv or open mirror was found. Everything below about its content is from the abstract. The abstract says it traces an arc 'from reactive molecular dynamics of dynamic fracture, the hierarchical mechanics of collagen and silk' through surrogates, inverse design, materiomusic, neurosymbolic reasoning and 'plannerless scientific swarms', and reads all of them as 'structure-preserving maps between typed objects'.",
+   "source": "https://api.crossref.org/works/10.26434/chemrxiv.15002850/v1",
+   "confidence": "high (abstract); none for the body",
+   "evidence_quote": "All these can be read as structure-preserving maps between typed objects"
+  },
+  {
+   "claim": "The abstract states its own limit: category theory here is 'a vocabulary, not a source of theorems'; its value is 'operational' because it forces authors to declare 'which types survive a coarse-graining step, which symmetries a learned surrogate respects, and where each diagram fails to commute'. This is the opposite stance to the JMPS paper's 'verified by construction' and is exactly the gap a machine-checked theorem fills: Lean turns the vocabulary into theorems for the one diagram that has a closed form (the Timoshenko bound).",
+   "source": "https://api.crossref.org/works/10.26434/chemrxiv.15002850/v1",
+   "confidence": "high (quotes); medium (my reading of the contrast)",
+   "evidence_quote": "This is a vocabulary, not a source of theorems, and that distinction matters."
+  },
+  {
+   "claim": "Wang and Buehler (arXiv:2606.01444, v2 21 Aug 2026) formalise discovery systems as copresheaves and instantiate it in 'CategoryScienceClaw', which extends ScienceClaw 'with proof-carrying typed artifacts, lineage, gates, stress tests, and claim records'. That is the closest published sibling of this project's machine-checked-claim approach, and shows the Buehler group already wants proof-carrying artifacts but reports no proof-assistant checking in the hygromorph work.",
+   "source": "https://arxiv.org/abs/2606.01444",
+   "confidence": "high",
+   "evidence_quote": "CategoryScienceClaw extends ScienceClaw with proof-carrying typed artifacts, lineage, gates, stress tests, and claim records."
+  },
+  {
+   "claim": "MRS Bulletin 50(12), 1492-1504 (Marom and Buehler, open access, published 2025-11-26): a review, no new equations, parameters or experiments. It defines material intelligence as 'the capacity of a material to sense, respond, adapt, and self-optimize based on environmental inputs'.",
+   "source": "https://link.springer.com/article/10.1557/s43577-025-00987-8",
+   "confidence": "high",
+   "evidence_quote": "intelligence refers to the capacity of a material to sense, respond, adapt, and self-optimize based on environmental inputs"
+  },
+  {
+   "claim": "MRS Bulletin devotes one passage to category theory: ologs 'encode how structural parts combine to yield a function' and 'support transferable design strategies across diverse material systems'. No functor, no Dyn, no equation.",
+   "source": "https://link.springer.com/article/10.1557/s43577-025-00987-8",
+   "confidence": "high",
+   "evidence_quote": "Diagrams known as ologs (ontology logs) encode how structural parts combine to yield a function."
+  },
+  {
+   "claim": "MRS Bulletin on fabrication: light-based methods (SLA, DLP, two-photon polymerisation) 'offer high resolution for microfabrication and responsive systems', whereas FFF and DIW 'support material-specific control'; it names 'limited material palettes' as a constraint. It does not mention powder-bed fusion (SLS) at all (searched 'sinter' and 'powder': 0 hits), and not humidity-driven resin parts. So the JMPS paper's FFF-only demonstration and the review's SLA remark leave resin and powder-bed hygromorphs unaddressed.",
+   "source": "https://link.springer.com/article/10.1557/s43577-025-00987-8",
+   "confidence": "high",
+   "value": "SLS hits: 0",
+   "evidence_quote": "light-based methods such as stereolithography (SLA), digital light processing (DLP), and two-photon polymerization (2PP) offer high resolution for microfabrication and responsive systems"
+  },
+  {
+   "claim": "OWN CALCULATION (ceiling_fraction.py): the paper's two printed pairs already sit at 97.8 percent (hygro, m=1, n=2850/5140, f=1.4672) and 98.2 percent (thermal, m=1, n=3500/6000, f=1.4726) of the machine-checked ceiling f<=3/2, and d ln f / d ln n is only +0.076 and +0.069 there. So the geometric coefficient C_geom contributes almost nothing to their design margin; what sets their curvature is the eigenstrain mismatch (a material property) and nothing in their pipeline can raise f by more than 2.2 percent. Choosing m=1/sqrt(n) would reach exactly 1.5000 with zero sensitivity to n.",
+   "source": "agents2/scripts/bm-category-theory-papers/ceiling_fraction.py",
+   "confidence": "high (arithmetic from stated moduli, m=1)",
+   "value": "f/1.5 = 0.978 and 0.982",
+   "evidence_quote": "timoshenkoCoefficient h m n ≤ 3 / (2 * h)"
+  },
+  {
+   "claim": "OWN CALCULATION: for the repo's pine panel pair (E=30 and 650 MPa), the equal-thickness assumption gives f=0.672 (45 percent of ceiling, sensitivity +0.61); assuming a sclereid layer twice the fibre layer (thickness figures from the earlier agent's file spec-hygromorph-4d.json, Eger et al. 2022, not re-fetched by me) gives f=1.250 (83 percent). Real pine-cone scales therefore sit well below the ceiling, so 'move the engineered bilayer to the ceiling' is a design option the natural system does not use.",
+   "source": "agents2/scripts/bm-category-theory-papers/ceiling_fraction.py",
+   "confidence": "medium (thickness ratio is secondhand)",
+   "value": "f = 0.672 (m=1), 1.250 (m=2)",
+   "evidence_quote": "name=pine_sclerenchyma;E=650;alpha_L=5e-6;alpha_T=5e-5;chi_L=0.01;chi_T=0.05"
+  },
+  {
+   "claim": "FORMALISE NEXT, rank 1 (easy, hours): theta(L)=L*kappa for constant curvature (eq 18) and alpha_3 (A.28) as a morphism from the augmented organ object (static attachment descriptors adjoined with zero dynamics) onto the induced configuration dynamics, inside the existing flat-space StimulusResponseHom. Pure fderiv of a product with a constant.",
+   "source": "judgement",
+   "confidence": "medium (effort estimate)",
+   "value": "difficulty 1/6"
+  },
+  {
+   "claim": "FORMALISE NEXT, rank 2 (easy to moderate): alpha_1 (averaging N fibres, eq 8) and alpha_2 (stacking, eq 11-12) as morphisms. alpha_1 is a linear map so fderiv is itself; the proof will need shared tau, shared m_eq and a common stimulus, the side conditions the paper leaves implicit. Also the 'thermal fibre object composes with the twist reduction' (Case III) as a typing lemma: same eigenstrain type, so downstream maps apply unchanged.",
+   "source": "judgement",
+   "confidence": "medium (effort estimate)",
+   "value": "difficulty 2/6"
+  },
+  {
+   "claim": "FORMALISE NEXT, rank 3 (moderate, 1 to 2 days, and publishable): (i) the corrected alpha_geom proposition with hypotheses tau_L=tau_T=tau_Delta and equal laminar moisture, plus the explicit two-state counterexample when tau_L != tau_T (numbers in closure_check.py); (ii) the scalar no-go that no diffeomorphism conjugates two relaxations with different tau (derivation in the NEW finding above). Both would show Lean finding something the informal treatment passed over.",
+   "source": "judgement",
+   "confidence": "medium (effort estimate)",
+   "value": "difficulty 3/6"
+  },
+  {
+   "claim": "FORMALISE NEXT, rank 4 (moderate): the implementation functor F as conjugation by diffeomorphisms (A.44) with the naturality squares A.51-A.53, and Nat/Art as Mathlib full subcategories. The proofs are the chain rule; the real work is choosing a formal predicate for 'arises from natural mechanisms', which the paper leaves informal.",
+   "source": "judgement",
+   "confidence": "medium (effort estimate)",
+   "value": "difficulty 4/6"
+  },
+  {
+   "claim": "FORMALISE NEXT, rank 5 (moderate to hard): A.4, the compatible-reduction proposition. Well-definedness and uniqueness of the induced dynamics are easy; smoothness of f_beta needs local sections of a submersion, and the 'image is an embedded submanifold' hypothesis needs Mathlib manifold machinery.",
+   "source": "judgement",
+   "confidence": "medium (effort estimate)",
+   "value": "difficulty 5/6"
+  },
+  {
+   "claim": "FORMALISE NEXT, rank 6 (moderate, high value for the build): process-window sensitivity from the existing ceiling: show f is increasing in n for n<1/m^2 and d f/d n = 0 at m^2 n = 1, so a design at the optimum is first-order insensitive to the infill-density error in E_eff = rho*E_bulk that the paper's Table 1 reports as about 8 percent curvature change for the passive layer. Also the effect of rounding layer thickness to integer passes (n = ceil(h/lh)).",
+   "source": "judgement",
+   "confidence": "medium (effort estimate)",
+   "value": "difficulty 4/6"
+  },
+  {
+   "claim": "FORMALISE NEXT, rank 7 (hard): replace the normed-space Dyn by the manifold version (f : X x E -> TX, mfderiv); Mathlib has tangent bundles and mfderiv, but dependent-type bookkeeping is heavy. Low scientific value for this project because every example is flat.",
+   "source": "judgement",
+   "confidence": "medium (effort estimate)",
+   "value": "difficulty 5/6"
+  },
+  {
+   "claim": "FORMALISE NEXT, rank 8 (hard, plausibly the most valuable mechanics theorem): the twist coefficient. Derive the free twist of an anisotropic +/-phi laminate from the eigenstrain mismatch (laminate stiffness, not the single scalar E per material in the repo panels) and prove whether the repo's kappa_twist = C_geom * d_12 is exact, bounded, or wrong. Extends the existing bilayerCurvature_ofEquilibrium from isotropic bending to shear coupling.",
+   "source": "judgement",
+   "confidence": "low-medium (effort estimate)",
+   "value": "difficulty 6/6"
+  },
+  {
+   "claim": "FORMALISE, rank 9 (open or not meaningful): Spec, Comp, pi and E. The Spec morphisms are DEFINED as pi-preserving, so the functor laws are tautologies; the content is that pi equals the true behaviour of a printed part and that G-code rewrites preserve deposited geometry, which needs a formal semantics of G-code and a physical model of raster mechanics. This is engineering validation, not a theorem to prove.",
+   "source": "judgement",
+   "confidence": "medium",
+   "value": "difficulty open"
+  }
+ ],
+ "key_claims": [
+  {
+   "claim": "The JMPS/arXiv paper formalises exactly one biological system, the pine cone (fibre, lamina, tissue, element, organ). Wheat awns, the flytrap, nacre and seed pods carry no equation or parameter; the pine fibre law (eq 6) has no numerical value for any tau, chi or m0.",
+   "source": "https://arxiv.org/html/2604.26367v2 (Sec. 3)",
+   "evidence_quote": "Here we instantiate $\\mathsf{Nat}$ on the hygromorphic pinecone hierarchy as an example of a natural system"
+  },
+  {
+   "claim": "'Preserve dynamics' means the simulation condition d(alpha)_x(f(x,e)) = g(alpha(x), alpha_E(e)); what is proved is closure under composition (chain rule), while model fidelity is explicitly left to experiment, and the repo's 'verified' flag is a tolerance test on recomputed curvature plus speed/temperature windows, not a check of that condition; only equilibrium angles were measured.",
+   "source": "https://arxiv.org/html/2604.26367v2 (Sec. 1) and gh_scripts/spec.py",
+   "evidence_quote": "Here, verification is a claim about composition, not about any single model."
+  },
+  {
+   "claim": "Re-run this session: HygromorphCeilingCheck.lean (f <= 3/(2h), equality at m^2 n = 1, bilayer_rules_out) and a scratch copy of Hygromorphs.lean compile with errors=0 and no sorryAx; the flat-space Dyn category, Timoshenko eq 15-16, eq 13 and eq 28 are checked, the ceiling is not in the paper, and alpha_1, alpha_2, alpha_geom, alpha_3, F, eta, eq 18, Spec/Comp/pi/E are not checked.",
+   "source": "local tracks/lean + upstream/leanbio/lean/ThompsonLaws/Hygromorphs.lean; logs in agents2/scratch/bm-category-theory-papers/lean-*.log",
+   "evidence_quote": "theorem bilayer_rules_out (h m n Δε κ_claimed : ℝ) (hh : 0 < h) (hm : 0 < m) (hn : 0 < n)"
+  },
+  {
+   "claim": "Proposition A.25 (alpha_geom is a Dyn morphism) needs tau_L = tau_T = tau_Delta and equal moisture in the two laminae, which the paper never states; with tau_L=1, tau_T=5 two states with the same (Delta_eps, m_A, m_B) have d(Delta_eps)/dt of -0.0095 and -0.0895. Also, conjugacy fixes tau, so 'F is parameter substitution' cannot cover a change of time constant.",
+   "source": "own calculation: agents2/scripts/bm-category-theory-papers/closure_check.py; paper eq 6, 17, A.25, A.42",
+   "evidence_quote": "This is exactly the element law used in Section 3."
+  }
+ ],
+ "reproduce": [
+  {
+   "what": "Fetch paper (HTML) and repo; record sha256",
+   "command_or_url": "curl -sL -A delphi-research/0.1 https://arxiv.org/html/2604.26367v2 -o paper.html ; python -I D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-category-theory-papers/fetch_repo.py",
+   "expected": "paper.html 517545 bytes sha256 b38afde8...; repo: 50 files, 375845 bytes (data/bm-cat-papers/MANIFEST.tsv)"
+  },
+  {
+   "what": "Convert HTML to text (for quote checks)",
+   "command_or_url": "python -I agents2/scripts/bm-category-theory-papers/html2txt.py paper.html paper.txt",
+   "expected": "about 93,000 characters; contains 'Table 3' and eq 28"
+  },
+  {
+   "what": "Decode the Grasshopper material panels",
+   "command_or_url": "python -I agents2/scripts/bm-category-theory-papers/gh_panels.py data/bm-cat-papers/repo/ct_design.gh",
+   "expected": "9 lines starting name=PA6-GF ... name=wPLA, including pine_sclereid and pine_sclerenchyma"
+  },
+  {
+   "what": "Re-derive the implied stimulus step for each Table 3 prediction",
+   "command_or_url": "python -I agents2/scripts/bm-category-theory-papers/reproduce_pipeline.py",
+   "expected": "du_required 0.5302 (90/0) / 92.4453 K / 0.9993 / 71.1118 K; crosstalk 27.3 and 17.0 deg; header kappa 0.0763 -> 43.7 deg"
+  },
+  {
+   "what": "Check the alpha_geom closure hypotheses",
+   "command_or_url": "python -I agents2/scripts/bm-category-theory-papers/closure_check.py",
+   "expected": "Part1 residual ~1e-16; Part2 dD/dt -0.0095 vs -0.0895 for states with equal (D,mA,mB)"
+  },
+  {
+   "what": "Ceiling closeness of printed and natural pairs",
+   "command_or_url": "python -I agents2/scripts/bm-category-theory-papers/ceiling_fraction.py",
+   "expected": "f/1.5 = 0.9781, 0.9817, 0.4480, 0.8333, 1.0000"
+  },
+  {
+   "what": "Machine-check the ceiling theorems (needs Lean v4.35.0 via elan at C:/Temp/elan, project Mathlib in delphisci/lean/.lake; one Lean process at a time; >15 percent free RAM)",
+   "command_or_url": "cd D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci && bash tracks/lean/check.sh \"$(pwd)/tracks/lean/HygromorphCeilingCheck.lean\"  (absolute path is required: the script cds into lean/)",
+   "expected": "errors=0 sorryAx=0 axiom-lines=5/5 ... ALL CHECKED: no errors, no sorryAx"
+  },
+  {
+   "what": "Compile Hygromorphs.lean with an axiom audit (scratch copy, upstream untouched)",
+   "command_or_url": "cp upstream/leanbio/lean/ThompsonLaws/Hygromorphs.lean agents2/scratch/bm-category-theory-papers/HygromorphsAudit.lean ; append '#print axioms ...' lines ; bash tracks/lean/check.sh <absolute path>",
+   "expected": "errors=0 sorryAx=0 axiom-lines=8/8, each on [propext, Classical.choice, Quot.sound]"
+  },
+  {
+   "what": "Verify the Atoms to Swarms record and abstract",
+   "command_or_url": "curl -s -A delphi-research/0.1 https://api.crossref.org/works/10.26434/chemrxiv.15002850/v1",
+   "expected": "title 'From Atoms to Swarms: The Categorical Spine ...', author Markus J. Buehler, posted 2026-05-07, abstract containing 'a vocabulary, not a source of theorems'. The chemrxiv.org full-text URL returns HTTP 403 (Cloudflare); not reproducible beyond the abstract."
+  }
+ ],
+ "citations": [
+  {
+   "authors": "Marom L., Tibbits S., Zardini G., Buehler M.J.",
+   "year": 2026,
+   "title": "A Category-Theoretic Framework from Biological Mechanics to Engineered Stimulus-Response Systems",
+   "venue": "arXiv:2604.26367 (cond-mat.soft), v2 20 Aug 2026",
+   "doi_or_arxiv": "arXiv:2604.26367",
+   "verified": true,
+   "how_verified": "export.arxiv.org API (id_list=2604.26367) returned the entry with these four authors; full HTML (v2) fetched and read end to end this run",
+   "used_for": "All statements about objects, morphisms, equations, results and limits"
+  },
+  {
+   "authors": "Marom L., Tibbits S., Zardini G., Buehler M.J.",
+   "year": 2026,
+   "title": "A category-theoretic framework from biological mechanics to engineered stimulus-response systems",
+   "venue": "Journal of the Mechanics and Physics of Solids 216, 106780",
+   "doi_or_arxiv": "10.1016/j.jmps.2026.106780",
+   "verified": true,
+   "how_verified": "api.crossref.org/works/10.1016/j.jmps.2026.106780 resolved (title, four authors, issued 2026-10) in this run; journal full text not read (arXiv v2 used)",
+   "used_for": "Journal record of the same paper"
+  },
+  {
+   "authors": "Buehler M.J.",
+   "year": 2026,
+   "title": "From Atoms to Swarms: The Categorical Spine of Multiscale Materials Modeling and Autonomous Discovery",
+   "venue": "ChemRxiv preprint (posted 2026-05-07); cited as in press, ACS Accounts of Materials Research",
+   "doi_or_arxiv": "10.26434/chemrxiv.15002850/v1",
+   "verified": true,
+   "how_verified": "api.crossref.org/works/10.26434/chemrxiv.15002850/v1 resolved in this run with title, author, posted date and full abstract; DataCite returned 404; ChemRxiv full text blocked (HTTP 403) so only the abstract was read",
+   "used_for": "What the spine paper claims and its stance that category theory is a vocabulary, not theorems"
+  },
+  {
+   "authors": "Marom L., Buehler M.J.",
+   "year": 2025,
+   "title": "Frontiers of biological material intelligence",
+   "venue": "MRS Bulletin 50(12), 1492-1504",
+   "doi_or_arxiv": "10.1557/s43577-025-00987-8",
+   "verified": true,
+   "how_verified": "api.crossref.org resolved (authors Marom, Buehler; issued 2025-11-26); open-access full text fetched from link.springer.com and searched",
+   "used_for": "Definition of material intelligence, ologs paragraph, SLA/DLP remark"
+  },
+  {
+   "authors": "Wang F.Y., Buehler M.J.",
+   "year": 2026,
+   "title": "Self-Revising Discovery Systems for Science: A Categorical Framework for Agentic Artificial Intelligence",
+   "venue": "arXiv:2606.01444 (cs.AI), v2",
+   "doi_or_arxiv": "arXiv:2606.01444",
+   "verified": true,
+   "how_verified": "export.arxiv.org API returned the entry (authors Fiona Y. Wang, Markus J. Buehler, published 2026-05-31); HTML v2 fetched and its reference [15] read",
+   "used_for": "Citation record of Atoms to Swarms (ACS Accounts, in press) and CategoryScienceClaw"
+  },
+  {
+   "authors": "Reyssat E., Mahadevan L.",
+   "year": 2009,
+   "title": "Hygromorphs: from pine cones to biomimetic bilayers",
+   "venue": "J. R. Soc. Interface 6, 951-957",
+   "doi_or_arxiv": "10.1098/rsif.2009.0184",
+   "verified": true,
+   "how_verified": "api.crossref.org/works/10.1098/rsif.2009.0184 resolved in this run; paper not read by me",
+   "used_for": "The JMPS paper's source for pine-cone bilayer mechanics (its ref 25)"
+  },
+  {
+   "authors": "Timoshenko S.",
+   "year": 1925,
+   "title": "Analysis of Bi-Metal Thermostats",
+   "venue": "J. Opt. Soc. Am. 11, 233-255",
+   "doi_or_arxiv": "10.1364/josa.11.000233",
+   "verified": true,
+   "how_verified": "api.crossref.org resolved in this run; paper not read",
+   "used_for": "Origin of the bilayer coefficient (paper ref 33)"
+  },
+  {
+   "authors": "Elbaum R., Zaltzman L., Burgert I., Fratzl P.",
+   "year": 2007,
+   "title": "The Role of Wheat Awns in the Seed Dispersal Unit",
+   "venue": "Science 316, 884-886",
+   "doi_or_arxiv": "10.1126/science.1140097",
+   "verified": true,
+   "how_verified": "api.crossref.org resolved in this run; paper not read",
+   "used_for": "The only wheat-awn reference in the JMPS paper (ref 14); awns are not modelled there"
+  },
+  {
+   "authors": "Armon S., Efrati E., Kupferman R., Sharon E.",
+   "year": 2011,
+   "title": "Geometry and Mechanics in the Opening of Chiral Seed Pods",
+   "venue": "Science 333, 1726-1730",
+   "doi_or_arxiv": "10.1126/science.1203874",
+   "verified": true,
+   "how_verified": "api.crossref.org resolved in this run; paper not read",
+   "used_for": "Motivation for the twist case (ref 3); pods are not modelled"
+  },
+  {
+   "authors": "Forterre Y., Skotheim J.M., Dumais J., Mahadevan L.",
+   "year": 2005,
+   "title": "How the Venus flytrap snaps",
+   "venue": "Nature 433, 421-425",
+   "doi_or_arxiv": "10.1038/nature03185",
+   "verified": true,
+   "how_verified": "api.crossref.org resolved in this run; paper not read",
+   "used_for": "The only flytrap reference in the JMPS paper (ref 15); the flytrap is not modelled"
+  },
+  {
+   "authors": "Zhang C., Chen M., Keten S., Coasne B., Derome D., Carmeliet J.",
+   "year": 2021,
+   "title": "Hygromechanical mechanisms of wood cell wall revealed by molecular modeling and mixture rule analysis",
+   "venue": "Science Advances 7, eabi8919",
+   "doi_or_arxiv": "10.1126/sciadv.abi8919",
+   "verified": true,
+   "how_verified": "api.crossref.org resolved in this run; paper not read",
+   "used_for": "The JMPS paper's cited basis for the fibre-scale law (ref 37); the paper gives no values from it"
+  }
+ ],
+ "could_not_find": [
+  "The full text of 'From Atoms to Swarms' (ChemRxiv 10.26434/chemrxiv.15002850/v1): chemrxiv.org and its public API return HTTP 403 behind a Cloudflare challenge, which I did not bypass; Europe PMC has no record; DataCite 404. Only the Crossref abstract was read, so I cannot say which equations, objects or hygromorph material it contains, or whether it discusses the JMPS paper at all.",
+  "Any equation or parameter value for wheat awns, seed pods, the Venus flytrap or nacre in the JMPS paper: none exists (the task's premise is incorrect for these four).",
+  "Numerical values of tau_m, tau_L, tau_T, tau_Delta, m0, m_eq(u) in the paper or the repo: none exist; the code never integrates dynamics.",
+  "The slider settings (RH_ref, RH, T_ref, T_cur) behind Table 3, and per-specimen angle data and the measurement method: not in the paper or repo; ct_design.gh slider state is in a binary format I did not decode. Three of the four predicted angles are not reproduced by a single sensible step under the .gh panels; the setup guide's panels differ from the .gh panels, so the discrepancy may come from stale panels rather than from the model.",
+  "The four actuation videos (.mov) were not downloaded or viewed, so my bend-crosstalk estimate (27.3 and 17.0 degrees) is unchecked against the specimens.",
+  "The journal (JMPS) full text: only the Crossref record and arXiv v2 were read; the published version may differ.",
+  "A plate-theory derivation of the twist curvature for the +/-45 laminate: neither the paper nor the repo gives it, and I did not derive it (the panels hold one scalar E per material, not laminate stiffnesses).",
+  "Mamou-Mani: nothing about the architecture practice was researched in this task (other agents' files spec-partner-architecture.json cover it).",
+  "Lean claims are limited to the two files I compiled (HygromorphCeilingCheck.lean and Hygromorphs.lean); other Lean files in the programme were not searched, so 'not machine-checked' means not found in those two.",
+  "Reyssat and Mahadevan 2009 modulus ratio n ~ 5 and the Eger 2022 layer thicknesses are quoted from the earlier agent's file, not re-fetched by me.",
+  "DataCite returned 404 for the ChemRxiv DOI and the Crossref record for Gladman et al. 2016 (10.1038/nmat4544) failed to parse in my run, so Gladman is not cited as verified."
+ ],
+ "glossary": [
+  {
+   "term": "category theory",
+   "plain": "A branch of mathematics about things and the rules that carry one thing into another, used here as a bookkeeping language for design steps."
+  },
+  {
+   "term": "morphism",
+   "plain": "One of those carrying rules, such as 'average these fibres into one layer'."
+  },
+  {
+   "term": "simulation condition",
+   "plain": "The test that a carrying rule respects time: running then summarising equals summarising then running."
+  },
+  {
+   "term": "bilayer",
+   "plain": "A strip made of two glued layers that bends when one layer swells or expands more than the other."
+  },
+  {
+   "term": "hygromorph",
+   "plain": "A material that changes shape when the humidity changes, like a pine cone scale."
+  },
+  {
+   "term": "Timoshenko formula",
+   "plain": "A century-old formula that tells how much a two-layer strip bends for a given mismatch in swelling."
+  },
+  {
+   "term": "Lean / machine-checked",
+   "plain": "A proof written for a computer program (Lean) that checks every logical step, so a mistake cannot slip through."
+  },
+  {
+   "term": "ceiling of 3/2",
+   "plain": "A proven upper limit: however you choose the layer thicknesses and stiffnesses, the strip cannot bend more than 1.5 times the mismatch divided by its thickness."
+  },
+  {
+   "term": "fused filament fabrication (FFF)",
+   "plain": "Ordinary desktop 3D printing that melts a plastic thread and lays it down line by line."
+  },
+  {
+   "term": "relaxation time",
+   "plain": "How long a material takes to settle after its surroundings change."
+  },
+  {
+   "term": "G-code",
+   "plain": "The list of movement instructions a 3D printer follows."
+  }
+ ],
+ "recommendations": [
+  "Correct the project's working description before citing the JMPS paper: it formalises the pine cone only. Awns, pods, flytrap and nacre are motivation with no equations; cite Forterre 2005, Elbaum 2007 and Armon 2011 for those.",
+  "WHAT A JOINT PAPER ADDS (1, a rejected design): the authors' own future-work text promises a simulation condition that 'returns rejected candidates ... with an explicit interface failure' but shows only four successes. The Lean theorem bilayer_rules_out is a real rejection rule (no candidate with kappa above 1.5*d_eps/h can pass). A joint paper can show a candidate rejected by a checked theorem, which their pipeline never does.",
+  "WHAT A JOINT PAPER ADDS (2, a correction the authors can accept): state the hypotheses their Proposition A.25 needs (tau_L=tau_T=tau_Delta, equal laminar moisture) and replace 'F is parameter substitution' by a statement that allows a time-rescaling, since conjugacy fixes tau. Prove both in Lean with the explicit counterexample. This turns 'verified by construction' from a slogan into a theorem with stated side conditions.",
+  "WHAT A JOINT PAPER ADDS (3, a design rule): the machine-checked ceiling shows their printed pairs are already at 97.8 to 98.2 percent of the geometric maximum, so the only lever left is the eigenstrain mismatch and the response speed. Pair that with a first-order-insensitivity-to-modulus result at m^2 n = 1 (formalisation rank 6) as a robust-to-infill design window.",
+  "WHAT A JOINT PAPER ADDS (4, dynamics): their objects are dynamical but only equilibrium angles were measured. Predict and measure actuation TIME versus thickness (tau proportional to h^2, which Lean already has as diffusiveTime) on printed strips. For Formlabs resins the project record says no water diffusivity or hygroscopic coefficient was found and stock resins gain under 1 percent mass in water, so the stimulus for a first demonstration is likely a solvent (isopropanol uptake: Elastic 50A 39 percent against under 0.1 percent for Rigid 10K, project record) or heat, not humidity. This is a hypothesis to test, not a result; Delta_eps for that pair is unmeasured.",
+  "WHAT A JOINT PAPER ADDS (5, a new Spec): the repo names 'SLA' and a new machine profile as an extension path but has none. A resin or powder-bed Spec needs exposure, layer, orientation and post-cure instead of raster angle; vat parts have no raster anisotropy, so the mismatch must come from material pairing, cure gradient or geometry. That forces a new tissue-level object and reduction, which is the scientifically new part. Neither the JMPS paper nor the MRS review addresses SLS.",
+  "WHAT A JOINT PAPER ADDS (6, the twist coefficient): derive the +/-phi laminate twist from laminate stiffnesses and prove in Lean whether the repo's reuse of the bending coefficient is right; report the bend crosstalk that two-material twist specimens carry (27.3 degrees by my estimate, to be checked on the videos).",
+  "Before building on Table 3, ask the authors for the slider settings, the per-specimen angles, and which of the two panel sets (guide vs .gh) produced the predictions. Pre-register the predicted angle and time before any Formlabs print, in line with this project's freeze-then-test habit.",
+  "Treat n=3 to 4 specimens and 'within one s.d.' as modest evidence; a joint paper should report all specimens and a stated acceptance tolerance.",
+  "Do not describe the Lean files as 'the paper formalised': they check the flat-space Dyn, the Timoshenko algebra and the strain projections, plus items (ceiling, derivation from equilibrium, mapsSolutions, diffusion, snap) that the paper does not contain."
+ ],
+ "table": [
+  {
+   "name": "Dyn object",
+   "fields": "S=(X,E,f); X,E finite-dimensional (smooth manifolds in A.2); dynamics xdot=f(x,e)",
+   "source": "https://arxiv.org/html/2604.26367v2"
+  },
+  {
+   "name": "Dyn morphism / 'preserve dynamics'",
+   "fields": "pair (alpha,alpha_E) of smooth maps; condition d(alpha)_x(f(x,e)) = g(alpha(x),alpha_E(e)); identity=(id,id); composition component-wise",
+   "source": "https://arxiv.org/html/2604.26367v2"
+  },
+  {
+   "name": "Pine-cone fibre law (eq 6)",
+   "fields": "state=(m,eps_L,eps_T) in R^3; stimulus=RH u; m'=-(m-m_eq(u))/tau_m; eps_L'=-(eps_L-chi_L(m-m0))/tau_L; eps_T'=-(eps_T-chi_T(m-m0))/tau_T; numeric values given=none",
+   "source": "https://arxiv.org/html/2604.26367v2"
+  },
+  {
+   "name": "Element law (eq 15-16)",
+   "fields": "kappa=C_geom*d_eps; C_geom=(1/h)*6(1+mu)^2/[3(1+mu)^2+(1+mu n)(mu^2+1/(mu n))]; mu=h1/h2; n=E1/E2; ceiling h*C_geom<=1.5 at mu^2 n=1 (Lean)",
+   "source": "https://arxiv.org/html/2604.26367v2"
+  },
+  {
+   "name": "Organ law (eq 18)",
+   "fields": "theta(L)=L*kappa (rad if kappa in 1/length); clamped base; uniform curvature",
+   "source": "https://arxiv.org/html/2604.26367v2"
+  },
+  {
+   "name": "Wheat awn / seed pod / flytrap / nacre",
+   "fields": "equations in paper=0; parameters in paper=0; role=one-sentence motivation (refs Elbaum 2007, Armon 2011, Forterre 2005, Cartwright 2007)",
+   "source": "https://arxiv.org/html/2604.26367v2"
+  },
+  {
+   "name": "Baseline hygro bend",
+   "fields": "PA6-GF/PA612-CF15; raster 0/90 (paper) or 90/0 (G-code); predicted=36.4 deg; measured=35.3+/-3.1 deg; n=3; implied du=0.530 (90/0 order)",
+   "source": "https://arxiv.org/html/2604.26367v2"
+  },
+  {
+   "name": "Case I thermal bend",
+   "fields": "PLA/PLA-CF; 90/0; predicted=52.0 deg; measured=55.7+/-4.2 deg; n=3; implied step=92.4 K under .gh panels",
+   "source": "https://arxiv.org/html/2604.26367v2"
+  },
+  {
+   "name": "Case II hygro twist",
+   "fields": "PA6-GF/PA612-CF15; +45/-45; predicted=41.3 deg; measured=41.3+/-2.2 deg; n=4; implied du=0.9993 (reproduced); bend crosstalk=27.3 deg (own calc)",
+   "source": "https://arxiv.org/html/2604.26367v2"
+  },
+  {
+   "name": "Case III thermal twist",
+   "fields": "PLA/PLA-CF; +45/-45; predicted=23.0 deg; measured=23.3+/-2.5 deg; n=3; implied step=71.1 K; bend crosstalk=17.0 deg (own calc)",
+   "source": "https://arxiv.org/html/2604.26367v2"
+  },
+  {
+   "name": "Material panels in ct_design.gh (printed)",
+   "fields": "PA6-GF E=2850 MPa chi_L=5.0e-3 chi_T=1.1e-2; PA612-CF15 E=5140 MPa chi_L=1.2e-3 chi_T=7.0e-3; PLA E=3500 MPa alpha_L=6.8e-5 alpha_T=1.0e-4 /K; PLA-CF E=6000 MPa alpha_L=2.0e-5 alpha_T=8.0e-5 /K",
+   "source": "https://raw.githubusercontent.com/lamm-mit/CategoryTheoryDesign/main/ct_design.gh"
+  },
+  {
+   "name": "Material panels in ct_design.gh (natural)",
+   "fields": "pine_sclereid E=30 MPa chi_L=0.02 chi_T=0.20; pine_sclerenchyma E=650 MPa chi_L=0.01 chi_T=0.05; bauhinia E=2000 MPa chi_L=0.005 chi_T=0.18",
+   "source": "https://raw.githubusercontent.com/lamm-mit/CategoryTheoryDesign/main/ct_design.gh"
+  },
+  {
+   "name": "Closeness to the Timoshenko ceiling",
+   "fields": "paper hygro pair f/1.5=0.978; thermal pair f/1.5=0.982; pine pair m=1 f/1.5=0.448; pine pair m=2 f/1.5=0.833; own calc",
+   "source": "agents2/scripts/bm-category-theory-papers/ceiling_fraction.py"
+  },
+  {
+   "name": "Lean status (re-run 2026-11-12, Lean v4.35.0)",
+   "fields": "HygromorphCeilingCheck.lean: errors=0, sorryAx=0, 5/5 theorems on 3 standard axioms; Hygromorphs.lean (scratch copy): errors=0, 8/8 audited theorems on 3 standard axioms",
+   "source": "https://github.com/lamm-mit/CategoryTheoryDesign (paper) / local tracks/lean"
+  },
+  {
+   "name": "Atoms to Swarms (ChemRxiv)",
+   "fields": "author=Buehler (single); doi=10.26434/chemrxiv.15002850/v1; posted=2026-05-07; type=Account/review; body read=no (HTTP 403); abstract read=yes",
+   "source": "https://api.crossref.org/works/10.26434/chemrxiv.15002850/v1"
+  },
+  {
+   "name": "Marom and Buehler 2025 (MRS Bulletin)",
+   "fields": "vol=50(12); pages=1492-1504; published=2025-11-26; open access; new equations=0; SLA/DLP mentioned=yes; SLS mentioned=no",
+   "source": "https://link.springer.com/article/10.1557/s43577-025-00987-8"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-category-theory-papers/html2txt.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-category-theory-papers/fetch_repo.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-category-theory-papers/gh_panels.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-category-theory-papers/reproduce_pipeline.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-category-theory-papers/closure_check.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-category-theory-papers/check_no_numbers.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-category-theory-papers/ceiling_fraction.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-category-theory-papers/part_a_paper.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-category-theory-papers/part_b_repo_lean.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-category-theory-papers/part_c_rest.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-category-theory-papers/build_result.py"
+ ]
+}

@@ -1,0 +1,30 @@
+{
+ "label": "verify-q2-theory-lean",
+ "claims": [
+  {
+   "claim": "Attenuation: with cov(y,e)=0 and cov(p,e)=0, r(p,y+e)^2 <= var y/(var y+var e) and |r| <= sqrt of that; tight via attenuation_tight.",
+   "verdict": "supported",
+   "source_says": "theorem pearson_attenuation ... (hye : cov P y e = 0) (hpe : cov P p e = 0) ... (pearson P p (y+e))^2 ≤ var P y / (var P y + var P e) ∧ |pearson ...| ≤ Real.sqrt (...)",
+   "note": "Statement matches; also needs var p>0 and var y+var e>0, and attenuation_tight shows r^2 equals the bound with the truth as predictor."
+  },
+  {
+   "claim": "Total variance on pooled data: var y = between + within; target-only predictor has r^2 = between/total and cannot reduce MSE below within.",
+   "verdict": "supported",
+   "source_says": "theorem total_variance (hm : IsGroupMean P g y m) : var P y = between + within; r2_target_only: cov^2/(var*var y) = between/var y; target_only_floor: within ≤ MSE of any f∘g.",
+   "note": "All three theorems match the plain words, with positivity side conditions for the r^2 one."
+  },
+  {
+   "claim": "Cycle closure: path-additive predictor sums to zero around closed walks; with additive truth errors also sum to zero; pairwise-uncorrelated cycle errors impossible unless zero; exchangeable errors have correlation -1/(n-1).",
+   "verdict": "partly",
+   "source_says": "exchangeable_cycle_deviations concludes only: s + ((n : ℝ) - 1) * c = 0 (docstring: 'i.e. error correlation -1/(n-1)'). deviations_not_independent: E[ε_i ε_i] = 0 for all i.",
+   "note": "Cycle and zero-second-moment theorems match, but -1/(n-1) correlation is only implied informally (c/s with s>0), not stated as a theorem."
+  },
+  {
+   "claim": "Kernel check passed: errors=0, sorryAx=0, 16/16 axiom lines, axioms only propext, Classical.choice, Quot.sound.",
+   "verdict": "partly",
+   "source_says": "Q2Theory.lean errors=0 sorryAx=0 axiom-lines=16/16 ... ALL CHECKED: no errors, no sorryAx",
+   "note": "Log reproduces errors, sorryAx and 16/16; the axiom names are not in the log and I did not inspect them, but the file has zero 'sorry' and sha256 matches."
+  }
+ ],
+ "overall": "Three of four claims hold. The cycle claim is partly supported, because the -1/(n-1) correlation appears only in a docstring while the theorem proves s+(n-1)c=0. The kernel-check claim is also partly supported, because the log shows errors=0, sorryAx=0 and 16/16 but does not list the axiom names. I did not re-run Lean."
+}

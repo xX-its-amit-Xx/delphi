@@ -1,0 +1,450 @@
+{
+ "label": "t2-patterns-data",
+ "topic": "Track 2 data and reproducibility: Cremer 2019 E. coli chemotactic range-expansion source data, re-analysis of the earlier agents' pilot numbers",
+ "summary": "Downloaded and hashed the three source files the design leans on (Cremer 2019 Extended Data Fig 1c, ED Fig 8, simulation parameter file) plus the simulation code. They are byte-identical to the scout's copies. Three scripts run from a clean directory and a second clean run gave identical hashes and identical output. Every pilot number the scout and designer reported reproduced: k = 16.9035 mm^2/h (they wrote 16.91 and 16.907; 0.02 percent apart, input rounding); square-root-law errors on the scout's six held-out rows 10.2 to 63.9 percent (they said 10 to 64); log-log slope of speed on growth rate 1.124 (5 points) and 0.895 (4 points) vs 1.12 and 0.90; dose slopes 0.300 (glucose) and 0.282 (glycerol) vs 0.30 and 0.28; fitted chemotactic gap 0.7873 vs 0.7874 mm^2/h; published-parameter speed 4.865 mm/h, 12.2 percent above measurement (12 reported). Nothing contradicted. New findings: (a) the scout's six held-out strains omit the 8 Pu-glpFK rows; over all 14 non-fit rows the square-root law is within 15 percent on only 6 and off by up to 94 percent; (b) the 95 percent interval of the 5-point slope is 0.72 to 1.53 and of the 4-point slope 0.44 to 1.35, so the 4-point slope does not exclude exponent 0.5; 18 of 25 speed means rest on 2 or fewer plates; (c) plain Fisher-KPP speed 2 sqrt(D r) with the published D_rho is 4.7 to 5.1 times too slow for wild type, so the library's fisher-kpp-speed law (candidate in 1.8.1) is only the zero-chemotaxis baseline; (d) the design's F1 alpha window (0.47 to 0.92) reproduces. Not obtainable under the rules: the 168 MB confocal archive (over the 150 MB cap) and the swimming videos (about 110 files of 0.7 to 1.8 GB). Twelve quarantined source-data sheets were downloaded and hashed but never opened by any script, so the pre-registration blind is intact.",
+ "lay_summary": "Earlier team members reported that bacteria spreading through soft jelly follow a simple speed rule that works for some strains and fails for others. We downloaded the same public measurements from the journal and redid every calculation from scratch. All the numbers they quoted came out the same, give or take rounding. We also found two things they did not say. The rule fails more often than reported once every strain is counted. And one key claim is shakier than it looks, because each data point rests on only two or three plates. A clean computer can repeat everything with one command, a bit like re-weighing a recipe's ingredients: the recipe card was right, but some weights came from very small samples.",
+ "glossary": [
+  {
+   "term": "range expansion",
+   "plain": "A population spreading outward into new territory, like a colony growing across a plate."
+  },
+  {
+   "term": "soft agar",
+   "plain": "A jelly so watery that swimming bacteria can move through it."
+  },
+  {
+   "term": "front speed",
+   "plain": "How fast the outer edge of the colony advances, in millimetres per hour."
+  },
+  {
+   "term": "growth rate",
+   "plain": "How fast the population multiplies per hour in a flask."
+  },
+  {
+   "term": "held-out",
+   "plain": "Data not used to set the rule, kept to test it."
+  },
+  {
+   "term": "log-log slope",
+   "plain": "How many percent one quantity changes when another changes by one percent."
+  },
+  {
+   "term": "95 percent interval",
+   "plain": "The range that would contain the true value in 95 of 100 repeats of the experiment."
+  },
+  {
+   "term": "sha256",
+   "plain": "A fingerprint of a file; any change in the file changes it."
+  },
+  {
+   "term": "quarantined",
+   "plain": "Downloaded and fingerprinted but deliberately not opened, so later predictions stay blind."
+  },
+  {
+   "term": "Fisher-KPP speed",
+   "plain": "The textbook speed of a growing, randomly spreading population: twice the square root of diffusion times growth rate."
+  },
+  {
+   "term": "chemotaxis",
+   "plain": "Swimming up a chemical gradient, towards food."
+  }
+ ],
+ "findings": [
+  {
+   "claim": "Source-data files MOESM11, MOESM22, MOESM3 downloaded 2026-11-12; their sha256 are identical to the scout's earlier copies.",
+   "source": "D:/Users/ashenoy00000/delphi-work/data/cremer2019/MANIFEST.json",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "ED Fig 1c has 25 condition rows (speed, growth rate, n); 18 of 25 speed means have n of 2 or fewer plates.",
+   "source": "MOESM11.xlsx (own count in 02_analysis.py)",
+   "confidence": "high",
+   "evidence_quote": "HE206 | wt | 20mM glucose | Aspartate | 100 | 0.25 | 4.3347312336 | 0.442176708335675 | 5 | 0.9985",
+   "value": "25 rows; 18 with n ES <= 2"
+  },
+  {
+   "claim": "REPRODUCED k = 16.9035 mm^2/h (sum u^2 r / sum r^2 over wt rows 3-8). Scout reported 16.91, designer 16.907.",
+   "source": "02_analysis.py on MOESM11.xlsx",
+   "confidence": "high",
+   "evidence_quote": "",
+   "value": "16.9035 vs 16.91 / 16.907"
+  },
+  {
+   "claim": "REPRODUCED per-condition u^2/r for the six wt carbon sources: 16.15, 13.70, 20.70, 18.82, 17.46, 17.86 (scout last value 17.87).",
+   "source": "02_analysis.py",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "REPRODUCED held-out errors of u = sqrt(k r): Pu-ptsG1 +10.7 and +14.9 %, Pu-ptsG2 +63.9, +34.3, +10.2 %, glpK22 -17.1 %; scout said 10 to 64 percent.",
+   "source": "02_analysis.py",
+   "confidence": "high",
+   "evidence_quote": "",
+   "value": "10.2 to 63.9 %, n=6"
+  },
+  {
+   "claim": "NEW: the scout's six held-out strains omit the Pu-glpFK rows. Over all 14 non-fit rows the square-root law errs 7.8 to 94.0 %, and only 6 of 14 fall within 15 %. Worst: Pu-glpFK 0 uM +94 %, Pu-glpFK serine 10 uM +76.8 %.",
+   "source": "02_analysis.py",
+   "confidence": "high",
+   "evidence_quote": "",
+   "value": "6/14 within 15 %; max 94.0 %"
+  },
+  {
+   "claim": "REPRODUCED log-log slope of speed on growth rate, Pu-glpFK aspartate series: 1.124 (5 points), 0.895 (4 points, no zero-inducer). Reported 1.12 and 0.90.",
+   "source": "02_analysis.py on MOESM11 rows 15-19",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "NEW: 95 % CI of those slopes (OLS, t with n-2 df) is 0.717 to 1.532 (5 points) and 0.436 to 1.353 (4 points). The 4-point interval contains 0.5; the 5-point interval excludes 0.5 narrowly.",
+   "source": "02_analysis.py (scipy.stats.t)",
+   "confidence": "high",
+   "evidence_quote": "",
+   "value": "1.124 [0.717,1.532]; 0.895 [0.436,1.353]"
+  },
+  {
+   "claim": "NEW: the WT six-carbon-source slope of speed on growth rate is 0.424, 95 % CI 0.133 to 0.715, consistent with 0.5.",
+   "source": "02_analysis.py",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "REPRODUCED dose slopes for aspartate 10 to 100 uM (OLS on 10, 30, 50, 100): glucose 0.2998, glycerol 0.2818; two-point version 0.294 and 0.282. Reported 0.30 and 0.28. A square root would give a 3.16-fold rise from 10 to 100 uM; observed 1.97 (glucose) and 1.92 (glycerol).",
+   "source": "02_analysis.py on MOESM22.xlsx ED8 sheet",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Dose-series peaks: glucose at 1000 uM (4.650 mm/h; 2.104 at 10 mM), glycerol at 100 uM (3.675 mm/h; 1.317 at 10 mM); 10 and 11 points. Matches the design.",
+   "source": "02_analysis.py",
+   "confidence": "high",
+   "evidence_quote": "HE206 | wt | 40mM glycerol | Aspartate | 100 | 0.25 | 3.67462190077778 | 0.318230325273003 | 9"
+  },
+  {
+   "claim": "The 100 uM rows of the dose series equal the ED Fig 1c glucose and glycerol rows exactly (same numbers re-used, not independent).",
+   "source": "02_analysis.py",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Parameter file: D_chemotaxis_1 = 50.2e-12, xhi_1 = 0.315e-9, D_nutrients = 8.0e-10, weber_offset_1 = 0.001, weber_offsetmax_1 = 0.03. Units are not stated in the file; the designer's reading is m^2/s and mM, giving 50.2, 315, 800 um^2/s and 1, 30 uM.",
+   "source": "MOESM3.txt",
+   "confidence": "medium",
+   "evidence_quote": "\"D_chemotaxis_1\": 50.2e-12"
+  },
+  {
+   "claim": "REPRODUCED fitted gap X = chi0 - D_rho: 0.7873 mm^2/h = 218.7 um^2/s, chi0 = 268.9 um^2/s, phi = 4.357 (designer 0.7874, 218.7, 268.9, 4.36).",
+   "source": "02_analysis.py",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "REPRODUCED published-parameter closed-form speed 4.865 mm/h at r = 0.9985, 12.2 % above the measured 4.335 (designer 4.87, 12 %).",
+   "source": "02_analysis.py",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "REPRODUCED sensitivity d ln c / d ln D_rho at fixed phi = 0.8927 (fit) and 0.8757 (published); designer 0.893 and 0.876.",
+   "source": "02_analysis.py",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "REPRODUCED F1 refutation window for alpha: 0.471 to 0.919 around s_obs = 1.12 (design: about 0.47 to 0.92). Around the 4-point slope the window would be 0.218 to 0.666.",
+   "source": "02_analysis.py",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "REPRODUCED F2 e-fold lengths u/r: 4.751 mm (glycerol+asp), 4.341 (glucose+asp); F3 uptake ratios 1.395, 1.485, 2.849; F4 max/quadrature 4.20/5.58 (wt glycerol), 5.85/7.66 (glpK22), 2.01/2.77/4.17 and 2.39/3.75/5.83 (Pu-glpFK). These are arithmetic on seen rows, not tests.",
+   "source": "02_analysis.py",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "NEW: Fisher-KPP c = 2 sqrt(D_rho r) with D_rho = 0.1807 mm^2/h gives 0.850 mm/h (glucose), 0.748 (glycerol), 0.626 (acetate); measured speeds are 5.10, 4.91, 4.73 times higher. Only the Pu-glpFK 0 uM strain is as low as 2.49 times.",
+   "source": "03_fisher_baseline.py",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Law set 1.8.1 pins fisher-kpp-speed 1.1.0 (candidate, introduced 1.8.0) and turing-ddi 1.1.0 (candidate, introduced 1.8.0). turing-wavelength 1.1.0 has a registry file but is not pinned (introduced_in null). No law covers chemotactic travelling fronts. The earlier mapper's id turing-ddi-linear-condition is now turing-ddi.",
+   "source": "delphisci/lean/registry/lawsets/lawset-1.8.1.json and registry/laws/*.json",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "fisher-kpp-speed is arithmetic of c^2 = 4 s D under a stated hypothesis, not a claim that a population disperses diffusively; given the 5-fold excess speed it is the non-chemotactic baseline for this front.",
+   "source": "registry/laws/fisher-kpp-speed.json",
+   "confidence": "high",
+   "evidence_quote": "it does not establish that a travelling wave exists, that compactly supported initial data converge to it, or that any population disperses diffusively."
+  },
+  {
+   "claim": "Simulation code gp_chemotaxis.py (132,233 bytes) is LGPL-3.0. The drift potential log((1+n/weber_offset)/(1+n/weber_offsetmax)) is at lines 661 and 667; line 661 is the AACarbonGRC3neqa branch, line 667 the generic branch that dynamicsmode AACarbonGRC3 would use.",
+   "source": "data/cremer2019/code/gp_chemotaxis.py and LICENSE",
+   "confidence": "high",
+   "evidence_quote": "GNU LESSER GENERAL PUBLIC LICENSE Version 3, 29 June 2007"
+  },
+  {
+   "claim": "Figshare 10.6084/m9.figshare.9639209 is one file, confocal_intensityscans.zip, 168,455,158 bytes, CC BY 4.0: over the 150 MB cap, not downloaded. Figshare 9643001 (swimming videos, CC BY 4.0) holds about 110 avi files of 0.7 to 1.8 GB each, not downloaded.",
+   "source": "https://api.figshare.com/v2/articles/9639209 and https://api.figshare.com/v2/articles/9643001",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "The paper's data statement names both figshare deposits.",
+   "source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC6883170/fullTextXML",
+   "confidence": "high",
+   "evidence_quote": "Major experimental data supporting this study are provided in this manuscript or available via figshare repositories: doi.org/ 10.6084/m9.figshare.9639209 (confocal expansion data)"
+  }
+ ],
+ "key_claims": [
+  {
+   "claim": "Every pilot number the earlier agents reported from ED Fig 1c, ED Fig 8 and the parameter file reproduces from the freshly downloaded files (k 16.9035, slopes 1.124 and 0.895, dose slopes 0.300 and 0.282, X 0.7873, 4.865 mm/h).",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM11_ESM.xlsx",
+   "evidence_quote": "HE206 | wt | 20mM glucose | Aspartate | 100 | 0.25 | 4.3347312336 | 0.442176708335675 | 5 | 0.9985"
+  },
+  {
+   "claim": "The Pu-glpFK exponent evidence is statistically weak: the 4-point slope 0.895 has 95 % CI 0.44 to 1.35, which contains 0.5, and each point is a mean of 2 to 3 plates.",
+   "source": "MOESM11.xlsx rows 15-19 via 02_analysis.py",
+   "evidence_quote": "HE443 | Pu-glpFK | 40mM glycerol | 3MBA | 50 | Aspartate | 100 | 0.25 | 2.76915795933333 | 0.150150772808 | 3"
+  },
+  {
+   "claim": "Aspartate dependence between 10 and 100 uM is 0.28 to 0.30, not 0.5, on both carbon sources (100/10 ratio 1.97 and 1.92 vs 3.16 for a square root).",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM22_ESM.xlsx",
+   "evidence_quote": "HE206 | wt | 40mM glycerol | Aspartate | 100 | 0.25 | 3.67462190077778 | 0.318230325273003 | 9"
+  },
+  {
+   "claim": "The confocal archive needed for F2 and the density half of F3 is 168,455,158 bytes, over the 150 MB cap, so those predictions cannot be run under the rules without an exception.",
+   "source": "https://api.figshare.com/v2/articles/9639209",
+   "evidence_quote": ""
+  }
+ ],
+ "table": [
+  {
+   "name": "MOESM11 ED Fig 1c",
+   "fields": "bytes=11512; sha256=685b5e376f51345e26b8f307a0403a0dff45088a9a075325a1507ed623d9cb42; downloaded=2026-11-12; status=seen; rows=25",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM11_ESM.xlsx"
+  },
+  {
+   "name": "MOESM22 ED Fig 8",
+   "fields": "bytes=11707; sha256=7f758405641324bc28c5740cf004be42c8d9160528aa42c7b53ee6f0ef778b68; downloaded=2026-11-12; status=seen; dose rows=21",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM22_ESM.xlsx"
+  },
+  {
+   "name": "MOESM3 simulation parameters",
+   "fields": "bytes=5908; sha256=40072304946f8e5ff32ec7dfcbcd5efba11b97bdb54dda0dd0a6214df0f78d38; downloaded=2026-11-12; status=seen",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM3_ESM.txt"
+  },
+  {
+   "name": "MOESM12",
+   "fields": "bytes=12747; sha256=dda068c4f98f8365f0c628cf5db268b67fb88de59a0ef965b858fda1c316a53b; downloaded=2026-11-12; quarantined, never parsed",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM12_ESM.xlsx"
+  },
+  {
+   "name": "MOESM13 (F1 target)",
+   "fields": "bytes=46736; sha256=c6d9082bb0865a626e8e3fd1caea1b374aa1f61e1f02f026eaf8e67a69d65621; downloaded=2026-11-12; quarantined, never parsed",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM13_ESM.xlsx"
+  },
+  {
+   "name": "MOESM14",
+   "fields": "bytes=11505; sha256=b3cecebefb77f28a823ba531db47f1373ff4b43e9c236dc9dd1a7bb405f8f2fd; downloaded=2026-11-12; quarantined, never parsed",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM14_ESM.xlsx"
+  },
+  {
+   "name": "MOESM15 (F4)",
+   "fields": "bytes=15249; sha256=c7aae14da77249508778b67ba0b2fa3ccf2429ca9c4b45dc5c53022ed87c5edd; downloaded=2026-11-12; quarantined, never parsed",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM15_ESM.xlsx"
+  },
+  {
+   "name": "MOESM16 (F1 input)",
+   "fields": "bytes=13094; sha256=7623f7a81a17d0f309ed62243702b8b3597654217dbd83d0bdf1fecb40bfb16b; downloaded=2026-11-12; quarantined, never parsed",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM16_ESM.xlsx"
+  },
+  {
+   "name": "MOESM17",
+   "fields": "bytes=153252; sha256=c9bcf8d224a4f6981796d1087f6c52339a4d6c1dd1d3fd50324dce25eeb3a81c; downloaded=2026-11-12; quarantined, never parsed",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM17_ESM.xlsx"
+  },
+  {
+   "name": "MOESM18",
+   "fields": "bytes=9791; sha256=4dc5dc5b82e9a7d38f84a45ea56b8685ebfa715b42572e6afd1ff15c67aea360; downloaded=2026-11-12; quarantined, never parsed",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM18_ESM.xlsx"
+  },
+  {
+   "name": "MOESM19",
+   "fields": "bytes=13825; sha256=1bb1ba60afffa35515b125d7b9a3baa821551d2dee07c4938ed539e3abd87e26; downloaded=2026-11-12; quarantined, never parsed",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM19_ESM.xlsx"
+  },
+  {
+   "name": "MOESM20",
+   "fields": "bytes=152876; sha256=b02e358d5f181a5cde72988404015a4a33d46effd87e70a1ffbc6ef4b217aa56; downloaded=2026-11-12; quarantined, never parsed",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM20_ESM.xlsx"
+  },
+  {
+   "name": "MOESM21 (F3)",
+   "fields": "bytes=209456; sha256=bd42cf7140dbe45e77388c81e71ecec9a9f40a28dda489a5982239d67b97b8c5; downloaded=2026-11-12; quarantined, never parsed",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM21_ESM.xlsx"
+  },
+  {
+   "name": "MOESM23",
+   "fields": "bytes=10170; sha256=edef8c92a2d7c3ca9654aa60358e687e352264dce295532759d9355a8edda321; downloaded=2026-11-12; quarantined, never parsed",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM23_ESM.xlsx"
+  },
+  {
+   "name": "MOESM24",
+   "fields": "bytes=22729; sha256=33ef5c8f2932545e55b3fd7e1c530a40b90dfc39447453e410a8910f3be2fc17; downloaded=2026-11-12; quarantined, never parsed",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM24_ESM.xlsx"
+  },
+  {
+   "name": "gp_chemotaxis.py",
+   "fields": "bytes=132233; sha256=e46fea156682c8cf1514ef9aee743e04787fc64b7d466182ccd2b05171c9869a; licence=LGPL-3.0; downloaded=2026-11-12",
+   "source": "https://raw.githubusercontent.com/jonascremer/chemotaxis_simulation/master/gp_chemotaxis.py"
+  },
+  {
+   "name": "LICENSE (code)",
+   "fields": "bytes=7652; sha256=e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118",
+   "source": "https://raw.githubusercontent.com/jonascremer/chemotaxis_simulation/master/LICENSE"
+  },
+  {
+   "name": "confocal_intensityscans.zip (NOT downloaded)",
+   "fields": "bytes=168455158; md5=a0d14e87394dfe7fc725a35033281fe7; licence=CC BY 4.0",
+   "source": "https://doi.org/10.6084/m9.figshare.9639209"
+  },
+  {
+   "name": "Pilot check k",
+   "fields": "mine=16.9035 mm^2/h; scout=16.91; designer=16.907; verdict=reproduced (rounding)",
+   "source": "02_analysis.py"
+  },
+  {
+   "name": "Pilot check slope Pu-glpFK 5pt",
+   "fields": "mine=1.124; reported=1.12; ci95=0.717..1.532; verdict=reproduced",
+   "source": "02_analysis.py"
+  },
+  {
+   "name": "Pilot check slope Pu-glpFK 4pt",
+   "fields": "mine=0.895; reported=0.90; ci95=0.436..1.353; verdict=reproduced",
+   "source": "02_analysis.py"
+  },
+  {
+   "name": "Pilot check dose slope glucose",
+   "fields": "mine=0.2998 (OLS 4pt), 0.294 (2pt); reported=0.30; verdict=reproduced",
+   "source": "02_analysis.py"
+  },
+  {
+   "name": "Pilot check dose slope glycerol",
+   "fields": "mine=0.2818; reported=0.28; verdict=reproduced",
+   "source": "02_analysis.py"
+  },
+  {
+   "name": "Pilot check X=chi0-D_rho",
+   "fields": "mine=0.7873 mm^2/h; designer=0.7874; verdict=reproduced",
+   "source": "02_analysis.py"
+  },
+  {
+   "name": "Pilot check published-parameter speed",
+   "fields": "mine=4.865 mm/h (+12.2 %); designer=4.87 (+12 %); verdict=reproduced",
+   "source": "02_analysis.py"
+  },
+  {
+   "name": "Pilot check held-out error range (6 strains)",
+   "fields": "mine=10.2..63.9 %; scout=10..64 %; verdict=reproduced; extended to 14 rows: 7.8..94.0 %, 6 of 14 within 15 %",
+   "source": "02_analysis.py"
+  },
+  {
+   "name": "Not checked",
+   "fields": "Narla Eq 21-25,36,40 transcription; M2 simulation outputs; F1/F2/F3/F4 observed values (quarantined or too large); gamma=0.26",
+   "source": "n/a"
+  }
+ ],
+ "reproduce": [
+  {
+   "what": "Install tools",
+   "command_or_url": "Python 3.14.2 (3.10+ should work); pip install openpyxl==3.1.5 numpy==2.5.3 scipy==1.18.1",
+   "expected": "imports succeed"
+  },
+  {
+   "what": "Whole pipeline from a clean directory",
+   "command_or_url": "sh D:/Users/ashenoy00000/delphi-work/agents2/scripts/t2-patterns-data/00_run_all.sh <EMPTY_DATA_DIR>",
+   "expected": "17 files downloaded; sha256 of MOESM11 starts 685b5e37, MOESM22 7f758405, MOESM3 40072304; analysis_results.json sha256 664b4f32294ab67d...; last line 'D_rho mm2/h = 0.1807'"
+  },
+  {
+   "what": "Step 1 only: download and manifest",
+   "command_or_url": "python -I scripts/t2-patterns-data/01_download.py <DATA_DIR>",
+   "expected": "MANIFEST.json with url, date, bytes, sha256 per file; figshare listing shows 168455158 bytes"
+  },
+  {
+   "what": "Step 2 only: pilot numbers",
+   "command_or_url": "python -P scripts/t2-patterns-data/02_analysis.py <DATA_DIR> <OUT_JSON>",
+   "expected": "k_mm2_per_h 16.9035; slope Pu-glpFK 5pt 1.1243, 4pt 0.8947; dose slopes 0.2998 and 0.2818; X_fit 0.7873; c_published 4.865"
+  },
+  {
+   "what": "Step 3: Fisher baseline",
+   "command_or_url": "python -P scripts/t2-patterns-data/03_fisher_baseline.py",
+   "expected": "wt glucose Fisher c=0.850 mm/h ratio 5.10"
+  },
+  {
+   "what": "Spot check by hand",
+   "command_or_url": "Open MOESM11.xlsx row 6 (HE206 wt, 20mM glucose)",
+   "expected": "speed 4.3347 mm/h, growth rate 0.9985 per h"
+  }
+ ],
+ "citations": [
+  {
+   "authors": "Cremer J, Honda T, Tang Y, Wong-Ng J, Vergassola M, Hwa T",
+   "year": 2019,
+   "title": "Chemotaxis as a navigation strategy to boost range expansion",
+   "doi_or_arxiv": "10.1038/s41586-019-1733-y",
+   "venue": "Nature",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1038/s41586-019-1733-y returned this title, Nature, 2019 on 2026-11-12",
+   "used_for": "Source of all data files"
+  },
+  {
+   "authors": "Narla AV, Cremer J, Hwa T",
+   "year": 2021,
+   "title": "A traveling-wave solution for bacterial chemotaxis with growth",
+   "doi_or_arxiv": "10.1073/pnas.2105138118",
+   "venue": "PNAS",
+   "verified": true,
+   "how_verified": "Crossref API returned this title, PNAS, 2021 on 2026-11-12",
+   "used_for": "Closed-form speed formula (not re-derived here)"
+  },
+  {
+   "authors": "Fisher RA",
+   "year": 1937,
+   "title": "The wave of advance of advantageous genes",
+   "doi_or_arxiv": "10.1111/j.1469-1809.1937.tb02153.x",
+   "venue": "Annals of Eugenics",
+   "verified": true,
+   "how_verified": "Crossref API returned this title, Annals of Eugenics, 1937 on 2026-11-12",
+   "used_for": "Baseline speed 2 sqrt(D r) behind library law fisher-kpp-speed"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t2-patterns-data/00_run_all.sh",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t2-patterns-data/01_download.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t2-patterns-data/02_analysis.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t2-patterns-data/03_fisher_baseline.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t2-patterns-data/04_write_result.py"
+ ],
+ "recommendations": [
+  "Report the Pu-glpFK slope with its interval (1.12 [0.72, 1.53]; 0.89 [0.44, 1.35]) in PREREGISTRATION.md and set F1's target as the interval; the 4-point version alone cannot refute exponent 0.5.",
+  "State the held-out error of the square-root law over all 14 rows (6 of 14 within 15 percent), not just the scout's six.",
+  "Obtain a size exception for the 168 MB confocal archive (needed for F2 and the density half of F3), or run F2 on the MOESM12 and MOESM14 profiles after Freeze A.",
+  "Freeze A should cite the sha256 values in this file; the 12 quarantined files are already fingerprinted and unopened.",
+  "For the Lean bridge, treat fisher-kpp-speed as the zero-chemotaxis baseline, about 5 times below the measured front.",
+  "Update design text from turing-ddi-linear-condition to turing-ddi (law set 1.8.1)."
+ ],
+ "could_not_find": [
+  "Confocal archive (168,455,158 bytes) not downloaded: over the 150 MB per-dataset limit. F2 and the density half of F3 cannot be run.",
+  "Swimming videos (figshare 9643001, about 110 files of 0.7 to 1.8 GB each) not downloaded.",
+  "Quarantined sheets MOESM12 to 21, 23 and 24 were downloaded and hashed but intentionally not opened; F1, F3 and F4 observed values are unchecked.",
+  "Narla 2021 equations (21-25, 36, 40) not re-verified against the PDF; the Cremer code was not run (needs FiPy and a Python 2 to 3 port), so M2 outputs are unchecked.",
+  "MOESM3.txt states no units; the m^2/s and mM readings are the designer's assumption and I found no statement of them.",
+  "Licence of the Nature supplementary spreadsheets not stated on anything fetched; files kept on D: for analysis, not redistribution.",
+  "Only registry JSON and Lean file headers were read; no Lean process was run."
+ ]
+}

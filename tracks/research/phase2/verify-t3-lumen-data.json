@@ -1,0 +1,30 @@
+{
+ "label": "verify-t3-lumen-data",
+ "claims": [
+  {
+   "claim": "The public Source Data reproduce every checkable scout and design number exactly (same files, same hashes), so the pilot numbers are trustworthy as data summaries.",
+   "verdict": "partly",
+   "source_says": "D4_WT_N3to10_baselines n 43 const_median_rmse_sol 0.12433049111187389 const_median_rmse_ipq 0.20351480290978877",
+   "note": "results.json holds the quoted values and the Fig 5 sheet really has 15030 rows, but I did not recompute the rest, and the agent's own findings admit a 0.001 IQR difference and that the 99 non-physical rows need four filters, so 'exactly' is too strong."
+  },
+  {
+   "claim": "The best setting of the published sweep is worse than a constant on WT lumen solidity (RMSE 0.2293 vs 0.1243) and IPQ (0.2977 vs 0.2035), so the P1(a) reproduction gate is expected to fail.",
+   "verdict": "partly",
+   "source_says": "D7_best_sweep_setting_by_sol_plus_ipq n_scored 151, ipq_rmse 0.2976701895964639, sol_rmse 0.22925887978755574; D4 const_median_rmse_sol 0.1243, const_median_rmse_ipq 0.2035",
+   "note": "The four numbers match results.json, but I did not recompute them, and the 'gate expected to fail' part is a prediction about the design, not something a source states."
+  },
+  {
+   "claim": "The authors' lumen_vm.py cannot be run as published (missing import os, NumPy 2 incompatibility, endless loop at default jitter), and the patched run did not clearly land in the published replicate range; design step 2 needs an old NumPy and the authors' actual initial conditions.",
+   "verdict": "partly",
+   "source_says": "Code: lines 1-5 import numpy, matplotlib, scipy, pickle only, but line 194 uses os.path.isdir; line 196 'while np.isnan(A0):'; jitter=0. default. 04_output: IPQ inside published range at N=4 and 5 only, outside at six others.",
+   "note": "Missing os, the jitter=0 NaN loop structure and the 2-of-8 range result are confirmed from the file and log (I did not rerun the NumPy 2 failure); the need for old NumPy and the authors' initial conditions is the agent's inference."
+  },
+  {
+   "claim": "Identities such as IPQ = 4 pi a/(N l_a)^2 hold to machine precision in data and sweep, so a test that feeds a lumen's own l_a to score its own IPQ is circular.",
+   "verdict": "partly",
+   "source_says": "D6_sweep_identity_check_IPQ max_abs_diff 6.661338147750939e-16",
+   "note": "The sweep-side machine-precision number is in results.json; the 'circular test' conclusion is a judgment, and the data-side identity I did not recompute."
+  }
+ ],
+ "overall": "The agent's figures match its saved results.json and logs, and I confirmed the raw file facts: lumen_vm.py is 31,238 bytes with the stated sha256, lacks import os, and the sweep sheet has 15,030 rows. I did not independently recompute the statistics, so I mark each claim partly. Claim 1's word \"exactly\" is the weakest part."
+}

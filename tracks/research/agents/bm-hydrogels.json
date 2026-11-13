@@ -1,0 +1,762 @@
+{
+ "label": "bm-hydrogels",
+ "topic": "Printable hydrogels and swelling layers compatible with a desktop SLA printer",
+ "summary": "Photocurable hydrogels DO print on desktop 405 nm vat printers, including a Formlabs machine. Burke 2020 printed PEGDMA-600 (TPO, 1 wt%) on a Formlabs Form 2 at 405 nm (gel fraction 97.6%); this CONTRADICTS the earlier claim in spec-resin-chemistry.json that no paper printed a hydrogel on a Formlabs printer. Measured swelling spans three orders of magnitude: stock-like neat PEGDA 250 swells 3.5% linear in 24 h, PEGDA 575+PEGMEMA 19.3%, PEGMEMA-based 74.1% (Maennel 2020, re-read); PEGDA 1.07/2.03/5.85 kDa swell to J=4.2-5.5 / 6.9-8.9 / 16.9-35.7 times dry volume (linear 1.6x-3.3x dry); GelMA 15% swells only 0.7-7.8% linear depending on exposure time; PNIPAm films deswell to 0.3-0.5 of area above LCST. The strongest new evidence for the project's bilayer law is a 405 nm LCD-printed GelMA bilayer whose bend is encoded purely by exposure time (linear swelling 7.83% at 30 s down to 0.70% at 70 s, E about 15-20 kPa): the Timoshenko ceiling (project record, f max = 1.5) predicts R = 10.9-11.0 mm for a 1 mm balanced strip against the paper's observed 11-20 mm range (my calculation; per-sample radii were in a figure I could not read). A new design consequence from the same formula: a soft hydrogel (about 20 kPa to 13 MPa) bonded to a stiff Formlabs resin (2.75-10 GPa) has f(m=1) of only 0.0000-0.11 and needs a hydrogel 15-725 times thicker than the stiff layer to reach the 1.5 ceiling, so the passive partner should be an elastomer (Silicone 40A / Flexible class) or the whole part should be a single hydrogel with a cure-depth gradient. Kinetics: a measured hydrogel cooperative diffusion constant of 8.8e-11 to 1.7e-10 m2/s gives tau = h^2/(pi^2 D) of 6-12 s at 0.1 mm and 10-19 min at 1 mm, i.e. a thin hydrogel layer equilibrates in minutes-to-hours, far faster than stock resins; but real printed gels were slower (24 h to equilibrate for 1.5 mm GelMA; about 2 weeks for a hydrophobically associated acrylic acid gel; 3-7.5 h to deswell a 0.5 mm PNIPAm film). Sensitive failure points found: oxygen inhibition (needs scavenger or oxygen-permeable window; PPh3 0.02-1 wt% used), under-cure and exposure-dependent swelling, residual photoinitiator/absorber (12 h ethanol wash needed for one PEGDA resin), hydrolytic ester loss of PEGDA, drying fracture, and very poor fatigue evidence (few actuators tested beyond 10 cycles). I also confirmed (from the Formlabs Flexible 80A V2 data sheet copy) the +8% mass / +3% volume in deionized water at 1 day that spec-formlabs-materials.json reported, and flag that it sits 10x above the 0.7% 24 h cube-test figure given for Flexible 80A in spec-resin-chemistry.json.",
+ "lay_summary": "Some jelly-like plastics can be 3D printed with the same blue-violet light that Formlabs printers use. They are made mostly of water once they soak. When one face swells more than the other, a flat strip curls, like a drying leaf curling. In one experiment a printed jelly strip curled into a circle about 11 to 20 millimetres in radius just from being given different light doses on its two halves, which matches what our bending law predicts. The catch is that jelly is far softer than the hard resins Formlabs sells, so a jelly layer glued onto a hard layer barely bends, like trying to curl a plank by stretching a rubber band on it. A soft rubbery partner layer, or a jelly-only part, should work much better.",
+ "glossary": [
+  {
+   "term": "hydrogel",
+   "plain": "a plastic network that soaks up a lot of water and swells like a sponge but keeps its shape"
+  },
+  {
+   "term": "swelling ratio",
+   "plain": "how much bigger or heavier a gel gets after soaking, compared with its dry size or weight"
+  },
+  {
+   "term": "linear swelling",
+   "plain": "growth in length (not volume) after soaking, in percent"
+  },
+  {
+   "term": "PEGDA / PEGDMA",
+   "plain": "a liquid chemical (a polyethylene glycol with reactive ends) that turns into a water-loving gel when lit"
+  },
+  {
+   "term": "GelMA",
+   "plain": "gelatin (cooked collagen) chemically modified so light can set it into a gel"
+  },
+  {
+   "term": "PNIPAM",
+   "plain": "a gel that shrinks and turns cloudy when warmed above about 32 C and swells again when cooled"
+  },
+  {
+   "term": "photoinitiator",
+   "plain": "a chemical that absorbs light and starts the setting reaction (examples: LAP, TPO)"
+  },
+  {
+   "term": "405 nm",
+   "plain": "the blue-violet light colour used by Formlabs SLA printers"
+  },
+  {
+   "term": "Open Material Mode",
+   "plain": "a paid Formlabs setting that lets you print with resins that are not Formlabs'"
+  },
+  {
+   "term": "oxygen inhibition",
+   "plain": "air in the liquid mops up the reaction so a thin layer near air or a window stays liquid or soft"
+  },
+  {
+   "term": "modulus",
+   "plain": "stiffness: how hard you must push to bend or stretch a material"
+  },
+  {
+   "term": "Timoshenko bilayer",
+   "plain": "the formula for how much a two-layer strip curls when one layer grows more than the other"
+  },
+  {
+   "term": "gel fraction",
+   "plain": "the share of the material that actually became part of the solid network instead of staying loose and washable"
+  },
+  {
+   "term": "cooperative diffusion constant D",
+   "plain": "a number for how fast water moves into or out of a gel; time to soak scales as thickness squared divided by D"
+  },
+  {
+   "term": "leaching",
+   "plain": "unreacted chemicals washing out of a printed part into water"
+  },
+  {
+   "term": "LCST",
+   "plain": "the temperature above which a gel like PNIPAM squeezes its water out"
+  }
+ ],
+ "findings": [
+  {
+   "claim": "A hydrogel (PEGDMA, Mw 600) was printed on a Formlabs Form 2 SLA printer at 405 nm; this contradicts spec-resin-chemistry.json, which found no paper printing a hydrogel on a Formlabs printer.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7564751/ (Burke, Devine, Major 2020, Polymers 12:2015, doi 10.3390/polym12092015)",
+   "confidence": "high",
+   "value": "Form 2, 250 mW laser, 405 nm, 50 um layers, 10 min Procure 350 post-cure",
+   "evidence_quote": "The 3D printing machine utilised was the Formlabs Form 2 SLA (Formlabs Inc., Somerville, MA, USA)."
+  },
+  {
+   "claim": "That Form 2 resin was neat PEGDMA with 1 wt% TPO as photoinitiator (the UV-chamber control used Irgacure 2959).",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7564751/",
+   "confidence": "high",
+   "value": "PEGDMA Mw 600 + 1 wt% TPO",
+   "evidence_quote": "The mixtures were prepared pre-polymerisation by combining PEGDMA with either 1 wt% Irgacure 2959 photoinitiator or TPO."
+  },
+  {
+   "claim": "Swelling ratio of the Form 2 printed PEGDMA gel in PBS was 41.7 versus 47.0 for UV-chamber cured; the text gives the number without units (the equation did not extract, so I cannot say if it is % or a ratio).",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7564751/",
+   "confidence": "medium",
+   "value": "41.7 (SLA) vs 47.0 (UV chamber), definition not read",
+   "evidence_quote": "the swelling ratios of the UV chamber and SLA samples were shown to be significantly different at 47.0 and 41.7, respectively"
+  },
+  {
+   "claim": "Compressive Young's modulus of the Form 2 printed PEGDMA gel was 13.01 MPa versus 8.26 MPa for UV-chamber samples; tensile values were 15.47 and 19.92 MPa in the order the text lists (the text's ordering is ambiguous). Samples were stored in PBS at 37 C, hydration state at test not stated.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7564751/",
+   "confidence": "medium",
+   "value": "compressive E 13.01 vs 8.26 MPa; tensile 15.47 / 19.92 MPa",
+   "evidence_quote": "with Young’s modulus values of 13.01 MPa and 8.26 MPa, respectively."
+  },
+  {
+   "claim": "Gel fraction of the Form 2 printed gel was 97.58% (UV chamber 99.33%), i.e. 2.4% unreacted/extractable vs 0.67%, about four times more residue in the printed part; FTIR still showed a residual C=C peak.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7564751/",
+   "confidence": "high",
+   "value": "97.58 % vs 99.33 %",
+   "evidence_quote": "results of 99.33% and 97.58% for the UV chamber and SLA samples, respectively."
+  },
+  {
+   "claim": "A Formlabs user forum post shows a modified Form 1+ printing PEGDA with LAP and chlorophyll photoblocker; hydrogels do not stick to the aluminium build head, so silane-coated glass slides were used. No concentrations or exposures were given. (Fetched through a page summariser, so the quote is not independently verified.)",
+   "source": "https://forum.formlabs.com/t/printing-hydrogels-with-form-1/22088",
+   "confidence": "low",
+   "value": "PEGDA + LAP + chlorophyll; silane glass slide build surface",
+   "evidence_quote": "This allows hydrogels to stick on silane coated glass slide, since they won't stick to aluminium surface."
+  },
+  {
+   "claim": "Re-read of Maennel 2020: printed 9 mm x 1 mm discs swell (diameter, PBS, 24 h) 3.5% for neat PEGDA 250, up to 19.3% for PEGDA+PEGMEMA blends, 74.1% for PEGMEMA-based, <0.5% for TPGDA; Asiga DLP at 385 nm, TPO 0.1% w/w and Sudan 1 absorber. Confirms the earlier agent's numbers.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7143370/",
+   "confidence": "high",
+   "value": "<0.5 / 3.5 / 19.3 / 74.1 % linear, 24 h",
+   "evidence_quote": "By preparing mixtures of PEGDA and PEGMEMA (RC1 to RC4), we drastically reduced the swelling ratio varying from 3.5% (RC1) up to 19.3% (RC4)."
+  },
+  {
+   "claim": "PEGDA swelling rises steeply with molecular weight. Measured volumetric swelling J (swollen/dry volume) of LAP-cured PEGDA discs: 4.2-5.5 at Mn 1.07 kDa, 6.9-8.9 at 2.03 kDa, 16.9-35.7 at 5.85 kDa, the range spanning as-cured concentrations 25.7-17.9, 21.0-15.8 and 15.9-8.0 wt%. My conversion to linear size vs dry: 1.6-1.8x, 1.9-2.1x, 2.6-3.3x.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11325651/ Table 2 (Macromolecules 2024, doi 10.1021/acs.macromol.3c02635); conversion in scripts/bm-hydrogels/calcs.py section 1",
+   "confidence": "high",
+   "value": "J = 5.5/4.8/4.2 (1.07 kDa); 8.9/7.6/6.9 (2.03 kDa); 35.7/22.2/16.9 (5.85 kDa)",
+   "evidence_quote": "5.85 | 133 | 37 | 8.0 | 35.7 | 30 | 7.5 | 30 | 0.29 | 2.46"
+  },
+  {
+   "claim": "Lower PEGDA molecular weight and higher concentration raise modulus and lower swelling (GelMA/PEGDA hybrid bioinks with PEGDA Mn 700, 2000, 4000; compressive moduli 50 kPa for 10% GelMA to 600 kPa for the 15% PEGDA-700 hybrid). Extrusion printing at 405 nm, not vat printing.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12169505/ (doi 10.1002/mabi.202400587)",
+   "confidence": "high",
+   "value": "E 50 kPa (10G) to 600 kPa (10G+15P700)",
+   "evidence_quote": "A lower molecular weight and high concentration induced high crosslinking density thus improving compressive modulus, lower swelling, and a slower degradation profile."
+  },
+  {
+   "claim": "In frontal-photopolymerised asymmetric PEGDA networks (Mn 250, 575, 700; Irgacure-819), the higher-Mn network swells more, tied to a larger mesh size. Numbers are in supplementary figures I did not read.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12947670/ (doi 10.1021/acs.macromol.5c02783)",
+   "confidence": "medium",
+   "value": "qualitative",
+   "evidence_quote": "The high-Mn polymer network is capable of absorbing more solvent and undergoing greater swelling (see Figures S5 and S6), which we associate to its larger network mesh size."
+  },
+  {
+   "claim": "LAP absorbs 365 nm strongly (epsilon 218 M-1 cm-1) and also gels PEGDA at 405 nm (2.2 mM, 10 mW/cm2: 120 s gel time) whereas Irgacure 2959 did not gel in 1800 s at 405 nm. Water solubility of LAP is far better than TPO's, which is why LAP is the hydrogel photoinitiator of choice at 405 nm.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC2896013/ (Fairbanks 2009, doi 10.1016/j.biomaterials.2009.08.055)",
+   "confidence": "high",
+   "value": "epsilon(365)=218 M-1cm-1; gel time 120 s at 405 nm, 10 mW/cm2, 2.2 mM",
+   "evidence_quote": "2.2 mM LAP | 405nm | 5 | 0.244 | 120 | 96±2"
+  },
+  {
+   "claim": "GelMA compressive modulus is only a few to about 30 kPa: 2.0, 10.0, 22.0 kPa for 5, 10, 15% w/v at 53.8% methacrylation, and 3.3, 16.0, 30.0 kPa at 81.4% (a review restating Nichol 2010). Mass swelling ratio falls with higher concentration and methacrylation (numbers only in Nichol's figure).",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4610009/ (Yue 2015, doi 10.1016/j.biomaterials.2015.08.045); primary https://pmc.ncbi.nlm.nih.gov/articles/PMC2878615/ (Nichol 2010)",
+   "confidence": "high",
+   "value": "2.0/10.0/22.0 kPa (5/10/15 %, DS 53.8 %); 3.3/16.0/30.0 kPa (DS 81.4 %)",
+   "evidence_quote": "Nichol et al. estimated compressive modulus values of 2.0, 10.0, and 22.0 KPa, respectively, for 5, 10, and 15% w/v GelMA (with a degree of substitution of 53.8%)."
+  },
+  {
+   "claim": "GelMA was printed on a consumer 405 nm LCD printer (Frozen Sonic Mini 8K, 1.4 mW/cm2) at 50 um layers with 20-70 s exposure per layer, using 15% w/v GelMA, 1% w/v LAP and 1.5 mM tartrazine absorber. Per-layer exposure is orders of magnitude longer than the 550 ms used for PEGDA with a strong absorber on a custom 385 nm printer (Warr 2020).",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13205297/ (Gels 2026, doi 10.3390/gels12050382)",
+   "confidence": "high",
+   "value": "1.4 mW/cm2; 20-70 s per 50 um layer; 15 % GelMA, 1 % LAP, 1.5 mM tartrazine",
+   "evidence_quote": "Printability was evaluated using a Frozen Sonic Mini 8K LCD printer (405 nm, 1.4 mW/cm2 light intensity"
+  },
+  {
+   "claim": "In that GelMA print, 24 h linear swelling in culture medium fell monotonically with exposure time: 7.83% (30 s), 7.11% (40 s), 5.52% (50 s), 2.02% (60 s), 0.70% (70 s); modulus rose 14.48 -> 20.23 kPa; gel fraction 70.4 -> 80.7%. So exposure time alone gives about 7 percentage points of differential linear strain.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13205297/ Table 1",
+   "confidence": "high",
+   "value": "LS 7.83/7.11/5.52/2.02/0.70 %; E 14.48/15.30/17.07/18.64/20.23 kPa",
+   "evidence_quote": "30 | 14.48 | 70.43 | 7.83 | 10.34 | 5.81 | 43.9"
+  },
+  {
+   "claim": "Two-region GelMA strips (20 x 2 x 1 mm, 35 s and 65 s halves) bent on swelling to radii of curvature between 11 and 20 mm depending on geometry; balanced thickness splits curved most; finite-element simulation matched. Direct vat-printed precedent for a swelling bilayer.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13205297/",
+   "confidence": "high",
+   "value": "R = 11-20 mm (per-sample values in Fig 5a not read)",
+   "evidence_quote": "enabling controlled bending of the printed structures upon immersion in aqueous media, with radii of curvature between 11 and 20 mm depending on the geometry."
+  },
+  {
+   "claim": "OWN CALCULATION: applying the project-record Timoshenko coefficient to the GelMA numbers (active layer 35 s, LS 7.47%, E 14.9 kPa; passive 65 s, LS 1.36%, E 19.4 kPa; d_eps 0.0611, n 0.766, h 1 mm) gives f = 1.493 at m=1 and kappa 0.0912 1/mm, R = 11.0 mm; ceiling R = 10.9 mm. The observed minimum of the quoted range, 11 mm, is consistent with the law; the 11-20 mm spread says unbalanced layers fall short. Caveat: interpolated table values and an unread per-sample figure.",
+   "source": "scripts/bm-hydrogels/calcs.py section 2, output in scratch/bm-hydrogels/calcs_output.txt; project record for f(m,n)",
+   "confidence": "medium",
+   "value": "R_pred = 10.9-11.0 mm vs observed 11-20 mm",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "OWN CALCULATION, design consequence: because the optimum m* = n^-1/2 requires the soft layer to be thicker, a hydrogel on a stiff Formlabs resin is mechanically dead. GelMA (about 19 kPa) on Grey/Clear V5 (2.75 GPa): f(m=1)=0.0002, m*=380; on Rigid 10K (10 GPa): f(m=1)=0.00005, m*=725; PEGDMA-600 (13 MPa) on Clear V5: f(m=1)=0.11, m*=14.5. Against a 0.2 mm Form 4 minimum wall this needs 76 mm of GelMA. With soft elastomer partners (my secant estimates from spec-formlabs-materials.json): GelMA on Silicone 40A m*=6.5, f(1)=0.43; PEGDMA-600 on Silicone 40A m*=0.25; on Flexible 80A V2 m*=0.67, f(1)=1.44. This does not contradict the 'modulus drops out' result; it says the thickness ratio that makes it drop out is impractical for a large modulus gap.",
+   "source": "scripts/bm-hydrogels/calcs.py section 9; moduli from spec-formlabs-materials.json, spec-resin-chemistry.json and PMC13205297, PMC7564751",
+   "confidence": "medium",
+   "value": "m* 0.25-725; f(m=1) 5e-5 to 1.44",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Poly(acrylamide) 'tanglemer' hydrogels made with LAP and DLP-printed (same paper benchmarks Formlabs Silicone 40A and Elastic 50A) swell to a ratio of about 4 (about 80 wt% water), with tensile modulus under 100 kPa (143 to 66 kPa as initiator drops from 0.01 to 0.0001 mol%). The soft, tough network needs very low initiator, i.e. slow exposures (30-60 s per 100 um layer for the elastomer case).",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13674616/ (Adv. Mater. 2026, doi 10.1002/adma.74661)",
+   "confidence": "high",
+   "value": "swelling ratio ~4; 80 wt% H2O; E_T 66-143 kPa",
+   "evidence_quote": "At equilibrium, all LAP‐derived hydrogels exhibited swelling ratios of ∼4, corresponding to ≈ 80 wt% H2O (Table S34, Equation S6)."
+  },
+  {
+   "claim": "Acrylic acid / hexadecyl acrylate copolymer gels (2 wt% TPO, Creality Halot-one, 405 nm cure) have equilibrium water content of 51% falling to 7% as the hydrophobic fraction rises, and took about 2 weeks to equilibrate; tensile Young's modulus 23-215 MPa (test state not stated). My conversion: EWC 51% is a 2.04x mass ratio, about 27% linear; 7% is about 2% linear.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9945108/ (doi 10.1021/acsabm.2c00939); calcs.py section 5",
+   "confidence": "high",
+   "value": "EWC 51 -> 7 %; equilibrium about 2 weeks",
+   "evidence_quote": "The equilibrium water content (EWC) of the printed hydrogels was determined by keeping the hydrogel specimen in water until obtaining the swelling equilibrium, which required about 2 weeks."
+  },
+  {
+   "claim": "PNIPAm hydrogel films cured on an Anycubic Photon D2 (405 nm, 2.5 mW/cm2) with PEGDA-700 plus BIS crosslinkers and a BAPO-type initiator in acetone-water: areal deswelling above the LCST (35 C) was 0.3-0.5 of the as-printed area (linear 0.55-0.71, my conversion); 50 s vs 120 s exposure gave modulus 40.2 vs 123.2 kPa. Heating through the LCST took 7.5 h (3 h with accelerated heating) to reveal a halftone image in a film printed in a 450-550 um cell.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12612155/ (Nat. Commun. 2025, doi 10.1038/s41467-025-65378-8); calcs.py section 4",
+   "confidence": "high",
+   "value": "A35/A0 0.3-0.5; E 40.23 / 123.24 kPa; 7.5 h -> 3 h",
+   "evidence_quote": "The 50-s hydrogel film had a Young’s modulus of 40.23 kPa and a strain at a break of 1102%, whereas the 120-s film exhibited a Young’s modulus of 123.24 kPa"
+  },
+  {
+   "claim": "Measured cooperative-diffusion swelling constants for a hydrogel (polyampholyte gel, 1.1-1.3 mm thick) are 8.8e-11 to 1.7e-10 m2/s, with swelling time proportional to thickness squared via tau = h^2/(pi^2 D). Not PEGDA or GelMA; transfers as an order of magnitude only.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9457170/ (PNAS 2022, doi 10.1073/pnas.2207422119)",
+   "confidence": "medium",
+   "value": "D_sw 8.8e-11 to 1.7e-10 m2/s",
+   "evidence_quote": "The cooperative diffusion coefficient of swelling, Dsw, increases slightly from 8.8 × 10−11 to 1.7 × 10−10 m2/s by increasing CMBAA from 0 to 5.0 mol% (Fig. 4A)."
+  },
+  {
+   "claim": "OWN CALCULATION: with D = 8.8e-11 to 1.7e-10 m2/s, tau = h^2/(pi^2 D) is 6-12 s at 0.1 mm, 2.5-4.8 min at 0.5 mm, 10-19 min at 1 mm and 40-77 min at 2 mm; five tau (near equilibrium) is 0.8-1.6 h at 1 mm. Printed gels were slower than this estimate (24 h chosen for 1.5 mm GelMA; 3-7.5 h PNIPAm film; 2 weeks for the hydrophobic AAc gel), so measure D on the real resin.",
+   "source": "scripts/bm-hydrogels/calcs.py section 3",
+   "confidence": "medium",
+   "value": "tau 6-12 s (0.1 mm) to 40-77 min (2 mm)",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Review of hydrogel actuators: bilayer bending angles span 20-720 degrees with actuation times 1-280 min; no clear relation between bending angle and bilayer thickness or modulus; bending follows the strain difference between layers, as the Timoshenko beam equation says. Actuation time grew from 1 min to 5 min when a 450-degree bilayer thickness was doubled to 2 mm.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13463021/ (Mater. Horiz. 2026, doi 10.1039/d6mh00947f)",
+   "confidence": "high",
+   "value": "20-720 deg; 1-280 min",
+   "evidence_quote": "The bending angle of bilayer actuators can range from 20 to 720° with actuation times varying from 1 to 280 min (Fig. 2a)."
+  },
+  {
+   "claim": "Hydrogel actuator forces are small: single-network hydrogels have kPa to hundreds of kPa modulus, so swelling and contraction forces are mostly below 1 N, about an order of magnitude below pine-cone scales (about 10 N).",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13463021/",
+   "confidence": "high",
+   "value": "< 1 N vs ~10 N",
+   "evidence_quote": "the swelling and contraction forces for most hydrogel actuators are less than 1 N,8,42 even though the osmotic pressure that drives swelling can reach megapascals."
+  },
+  {
+   "claim": "Fatigue is the least-tested failure point: few hydrogel actuators are cycled beyond 10 times and drying during a fatigue test confounds the result; stiffer hydrogels tend to be less fatigue resistant.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13463021/",
+   "confidence": "high",
+   "value": "repeatable actuation beyond 10 cycles rarely shown",
+   "evidence_quote": "Indeed, few studies demonstrate repeatable actuation beyond 10 cycles, and even fewer conduct long-term fatigue testing."
+  },
+  {
+   "claim": "Oxygen inhibition is a design lever and a failure point: an oxygen-permeable window creates a persistent liquid 'dead zone' in CLIP, and oxygen inhibition worsens as feature size shrinks in PEGDA. A DLP tanglemer study adds 0.02-1 wt% triphenylphosphine to mitigate it.",
+   "source": "https://europepmc.org/article/MED/25780246 (Tumbleston 2015, doi 10.1126/science.aaa2397); doi 10.1016/j.jcis.2017.09.081; https://pmc.ncbi.nlm.nih.gov/articles/PMC13674616/",
+   "confidence": "high",
+   "value": "PPh3 0.02-1 wt%",
+   "evidence_quote": "To accelerate photopolymerization and mitigate oxygen inhibition, triphenylphosphine (PPh3, 0.02–1 wt%) was added to the EA resins"
+  },
+  {
+   "claim": "Incomplete or graded cure changes swelling and leaves porosity: PEGDA micro-stereolithography shows a graded degree of cure, submicron pores and irreversible densification depending on exposure time and intensity. In the GelMA print, 30 vs 70 s exposure changed gel fraction 70% to 81%.",
+   "source": "doi 10.1039/d1sm00483b (Alketbi 2021, abstract via Europe PMC PMID 34269366); https://pmc.ncbi.nlm.nih.gov/articles/PMC13205297/",
+   "confidence": "high",
+   "value": "gel fraction 70.43-80.70 %",
+   "evidence_quote": "Our findings show that the degree of curing exhibits a graded profile from confocal Raman spectroscopy and submicron pores from atomic force microscopy"
+  },
+  {
+   "claim": "Leaching: a custom PEGDA resin with a UV absorber (2-nitrophenyl phenyl sulfide) needed a 12 h ethanol wash to be non-cytotoxic; an avobenzone-absorber variant was non-cytotoxic as printed. Any photoinitiator/absorber not bound into the network is a leachable.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7255423/ (Warr 2020, doi 10.1021/acsabm.0c00055)",
+   "confidence": "high",
+   "value": "12 h ethanol wash",
+   "evidence_quote": "We show that NPS-PEGDA can be made effectively non-cytotoxic with a post-print 12-hour ethanol wash, and that A-PEGDA, as-printed, is effectively non-cytotoxic."
+  },
+  {
+   "claim": "Printed soft networks can leave 5-23% sol: DLP-printed elastomer tanglemers rose from 77-87% to 91-95% gel fraction with a 10 min 365 nm post-cure, and omitting UV post-cure left a roughly 5% volume decrease on drying.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13674616/",
+   "confidence": "medium",
+   "value": "gel fraction 77/87 -> 91/95 %",
+   "evidence_quote": "post‐curing with 5 mW cm− 2 365 nm light for 10 min before drying increased gel fractions from 77% to 91% and from 87% to 95%"
+  },
+  {
+   "claim": "Hydrolysis: PEGDA gels degrade by ester hydrolysis, seen as rising swelling ratio and falling modulus; 10 kDa PEGDA 10 wt% gels degraded significantly in 12 weeks in vivo, whereas the amide analogue did not. A PEGDA active layer will drift to larger swelling over weeks.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4112173/ (Browning 2014, doi 10.1002/jbm.a.35096)",
+   "confidence": "high",
+   "value": "12 weeks in vivo (rat); 10 kDa, 10 wt%",
+   "evidence_quote": "PEGDAA hydrogels remained stable over 12 weeks of subcutaneous implantation in a rat model while PEGDA hydrogels underwent significant degradation as indicated by both increased swelling ratio and decreased modulus."
+  },
+  {
+   "claim": "Dehydration cracking: drying produces fracture by local dehydration of a brittle PEGDA gel (shown in freezing); partially dried gels behave as incompressible solids with environment-set target volumes. I found no measured critical thickness or drying rate for a printed hydrogel. Peer-reviewed numbers for printed gels were not found; APS abstracts seen in a search snippet (volatile solvents crack more, thickness and crosslinker density matter little) were not read.",
+   "source": "arXiv:2401.12871 (Yang et al., export API) ; arXiv:2606.07384 (Chao Correas et al.)",
+   "confidence": "medium",
+   "value": "qualitative",
+   "evidence_quote": "Instead, local ice growth dehydrates the surrounding hydrogel, leading to drying-induced fracture."
+  },
+  {
+   "claim": "Hydrogel to printed substrate: a silane (TMSPMA) anchored tough hydrogel gave interfacial toughness over 1000 J/m2; a non-tough PAAm gel was limited to 24 J/m2 by its own fracture toughness, and without anchoring only 8 J/m2. A cast hydrogel on a printed resin needs covalent anchoring, not just contact.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4762474/ (Yuk 2016, doi 10.1038/nmat4463)",
+   "confidence": "high",
+   "value": ">1000 / 24 / 8 J/m2",
+   "evidence_quote": "Here, we report a design strategy and a set of simple fabrication methods to give extremely tough and functional bonding between hydrogels and diverse solids"
+  },
+  {
+   "claim": "Multi-material on a single-vat desktop SLA printer is possible by pausing, swapping resin and cleaning ('Print-Pause-Print'); acrylate-rich interfaces between PEGDA variants bonded strongly and did not delaminate. Printer was a desktop DLP, not a Formlabs. PEGDA 258 Mw printed modulus about 870 MPa; adding PEGMEMA brought it to about 2.2 MPa; solvent/water uptake of the blends below 8% mass and 10% volume.",
+   "source": "arXiv:2305.14190 (Ahmadianyazdi, Miller, Folch 2023; PDF read locally)",
+   "confidence": "high",
+   "value": "E 870 -> 2.2 MPa; <8 % mass, <10 % vol uptake",
+   "evidence_quote": "the abundance of unsaturated acrylate groups at these interfaces led to a strong adhesion between different polymers and prevented delamination."
+  },
+  {
+   "claim": "Contradiction check: the Formlabs Flexible 80A V2 data sheet (copy dated 12/05/2026) lists deionized water at 1 day: -26 Shore A, +8% mass, +3% volume; 1 week +9% mass, +7% volume. This confirms spec-formlabs-materials.json and sits about 10x above the 0.7% 24 h cube figure for Flexible 80A in spec-resin-chemistry.json. The TDS copy I read had the cube table text missing, so I could not settle the 0.7%; the methods differ (ASTM D471 slabs vs 1 cm cubes).",
+   "source": "https://cdn.goengineer.com/flexible-80a-resin-v2-material-spec-sheet.pdf (local copy, sha256 a2c32cef76c40108082dc4a74f6466bc53ab3ac66d93598218396643b2c6b683)",
+   "confidence": "high",
+   "value": "+8 % mass, +3 % volume, -26 Shore A (1 day)",
+   "evidence_quote": "Deionized Water 1 day -26 +8% +3% 94% 89% 1 week -27 +9% +7% 101% 88%"
+  },
+  {
+   "claim": "Macroporous (emulsion) GelMA printed on an Anycubic Photon Mono SE (405 nm, 1.68 mW/cm2) swells to 2524% (DI) and 2261% (PBS) of its mass after 72 h; this shows swelling in printed gels can be raised by porosity but compressive modulus there was only 0.34 kPa.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13646038/ (Small Methods 2026, doi 10.1002/smtd.70988)",
+   "confidence": "medium",
+   "value": "2524 % (DI, 72 h); 0.34 kPa",
+   "evidence_quote": "Group 3 exhibited the highest swelling ratios after 72 h in both deionized water (2524%) and PBS buffer (2261%)"
+  },
+  {
+   "claim": "Swelling and stiffness trade off: raising swelling ratio from about 200% to about 800% gives a two- to four-fold fall in Young's modulus (review). Relevant because the active layer softens as it swells.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12385289/ (Gels 2025, doi 10.3390/gels11080588)",
+   "confidence": "medium",
+   "value": "2-4x modulus drop for 200-800 % swelling",
+   "evidence_quote": "hydrogels with swelling ratios increasing from ~200% to ~800% can exhibit a two- to four-fold decrease in Young’s modulus"
+  },
+  {
+   "claim": "HEMA: no measured swelling or modulus for a vat-printed pHEMA gel was found. The only vat-printable HEMA hit was a PHEMA-polysilsesquioxane resin (abstract only): more silsesquioxane reduced swelling and hydration markedly decreased compressive resistance.",
+   "source": "doi 10.1039/d6tb00727a (J. Mater. Chem. B 2026, abstract via Europe PMC PMID 42596689)",
+   "confidence": "low",
+   "value": "qualitative",
+   "evidence_quote": "Increasing PSS content reduced swelling, while TEGDMA produced more rigid networks than PEGDMA. Hydration markedly decreased compressive resistance"
+  }
+ ],
+ "key_claims": [
+  {
+   "claim": "A PEGDMA-600 hydrogel (1 wt% TPO) has been printed on a Formlabs Form 2 at 405 nm with 97.6% gel fraction, so hydrogel printing on a Formlabs printer has a published precedent (contradicting the earlier agent).",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7564751/",
+   "evidence_quote": "The 3D printing machine utilised was the Formlabs Form 2 SLA (Formlabs Inc., Somerville, MA, USA)."
+  },
+  {
+   "claim": "A 405 nm LCD-printed GelMA strip programmed only by per-layer exposure (linear swelling 7.83% at 30 s to 0.70% at 70 s, E about 15-20 kPa) bent to radii of 11-20 mm; the project Timoshenko ceiling predicts about 11 mm for a balanced 1 mm strip.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13205297/",
+   "evidence_quote": "enabling controlled bending of the printed structures upon immersion in aqueous media, with radii of curvature between 11 and 20 mm depending on the geometry."
+  },
+  {
+   "claim": "Printed PEG-acrylate swelling is tunable over about 0.5% to 74% linear in 24 h by monomer choice (Maennel), and PEGDA volumetric swelling rises from J about 4-5 at 1 kDa to about 17-36 at 5.85 kDa.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7143370/ ; https://pmc.ncbi.nlm.nih.gov/articles/PMC11325651/",
+   "evidence_quote": "Finally, TPGDA-based resins showed the lowest swelling ratio with less than 0.5% over a period of 24 h in PBS."
+  },
+  {
+   "claim": "By the project's own f(m,n), a kPa-to-MPa hydrogel on a GPa Formlabs resin needs a hydrogel 15-725 times thicker than the stiff layer to reach the 1.5 ceiling (my calculation), so the passive layer should be an elastomer or the part a single graded hydrogel.",
+   "source": "scripts/bm-hydrogels/calcs.py section 9 (inputs: PMC13205297 Table 1; PMC7564751; spec-formlabs-materials.json)",
+   "evidence_quote": ""
+  }
+ ],
+ "table": [
+  {
+   "name": "Neat PEGDA 250 (DLP, 385 nm, TPO 0.1%)",
+   "fields": "linear_swelling_24h_PBS=3.5 %; disc=9 mm x 1 mm; printer=Asiga PICO2 (not Formlabs)",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7143370/"
+  },
+  {
+   "name": "PEGDA 575 + PEGMEMA 500 blend (DLP, 385 nm)",
+   "fields": "linear_swelling_24h_PBS=19.3 % (RC4); PEGMEMA-based RC5=74.1 %; TPGDA RC6=<0.5 %",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7143370/"
+  },
+  {
+   "name": "PEGDMA Mw 600 neat, 1 wt% TPO, Formlabs Form 2 (405 nm laser)",
+   "fields": "swelling_ratio=41.7 (units not read; UV-chamber 47.0); compressive_E=13.01 MPa; gel_fraction=97.58 %; layer=50 um; post-cure=10 min Procure 350; stored PBS 37 C",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7564751/"
+  },
+  {
+   "name": "PEGDA Mn 1.07 kDa, LAP 4.95 mM, cast under argon",
+   "fields": "c_as_cured=17.9-25.7 wt%; J_swollen_over_dry_volume=5.5-4.2; linear_vs_dry=1.77-1.61x (my calc); kT*N_PEG=20-37 kPa",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11325651/"
+  },
+  {
+   "name": "PEGDA Mn 2.03 kDa, LAP",
+   "fields": "c=15.8-21.0 wt%; J=8.9-6.9; linear_vs_dry=2.07-1.90x (my calc); kT*N_PEG=42-60 kPa",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11325651/"
+  },
+  {
+   "name": "PEGDA Mn 5.85 kDa, LAP",
+   "fields": "c=8.0-15.9 wt%; J=35.7-16.9; linear_vs_dry=3.29-2.57x (my calc); kT*N_PEG=30-65 kPa",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11325651/"
+  },
+  {
+   "name": "PEGDA 258 printed plastic vs PEGDA-co-PEGMEMA (desktop DLP, Irgacure-819 0.6 wt%, ITX 0.6 wt%)",
+   "fields": "E_PEGDA=~870 MPa; E_blend_min=~2.2 MPa; solvent_uptake=<8 % mass, <10 % volume; multi-material=Print-Pause-Print",
+   "source": "https://arxiv.org/abs/2305.14190"
+  },
+  {
+   "name": "GelMA 5/10/15 % w/v (UV 360-480 nm, Irgacure 2959)",
+   "fields": "compressive_E=2.0/10.0/22.0 kPa (DS 53.8 %); 3.3/16.0/30.0 kPa (DS 81.4 %); cure=6.9 mW/cm2, 60 s",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4610009/"
+  },
+  {
+   "name": "GelMA 15 % w/v + LAP 1 % + tartrazine 1.5 mM, Frozen Sonic Mini 8K LCD, 405 nm 1.4 mW/cm2, 50 um layers",
+   "fields": "exposure_30/40/50/60/70 s: LS_24h=7.83/7.11/5.52/2.02/0.70 %; E=14.48/15.30/17.07/18.64/20.23 kPa; gel_fraction=70.4-80.7 %; bilayer R=11-20 mm (h=1 mm)",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13205297/"
+  },
+  {
+   "name": "Poly(acrylamide) tanglemer hydrogel (LAP, DLP, 405 nm)",
+   "fields": "swelling_ratio=~4; water=~80 wt%; E_T=66-143 kPa; strength=~0.5 MPa; gel fraction (elastomer) 77-95 %",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13674616/"
+  },
+  {
+   "name": "Poly(acrylic acid-co-hexadecyl acrylate), TPO 2 wt%, Creality Halot-one LCD",
+   "fields": "EWC=51 % (20 mol % C16A) to 7 % (50 mol %); equilibration=~2 weeks; E=23-215 MPa (tensile, state not stated)",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9945108/"
+  },
+  {
+   "name": "PNIPAm film (NIPAm 4 g, PEGDA-700 1.25 mol %, BIS 1 mol %, PBPO 0.15 mol %; Anycubic Photon D2 405 nm 2.5 mW/cm2)",
+   "fields": "areal_deswelling_35C=0.3-0.5; E=40.23 kPa (50 s) / 123.24 kPa (120 s); decryption time=7.5 h (3 h accelerated); cell gap 450-550 um",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12612155/"
+  },
+  {
+   "name": "LAP vs Irgacure 2959 (PEGDA, 405 nm)",
+   "fields": "LAP_epsilon_365=218 M-1cm-1; I2959_epsilon_365=4 M-1cm-1; LAP 2.2 mM 405 nm 10 mW/cm2 gel_time=120 s; I2959 no gel in 1800 s at 405 nm",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC2896013/"
+  },
+  {
+   "name": "Cooperative diffusion in a hydrogel (polyampholyte, 1.1-1.3 mm discs)",
+   "fields": "D_swell=8.8e-11 to 1.7e-10 m2/s; tau=h^2/(pi^2 D); my_calc tau(1 mm)=10-19 min",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9457170/"
+  },
+  {
+   "name": "Flexible 80A V2 (Formlabs) in deionized water, ASTM D471",
+   "fields": "1 day: +8 % mass, +3 % volume, -26 Shore A; 1 week: +9 % mass, +7 % volume, -27 Shore A",
+   "source": "https://cdn.goengineer.com/flexible-80a-resin-v2-material-spec-sheet.pdf"
+  },
+  {
+   "name": "Hydrogel on stiff printed resin: Timoshenko feasibility (own calc)",
+   "fields": "GelMA19kPa_on_Clear_V5: n=6.9e-6, m*=380, f(m=1)=0.0002; on Rigid10K: m*=725; PEGDMA13MPa_on_Clear_V5: m*=14.5, f(1)=0.11; GelMA_on_Silicone40A(est 0.8 MPa): m*=6.5, f(1)=0.43; PEGDMA_on_Flexible80A(est 5.8 MPa): m*=0.67, f(1)=1.44",
+   "source": "scripts/bm-hydrogels/calcs.py section 9"
+  }
+ ],
+ "recommendations": [
+  "Do not pair a thin kPa-MPa hydrogel layer with Rigid 10K, Clear/Grey V5 or other GPa resins: by the project's f(m,n) the hydrogel must be 15-725 times thicker than the stiff layer, which is not printable at the 0.2 mm minimum wall. Choose a soft passive partner (Silicone 40A / Flexible 80A class) or a hydrogel-only part with a through-thickness cure gradient.",
+  "First proof of concept: Form 4 Open Material Mode, neat PEGDMA-600 or PEGDA-575 plus PEGMEMA with TPO (Burke recipe is the only Formlabs precedent), coupons of three thicknesses (0.2, 0.5, 1.0 mm), measure linear swelling versus time in water, E wet and dry, and gel fraction. This replaces the unknown D and hygroscopic strain with measured values.",
+  "Alternative with much stronger precedent for bending: GelMA (or PEGDA) with a UV absorber printed with two exposure doses per layer, since exposure time alone moved linear swelling from 7.8% to 0.7% and produced R = 11-20 mm. Needs a long per-layer exposure on a 405 nm LCD (20-70 s), so test whether Form 4 can reach those doses in the Print Settings Editor.",
+  "Plan for oxygen inhibition (scavenger such as 0.1 wt% triphenylphosphine, nitrogen, or an oxygen-permeable interface), leachables (extended ethanol or water wash and a gel-fraction check), hydrolysis drift (avoid PEGDA over months or use methacrylamide variants), and slow drying (keep hydrated or use a glycerol or humectant solvent).",
+  "Open questions to resolve before a purchase: whether a water-based hydrogel resin damages the Form 4 resin tank film or cartridge seals, and whether the printer can pause for resin exchange (Print-Pause-Print). I found no source on either."
+ ],
+ "citations": [
+  {
+   "authors": "Burke G, Devine D, Major I",
+   "year": 2020,
+   "title": "Effect of Stereolithography 3D Printing on the Properties of PEGDMA Hydrogels",
+   "venue": "Polymers",
+   "doi_or_arxiv": "10.3390/polym12092015",
+   "verified": true,
+   "how_verified": "Crossref https://api.crossref.org/works/10.3390/polym12092015 returned this title in this run; full text read via Europe PMC PMC7564751",
+   "used_for": "Formlabs Form 2 hydrogel print, swelling, modulus, gel fraction"
+  },
+  {
+   "authors": "Maennel M, Fischer C, Thiele J",
+   "year": 2020,
+   "title": "A Non-Cytotoxic Resin for Micro-Stereolithography for Cell Cultures of HUVECs",
+   "venue": "Micromachines",
+   "doi_or_arxiv": "10.3390/mi11030246",
+   "verified": true,
+   "how_verified": "Crossref returned this record in this run; full text read via Europe PMC PMC7143370",
+   "used_for": "Linear swelling of printed PEG-acrylate resins"
+  },
+  {
+   "authors": "Fairbanks B, Schwartz M, Bowman C, Anseth K",
+   "year": 2009,
+   "title": "Photoinitiated polymerization of PEG-diacrylate with lithium phenyl-2,4,6-trimethylbenzoylphosphinate: polymerization rate and cytocompatibility",
+   "venue": "Biomaterials",
+   "doi_or_arxiv": "10.1016/j.biomaterials.2009.08.055",
+   "verified": true,
+   "how_verified": "Crossref returned this title; full text read via PMC2896013 (NCBI efetch)",
+   "used_for": "LAP absorbance and 405 nm gelation"
+  },
+  {
+   "authors": "Nichol J, Koshy S, Bae H, Hwang C, Yamanlar S, Khademhosseini A",
+   "year": 2010,
+   "title": "Cell-laden microengineered gelatin methacrylate hydrogels",
+   "venue": "Biomaterials",
+   "doi_or_arxiv": "10.1016/j.biomaterials.2010.03.064",
+   "verified": true,
+   "how_verified": "Crossref returned this title; full text read via PMC2878615 (NCBI efetch); numeric moduli are in a figure so values are taken from Yue 2015",
+   "used_for": "GelMA swelling and modulus trends"
+  },
+  {
+   "authors": "Yue K, Trujillo-de Santiago G, Alvarez M, Tamayol A, Annabi N, Khademhosseini A",
+   "year": 2015,
+   "title": "Synthesis, properties, and biomedical applications of gelatin methacryloyl (GelMA) hydrogels",
+   "venue": "Biomaterials",
+   "doi_or_arxiv": "10.1016/j.biomaterials.2015.08.045",
+   "verified": true,
+   "how_verified": "Crossref returned this title; full text read via PMC4610009",
+   "used_for": "GelMA compressive modulus values"
+  },
+  {
+   "authors": "Roca-Arroyo A, Gutierrez-Rivera J, et al.",
+   "year": 2025,
+   "title": "Hydrogel Network Architecture Design Space: Impact on Mechanical and Viscoelastic Properties",
+   "venue": "Gels",
+   "doi_or_arxiv": "10.3390/gels11080588",
+   "verified": true,
+   "how_verified": "Crossref returned this record in this run; full text read via PMC12385289",
+   "used_for": "Swelling-modulus trade-off statement"
+  },
+  {
+   "authors": "Authors of Macromolecules 2024 PEGDA statistical-mechanics paper (see DOI)",
+   "year": 2024,
+   "title": "Understanding the Response of Poly(ethylene glycol) diacrylate (PEGDA) Hydrogel Networks: A Statistical Mechanics-Based Framework",
+   "venue": "Macromolecules",
+   "doi_or_arxiv": "10.1021/acs.macromol.3c02635",
+   "verified": true,
+   "how_verified": "Crossref returned this title; Table 2 read via Europe PMC PMC11325651",
+   "used_for": "PEGDA swelling J versus molecular weight"
+  },
+  {
+   "authors": "Authors of Macromolecules 2026 frontal photopolymerization paper (see DOI)",
+   "year": 2026,
+   "title": "Curvature Dynamics of PEGDA Asymmetric Networks via Frontal Photopolymerization: Effect of Chain Length and Optical Attenuation",
+   "venue": "Macromolecules",
+   "doi_or_arxiv": "10.1021/acs.macromol.5c02783",
+   "verified": true,
+   "how_verified": "Crossref returned this title; full text read via PMC12947670",
+   "used_for": "Higher Mn PEGDA swells more (qualitative)"
+  },
+  {
+   "authors": "Authors of Macromol. Biosci. 2025 GelMA/PEGDA paper (see DOI)",
+   "year": 2025,
+   "title": "Bioprinting of GelMA/PEGDA Hybrid Bioinks for SH-SY5Y Cell Encapsulation: Role of Molecular Weight and Concentration",
+   "venue": "Macromolecular Bioscience",
+   "doi_or_arxiv": "10.1002/mabi.202400587",
+   "verified": true,
+   "how_verified": "Crossref returned this title; full text read via PMC12169505",
+   "used_for": "PEGDA molecular weight versus modulus and swelling"
+  },
+  {
+   "authors": "Authors of Gels 2026 vat-photopolymerization 4D bioprinting paper (see DOI)",
+   "year": 2026,
+   "title": "In Situ Programming of Shape-Morphing Hydrogels via Vat Photopolymerization for 4D Bioprinting",
+   "venue": "Gels",
+   "doi_or_arxiv": "10.3390/gels12050382",
+   "verified": true,
+   "how_verified": "Crossref returned this title; full text and Table 1 read via PMC13205297",
+   "used_for": "Exposure-encoded GelMA bilayer, swelling, modulus, curvature"
+  },
+  {
+   "authors": "Authors of Adv. Mater. 2026 tanglemer paper (see DOI)",
+   "year": 2026,
+   "title": "Soft Yet Tough Tanglemers Through Rapid Photopolymerization for DLP 3D Printing",
+   "venue": "Advanced Materials",
+   "doi_or_arxiv": "10.1002/adma.74661",
+   "verified": true,
+   "how_verified": "Crossref returned this title; full text read via PMC13674616",
+   "used_for": "Poly(acrylamide) hydrogel, oxygen inhibition, gel fraction"
+  },
+  {
+   "authors": "Abdullah T, Okay O",
+   "year": 2023,
+   "title": "4D Printing of Body Temperature-Responsive Hydrogels Based on Poly(acrylic acid) with Shape-Memory and Self-Healing Abilities",
+   "venue": "ACS Applied Bio Materials",
+   "doi_or_arxiv": "10.1021/acsabm.2c00939",
+   "verified": true,
+   "how_verified": "Crossref returned this title; full text read via PMC9945108",
+   "used_for": "Acrylic acid gel EWC and equilibration time"
+  },
+  {
+   "authors": "Authors of Nat. Commun. 2025 halftone paper (see DOI)",
+   "year": 2025,
+   "title": "Halftone-encoded 4D printing of stimulus-reconfigurable binary domains for cephalopod-inspired synthetic smart skins",
+   "venue": "Nature Communications",
+   "doi_or_arxiv": "10.1038/s41467-025-65378-8",
+   "verified": true,
+   "how_verified": "Crossref returned this title; full text read via PMC12612155",
+   "used_for": "PNIPAm DLP film deswelling, modulus, timing"
+  },
+  {
+   "authors": "Authors of PNAS 2022 swelling-kinetics paper (see DOI)",
+   "year": 2022,
+   "title": "Mechanism of temperature-induced asymmetric swelling and shrinking kinetics in self-healing hydrogels",
+   "venue": "Proceedings of the National Academy of Sciences",
+   "doi_or_arxiv": "10.1073/pnas.2207422119",
+   "verified": true,
+   "how_verified": "Crossref returned this title; full text read via PMC9457170",
+   "used_for": "Cooperative diffusion constants and tau proportional to thickness squared"
+  },
+  {
+   "authors": "Authors of Mater. Horiz. 2026 review (see DOI)",
+   "year": 2026,
+   "title": "3D printable tough hydrogel actuators",
+   "venue": "Materials Horizons",
+   "doi_or_arxiv": "10.1039/d6mh00947f",
+   "verified": true,
+   "how_verified": "Crossref returned this title; full text read via PMC13463021",
+   "used_for": "Actuation times, forces, fatigue gap"
+  },
+  {
+   "authors": "Warr C, Valdoz J, Bickham B, Knight C, Franks N, Chartrand N, et al.",
+   "year": 2020,
+   "title": "Biocompatible PEGDA Resin for 3D Printing",
+   "venue": "ACS Applied Bio Materials",
+   "doi_or_arxiv": "10.1021/acsabm.0c00055",
+   "verified": true,
+   "how_verified": "Crossref returned this title; full text read via PMC7255423",
+   "used_for": "Leaching and 12 h ethanol wash; 550 ms layer exposure with absorber"
+  },
+  {
+   "authors": "Browning M, Cereceres S, Luong P, Cosgriff-Hernandez E",
+   "year": 2014,
+   "title": "Determination of the in vivo degradation mechanism of PEGDA hydrogels",
+   "venue": "Journal of Biomedical Materials Research Part A",
+   "doi_or_arxiv": "10.1002/jbm.a.35096",
+   "verified": true,
+   "how_verified": "Crossref returned this title; full text read via PMC4112173",
+   "used_for": "Hydrolytic degradation of PEGDA"
+  },
+  {
+   "authors": "Yuk H, Zhang T, Lin S, Parada G, Zhao X",
+   "year": 2016,
+   "title": "Tough bonding of hydrogels to diverse non-porous surfaces",
+   "venue": "Nature Materials",
+   "doi_or_arxiv": "10.1038/nmat4463",
+   "verified": true,
+   "how_verified": "Crossref returned this title; full text read via PMC4762474",
+   "used_for": "Hydrogel-to-solid interfacial toughness"
+  },
+  {
+   "authors": "Tumbleston JR, Shirvanyants D, Ermoshkin N, et al.",
+   "year": 2015,
+   "title": "Continuous liquid interface production of 3D objects",
+   "venue": "Science",
+   "doi_or_arxiv": "10.1126/science.aaa2397",
+   "verified": true,
+   "how_verified": "Crossref returned this title; abstract read via Europe PMC (PMID 25780246)",
+   "used_for": "Oxygen dead zone"
+  },
+  {
+   "authors": "Authors of J. Colloid Interface Sci. 2018 paper (see DOI)",
+   "year": 2018,
+   "title": "Interfacially-mediated oxygen inhibition for precise and continuous poly(ethylene glycol) diacrylate (PEGDA) particle fabrication",
+   "venue": "Journal of Colloid and Interface Science",
+   "doi_or_arxiv": "10.1016/j.jcis.2017.09.081",
+   "verified": true,
+   "how_verified": "Crossref returned this title; abstract read via Europe PMC (PMID 28961432)",
+   "used_for": "Oxygen inhibition worse at small scale in PEGDA"
+  },
+  {
+   "authors": "Alketbi AS, Shi Y, Li H, Raza A, Zhang T",
+   "year": 2021,
+   "title": "Impact of PEGDA photopolymerization in micro-stereolithography on 3D printed hydrogel structure and swelling",
+   "venue": "Soft Matter",
+   "doi_or_arxiv": "10.1039/d1sm00483b",
+   "verified": true,
+   "how_verified": "Crossref returned this title; abstract read via Europe PMC (PMID 34269366); full text paywalled",
+   "used_for": "Graded cure and densification"
+  },
+  {
+   "authors": "Ahmadianyazdi A, Miller IJ, Folch A",
+   "year": 2023,
+   "title": "Tunable Resins with PDMS-like Elastic Modulus for Stereolithographic 3D-printing of Multimaterial Microfluidic Actuators",
+   "venue": "arXiv preprint",
+   "doi_or_arxiv": "arXiv:2305.14190",
+   "verified": true,
+   "how_verified": "arXiv export API returned title, authors and abstract; PDF downloaded and read locally",
+   "used_for": "Print-Pause-Print multi-material, PEGDA modulus, interface adhesion"
+  },
+  {
+   "authors": "Authors of Small Methods 2026 paper (see DOI)",
+   "year": 2026,
+   "title": "Vat Polymerization 3D Printing of Hydrogels With Tunable Porosity",
+   "venue": "Small Methods",
+   "doi_or_arxiv": "10.1002/smtd.70988",
+   "verified": true,
+   "how_verified": "Crossref returned this title; full text read via PMC13646038",
+   "used_for": "Macroporous GelMA swelling on Anycubic 405 nm"
+  },
+  {
+   "authors": "Authors of J. Mater. Chem. B 2026 paper (see DOI)",
+   "year": 2026,
+   "title": "PHEMA-polysilsesquioxane hybrids: a new platform for the photoinduced 3D printing of nitric oxide-releasing biomedical devices",
+   "venue": "Journal of Materials Chemistry B",
+   "doi_or_arxiv": "10.1039/d6tb00727a",
+   "verified": true,
+   "how_verified": "Crossref returned this title; abstract read via Europe PMC (PMID 42596689)",
+   "used_for": "Only HEMA vat-printing hit, qualitative"
+  },
+  {
+   "authors": "Yang S, Gerber D, Feng Y, Bain N, Kuster M, de Lorenzis L, Xu Y, Dufresne ER, Style RW",
+   "year": 2024,
+   "title": "Dehydration drives damage in the freezing of brittle hydrogels",
+   "venue": "arXiv preprint",
+   "doi_or_arxiv": "arXiv:2401.12871",
+   "verified": true,
+   "how_verified": "arXiv export API returned title, authors and abstract in this run",
+   "used_for": "Drying-induced fracture in brittle hydrogels"
+  }
+ ],
+ "reproduce": [
+  {
+   "what": "Check resume file and headroom",
+   "command_or_url": "ls D:/Users/ashenoy00000/delphi-work/agents2/bm-hydrogels.json; df -h /c /d",
+   "expected": "File present; C: about 6.5 GB, D: about 11 GB free at start of run"
+  },
+  {
+   "what": "Fetch an open-access full text and grep (Python 3.14, standard library only)",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-hydrogels/epmc_fulltext.py PMC7564751 'Form ?2' 'swelling ratios'",
+   "expected": "Prints the Form 2 / 405 nm sentences and 'significantly different at 47.0 and 41.7'"
+  },
+  {
+   "what": "Print the GelMA Table 1 (linear swelling vs exposure time)",
+   "command_or_url": "python -I .../epmc_fulltext.py PMC13205297 'Frozen' ; python -I .../epmc_tables.py PMC13205297",
+   "expected": "Table 1 rows 30-70 s: LS 7.83, 7.11, 5.52, 2.02, 0.70 %; E 14.48-20.23 kPa"
+  },
+  {
+   "what": "PEGDA molecular-weight J table",
+   "command_or_url": "python -I .../epmc_fulltext.py PMC11325651 ; python -I .../epmc_tables.py PMC11325651",
+   "expected": "Table 2 with J = 5.5/4.8/4.2, 8.9/7.6/6.9, 35.7/22.2/16.9"
+  },
+  {
+   "what": "Re-run all own arithmetic",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-hydrogels/calcs.py",
+   "expected": "Section 2: R about 11.0 mm; section 3: tau 10-19 min at 1 mm; section 9: m* 380 and 725 for GelMA on V5 and Rigid 10K"
+  },
+  {
+   "what": "Confirm Flexible 80A V2 water row",
+   "command_or_url": "curl -sL -o f.pdf https://cdn.goengineer.com/flexible-80a-resin-v2-material-spec-sheet.pdf ; python .../pdf_grep.py f.pdf 'Deionized Water' (needs PyMuPDF)",
+   "expected": "'Deionized Water 1 day -26 +8% +3% ... 1 week -27 +9% +7%'"
+  },
+  {
+   "what": "Verify DOIs",
+   "command_or_url": "python -I .../crossref_check.py 10.3390/polym12092015 10.3390/gels12050382 (Crossref may answer HTTP 429 if called quickly; wait and retry)",
+   "expected": "OK lines with matching titles; results logged in scratch/bm-hydrogels/crossref_verified.jsonl"
+  },
+  {
+   "what": "Downloaded file hashes",
+   "command_or_url": "D:/Users/ashenoy00000/delphi-work/data/bm-hydrogels/MANIFEST.jsonl",
+   "expected": "URL, date, byte size and sha256 for every kept file (5.6 MB total)"
+  }
+ ],
+ "could_not_find": [
+  "Equilibrium swelling and wet modulus for any hydrogel printed on a Form 3 or Form 4 (the only Formlabs print is Form 2 PEGDMA; Form 3 appears in other papers only as the maker of mould or spacer parts). The definition and units of Burke's 'swelling ratio' 41.7 did not extract.",
+  "Any peer-reviewed measurement of a HEMA/pHEMA vat-printed gel's swelling ratio, equilibrium water content or modulus. The pHEMA equilibrium water content of roughly 40% from contact-lens literature is unverified background and I did not use it.",
+  "A measured water diffusivity or time to equilibrium for printed PEGDA or GelMA layers at 0.1-1 mm: the only measured D is for a polyampholyte gel, so tau figures are order-of-magnitude.",
+  "Per-sample bending radii of the GelMA bilayer (only the 11-20 mm range is in text; per-sample values are in Fig. 5a), so my 11 mm prediction cannot be compared sample by sample.",
+  "Hydrogel fatigue numbers for printed PEG or GelMA actuators (cycles to failure, threshold toughness): the review says few studies go beyond 10 cycles.",
+  "Drying-crack thresholds (critical thickness, humidity, rate) for printed hydrogels; only the arXiv mechanism papers and APS meeting abstracts (seen as search snippets, not opened) were found.",
+  "Numerical swelling for PEGDA/PPGDMA (Zhao 2018) and the polyurethane/sodium acrylate cuff (Hiendlmeier 2023): full texts paywalled, as in the earlier agents.",
+  "Whether a water-based hydrogel resin is safe for the Form 4 resin tank film, cartridge or wiper, and whether Form 4 can pause mid-print for resin exchange; Open Material Mode price. No source found.",
+  "Quantitative leachable (TPO, LAP, absorber) amounts from printed hydrogels into water; only a wash-time result for one resin (Warr 2020).",
+  "A Springer paper (J. Mater. Res., doi 10.1557/s43578-021-00411-2) that a search linked to PEGDA on a Form 2 could not be opened (access redirect), so I did not use it; an acrylamide/PEGDA700 + cellulose nanocrystal Form 2 paper named in a search snippet was not located in Europe PMC.",
+  "Primary figures for Nichol 2010 (moduli and swelling are in figures); I used Yue 2015's restatement of them.",
+  "My use of the Timoshenko formula assumes small-strain linear elasticity and a swollen modulus; hydrogels at 7% to 70% strain and with time-varying modulus violate this, and no measurement of f for hydrogels on stiff resins exists."
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-hydrogels/epmc_search.sh",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-hydrogels/epmc_fulltext.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-hydrogels/epmc_tables.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-hydrogels/epmc_abstract.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-hydrogels/crossref_check.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-hydrogels/arxiv_meta.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-hydrogels/pdf_grep.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-hydrogels/calcs.py"
+ ]
+}

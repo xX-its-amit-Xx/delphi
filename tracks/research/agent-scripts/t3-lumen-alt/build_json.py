@@ -1,0 +1,152 @@
+import json
+O = 'D:/Users/ashenoy00000/delphi-work/agents2/t3-lumen-alt.json'
+R = {}
+
+
+def F(claim, source, conf, quote='', value=''):
+    d = {'claim': claim, 'source': source, 'confidence': conf}
+    if quote:
+        d['evidence_quote'] = quote
+    if value:
+        d['value'] = value
+    return d
+
+
+R['label'] = 't3-lumen-alt'
+R['topic'] = 'Track 3 alternatives and neighbours: lumen geometry (MDCK cyst lumen shape, Vasquez 2021)'
+R['summary'] = (
+    "Keep MDCK (Vasquez 2021) as the primary system. Seven further candidates were screened beyond the four the scout already ranked "
+    "(blastocyst, pancreatic organoids, zebrafish otic vesicle, bile canaliculus): zebrafish Kupffer's vesicle, ascidian notochord tube, "
+    "intestinal organoids, a phase-field organoid model, Hydra spheroids, kidney-cell fluid pumps, and electrically inflated kidneyoids. "
+    "None of the new ones is a better primary. Only the notochord (21.2 GB of images, MATLAB code with no licence field) and the kidney pump "
+    "(source data in the article, plotting code on GitHub) have public material bearing on lumen mechanics, and neither pairs per-sample shape tables "
+    "with a model sweep the way Vasquez does. "
+    "Strongest competing explanation: pressure-dominated lumens (Laplace sphere, hydraulic inflation), refined by Mukenhirn 2024 into a "
+    "pressure versus junctional-tension force balance in MDCK-II cysts. It is not independent of the chosen model: Vasquez's own model includes pressure and "
+    "covers the pressure-dominated case, and Mukenhirn also reports excess apical area aiding lumen opening. The discriminating prediction is non-sphericity "
+    "at low pressure, which a pure Laplace model cannot produce. I found no public per-cyst data for the Mukenhirn model, so it can be run only as a model arm on Vasquez data. "
+    "Run alongside: the scout's pancreatic organoid tables (a higher-pressure regime where the rival should do better) as a regime check; do not add a dataset from this report as a gate. "
+    "Registry note: law set 1.8.1 contains physiology-laplace (accepted) and no cell-geometry or lumen law; the seven cell-geometry candidates the earlier law-mapper cited are not in this tree.")
+R['lay_summary'] = (
+    "Scientists want to know why the hollow centre of a tiny ball of kidney cells has the shape it has. "
+    "One idea is that fluid pressure inflates it like a balloon, so it should be round. "
+    "The chosen study found the shapes are often irregular, because the cells have a fixed amount of inner surface that they must fit around. "
+    "I looked for other living systems that could test the same question, such as a fish embryo organ, the tube inside a sea squirt, and gut organoids. "
+    "Each is either too large to download, has no public measurements, or is only a computer model, so I recommend keeping the kidney-cell balls as the main test. "
+    "The balloon idea stays as the rival to beat, and a data set from pancreas organoids, where pressure matters more, is the best companion run.")
+R['glossary'] = [
+    {'term': 'lumen', 'plain': 'the fluid-filled hollow space inside a tube or ball of cells'},
+    {'term': 'cyst', 'plain': 'a small hollow ball of cells grown in a dish'},
+    {'term': 'MDCK', 'plain': 'a standard line of dog kidney cells used to grow cysts'},
+    {'term': 'organoid', 'plain': 'a miniature organ-like cell cluster grown in a dish'},
+    {'term': 'vertex model', 'plain': 'a computer model that draws each cell as a polygon and finds the shape with the lowest energy'},
+    {'term': 'Laplace pressure', 'plain': 'the rule that pressure inside a balloon-like shell is set by its surface tension and radius, which gives a round shape'},
+    {'term': 'apical', 'plain': 'the side of an epithelial cell that faces the lumen'},
+    {'term': 'tight junction', 'plain': 'a seal between neighbouring cells that stops fluid leaking between them'},
+    {'term': 'phase-field model', 'plain': 'a computer model that tracks each cell as a smooth blob'},
+    {'term': 'holdout', 'plain': 'data kept unseen until a prediction has been written down'}]
+R['table'] = [
+    {'name': 'CHOSEN: MDCK cyst lumen, Vasquez 2021', 'fields': 'organism=dog kidney cells (MDCK); cells_per_cyst=2-11 (scout); data=per-cyst shape tables + 15,030-row vertex sweep (scout/design files); code=MIT; role=primary', 'source': 'https://doi.org/10.1038/s41467-021-25050-3'},
+    {'name': 'Alt 1: Zebrafish Kupffer vesicle (Dasgupta 2018)', 'fields': 'organism=zebrafish; measure=cell volume and shape along AP axis plus vertex simulations; public_data=none found (eLife API additionalFiles lists only a transparent reporting form); cost=re-measure from figures, not feasible', 'source': 'https://doi.org/10.7554/eLife.30963'},
+    {'name': 'Alt 2: Ascidian notochord tube expansion (Shi 2025, PNAS)', 'fields': 'organism=Ciona; measure=tube/lumen geometry, 3 expansion phases, predicted growth kinetics; images_zenodo_bytes=21,226,936,940 (6 files, my sum); images_licence=CC-BY-4.0; code=GitHub Physics_tube, 11 files, no licence field, MATLAB/Mathematica', 'source': 'https://doi.org/10.1073/pnas.2419960122'},
+    {'name': 'Alt 3: Intestinal organoid bistability (Nat Phys 2025)', 'fields': 'organism=mouse intestinal organoid; measure=crypt bulged vs budded state against lumen volume history; data=Source Data files; code=reused from fmi-basel repo (MIT, 54,614 KB, last push 2021-05-10); phenotype=crypt shape, not lumen shape per se', 'source': 'https://doi.org/10.1038/s41567-025-02792-1'},
+    {'name': 'Alt 4: Phase-field organoid model (PLoS CB 2025)', 'fields': 'type=model only; params=lumen pressure xi, division time t_d; code=GitLab Sakurako_T/hfsp (public, last activity 2024-04-19, no licence field); measured_data=none shipped', 'source': 'https://doi.org/10.1371/journal.pcbi.1012090'},
+    {'name': 'Alt 5: Hydra regenerating spheroids (Ferenc 2021)', 'fields': 'organism=Hydra; measure=osmotic inflation/deflation cycles, Wnt3 expression; zenodo_bytes=186,708,955 (above 150 MB cap); data_type=RNA expression + scripts, not lumen shape tables', 'source': 'https://doi.org/10.1126/sciadv.abj6897'},
+    {'name': 'Alt 6: Kidney epithelial fluid pumps (Choudhury 2022)', 'fields': 'cells=human kidney epithelial incl. ADPKD; measure=flux vs hydraulic pressure up to a stall pressure; data=Source Data with paper, rest on request; code=MATLAB plotting scripts on GitHub sxslabjhu/pump_code; gives=a pressure scale for a kidney epithelium, not lumen shape', 'source': 'https://doi.org/10.1038/s41467-022-29988-w'},
+    {'name': 'Alt 7: Electro-inflated kidneyoids and gut organoids (2024)', 'fields': 'stimulus=5-10 V/cm; measure=lumen inflation, hydrostatic pressure vs cytoskeletal tension; data=Source Data file; gives=a tunable pressure knob on hollow tissues', 'source': 'https://doi.org/10.1038/s41467-024-47079-w'},
+    {'name': 'Rival theory: pressure-tension force balance in MDCK-II (Mukenhirn 2024)', 'fields': 'cells=MDCK-II cysts; measures=hydrostatic lumen pressure and junctional tension; data_public=not found; role=strongest competing explanation', 'source': 'https://doi.org/10.1016/j.devcel.2024.07.016'},
+    {'name': 'Rival theory: hydro-osmotic coarsening (Torres-Sanchez 2021)', 'fields': 'type=theory; prediction=lumen number N(t) ~ t^(-2/5) hydraulic coarsening, N(t) ~ t^-1 with strong pumping; scope=cavity formation, not single-lumen shape', 'source': 'https://doi.org/10.1371/journal.pcbi.1009333'},
+    {'name': 'Already screened by scout (not re-ranked): blastocyst, pancreatic organoids, zebrafish otic vesicle, bile canaliculus', 'fields': 'see scout-lumen.json; pancreatic and blastocyst have per-sample public tables', 'source': 'D:/Users/ashenoy00000/delphi-work/agents/scout-lumen.json'}]
+R['findings'] = [
+    F('Vasquez 2021 reports MDCK lumen shape reflects cell geometry tied to polarity, and its model includes both geometry and pressure.', 'https://doi.org/10.1038/s41467-021-25050-3 (Europe PMC PMC8460836)', 'high',
+      'We find that in this system, lumen shape reflects basic geometrical considerations tied to the establishment of apico-basal polarity. A physical model incorporating both cell geometry and intraluminal pressure can account for our observations'),
+    F('The pressure-dominated view is the competing explanation, supported by the mouse blastocyst.', 'same', 'high',
+      'Hydrostatic pressure has been proposed to drive lumen expansion, a view that is supported by experiments in the mouse blastocyst.'),
+    F('Mukenhirn 2024 (MDCK-II cysts) explains lumen morphologies from a pressure versus tension force balance and suggests excess apical area helps lumen opening, so the rival partly agrees with the chosen model.', 'https://doi.org/10.1016/j.devcel.2024.07.016 (Europe PMC abstract)', 'high',
+      'enabled us to explain lumen morphologies from the pressure-tension force balance.'),
+    F('Mukenhirn 2024: ZO depletion collapses the lumen and folds apical membrane; claudin ion barrier is not required for inflation.', 'same', 'high',
+      'the depletion of the zonula occludens scaffold resulted in lumen collapse and folding of apical membranes'),
+    F('Kupffer vesicle: cell volume and shape changes are separable from lumen forces, so it argues against pressure alone controlling cell shape.', 'https://doi.org/10.7554/eLife.30963', 'high',
+      'asymmetric changes in KV cell volume and shape occur normally when KV lumen growth fails due to leaky cell adhesions'),
+    F('The eLife record for the Kupffer vesicle paper lists no data files: additionalFiles holds only a transparent reporting form.', 'https://api.elifesciences.org/articles/30963 (fetched 2026-11-12)', 'medium', '', '1 file: elife-30963-transrepform-v2.pdf'),
+    F('Ascidian notochord paper builds a conservation-law tube-expansion theory with asymmetric cortex tension and tight-junction gating, and predicts growth kinetics under different conditions.', 'https://doi.org/10.1073/pnas.2419960122', 'high',
+      'a conservation-laws-based tube expansion theory was developed'),
+    F('Notochord images on Zenodo 10.5281/zenodo.15005334 total 21,226,936,940 bytes in 6 files under CC-BY-4.0, far above the 150 MB cap.', 'https://zenodo.org/api/records/15005334 (fetched 2026-11-12); sum in scripts/t3-lumen-alt/sizes.py', 'high', '', '21.23 GB = 3 x 4,294,967,296 + 3,388,490,035 + 1,533,643,961 + 3,419,901,056'),
+    F('Notochord code is the public GitHub repo WenjieShi8514/Physics_tube, 11 files, MATLAB and Mathematica, no licence reported by the API.', 'https://api.github.com/repos/WenjieShi8514/Physics_tube (fetched 2026-11-12)', 'medium'),
+    F('Intestinal organoid paper: feedback between cellular tension and fluid pressure gives bulged versus budded crypt bistability.', 'https://doi.org/10.1038/s41567-025-02792-1 (PMC11999871)', 'high',
+      'bistability arising from feedback between cellular tensions and fluid pressure could be a general mechanism that coordinates multicellular shape changes in developing systems.'),
+    F('Intestinal organoid data statement: Source Data with the paper; code from an earlier MIT-licensed repo.', 'PMC11999871 full text', 'high',
+      'Data availability Source data are provided with this paper. Code availability Codes used in the current study are from previous work'),
+    F('Phase-field organoid model ships source code only, no measurements.', 'PMC12373292 full text', 'high',
+      'All source code for the model is available on GitLab at https://gitlab.com/Sakurako_T/hfsp .'),
+    F('Phase-field model gives phase diagrams in proliferation time and lumen pressure.', 'https://doi.org/10.1371/journal.pcbi.1012090', 'high',
+      'construct phase diagrams and show their dependencies on proliferation time and lumen pressure.'),
+    F('Hydra spheroid Zenodo record is 186,708,955 bytes, above the 150 MB cap, and holds expression data and scripts.', 'https://zenodo.org/api/records/5535691 (fetched 2026-11-12)', 'high', '', '186,708,955 bytes'),
+    F('Hydra: osmotically driven inflation and deflation cycles stretch the tissue.', 'https://doi.org/10.1126/sciadv.abj6897', 'high',
+      'periodic osmotically driven inflation and deflation cycles generate mechanical stimuli in the form of tissue stretching'),
+    F('Kidney epithelial pumps: flux falls with hydraulic pressure until a stall pressure; ADPKD cells reverse flux direction.', 'https://doi.org/10.1038/s41467-022-29988-w', 'high',
+      'The fluidic flux declines with increasing hydraulic pressure until a stall pressure, in a manner similar to mechanical fluid pumps.'),
+    F('Kidney pump data: source data with the paper, remainder on request.', 'PMC9050750 full text', 'high',
+      'available in the article and in the Supplementary Information and from the corresponding author upon reasonable request.'),
+    F('Electro-inflation at about 5-10 V/cm inflates hollow kidneyoids and gut organoids, building hydrostatic pressure against cytoskeletal tension.', 'https://doi.org/10.1038/s41467-024-47079-w', 'high',
+      'physiological-strength electrical stimulation of ∼ 5 - 10 V/cm powerfully inflates hollow tissues'),
+    F('Hydro-osmotic coarsening theory predicts lumen number N(t) proportional to t^(-2/5) under hydraulic coarsening; it concerns many-lumen cavity formation, not single-lumen shape.', 'https://doi.org/10.1371/journal.pcbi.1009333 (PMC8445475)', 'high',
+      'dynamic scaling law N ( t ) ∝ t - 2 5 .'),
+    F('A 2026 review frames lumens as active and says models link molecular perturbations to lumen shape.', 'https://doi.org/10.1242/dev.205628', 'high',
+      'theoretical modeling and numerical simulations provide a quantitative framework for predicting phenotypes related to lumen shape'),
+    F('Law set 1.8.1 pins 59 laws; registry/laws has 62 files, none about cells, hexagons, plateau borders or lumens; the only law on this track is physiology-laplace (accepted), perturb-pressure is candidate.', 'D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/lawsets/lawset-1.8.1.json and registry/laws/ listing', 'high', '', '59 pinned; 62 law files; 0 cell-geometry files; lean/Delphi has no CellGeometry.lean'),
+    F('physiology-laplace bounds pressure by wall strength, thickness and radius and has no instance.', 'registry/laws/physiology-laplace.json', 'high',
+      'a wall that holds at most sigma_max limits the pressure to 2 sigma_max t / r (sphere) or sigma_max t / r (cylinder).'),
+    F('Discrepancy with the earlier law-mapper: it cited seven cell-geometry candidate laws in its 1.6.0 tree; I find none in the 1.8.1 repo.', 'laws-lumen.json changes_since_october vs registry listing', 'medium')]
+R['key_claims'] = [
+    {'claim': 'Vasquez 2021 reports MDCK lumen shape reflects cell geometry tied to polarity, with a model that nests pressure; the pressure-dominated lumen is the competing view.', 'source': 'https://doi.org/10.1038/s41467-021-25050-3', 'evidence_quote': 'We find that in this system, lumen shape reflects basic geometrical considerations tied to the establishment of apico-basal polarity.'},
+    {'claim': 'The strongest published rival is the pressure versus junctional-tension force balance of Mukenhirn 2024 in MDCK-II cysts, which also reports excess apical area aiding lumen opening.', 'source': 'https://doi.org/10.1016/j.devcel.2024.07.016', 'evidence_quote': 'explain lumen morphologies from the pressure-tension force balance'},
+    {'claim': 'The best-documented new alternative, the notochord, ships 21.23 GB of images (6 Zenodo files) plus unlicensed MATLAB code, so it cannot be a bounded-cost companion.', 'source': 'https://zenodo.org/api/records/15005334', 'evidence_quote': ''},
+    {'claim': 'Law set 1.8.1 has no cell-geometry or lumen law besides accepted physiology-laplace.', 'source': 'D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/lawsets/lawset-1.8.1.json', 'evidence_quote': ''}]
+R['recommendations'] = [
+    'Keep MDCK (Vasquez 2021) as the primary Track 3 system; none of the seven new candidates has per-sample shape tables plus a model sweep.',
+    'Implement the pressure-only Laplace sphere and a pressure-plus-junctional-tension variant as explicit rival model arms scored on the same Vasquez data; the pressure-tension arm needs per-cyst pressure, which Vasquez does not provide, so it must use a genotype-level pressure constant.',
+    'Run the scout pancreatic organoid tables alongside as a regime check (higher pressure, where the rival should do better); a model that wins in MDCK and loses there is a coherent result.',
+    'Do not add the notochord (21.2 GB), Hydra (186.7 MB, expression data) or Kupffer vesicle (no public data) to the gate. Optionally pull the kidney-pump Source Data (small) to put a pressure scale on the Laplace arm.',
+    'Ask the registry owner why the seven cell-geometry candidate laws are absent from 1.8.1: any lumen certificate would currently rest on physiology-laplace alone, which has no instance.',
+    'Try to obtain Mukenhirn 2024 per-cyst pressure and tension values (Dev Cell data statement not read); this is the single most valuable missing item.']
+S = 'python D:/Users/ashenoy00000/delphi-work/agents2/scripts/t3-lumen-alt/'
+R['reproduce'] = [
+    {'what': 'Search Europe PMC for candidates', 'command_or_url': S + 'search.py "Ciona notochord lumen formation tubulogenesis"', 'expected': 'hit list includes 10.1073/pnas.2419960122'},
+    {'what': 'Abstracts of cited papers', 'command_or_url': S + 'abs.py 10.1038/s41467-021-25050-3 10.1016/j.devcel.2024.07.016 10.7554/elife.30963 10.1073/pnas.2419960122 10.1038/s41567-025-02792-1 10.1371/journal.pcbi.1012090 10.1126/sciadv.abj6897 10.1038/s41467-022-29988-w 10.1038/s41467-024-47079-w 10.1371/journal.pcbi.1009333 10.1242/dev.205628', 'expected': 'abstract text matches the evidence quotes'},
+    {'what': 'Data and code availability sentences', 'command_or_url': S + 'avail.py PMC12167941 PMC11999871 PMC12373292 PMC9050750', 'expected': 'Zenodo 15005334 and GitHub Physics_tube; Source Data; GitLab hfsp; upon-request statement'},
+    {'what': 'Zenodo and repository sizes', 'command_or_url': S + 'records.py then ' + S + 'sizes.py', 'expected': 'sizes.py prints 21226936940 bytes; Hydra Zenodo file 186708955 bytes'},
+    {'what': 'Crossref verification of every DOI', 'command_or_url': S + 'crossref_check.py 10.1038/s41467-021-25050-3 10.1016/j.devcel.2024.07.016 10.7554/elife.30963 10.1073/pnas.2419960122 10.1038/s41567-025-02792-1 10.1371/journal.pcbi.1012090 10.1038/s41467-024-47079-w 10.1038/s41467-022-29988-w 10.1126/sciadv.abj6897 10.1371/journal.pcbi.1009333 10.1242/dev.205628 10.1242/dev.153056 10.1126/science.aaw7709', 'expected': 'every line prints OK'},
+    {'what': 'Law library state', 'command_or_url': 'ls D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/laws ; read registry/lawsets/lawset-1.8.1.json and count the laws list', 'expected': '62 files, none about cell geometry; 59 pinned laws'},
+    {'what': 'Tools and date', 'command_or_url': 'Python 3 standard library only; network access to europepmc.org, crossref.org, zenodo.org, api.github.com, gitlab.com, api.elifesciences.org; run on 2026-11-12', 'expected': 'live APIs may change later'},
+    {'what': 'Rebuild this JSON', 'command_or_url': S + 'build_json.py', 'expected': 'writes D:/Users/ashenoy00000/delphi-work/agents2/t3-lumen-alt.json'}]
+cit = [
+    ('Vasquez et al.', 2021, 'Physical basis for the determination of lumen shape in a simple epithelium', '10.1038/s41467-021-25050-3', 'chosen system; competing views'),
+    ('Mukenhirn et al.', 2024, 'Tight junctions control lumen morphology via hydrostatic pressure and junctional tension', '10.1016/j.devcel.2024.07.016', 'strongest rival explanation'),
+    ('Dasgupta et al.', 2018, "Cell volume changes contribute to epithelial morphogenesis in zebrafish Kupffer's vesicle", '10.7554/eLife.30963', 'alternative 1'),
+    ('Shi et al.', 2025, 'Physics of notochord tube expansion in ascidians', '10.1073/pnas.2419960122', 'alternative 2'),
+    ('see DOI', 2025, 'Mechanochemical bistability of intestinal organoids enables robust morphogenesis', '10.1038/s41567-025-02792-1', 'alternative 3'),
+    ('see DOI', 2025, 'Predicting organoid morphology through a phase field model: Insights into cell division and lumenal pressure', '10.1371/journal.pcbi.1012090', 'alternative 4'),
+    ('see DOI', 2021, 'Mechanical oscillations orchestrate axial patterning through Wnt activation in Hydra', '10.1126/sciadv.abj6897', 'alternative 5'),
+    ('see DOI', 2022, 'Kidney epithelial cells are active mechano-biological fluid pumps', '10.1038/s41467-022-29988-w', 'alternative 6'),
+    ('see DOI', 2024, 'Bioelectric stimulation controls tissue shape and size', '10.1038/s41467-024-47079-w', 'alternative 7'),
+    ('see DOI', 2021, 'A hydro-osmotic coarsening theory of biological cavity formation', '10.1371/journal.pcbi.1009333', 'rival theory'),
+    ('see DOI', 2026, 'Biophysics of lumen morphogenesis', '10.1242/dev.205628', 'context review'),
+    ('see DOI', 2017, 'Organ size control via hydraulically gated oscillations', '10.1242/dev.153056', 'neighbour (DOI resolved only)'),
+    ('see DOI', 2019, 'Hydraulic fracturing and active coarsening position the lumen of the mouse blastocyst', '10.1126/science.aaw7709', 'neighbour (DOI resolved only)')]
+R['citations'] = [{'authors': a, 'year': y, 'title': t, 'doi_or_arxiv': d, 'venue': '', 'verified': True,
+                   'how_verified': 'Crossref https://api.crossref.org/works/' + d + ' returned a record with a matching title on 2026-11-12' + ('' if 'resolved only' in u else '; abstract read via Europe PMC'),
+                   'used_for': u} for a, y, t, d, u in cit]
+R['could_not_find'] = [
+    'Public per-cyst pressure and tension data for Mukenhirn 2024; the Dev Cell article has no PMC full text, so its data statement was not read.',
+    'Equations of the Mukenhirn force-balance model (only the abstract was read), so I cannot say whether it is formally nested in the Vasquez model.',
+    'Public data for the Kupffer vesicle paper (eLife API lists none); Dryad and Figshare were not searched.',
+    'Whether the Nature Physics intestinal organoid Source Data contain per-organoid shape values; not downloaded.',
+    'Author names for most citations (not fetched; shown as see DOI).',
+    'The kidney-pump Source Data were not downloaded or inspected; no download was made in this run, so no files are kept under delphi-work/data.',
+    'No search of mammary acini, Caco-2, Drosophila trachea, C. elegans excretory canal or zebrafish gut beyond a few Europe PMC queries, which returned no relevant hits.',
+    'Why the seven cell-geometry candidate laws are absent from 1.8.1 is not documented in the files I read.',
+    'Hydra, notochord and kidney-pump candidates were judged on data availability only; I did not test whether any gives a usable lumen-shape metric.',
+    'Headroom check at start: C: free 5.99 GB, D: free 10.07 GB, free RAM 35 percent; nothing heavy was run.']
+json.dump(R, open(O, 'w'), indent=1)
+print('written', len(json.dumps(R)))

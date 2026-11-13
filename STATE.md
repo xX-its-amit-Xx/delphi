@@ -39,8 +39,17 @@ Six tracks: 1 reporter response · 2 spatial patterns · 3 lumen geometry · 4 p
 - Proposed Lean, UNCHECKED (Mathlib not built here): `tracks/lean/HygromorphCeiling.lean`. Hand to session 31; do not write into lean/.
 - Embryo drawn as nuclei at measured radii (Gemini-written `atlas/embryo-render.mjs`, reviewed).
 
+## Done 2026-11-12 (second fleet, wf_af15c8ea-cdf, 77 agents, finished)
+- Outputs copied to `tracks/research/agents/*.json` (77), `tracks/research/agent-scripts/` (agent-written scripts), `tracks/research/lean/*.lean` (12). Originals stay in `D:/Users/ashenoy00000/delphi-work/agents2/`.
+- COPY RULES: after copying, run `python -I tracks/scripts/scrub-holdout.py tracks/research` (agents wrote the held-out clade's common names and two claim ids; the gate caught 20), then `node tracks/build.mjs`, then `node holdout/check-leaks.mjs tracks`.
+- Three agent files were stubs ("full result returned via StructuredOutput"): pp-sentry-agent-platform, q1-critic, q1-theory-lean. Recovered from the workflow journal (`.../subagents/workflows/wf_af15c8ea-cdf/journal.jsonl`, `result` lines). Check for `findings` in every file after a copy.
+- Bundle now has `fleet` (77 agents, 2,583 findings); page section "The research fleet". Evidence quotes are labelled the agent's own: a verifier pass has NOT run.
+- Citations: 529 of 1,021 resolved independently, 0 failed, 484 not yet checked (no DOI/arXiv id, or not in the resolver run).
+- `tracks/lean/check.sh` now makes relative paths absolute (it runs from lean/). A deliberate negative control, `bm-lean-materials-laws__NegativeControl.lean`, MUST fail (it does).
+
 ## What is running
-- Nothing. No workflows, no cluster jobs, no GPUs. Explorer/Discovery still decline the SSH key (since 2026-11-07).
+- Background: `complete-corpus-when-ready.sh` waiting for the OpenAlex budget (resets 00:00 UTC) to fill 97 missing Buehler works. No cluster jobs, no GPUs. Explorer/Discovery still decline the SSH key (since 2026-11-07).
+- Not started: phase 2 (layperson explainers + no-context reader check + claim verifiers).
 
 ## Standing constraints
 - Frozen holdout: nothing from the held-out clade (roster in holdout/split.json) in any file, mesh, manifest or log. Never add allowlist entries.

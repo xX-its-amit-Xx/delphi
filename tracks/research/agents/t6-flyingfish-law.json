@@ -1,0 +1,423 @@
+{
+ "label": "t6-flyingfish-law",
+ "topic": "Track 6 law map against law set 1.8.1 with a checked Lean law (parabolic drag polar L/D bound)",
+ "summary": "Mapped Track 6 against the application repo's law set 1.8.1 (59 pinned laws; 45 with a Lean theorem verified present in the named module, 14 placeholders with none). 48 relevant laws are in 'table' with registry id, version, status, theorem and module. The older map used leanbio 1.6.0: its versions are stale (E3 2.0.0, fick 1.1.0), its 'broken reference' finding does not hold in the application repo (vmin_rules_out etc. are defined in Constraints.lean), and it missed physiology, Hydro, altitude helpers, froude and the growth-asymptote candidate. Chosen missing law: the parabolic drag polar bound C_L/C_D <= (1/2) sqrt(pi e AR / C_D0), which closes the registry gap aspect-ratio-induced-drag. It is in DragPolarBound.lean, composed with Delphi.glide_range_le, and passes check.sh with no errors and no sorryAx (first attempt failed, then fixed). It is a theorem about a MODEL (the parabolic polar is a hypothesis); no flying-fish C_D0, e or AR was measured here, so it is not yet an empirical test.",
+ "lay_summary": "A flying fish glides because its long fins give lift, but the fins also cause drag. Engineers know a rule: the longer and thinner the wing, the better the glide ratio, up to a limit. The project's rulebook had this rule only as a note saying 'not written down yet'. I wrote it as a short mathematical proof, and a computer proof-checker confirmed every step. On a simple drag model, the glide ratio can never beat half the square root of a number built from the wing shape. The proof links to the existing rule on how far a glide can go from a given height. It only holds if the fish's real drag follows that simple model, which nobody has measured yet.",
+ "glossary": [
+  {
+   "term": "law set",
+   "plain": "a numbered, frozen list of the rules the project checks designs against"
+  },
+  {
+   "term": "Lean",
+   "plain": "a proof-checking program that accepts a statement only if every step is justified"
+  },
+  {
+   "term": "sorryAx",
+   "plain": "the marker Lean leaves when a proof has a hole"
+  },
+  {
+   "term": "placeholder law",
+   "plain": "a rule listed in the rulebook with no machine-checked proof yet"
+  },
+  {
+   "term": "glide ratio (L/D)",
+   "plain": "how many metres you travel forward per metre you drop"
+  },
+  {
+   "term": "aspect ratio",
+   "plain": "wingspan squared divided by wing area; large means long and thin"
+  },
+  {
+   "term": "drag polar",
+   "plain": "a formula giving total drag from lift"
+  },
+  {
+   "term": "registry gap",
+   "plain": "a rule the project knows it lacks"
+  }
+ ],
+ "findings": [
+  {
+   "claim": "Law set 1.8.1 (current.json -> lawset-1.8.1.json, created 2026-11-01T05:37:39Z, previous 1.8.0) pins 59 laws: 36 accepted, 10 candidate, 7 proposed, 3 retired, 3 contested (counted by dump_laws.py / a Counter in session).",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/lawsets/lawset-1.8.1.json",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "14 pinned laws have no Lean theorem name: aspect-ratio-induced-drag, disc-flying-fish-fin-ratio-gap, disc-heterurus-mass-exponent, disc-measured-wing-loading-band, disc-pectoral-length-allometry, elastic-similarity, fick-principle (named-hypothesis), fin-length-ratio, gene-regulatory-dynamics, gill-o2-uptake, muscle-power-premise (retired), taxiing-thrust, test-loop-only-density-sanity (retired), walking-pendulum-speed. The other 45 carry a theorem name; verify_names.py found a declaration of that short name in the named module for all 45.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/*.json; scripts/verify_names.py",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Since the 1.6.0 set the old map used, 1.8.1 added development-growth-asymptote, fisher-kpp-speed, kimura-heterozygosity, maynardsmith-hawk-dove, turing-ddi (all candidate, non-binding) and test-loop-only-density-sanity (retired); removed none; bumped E2 1.1.0, E3 2.1.0, aerobic-power-bound 1.1.0, fick-principle 1.3.0, scaling-area-law 1.1.0, scaling-strength-law 1.1.0, thompson1917-ch02-10 1.1.0, thompson1917-ch03-07 1.1.0.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/lawsets/lawset-1.6.0.json vs lawset-1.8.1.json (set diff run in session); registry/CHANGELOG.md",
+   "confidence": "high",
+   "evidence_quote": "Changed - E2 1.0.0 -> 1.1.0 - aerobic-power-bound 1.0.0 -> 1.1.0 - fick-principle 1.2.0 -> 1.3.0"
+  },
+  {
+   "claim": "laws-flyingfish.json cites E3 2.0.0 and fick-principle 1.1.0; in 1.8.1 they are E3 2.1.0 and fick-principle 1.3.0, so the older map's version numbers are stale.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents/laws-flyingfish.json vs lawset-1.8.1.json",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "The older map's 'BROKEN REFERENCE' (vmin_rules_out and aerobic_flight_rules_out undefined; C8-C16 lemmas missing from Constraints.lean) is true of the split-out leanbio 1.6.0 tree but NOT of the application repo: lean/Delphi/Constraints.lean defines vmin_rules_out (line 243), aerobic_flight_rules_out (316), glide_range_rules_out (324), climb_rules_out (331) and froude_rules_out (338).",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/Delphi/Constraints.lean",
+   "confidence": "high",
+   "evidence_quote": "theorem vmin_rules_out {ρ S C Cmax W v : ℝ} (hρ : 0 < ρ) (hS : 0 < S)"
+  },
+  {
+   "claim": "The application repo's lean/Delphi.lean imports Scaling, Flight, Genotype, Physiology, Empirical, Altitude, Perturb, Hydrostatics and Constraints, so the track's core modules are in its default import closure; the older map's 'not in the default build' finding applies to leanbio, not here.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/Delphi.lean",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "The registry laws/ folder has 62 files; 3 are not pinned by 1.8.1 (fisher-sex-ratio, hamilton-rule, turing-wavelength). The older map's 11 unpinned laws (cell geometry, crystals) are not in this registry at all.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/laws/ vs lawset-1.8.1.json",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Flying-fish-specific laws in 1.8.1 are placeholders or candidates without a theorem: disc-flying-fish-fin-ratio-gap, disc-measured-wing-loading-band, disc-pectoral-length-allometry (candidate) and disc-heterurus-mass-exponent (contested). The proved Lean content that touches the fish is Delphi.Certificates.AFlyingFish (aFlyingFish_wellFormed etc., under blueprint-well-formedness) and the Eliminations*/FinDevelopment certificates, which are not registry laws themselves.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/laws/disc-*.json; Delphi/Certificates/",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Missed or only partly seen by the older map: physiology-q10 and physiology-laplace (Delphi.Physiology.q10_ratio, laplace_pressure_limit); the Delphi.Altitude helpers vmin_mono, demand_mono, supply_anti, demand_anti_area under altitude-coupling; Delphi.Hydro.closed_bladder_rules_out; Delphi.Scaling.froude_ratio and Constraints.froude_rules_out (no registry law pins froude); development-growth-asymptote (von Bertalanffy, candidate) for fin growth; and the seven pinned gaps aspect-ratio-induced-drag, taxiing-thrust, gill-o2-uptake, fin-length-ratio, elastic-similarity, gene-regulatory-dynamics, walking-pendulum-speed.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/Delphi/*.lean; registry/laws",
+   "confidence": "medium",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "The gap aspect-ratio-induced-drag (status proposed, class gap, lean_ref.theorem null) states 'not formalised: L/D enters only as a committed number'. A grep of the application repo's lean/ tree for induced/polar/aspect matched no .lean file.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/laws/aspect-ratio-induced-drag.json",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "NEW LAW CHECKED: theorem T6.DragPolar.ld_le_bound {e AR CD0 CL CD : R} (he : 0 < e) (hAR : 0 < AR) (hCD0 : 0 < CD0) (hCL : 0 < CL) (hpolar : CD = CD0 + CL ^ 2 / (pi * e * AR)) : CL / CD <= ldBound e AR CD0, where ldBound e AR CD0 := Real.sqrt (pi * e * AR / CD0) / 2. check.sh reported 'errors=0 sorryAx=0 axiom-lines=6/6' and 'ALL CHECKED: no errors, no sorryAx'; axioms are propext, Classical.choice, Quot.sound only. Toolchain leanprover/lean4:v4.35.0.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-law/DragPolarBound.lean",
+   "confidence": "high",
+   "evidence_quote": "ALL CHECKED: no errors, no sorryAx"
+  },
+  {
+   "claim": "The same file also proves (all checked): ld_sq_le (core algebra, (CL/CD)^2 <= 1/(4 k CD0)), ld_bound_attained (equality at CL = sqrt(pi e AR CD0), non-vacuity), ldBound_strictMono (bound strictly increasing in AR), glide_range_le_polar (composes Delphi.glide_range_le: x <= h * ldBound), glide_range_polar_rules_out (False if the claimed range exceeds h*ldBound).",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-law/DragPolarBound.lean",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "First compile attempt FAILED (errors=2, sorryAx=3: a rewrite on an unresolved metavariable in ld_le_bound); fixed by stating the polar with k = 1/(pi e AR) explicitly; the second run passed. Only the second result is reported as passing.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-law/DragPolarBound.lean",
+   "confidence": "high",
+   "evidence_quote": ""
+  }
+ ],
+ "key_claims": [
+  {
+   "claim": "Law set 1.8.1 pins 59 laws, 14 of which have no Lean theorem; the 45 named theorems exist in their modules.",
+   "source": "lawset-1.8.1.json + law-versions + verify_names.py",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "The application repo's Constraints.lean defines vmin_rules_out, aerobic_flight_rules_out and glide_range_rules_out, so the older map's broken-reference finding does not apply there.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/Delphi/Constraints.lean lines 243, 316, 324",
+   "evidence_quote": "theorem vmin_rules_out {ρ S C Cmax W v : ℝ} (hρ : 0 < ρ) (hS : 0 < S)"
+  },
+  {
+   "claim": "DragPolarBound.lean passes check.sh with errors=0 sorryAx=0 and standard axioms only; the first attempt had errors.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-law/DragPolarBound.lean",
+   "evidence_quote": "ALL CHECKED: no errors, no sorryAx"
+  }
+ ],
+ "recommendations": [
+  "Register DragPolarBound as a candidate law replacing the gap aspect-ratio-induced-drag (owner decision; nothing was written into the repo).",
+  "Cite or measure C_D0, span efficiency and aspect ratio for a flying-fish specimen before using ldBound as an elimination test; until then it is model-conditional.",
+  "Pin the unregistered helpers (froude, Hydro) to a law."
+ ],
+ "reproduce": [
+  {
+   "what": "Rebuild law table",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-law/dump_laws.py",
+   "expected": "59 laws printed, last line '14 without theorem'"
+  },
+  {
+   "what": "Check theorem names exist",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-law/verify_names.py | grep -c OK",
+   "expected": "45 (no MISSING lines)"
+  },
+  {
+   "what": "Check the Lean file (Lean v4.35.0, project Mathlib, elan in C:/Temp/elan)",
+   "command_or_url": "bash D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/lean/check.sh D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-law/DragPolarBound.lean",
+   "expected": "errors=0 sorryAx=0 axiom-lines=6/6; ALL CHECKED: no errors, no sorryAx"
+  },
+  {
+   "what": "Rebuild this JSON",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-law/build_result.py",
+   "expected": "prints 48"
+  }
+ ],
+ "citations": [],
+ "could_not_find": [
+  "No literature citation was fetched (the task was repository mapping), so citations is empty; no flying-fish C_D0, span efficiency or aspect ratio value was read, so the bound is not instantiated numerically.",
+  "Whether every Constraints rules_out lemma (about 34) is registered under a law id was not exhaustively mapped via constraints.json.",
+  "Did not run a full lake build of the repo, only the single file through check.sh."
+ ],
+ "table": [
+  {
+   "name": "aerobic-power-bound",
+   "fields": "version=1.1.0; pinned_status=accepted; class=theorem; theorem=Delphi.sustained_flight_requires; module=lean/Delphi/Flight.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/aerobic-power-bound.json (or laws/aerobic-power-bound.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "fick-principle",
+   "fields": "version=1.3.0; pinned_status=accepted; class=named-hypothesis; theorem=NONE (placeholder); module=lean/Delphi/Flight.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/fick-principle.json (or laws/fick-principle.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "flight-allometry-law",
+   "fields": "version=1.0.0; pinned_status=accepted; class=theorem; theorem=Delphi.vmin_powerLaw_log; module=lean/Delphi/Flight.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/flight-allometry-law.json (or laws/flight-allometry-law.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "flight-climb-glide-law",
+   "fields": "version=1.0.0; pinned_status=accepted; class=theorem; theorem=Delphi.glide_range_le; module=lean/Delphi/Flight.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/flight-climb-glide-law.json (or laws/flight-climb-glide-law.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "altitude-coupling",
+   "fields": "version=1.0.0; pinned_status=accepted; class=theorem; theorem=Delphi.Altitude.feasible_downward_closed; module=lean/Delphi/Altitude.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/altitude-coupling.json (or laws/altitude-coupling.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "scaling-area-law",
+   "fields": "version=1.1.0; pinned_status=accepted; class=theorem; theorem=Delphi.areaLaw_ratio; module=lean/Delphi/Scaling.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/scaling-area-law.json (or laws/scaling-area-law.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "scaling-strength-law",
+   "fields": "version=1.1.0; pinned_status=accepted; class=theorem; theorem=Delphi.breakLoad_ratio; module=lean/Delphi/Scaling.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/scaling-strength-law.json (or laws/scaling-strength-law.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "scaling-bending-law",
+   "fields": "version=1.0.0; pinned_status=accepted; class=theorem; theorem=Delphi.bendingStress_ratio_body; module=lean/Delphi/Scaling.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/scaling-bending-law.json (or laws/scaling-bending-law.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "[claim id withheld]",
+   "fields": "version=1.0.0; pinned_status=accepted; class=theorem; theorem=Delphi.powerRequired_log; module=lean/Delphi/Scaling.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/[claim id withheld].json (or laws/[claim id withheld].json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "[claim id withheld]",
+   "fields": "version=1.0.0; pinned_status=accepted; class=theorem; theorem=Delphi.exists_size_limit; module=lean/Delphi/Scaling.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/[claim id withheld].json (or laws/[claim id withheld].json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "thompson1917-ch02-10",
+   "fields": "version=1.1.0; pinned_status=accepted; class=theorem; theorem=Delphi.vmin_ratio; module=lean/Delphi/Scaling.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/thompson1917-ch02-10.json (or laws/thompson1917-ch02-10.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "thompson1917-ch03-07",
+   "fields": "version=1.1.0; pinned_status=accepted; class=theorem; theorem=Delphi.cubeLaw_loglog_exponent; module=lean/Delphi/Thompson.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/thompson1917-ch03-07.json (or laws/thompson1917-ch03-07.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "muscle-power-premise",
+   "fields": "version=1.0.0; pinned_status=retired; class=named-hypothesis; theorem=NONE (placeholder); module=lean/Delphi/Scaling.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/muscle-power-premise.json (or laws/muscle-power-premise.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "perturb-thermal",
+   "fields": "version=1.0.0; pinned_status=accepted; class=theorem-from-hypothesis; theorem=Delphi.Perturb.thermal_rules_out; module=lean/Delphi/Perturb.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/perturb-thermal.json (or laws/perturb-thermal.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "perturb-current",
+   "fields": "version=1.1.0; pinned_status=accepted; class=theorem-from-hypothesis; theorem=Delphi.Perturb.no_station_above_ucrit; module=lean/Delphi/Perturb.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/perturb-current.json (or laws/perturb-current.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "perturb-pressure",
+   "fields": "version=2.0.0; pinned_status=candidate; class=theorem-from-hypothesis; theorem=Delphi.Hydro.closed_bladder_rules_out; module=lean/Delphi/Hydrostatics.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/perturb-pressure.json (or laws/perturb-pressure.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "perturb-depth-cap",
+   "fields": "version=1.0.0; pinned_status=contested; class=theorem-from-hypothesis; theorem=Delphi.Perturb.no_teleost_below; module=lean/Delphi/Perturb.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/perturb-depth-cap.json (or laws/perturb-depth-cap.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "perturb-isa-vmin",
+   "fields": "version=1.0.0; pinned_status=accepted; class=theorem-from-hypothesis; theorem=Delphi.Perturb.vmin_isa_mono; module=lean/Delphi/Perturb.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/perturb-isa-vmin.json (or laws/perturb-isa-vmin.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "perturb-wind-glide",
+   "fields": "version=1.0.0; pinned_status=accepted; class=theorem-from-hypothesis; theorem=Delphi.Perturb.wind_glide_rules_out; module=lean/Delphi/Perturb.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/perturb-wind-glide.json (or laws/perturb-wind-glide.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "perturb-energy-balance",
+   "fields": "version=1.0.0; pinned_status=accepted; class=theorem-from-hypothesis; theorem=Delphi.Perturb.energy_rules_out; module=lean/Delphi/Perturb.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/perturb-energy-balance.json (or laws/perturb-energy-balance.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "E1",
+   "fields": "version=1.0.0; pinned_status=accepted; class=empirical-observation; theorem=Delphi.Empirical.not_isometric_area; module=lean/Delphi/Empirical.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/E1.json (or laws/E1.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "E2",
+   "fields": "version=1.1.0; pinned_status=accepted; class=empirical-observation; theorem=Delphi.Empirical.weight_ratio_band; module=lean/Delphi/Empirical.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/E2.json (or laws/E2.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "E3",
+   "fields": "version=2.1.0; pinned_status=accepted; class=empirical-observation; theorem=Delphi.Empirical.aerobicCeilingV2_le; module=lean/Delphi/Empirical.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/E3.json (or laws/E3.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "E4",
+   "fields": "version=1.0.0; pinned_status=accepted; class=empirical-observation; theorem=Delphi.Empirical.stored_power_le; module=lean/Delphi/Empirical.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/E4.json (or laws/E4.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "E5",
+   "fields": "version=1.0.0; pinned_status=accepted; class=empirical-observation; theorem=Delphi.Empirical.finRatio_outside; module=lean/Delphi/Empirical.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/E5.json (or laws/E5.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "E7",
+   "fields": "version=1.0.0; pinned_status=accepted; class=empirical-observation; theorem=Delphi.Empirical.cannot_score_of_lethal_before; module=lean/Delphi/Empirical.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/E7.json (or laws/E7.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "disc-flying-fish-fin-ratio-gap",
+   "fields": "version=1.0.0; pinned_status=candidate; class=empirical-observation; theorem=NONE (placeholder); module=lean/registry/proposals/disc-flying-fish-fin-ratio-gap/law.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/disc-flying-fish-fin-ratio-gap.json (or laws/disc-flying-fish-fin-ratio-gap.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "disc-pectoral-length-allometry",
+   "fields": "version=1.0.0; pinned_status=candidate; class=empirical-observation; theorem=NONE (placeholder); module=lean/registry/proposals/disc-pectoral-length-allometry/law.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/disc-pectoral-length-allometry.json (or laws/disc-pectoral-length-allometry.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "disc-measured-wing-loading-band",
+   "fields": "version=1.0.0; pinned_status=candidate; class=empirical-observation; theorem=NONE (placeholder); module=lean/registry/proposals/disc-measured-wing-loading-band/law.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/disc-measured-wing-loading-band.json (or laws/disc-measured-wing-loading-band.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "disc-heterurus-mass-exponent",
+   "fields": "version=1.0.0; pinned_status=contested; class=empirical-observation; theorem=NONE (placeholder); module=lean/registry/proposals/disc-heterurus-mass-exponent/law.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/disc-heterurus-mass-exponent.json (or laws/disc-heterurus-mass-exponent.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "blueprint-well-formedness",
+   "fields": "version=1.0.0; pinned_status=accepted; class=theorem; theorem=Delphi.Blueprint.wellFormed_of_check; module=lean/Delphi/Blueprint.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/blueprint-well-formedness.json (or laws/blueprint-well-formedness.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "genotype-developmental-ordering",
+   "fields": "version=1.0.0; pinned_status=accepted; class=theorem; theorem=Delphi.Genotype.devOrdered_of_check; module=lean/Delphi/Genotype.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/genotype-developmental-ordering.json (or laws/genotype-developmental-ordering.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "genotype-genetic-code",
+   "fields": "version=1.0.0; pinned_status=accepted; class=theorem; theorem=Delphi.Genotype.claimed_substitutions_rules_out; module=lean/Delphi/Genotype.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/genotype-genetic-code.json (or laws/genotype-genetic-code.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "genotype-pleiotropy-closure",
+   "fields": "version=1.0.0; pinned_status=accepted; class=theorem; theorem=Delphi.Genotype.closure_of_check; module=lean/Delphi/Genotype.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/genotype-pleiotropy-closure.json (or laws/genotype-pleiotropy-closure.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "genotype-substitution-time",
+   "fields": "version=1.0.0; pinned_status=accepted; class=theorem; theorem=Delphi.Genotype.expectedWaitingTime_bounds; module=lean/Delphi/Genotype.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/genotype-substitution-time.json (or laws/genotype-substitution-time.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "haldane-cost-of-selection",
+   "fields": "version=1.0.0; pinned_status=contested; class=theorem-from-hypothesis; theorem=Delphi.Genotype.haldane_time_lower; module=lean/Delphi/Genotype.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/haldane-cost-of-selection.json (or laws/haldane-cost-of-selection.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "physiology-q10",
+   "fields": "version=1.0.0; pinned_status=accepted; class=theorem; theorem=Delphi.Physiology.q10_ratio; module=lean/Delphi/Physiology.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/physiology-q10.json (or laws/physiology-q10.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "physiology-laplace",
+   "fields": "version=1.0.0; pinned_status=accepted; class=theorem; theorem=Delphi.Physiology.laplace_pressure_limit; module=lean/Delphi/Physiology.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/physiology-laplace.json (or laws/physiology-laplace.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "development-growth-asymptote",
+   "fields": "version=1.0.0; pinned_status=candidate; class=theorem-from-hypothesis; theorem=Delphi.LeanBio.Round2.GrowthAsymptote.von_bertalanffy_asymptote; module=lean/registry/proposals/development-growth-asymptote/law.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/development-growth-asymptote@1.0.0.json (or laws/development-growth-asymptote.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "aspect-ratio-induced-drag",
+   "fields": "version=1.0.0; pinned_status=proposed; class=gap; theorem=NONE (placeholder); module=none",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/aspect-ratio-induced-drag.json (or laws/aspect-ratio-induced-drag.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "taxiing-thrust",
+   "fields": "version=1.0.0; pinned_status=proposed; class=gap; theorem=NONE (placeholder); module=none",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/taxiing-thrust.json (or laws/taxiing-thrust.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "fin-length-ratio",
+   "fields": "version=1.0.0; pinned_status=proposed; class=gap; theorem=NONE (placeholder); module=none",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/fin-length-ratio.json (or laws/fin-length-ratio.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "gill-o2-uptake",
+   "fields": "version=1.0.0; pinned_status=proposed; class=gap; theorem=NONE (placeholder); module=none",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/gill-o2-uptake.json (or laws/gill-o2-uptake.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "elastic-similarity",
+   "fields": "version=1.0.0; pinned_status=proposed; class=gap; theorem=NONE (placeholder); module=none",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/elastic-similarity.json (or laws/elastic-similarity.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "gene-regulatory-dynamics",
+   "fields": "version=1.0.0; pinned_status=proposed; class=gap; theorem=NONE (placeholder); module=none",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/gene-regulatory-dynamics.json (or laws/gene-regulatory-dynamics.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "kimura-fixation-probability",
+   "fields": "version=1.0.0; pinned_status=accepted; class=theorem; theorem=Delphi.NeutralChain.fixedBy_tendsto; module=lean/Delphi/Kimura.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/kimura-fixation-probability.json (or laws/kimura-fixation-probability.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "kimura-substitution-rate",
+   "fields": "version=1.0.0; pinned_status=accepted; class=theorem; theorem=Delphi.neutral_substitution_rate; module=lean/Delphi/Kimura.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/kimura-substitution-rate.json (or laws/kimura-substitution-rate.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  },
+  {
+   "name": "favored-fixation-lower-bound",
+   "fields": "version=1.0.0; pinned_status=accepted; class=theorem; theorem=Delphi.FavoredChain.fixationProbability_ge; module=lean/Delphi/Favored.lean",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/law-versions/favored-fixation-lower-bound.json (or laws/favored-fixation-lower-bound.json) and lean/registry/lawsets/lawset-1.8.1.json"
+  }
+ ],
+ "scripts_written": [
+  "dump_laws.py",
+  "verify_names.py",
+  "DragPolarBound.lean",
+  "build_result.py"
+ ],
+ "new_law": {
+  "file": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-law/DragPolarBound.lean",
+  "statement": "theorem T6.DragPolar.ld_le_bound {e AR CD0 CL CD : R} (he : 0 < e) (hAR : 0 < AR) (hCD0 : 0 < CD0) (hCL : 0 < CL) (hpolar : CD = CD0 + CL ^ 2 / (pi * e * AR)) : CL / CD <= ldBound e AR CD0, where ldBound e AR CD0 := Real.sqrt (pi * e * AR / CD0) / 2",
+  "result": "check.sh: errors=0 sorryAx=0 axiom-lines=6/6; ALL CHECKED"
+ }
+}

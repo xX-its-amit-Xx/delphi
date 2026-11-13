@@ -1,0 +1,740 @@
+{
+ "label": "bm-diffusion-kinetics",
+ "topic": "Time to equilibrate: diffusion, poroelasticity and thickness scaling",
+ "summary": "Equilibration time of a polymer layer is t = c h^2/D with fixed constants: for a one-face-exposed active layer (the bilayer case) t50 = 0.197, t90 = 0.848 and t99 = 1.78 h^2/D; for two exposed faces divide by 4. My own laminate calculation shows an optimal hygromorph bilayer reaches 99 % of its final curvature at 1.65 h_a^2/D whatever the modulus ratio, and reproduces the project's 3/2 ceiling numerically. Measured water D spans four decades: 1.4e-13 to 5e-12 m2/s for dense polyamide, TPU and filament thermoplastics (Aniskevich 2023, PA11 Oliver-Ortega 2018, TPU 2026), 1.5e-12 to 1.1e-11 for dimethacrylate resins (Sideridou 2011), 4e-11 to 2e-10 for hydrogels and PEG-acrylates (PNAS 2022; arXiv 2406.15224), 6e-10 to 1e-9 for PDMS and porous tissue. No D has been published for a Formlabs resin, but Formlabs' own 1 day / 1 week mass gains imply D about 3e-12 (Grey V5, M_inf about 3.7 %, assumed 3.2 mm bars) and at least 6e-12 m2/s (Flexible 80A V2, assumed 2 mm slabs); the earlier '<1 % in 24 h' cube numbers are therefore far from equilibrium (a 10 mm cube at D = 1e-12 reaches 19 % of plateau in 24 h). D is not constant: it varies 2-4x with humidity in half the filaments and 21x with water content in PA6, which makes drying about 2.5x slower than wetting. Case II (front moving at constant speed, t ~ h) needs relaxation slower than diffusion in a glassy polymer plasticised by a strong penetrant; I found no measured Case II water data for any Formlabs material, only pseudo-Fickian or sub-Fickian reports (PA11 n = 0.27-0.31; epoxy SLA anomalous). Demonstration verdict (one face, t90): hours need D >= 1e-11 (Flexible 80A V2-class, hydrogel or PEG-acrylate layer, 0.2-0.8 mm; 0.2 mm Flexible 80A about 1 h); stock rigid resins at 0.2-0.4 mm need 9-38 h, at 0.8-1.6 mm 6-25 d; dense nylon or TPU at 0.8 mm or more need 3 weeks to many months.",
+ "lay_summary": "A thin plastic strip that curls when it gets wet cannot curl faster than water can soak into it. The soaking time grows with the square of the thickness: a strip twice as thick takes four times as long, like a thick sponge versus a thin cloth. Stiff 3D-printed plastics and nylon soak up water very slowly, so a half-millimetre strip can take days or weeks to finish moving, while a soft rubbery print or a jelly-like layer finishes in an hour or a few hours. Formlabs' own one-day test numbers look small mostly because one day is too short for a thick block to fill up, not because the plastic cannot absorb more. So a demonstration that finishes in an afternoon needs a thin layer, 0.2 to 0.8 millimetres, of a soft or water-loving material, and a stiff nylon or resin strip is a week-long experiment.",
+ "glossary": [
+  {
+   "term": "diffusion coefficient (D)",
+   "plain": "How quickly water spreads through a material; larger means faster, in square metres per second."
+  },
+  {
+   "term": "Fickian diffusion",
+   "plain": "The ordinary slow spreading of water in which the soaking time grows with thickness squared."
+  },
+  {
+   "term": "Case II diffusion",
+   "plain": "A sharp wet front that moves into a glassy plastic at a steady speed, so time grows with thickness, not thickness squared."
+  },
+  {
+   "term": "glassy / rubbery polymer",
+   "plain": "A plastic that is hard and stiff (glassy) or soft and stretchy (rubbery) at the temperature of use."
+  },
+  {
+   "term": "half-time (t50), t90, t99",
+   "plain": "The time for the layer to fill to 50, 90 or 99 percent of its final water content."
+  },
+  {
+   "term": "one-face exposure",
+   "plain": "Water can enter only through one side because the other side is glued to a layer that water does not enter."
+  },
+  {
+   "term": "plasticise",
+   "plain": "Soften a plastic by letting a small molecule such as water get between the chains."
+  },
+  {
+   "term": "hygromorph bilayer",
+   "plain": "Two bonded layers, one of which swells in water, so the strip bends like a bimetal strip."
+  },
+  {
+   "term": "equilibrium (saturation)",
+   "plain": "The point where the material has taken up all the water it will take at those conditions."
+  },
+  {
+   "term": "poroelastic",
+   "plain": "A sponge-like material whose swelling speed is set by water flowing through its pores while the network deforms."
+  },
+  {
+   "term": "Arrhenius / activation energy",
+   "plain": "A rule that diffusion speeds up by a fixed factor for each rise in temperature; the activation energy sets the factor."
+  },
+  {
+   "term": "TDS",
+   "plain": "Technical data sheet published by the manufacturer."
+  }
+ ],
+ "findings": [
+  {
+   "claim": "Fickian slab: the fractional uptake of a plane sheet of thickness l with both faces held at the bath concentration depends only on x = D t / l^2. The half-time is x50 = 0.04918, the 90 % time x90 = 0.2120, the 95 % time x95 = 0.2823 and the 99 % time x99 = 0.4453. Short-time law M_t/M_inf = 4 sqrt(D t/(pi l^2)). Single slowest-mode time constant tau = l^2/(pi^2 D).",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/diffusion_kinetics.py (series of Crank eq. 4.14, reproduced by an independent finite-volume solve that gives x50 = 0.04918 as well)",
+   "confidence": "high",
+   "value": "x50=0.04918; x90=0.2120; x99=0.4453",
+   "evidence_quote": "D was calculated at low times of immersion, when M t / M ∞ ≤ 0.5, as: (3) M t M ∞ = 4 L · ( D π ) 1 2 · t 1 2"
+  },
+  {
+   "claim": "Thickness scaling: for a layer exposed on both faces the half-time is t50 = 0.0492 h^2/D; for an active layer exposed on ONE face only (the other face bonded to an impermeable passive layer, the bilayer case) the effective sheet thickness is 2h, so t50 = 0.197 h^2/D, t90 = 0.848 h^2/D, t99 = 1.78 h^2/D. Doubling h quadruples every time.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/diffusion_kinetics.py",
+   "confidence": "high",
+   "value": "one-face: t50 0.197, t90 0.848, t99 1.78 (units h^2/D)",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Measured thickness exponents in a porous hygromorph are below 2: wetting time varies as h^1.3 and drying time as h^1.5 in pine-cone scales, against the Fickian h^2 estimate (tau = h_a^2/D ~ 1000 s for D ~ 1e-9 m2/s and h_a ~ 1 mm).",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC2838359/ (10.1098/rsif.2009.0184)",
+   "confidence": "high",
+   "value": "exponents 1.3 (wet), 1.5 (dry)",
+   "evidence_quote": "the shrinking (drying) time varies as τ d = 96 h a 1.5 min and the swelling (wetting) time varies as τ d = 29 h a 1.3 min (where h a is in mm)"
+  },
+  {
+   "claim": "Hydrogel swelling time is proportional to thickness squared; the cooperative diffusion coefficient follows from tau = h^2/(pi^2 D) with D = (K_os + 4 mu/3)/f (osmotic and shear moduli over network-solvent friction).",
+   "source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC9457170/fullTextXML (10.1073/pnas.2207422119)",
+   "confidence": "high",
+   "evidence_quote": "Our previous study confirmed that τ is proportional to the square of the sample thickness, following cooperative diffusion ( 27 ). We estimated the cooperative diffusion coefficients, D , from the relation τ = h ∞ 2 π 2 D"
+  },
+  {
+   "claim": "Water D in 12 FFF filaments (97 % RH and lower, room temperature, cylinders of 1.75 or 2.8 mm diameter): Nylon 0.001, Antero 0.00245, CPE 0.00247, PET-G 0.00335, Ultem 0.00399, PC 0.00472, PLA Lava 0.00782 up to PLA T-W 0.0151 mm2/h, i.e. 2.8e-13 to 4.2e-12 m2/s. Confirms the earlier agent's range.",
+   "source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC10304609/fullTextXML (10.3390/polym15122600), Table 3; 1 mm2/h = 2.778e-10 m2/s (own conversion)",
+   "confidence": "high",
+   "value": "2.8e-13 to 4.2e-12 m2/s",
+   "evidence_quote": "Antero 0.00245 0.00011 181 CPE 0.00247 0.00003 165 Koltron −0.0048 0.0033 0.3044 −0.0170 0.0001 550 Nylon 0.001 0.00060 360 PC 0.00472 0.00038 92"
+  },
+  {
+   "claim": "In those filaments the moisture swelling strain is small (0.15-0.25 % for most), and the Nylon filament shrank by 2.43 % in humid air, so a polyamide filament is not a safe stand-in for a swelling layer.",
+   "source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC10304609/fullTextXML",
+   "confidence": "high",
+   "evidence_quote": "Most materials had a maximal swelling ability of 0.15−0.25%, which was not dependent on their structure and composition."
+  },
+  {
+   "claim": "Concentration dependence of D, filaments: D was independent of humidity for six of twelve filaments, fell about four-fold with moisture for four and rose 2-3-fold for PLA Lava and PET-G.",
+   "source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC10304609/fullTextXML",
+   "confidence": "high",
+   "evidence_quote": "For the other six materials, the diffusion coefficient changed with the moisture concentration in the atmosphere. The dependence significantly (four times) decreased for four materials, including ABS White"
+  },
+  {
+   "claim": "Concentration dependence of D, polyamide 6 in water: the FE-model input table gives D = 2.58e-9 at zero water, 7.34e-9 at 30 000 ppm, 2.42e-8 at 65 000 ppm and 5.51e-8 at 89 000 ppm, a factor 21.4 between dry and near-saturated (own division). The unit printed in the table header is garbled ('[m/s 2]'), so only the unit-free ratio is used.",
+   "source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC8124584/fullTextXML (10.3390/polym13091480), Table 2",
+   "confidence": "medium",
+   "value": "ratio 21.4 (D at 89 000 ppm / D at 0)",
+   "evidence_quote": "0 2.58 × 10 − 9 1100 0 0 0 30,000 7.34 × 10 − 9 400 1.06 × 10 − 7 0.86 × 10 − 7 2.78 × 10 − 7 65,000 2.42 × 10 − 8 350"
+  },
+  {
+   "claim": "Consequence of a D that rises with water content (own finite-volume simulation, D = D0 exp(beta c), D ratio 21.4): the half-time for wetting is 0.114 times the constant-D0 value and the half-time for drying 0.279 times, so drying takes 2.46 times longer than wetting; for a ratio of 100 drying is 4.05 times slower. A wet/dry cycling demonstration is therefore limited by the drying half-cycle and a single D from the wetting curve under-predicts it.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/diffusion_kinetics.py section 7 (results.json concentration_dependent_D)",
+   "confidence": "medium",
+   "value": "desorption/sorption half-time = 2.46 (ratio 21.4); 4.05 (ratio 100)",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Dimethacrylate photopolymers (the chemistry class of SLA resins): water diffusion coefficient 1.52e-8 cm2/s (TEGDMA) up to 11.01e-8 cm2/s (Bis-GMA), i.e. 1.5e-12 to 1.1e-11 m2/s (own unit conversion, x1e-4). The abstract says D was highest in water, so these are read as the water values; the disc thickness is not in the abstract.",
+   "source": "https://pubmed.ncbi.nlm.nih.gov/21783239/ (10.1016/j.dental.2011.06.007), abstract via Europe PMC search API",
+   "confidence": "medium",
+   "value": "1.52e-12 to 1.10e-11 m2/s",
+   "evidence_quote": "The diffusion coefficient for all resins was higher in water than in ethanol/water solution or ethanol. Bis-GMA-resin showed the highest diffusion coefficient (11.01 × 10⁻⁸cm² s⁻¹)"
+  },
+  {
+   "claim": "In dimethacrylate resins the volume increase depends linearly on the amount of water or ethanol absorbed, so swelling strain equilibrates on the same clock as mass uptake.",
+   "source": "https://pubmed.ncbi.nlm.nih.gov/18321567/ (10.1016/j.dental.2007.12.009), abstract via Europe PMC",
+   "confidence": "high",
+   "evidence_quote": "The volume increase was found to depend linearly on the amount of water or ethanol absorbed."
+  },
+  {
+   "claim": "Flexible TPU (60A-98A, FDM, immersed in 0.9 % NaCl up to 96 h): Fickian D from the initial uptake 1.40e-13 to 3.40e-12 m2/s, equilibrium uptake up to ~1.8 %; the authors flag the lowest value (TPU 98A) as possibly an artefact of very low initial absorption.",
+   "source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC13258891/fullTextXML (10.3390/polym18111392)",
+   "confidence": "high",
+   "value": "1.4e-13 to 3.4e-12 m2/s",
+   "evidence_quote": "Diffusion coefficients ranged from 1.40 × 10 −13 to 3.40 × 10 −12 m 2 s −1 , with no monotonic dependence on hardness."
+  },
+  {
+   "claim": "Neat PA11 (hot-pressed, immersed in water): D = 4.95e-13 m2/s at 23 C and 22.0e-13 m2/s at 40 C, M_inf 1.43 % and 1.58 %; the n exponent is 0.305 and 0.272, below the Fickian 0.5 ('pseudo-Fickian').",
+   "source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC6404017/fullTextXML (10.3390/polym10070717), Table 3",
+   "confidence": "high",
+   "value": "4.95e-13 (23 C); 2.20e-12 (40 C) m2/s",
+   "evidence_quote": "23 0 1.43 ± 0.02 0.305 ± 0.045 0.088 ± 0.023 4.95 ± 0.02"
+  },
+  {
+   "claim": "Temperature: from the two PA11 points the apparent activation energy is 67.7 kJ/mol (own Arrhenius calculation) and D rises 4.44-fold from 23 to 40 C; extrapolating the same line to 50 C gives a ten-fold speed-up (extrapolation beyond the data, treat as indicative). A warm bath is therefore a 4-10x accelerator for a polyamide demonstration, at the cost of a different strain/modulus state.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/diffusion_kinetics.py section 6",
+   "confidence": "medium",
+   "value": "Ea 67.7 kJ/mol; x4.44 (23->40 C); x9.9 (->50 C, extrapolated)",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Water in PDMS elastomer: D about 6-8e-10 m2/s (value quoted second-hand in a Sylgard-184 chip paper, which says the pervaporation time scales as H^2/D); the older figure D ~ 1e-9 m2/s comes from a web-search snippet of Randall & Doyle 2005 that I did not open. PDMS equilibrates in minutes at 1 mm but takes up very little water.",
+   "source": "https://arxiv.org/pdf/2401.05139 (arXiv:2401.05139), text saved at D:/Users/ashenoy00000/delphi-work/data/bm-diffusion-kinetics/arxiv_2401.05139.txt",
+   "confidence": "medium",
+   "value": "6e-10 to 8e-10 m2/s",
+   "evidence_quote": "τp ∼ H2/Dwp , Dwp ≃ 6–8 × 10-10 m2 s-1 being the diffusion coefficient of water in PDMS"
+  },
+  {
+   "claim": "Polyampholyte hydrogel (45 wt% water, 1.1-1.3 mm thick): cooperative swelling diffusivity 8.8e-11 to 1.7e-10 m2/s, roughly 10-100x faster than dense photopolymer resins.",
+   "source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC9457170/fullTextXML (10.1073/pnas.2207422119)",
+   "confidence": "high",
+   "value": "8.8e-11 to 1.7e-10 m2/s",
+   "evidence_quote": "The cooperative diffusion coefficient of swelling, D sw , increases slightly from 8.8 × 10 −11 to 1.7 × 10 −10 m 2 /s by increasing C MBAA from 0 to 5.0 mol%"
+  },
+  {
+   "claim": "Printed PEG-acrylate type gels (PEGDA-700/PEGMEMA, 2 mm dry slabs photocured in glass moulds) swell to equilibrium in hours: exponential time constant tau of about 61 min or less for 5-40 mol% PEGDA, about 120 min for 1 mol% PEGDA-700 and about 190 min for 10k-PEGDA; curves reach their plateau by ~3-6 h. Own D = l^2/(pi^2 tau) with l = 2 mm gives 3.6e-11 to 1.1e-10 m2/s (lower bound; swollen thickness is larger, 3 mm gives up to 2.5e-10).",
+   "source": "https://arxiv.org/pdf/2406.15224 (arXiv:2406.15224), p. 13 and Fig. 2 (value symbols checked on the rendered page image); sample size p. 7",
+   "confidence": "high",
+   "value": "tau <=61 / ~120 / ~190 min",
+   "evidence_quote": "When PEGDA-700 is employed, the 1:99 formulation experiences a much larger time to reach equilibrium (τ ≃120 minutes) than the formulations with higher PEGDA-700 content (all τ ≤61 minutes)."
+  },
+  {
+   "claim": "Stock photopolymer: low-cost acrylate LCD resins as 60 x 60 x 1 mm plates in seawater: R3 +12.37 % in 2.5 d then 13.49 %; R2 (4.3 %) stable within 4 d; R1 (3.4 %) not saturated until after 8 d. Own inversion with x95/x99 for both-face exposure: D about 4e-13 to 2e-12 m2/s (R1 4.1e-13 to 6.4e-13, R2 8.2e-13 to 1.3e-12, R3 1.3e-12 to 2.1e-12).",
+   "source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC11643832/fullTextXML (10.3390/ma17235953)",
+   "confidence": "medium",
+   "value": "D 4e-13 to 2e-12 m2/s (derived)",
+   "evidence_quote": "While resin R2 stabilized within four days, resin R1 did not reach saturation until after eight days."
+  },
+  {
+   "claim": "Formlabs Grey V5 tensile bars (ASTM D638 Type 4, DI water): mass 101.38 % after 1 day and 103.23 % after 1 week, modulus 88.63 % and 65.29 %. This resolves the earlier agent's 'scrambled table' doubt: the values sit in the MASS column and the DI Water row by word coordinates (pdf read with PyMuPDF).",
+   "source": "https://formlabs-media.formlabs.com/filer_public/dd/7f/dd7f3de9-55ae-4c82-ac52-408a4b5df64d/clear_resin_v5_tds___formlabs.pdf (TDS pages 9-10, downloaded 2026-11-12)",
+   "confidence": "high",
+   "value": "+1.38 % (1 d), +3.23 % (1 wk)",
+   "evidence_quote": "DI 88.63% 89.21% 105.36% 101.38% ... 65.29% 67.62% 83.53% 103.23%"
+  },
+  {
+   "claim": "First kinetic parameters for a Formlabs resin: a two-point Fickian inversion of the Grey V5 bars (ratio 3.23/1.38 = 2.34, below sqrt7 = 2.65, so the curve is bending to a plateau) gives x = D t/l^2 = 0.0279 at 1 d, equilibrium uptake M_inf about 3.7 % (the bars would be 38 % saturated at 1 d and 88 % at 1 wk) and D = 3.3e-12 m2/s for an ASSUMED 3.2 mm bar (1.3e-12 at 2 mm, 5.2e-12 at 4 mm; the TDS does not state bar thickness). Cross-check: the same D and M_inf predict 1.17 % for a 10 mm cube at 24 h against Formlabs' 0.8 % (Grey V5) and 0.9 % (Clear V5).",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/diffusion_kinetics.py (inputs from the Formlabs TDS above and https://formlabs.com/support/solvent-compatibility/)",
+   "confidence": "medium",
+   "value": "D~3.3e-12 m2/s (assumed 3.2 mm); M_inf~3.7 %",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Formlabs Flexible 80A V2 slabs (ASTM D471) in DI water: +8 % mass and +3 % volume at 1 day, +9 % mass and +7 % volume at 1 week (confirmed by word coordinates: the 'Deionized Water' label sits between the 1-day and 1-week lines). Because 8 to 9 % is close to a plateau, a Fickian inversion gives D = 9.3e-12 m2/s, and D >= 6.3e-12 m2/s allowing for the integer rounding of the percentages, for an ASSUMED 2 mm slab (thickness not stated in the TDS); D scales with thickness squared (2.3e-12 if the slab were 1 mm).",
+   "source": "https://media.formlabs.com/asset/af9d9268-d8c4-4019-9ccd-bd3af926c67e/-ENUS-Flexible-80A-V2-TDS.pdf (page 6, downloaded 2026-11-12); inversion in D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/diffusion_kinetics.py",
+   "confidence": "medium",
+   "value": "D~9.3e-12 m2/s (>=6.3e-12), assumed 2 mm",
+   "evidence_quote": "Deionized Water 1 day -26 +8% +3% 94% 89% ; 1 week -27 +9% +7% 101% 88%"
+  },
+  {
+   "claim": "The two Formlabs numbers for 'Flexible 80A' water uptake cannot be reconciled by kinetics: with D >= 6.3e-12 m2/s a 1 cm cube should reach 42 % of its plateau in 24 h, i.e. about 3.8 % mass for a 9 % plateau, against 0.7 % reported in the cube table. So the 'Flexible 80A Resin' row and 'Flexible 80A V2' are most likely different formulations (the earlier agents left V1 versus V2 open); this supports reading V2 as the swelling material only if the V2 cube value is measured.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/diffusion_kinetics.py section 5h; cube value from https://formlabs.com/support/solvent-compatibility/",
+   "confidence": "medium",
+   "evidence_quote": "Flexible 80A Resin | 0.9 | 37.4 | 0.6 | 51.4 | 2.3 | 19.3 | 1 | 0.7 | 1.6 | 11.7 | <0.1 | 0.1 | 0.5 | 10.7"
+  },
+  {
+   "claim": "Confirmed: Elastic 50A V2 gains 39.2 % mass in isopropanol in 24 h (acetone 43.4 %, TPM 45.6 %, water 0.7 %) while Rigid 10K gains <0.1 % in isopropanol and water (1 cm cubes). Interpreting the cube as 3-D Fickian with a 43-50 % plateau, D of isopropanol in Elastic 50A is about 3.6e-11 to 6.7e-11 m2/s (own estimate), so a 0.4 mm layer is within 90 % in about 34-62 min on one face: a rubbery elastomer takes up its solvent roughly 10-60x faster than stock glassy resins take up water (solvent and water differ, so indicative only).",
+   "source": "https://formlabs.com/support/solvent-compatibility/ (HTML table parsed, saved at D:/Users/ashenoy00000/delphi-work/data/bm-diffusion-kinetics/solvent.html); inversion in D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/diffusion_kinetics.py",
+   "confidence": "medium",
+   "value": "IPA 39.2 % at 24 h",
+   "evidence_quote": "Elastic 50A Resin V2 | 1.5 | 43.4 | 0.6 | 133.1 | 7.9 | 31.4 | 3.9 | 0.9 | 15.6 | 39.2 | 0.4 | 0.7"
+  },
+  {
+   "claim": "Why '<1 % in 24 h' is not an equilibrium number: a 10 mm cube reaches only 7 % (D=1.4e-13), 19 % (1e-12), 51 % (1e-11) and 96 % (1e-10 m2/s) of its equilibrium uptake in 24 h; a 3 mm cube 23 %, 53 %, 97 % and 100 %. For Grey V5 the fitted equilibrium is about 3.7 %, four times the 24 h cube value. Earlier records state the 24 h figure is short-time; this puts numbers on how short.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/diffusion_kinetics.py section 4",
+   "confidence": "high",
+   "value": "10 mm cube, 24 h: 19 % of plateau at D=1e-12",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Sintered PA12 (SLS) saturates fast compared with dense PA12: 8 x 8 mm cylinders gained mass 'sharply in the first 36 h' and reached 5.47 % (CF/PA12: 4.6 % after 24 h). Own apparent-D bracket 1.3e-11 to 3.0e-11 m2/s if 90-99 % was reached at 36-72 h (the curve could not be read numerically). This is mostly open pores filling, not polymer-matrix diffusion, and the 5.5 % is 3-4x the dense PA12 saturation (1.6 %) in the earlier record.",
+   "source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC9320715/fullTextXML (10.3390/mi13071041)",
+   "confidence": "low",
+   "value": "apparent D 1.3e-11 to 3e-11 m2/s (assumed fractions)",
+   "evidence_quote": "Δ m of PA12 sample increases sharply in the first 36 h as the samples were immersed into water. With further prolonged immersed time, the Δ m increases slowly and reaches a saturation state with Δ m of 5.47%."
+  },
+  {
+   "claim": "Hot-pressed PA11 and PA12 (dense) took 'around two months' to reach water saturation (1.5 % in water, 0.8 % in humid air); specimen thickness for the durability series is not stated (sheets 1 mm, bulk 4 mm), so no D is derived.",
+   "source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC8537549/fullTextXML (10.3390/polym13203553)",
+   "confidence": "medium",
+   "evidence_quote": "After around two months, both PAs had the same saturation level for water and moisture absorption, i.e., 1.5% and 0.8%, respectively."
+  },
+  {
+   "claim": "Epoxy-based stereolithography parts show anomalous (non-Fickian) water uptake that looks pseudo-Fickian, fitted by dual-sorption, diffusion-relaxation and dual-Fickian models. Quoted from a web-search extract of the Loughborough repository page; the page itself returned 403/anti-bot, and Crossref gives no abstract, so I did not read the paper or any D value.",
+   "source": "https://repository.lboro.ac.uk/articles/journal_contribution/Environmental_ageing_of_epoxy-based_stereolithography_parts_Part_1_moisture_transport/9564056 (10.1179/1743289811y.0000000024); not fetched directly",
+   "confidence": "low",
+   "evidence_quote": "Moisture transport in three different epoxy-based stereolithography materials has been investigated using mass uptake experiments. The results show that anomalous (non-Fickian) diffusion occurs to varying degrees in all three materials, the characteristic uptake appearing to be pseudo-Fickian."
+  },
+  {
+   "claim": "Fickian (Case I) uptake is linear in the square root of time; the exponent n in M_t/M_inf = K t^n is 0.5 for Fick, 1 for Case II, in between for anomalous transport. Fickian behaviour needs polymer relaxation much faster than diffusion (rubbery state); Case II needs diffusion much faster than relaxation, typical of glassy polymers with strongly plasticising penetrants; anomalous when the two rates are comparable.",
+   "source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC7023388/fullTextXML (10.3390/polym12010138) and PMC11359223 (10.3390/polym16162265); classical sources Alfrey-Gurnee-Lloyd 1966, Thomas-Windle 1982 and Ritger-Peppas 1987 are DOI-verified only, not read",
+   "confidence": "medium",
+   "evidence_quote": "(1) Case I (Fick’s diffusion, n = 0.5). Polymer relaxation is much faster than water diffusion, and the diffusion is followed by an instantaneous response of the system, resulting in Fick’s behavior."
+  },
+  {
+   "claim": "Which polymers: rubbery polymers are typically Fickian, many glassy polymers are Fickian at low solubility, Case II appears in glassy polymers with highly absorbent liquids when the absorbed liquid plasticises the polymer.",
+   "source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC11359223/fullTextXML (10.3390/polym16162265)",
+   "confidence": "medium",
+   "evidence_quote": "Rubbery polymers typically demonstrate Fickian diffusion due to their rapid response to environmental changes. Additionally, many glassy polymers also display Fickian diffusion under conditions where liquid solubility levels are relatively low."
+  },
+  {
+   "claim": "Case II is a moving front: the dissolution/swelling front propagates as a wave into the undissolved glassy polymer, so the penetration time scales with distance (t ~ h / v, front speed v) rather than distance squared. A crossover length h* = D/v separates the two regimes (own scaling, no measured v for any Formlabs resin exists in what I found).",
+   "source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC12574211/fullTextXML (10.1021/acs.macromol.5c02222); scaling is own",
+   "confidence": "medium",
+   "evidence_quote": "this frontal dissolution process in glassy miscible polymer films closely resembles the phenomenology of Case II non-Fickian diffusion commonly observed in the dissolution of glassy polymers by solvents"
+  },
+  {
+   "claim": "Water also plasticises the glassy resins, which couples D to the state of the network: Grey V5 bars keep only about 65 % of dry modulus after one week in water, PA6.6 falls to about 21 %. A swollen layer is softer, so the bilayer's n changes during the experiment, but the optimum curvature (3/2) does not depend on n.",
+   "source": "https://formlabs-media.formlabs.com/filer_public/dd/7f/dd7f3de9-55ae-4c82-ac52-408a4b5df64d/clear_resin_v5_tds___formlabs.pdf (modulus column); earlier agent spec-resin-chemistry.json for PA6.6",
+   "confidence": "medium",
+   "evidence_quote": "65.29% 67.62% 83.53% 103.23%"
+  },
+  {
+   "claim": "Bilayer curvature kinetics, own laminate calculation (active layer on one face, Fickian eigenstrain profile, bonded passive layer impermeable): at the optimum m^2 n = 1 the curvature reaches 50 %, 90 % and 99 % of its final value at 0.091, 0.719 and 1.65 h_a^2/D, identical for modulus ratios n = 1, 0.1, 0.01. Uptake itself needs 0.197, 0.849 and 1.78 h_a^2/D. Curvature leads mass uptake early (bending is dominated by the outer, wettest fibre) but equilibrium time is within 8 % of the uptake time. Away from the optimum the thickness ratio m shifts these (m = 2: 0.036, 0.528, 1.46; m = 0.5: 0.142, 0.789, 1.72).",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/diffusion_kinetics.py section 8",
+   "confidence": "high",
+   "value": "curvature t99 = 1.65 h_a^2/D at m^2 n = 1",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Independent numerical check of the project record's 3/2 ceiling: the same laminate code run with uniform eigenstrain returns kappa h/d_eps = 1.500000 at (m,n) = (1,1), (3.162, 0.1), (10, 0.01) and (0.316, 10), all with m^2 n = 1, and equals the Timoshenko formula f(m,n) at (1, 0.1) = 0.99585 and (0.5, 3) = 1.49309. This confirms the formula numerically; it is not the Lean proof.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/diffusion_kinetics.py section 8 (saturation_check in results.json)",
+   "confidence": "high",
+   "value": "f = 1.5 at m^2 n = 1",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Verdict for a demonstration (one-face exposed active layer, t90): D ~ 1e-10 to 1e-9 m2/s (hydrogel, PEG-acrylate, porous or PDMS) finishes in minutes to hours at every thickness 0.2-1.6 mm (1.6 mm: 6 h at 1e-10). D ~ 1e-11 (Flexible 80A V2 class, Bis-GMA) gives 57 min (0.2 mm), 3.8 h (0.4), 15 h (0.8) and 2.5 d (1.6). D ~ 1e-12 (stock rigid acrylate resins, PET-G, PC) gives 9 h, 38 h, 6.3 d and 25 d. D ~ 3e-13 (PA11/PA12-class, nylon, TPU) gives 1.3 d, 5.2 d, 21 d and 12 weeks.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/diffusion_kinetics.py (equilibration_table.csv)",
+   "confidence": "high",
+   "value": "hours: D>=1e-11 and h<=0.8 mm; days: D~1e-12 and h<=0.8 mm; weeks: D<=5e-13 and h>=0.8 mm",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Printable thickness floors from the project record: 0.2 mm on Form 4 (Grey V5) and 0.3-0.6 mm on Fuse. At those floors one-face t90 is 1.8 d for 0.3 mm and 7.1 d for 0.6 mm of dense PA11 (D = 4.95e-13; 0.848 x h^2/D, e.g. 0.848 x (0.6e-3)^2 / 4.95e-13 = 6.2e5 s), and 9.4 h for 0.2 mm of a stock rigid resin at D = 1e-12.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents/spec-formlabs-materials.json (floors); own arithmetic in D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/diffusion_kinetics.py",
+   "confidence": "medium",
+   "evidence_quote": ""
+  }
+ ],
+ "key_claims": [
+  {
+   "claim": "Time to equilibrium scales as h^2/D with fixed constants: for an active layer exposed on one face (bilayer) t50 = 0.197, t90 = 0.848, t99 = 1.78 h^2/D; for both faces exposed multiply by 1/4. The curvature of an optimal bilayer reaches 99 % at 1.65 h_a^2/D regardless of modulus ratio.",
+   "evidence_quote": "",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/diffusion_kinetics.py (finite-volume check x50 = 0.04918 equals the Crank series; bilayer laminate reproduces the 3/2 ceiling)"
+  },
+  {
+   "claim": "Measured water diffusivities span about four decades: dense polyamide, TPU and filament thermoplastics 1.4e-13 to 5e-12 m2/s, methacrylate/acrylate resins 1.5e-12 to 1.1e-11, hydrogels and PEG-acrylates 4e-11 to 2e-10, PDMS and porous media 6e-10 to 1e-9.",
+   "evidence_quote": "Diffusion coefficients ranged from 1.40 × 10 −13 to 3.40 × 10 −12 m 2 s −1 , with no monotonic dependence on hardness.",
+   "source": "10.3390/polym18111392; 10.3390/polym15122600; 10.3390/polym10070717; 10.1016/j.dental.2011.06.007; 10.1073/pnas.2207422119; arXiv:2401.05139"
+  },
+  {
+   "claim": "Formlabs' own 1 day / 1 week mass data imply the first D for Formlabs resins: about 3e-12 m2/s for Grey V5 (equilibrium ~3.7 %, assumed 3.2 mm bars) and >= 6e-12 m2/s for Flexible 80A V2 (assumed 2 mm slabs); the '<1 % in 24 h' cube numbers are therefore far from equilibrium (a 10 mm cube at D=1e-12 reaches ~19 % of plateau).",
+   "evidence_quote": "DI 88.63% 89.21% 105.36% 101.38% ... 65.29% 67.62% 83.53% 103.23%",
+   "source": "https://formlabs-media.formlabs.com/filer_public/dd/7f/dd7f3de9-55ae-4c82-ac52-408a4b5df64d/clear_resin_v5_tds___formlabs.pdf ; https://media.formlabs.com/asset/af9d9268-d8c4-4019-9ccd-bd3af926c67e/-ENUS-Flexible-80A-V2-TDS.pdf ; own inversion in script"
+  },
+  {
+   "claim": "A demonstration that finishes in hours needs D >= 1e-11 m2/s (elastomer such as Flexible 80A V2, or a PEG-acrylate/hydrogel layer) with an active layer of 0.2-0.8 mm; stock rigid resins (D~1e-12) at 0.2-0.4 mm give 9-38 h; 0.8 mm or more, or dense nylon/TPU, takes days to weeks.",
+   "evidence_quote": "",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/diffusion_kinetics.py equilibration_table.csv"
+  }
+ ],
+ "table": [
+  {
+   "name": "Nylon filament, 97% RH, 23C (Aniskevich 2023 Table 3, 0.001 mm2/h)",
+   "fields": "D=2.78e-13 m2/s; one-face t90 at h=0.2 mm = 33.9 h; one-face t90 at h=0.4 mm = 5.7 d; one-face t90 at h=0.8 mm = 22.6 d; one-face t90 at h=1.6 mm = 13 wk (0.25 yr); both-faces t90 at h=0.2/0.4/0.8/1.6 mm = 8.5 h / 33.9 h / 5.7 d / 22.6 d",
+   "source": "10.3390/polym15122600"
+  },
+  {
+   "name": "PEKK/Antero filament (0.00245 mm2/h)",
+   "fields": "D=6.81e-13 m2/s; one-face t90 at h=0.2 mm = 13.8 h; one-face t90 at h=0.4 mm = 2.3 d; one-face t90 at h=0.8 mm = 9.2 d; one-face t90 at h=1.6 mm = 36.9 d; both-faces t90 at h=0.2/0.4/0.8/1.6 mm = 3.5 h / 13.8 h / 2.3 d / 9.2 d",
+   "source": "10.3390/polym15122600"
+  },
+  {
+   "name": "PC filament (0.00472 mm2/h)",
+   "fields": "D=1.31e-12 m2/s; one-face t90 at h=0.2 mm = 7.2 h; one-face t90 at h=0.4 mm = 28.7 h; one-face t90 at h=0.8 mm = 4.8 d; one-face t90 at h=1.6 mm = 19.2 d; both-faces t90 at h=0.2/0.4/0.8/1.6 mm = 108 min / 7.2 h / 28.7 h / 4.8 d",
+   "source": "10.3390/polym15122600"
+  },
+  {
+   "name": "PET-G filament (0.00335 mm2/h)",
+   "fields": "D=9.31e-13 m2/s; one-face t90 at h=0.2 mm = 10.1 h; one-face t90 at h=0.4 mm = 40.5 h; one-face t90 at h=0.8 mm = 6.8 d; one-face t90 at h=1.6 mm = 27.0 d; both-faces t90 at h=0.2/0.4/0.8/1.6 mm = 2.5 h / 10.1 h / 40.5 h / 6.8 d",
+   "source": "10.3390/polym15122600"
+  },
+  {
+   "name": "PLA filaments (0.00782 to 0.0151 mm2/h)",
+   "fields": "D=2.17e-12 to 4.19e-12 m2/s; one-face t90 at h=0.2 mm = 2.2 h to 4.3 h; one-face t90 at h=0.4 mm = 9.0 h to 17.4 h; one-face t90 at h=0.8 mm = 35.9 h to 2.9 d; one-face t90 at h=1.6 mm = 6.0 d to 11.6 d; both-faces t90 at h=0.2/0.4/0.8/1.6 mm = 34 min to 65 min / 2.2 h to 4.3 h / 9.0 h to 17.4 h / 35.9 h to 2.9 d",
+   "source": "10.3390/polym15122600"
+  },
+  {
+   "name": "PA11 (neat, hot-pressed), water, 23 C",
+   "fields": "D=4.95e-13 m2/s; one-face t90 at h=0.2 mm = 19.0 h; one-face t90 at h=0.4 mm = 3.2 d; one-face t90 at h=0.8 mm = 12.7 d; one-face t90 at h=1.6 mm = 50.8 d; both-faces t90 at h=0.2/0.4/0.8/1.6 mm = 4.8 h / 19.0 h / 3.2 d / 12.7 d",
+   "source": "10.3390/polym10070717"
+  },
+  {
+   "name": "PA11 (neat), water, 40 C",
+   "fields": "D=2.20e-12 m2/s; one-face t90 at h=0.2 mm = 4.3 h; one-face t90 at h=0.4 mm = 17.1 h; one-face t90 at h=0.8 mm = 2.9 d; one-face t90 at h=1.6 mm = 11.4 d; both-faces t90 at h=0.2/0.4/0.8/1.6 mm = 64 min / 4.3 h / 17.1 h / 2.9 d",
+   "source": "10.3390/polym10070717"
+  },
+  {
+   "name": "TPU 60A-98A, FDM, 0.9 % NaCl (1.40e-13 to 3.40e-12)",
+   "fields": "D=1.40e-13 to 3.40e-12 m2/s; one-face t90 at h=0.2 mm = 2.8 h to 2.8 d; one-face t90 at h=0.4 mm = 11.1 h to 11.2 d; one-face t90 at h=0.8 mm = 44.3 h to 44.9 d; one-face t90 at h=1.6 mm = 7.4 d to 26 wk (0.49 yr); both-faces t90 at h=0.2/0.4/0.8/1.6 mm = 42 min to 16.8 h / 2.8 h to 2.8 d / 11.1 h to 11.2 d / 44.3 h to 44.9 d",
+   "source": "10.3390/polym18111392"
+  },
+  {
+   "name": "Dimethacrylate dental resins, water (1.52e-8 to 11.01e-8 cm2/s)",
+   "fields": "D=1.52e-12 to 1.10e-11 m2/s; one-face t90 at h=0.2 mm = 51 min to 6.2 h; one-face t90 at h=0.4 mm = 3.4 h to 24.8 h; one-face t90 at h=0.8 mm = 13.7 h to 4.1 d; one-face t90 at h=1.6 mm = 2.3 d to 16.5 d; both-faces t90 at h=0.2/0.4/0.8/1.6 mm = 13 min to 93 min / 51 min to 6.2 h / 3.4 h to 24.8 h / 13.7 h to 4.1 d",
+   "source": "10.1016/j.dental.2011.06.007"
+  },
+  {
+   "name": "Polyampholyte hydrogel, 45 wt% water, 1.1-1.3 mm (8.8e-11 to 1.7e-10)",
+   "fields": "D=8.80e-11 to 1.70e-10 m2/s; one-face t90 at h=0.2 mm = 3 min to 6 min; one-face t90 at h=0.4 mm = 13 min to 26 min; one-face t90 at h=0.8 mm = 53 min to 103 min; one-face t90 at h=1.6 mm = 3.5 h to 6.9 h; both-faces t90 at h=0.2/0.4/0.8/1.6 mm = 50 s to 96 s / 3 min to 6 min / 13 min to 26 min / 53 min to 103 min",
+   "source": "10.1073/pnas.2207422119"
+  },
+  {
+   "name": "PDMS (Sylgard 184), water (6e-10 to 8e-10; 1e-9 older)",
+   "fields": "D=6.00e-10 to 1.00e-09 m2/s; one-face t90 at h=0.2 mm = 34 s to 57 s; one-face t90 at h=0.4 mm = 2 min to 4 min; one-face t90 at h=0.8 mm = 9 min to 15 min; one-face t90 at h=1.6 mm = 36 min to 60 min; both-faces t90 at h=0.2/0.4/0.8/1.6 mm = 8 s to 14 s / 34 s to 57 s / 2 min to 4 min / 9 min to 15 min",
+   "source": "arXiv:2401.05139 (cites ref. 33) and Randall&Doyle 2005"
+  },
+  {
+   "name": "Porous plant tissue / pine-cone scale, molecular pores",
+   "fields": "D=1.00e-09 m2/s; one-face t90 at h=0.2 mm = 34 s; one-face t90 at h=0.4 mm = 2 min; one-face t90 at h=0.8 mm = 9 min; one-face t90 at h=1.6 mm = 36 min; both-faces t90 at h=0.2/0.4/0.8/1.6 mm = 8 s / 34 s / 2 min / 9 min",
+   "source": "10.1098/rsif.2009.0184"
+  },
+  {
+   "name": "Grey V5 (Formlabs bars, derived, 3.2 mm assumed)",
+   "fields": "D=3.30e-12 m2/s; one-face t90 at h=0.2 mm = 2.9 h; one-face t90 at h=0.4 mm = 11.4 h; one-face t90 at h=0.8 mm = 45.6 h; one-face t90 at h=1.6 mm = 7.6 d; both-faces t90 at h=0.2/0.4/0.8/1.6 mm = 43 min / 2.9 h / 11.4 h / 45.6 h",
+   "source": "own inversion of Formlabs TDS 1 d / 1 wk mass"
+  },
+  {
+   "name": "Flexible 80A V2 (Formlabs slabs, derived, 2 mm assumed)",
+   "fields": "D=9.32e-12 m2/s; one-face t90 at h=0.2 mm = 61 min; one-face t90 at h=0.4 mm = 4.0 h; one-face t90 at h=0.8 mm = 16.2 h; one-face t90 at h=1.6 mm = 2.7 d; both-faces t90 at h=0.2/0.4/0.8/1.6 mm = 15 min / 61 min / 4.0 h / 16.2 h",
+   "source": "own inversion of Formlabs TDS 1 d / 1 wk mass"
+  },
+  {
+   "name": "LCD acrylate resins, 1 mm plates, seawater (derived)",
+   "fields": "D=6.44e-13 to 1.31e-12 m2/s; one-face t90 at h=0.2 mm = 7.2 h to 14.6 h; one-face t90 at h=0.4 mm = 28.8 h to 2.4 d; one-face t90 at h=0.8 mm = 4.8 d to 9.8 d; one-face t90 at h=1.6 mm = 19.2 d to 39.0 d; both-faces t90 at h=0.2/0.4/0.8/1.6 mm = 108 min to 3.7 h / 7.2 h to 14.6 h / 28.8 h to 2.4 d / 4.8 d to 9.8 d",
+   "source": "own inversion of 10.3390/ma17235953 saturation times"
+  },
+  {
+   "name": "PEGDA-700 / PEGMA gels, 2 mm (derived)",
+   "fields": "D=3.56e-11 to 2.49e-10 m2/s; one-face t90 at h=0.2 mm = 2 min to 16 min; one-face t90 at h=0.4 mm = 9 min to 64 min; one-face t90 at h=0.8 mm = 36 min to 4.2 h; one-face t90 at h=1.6 mm = 2.4 h to 17.0 h; both-faces t90 at h=0.2/0.4/0.8/1.6 mm = 34 s to 4 min / 2 min to 16 min / 9 min to 64 min / 36 min to 4.2 h",
+   "source": "own inversion of arXiv:2406.15224 tau"
+  },
+  {
+   "name": "Elastic 50A V2 + isopropanol (solvent, not water; derived)",
+   "fields": "D=3.64e-11 to 6.68e-11 m2/s; one-face t90 at h=0.2 mm = 8 min to 16 min; one-face t90 at h=0.4 mm = 34 min to 62 min; one-face t90 at h=0.8 mm = 2.3 h to 4.1 h; one-face t90 at h=1.6 mm = 9.0 h to 16.6 h; both-faces t90 at h=0.2/0.4/0.8/1.6 mm = 2 min to 4 min / 8 min to 16 min / 34 min to 62 min / 2.3 h to 4.1 h",
+   "source": "own inversion of Formlabs solvent page"
+  },
+  {
+   "name": "GRID one-face exposed layer, D = 1.4e-13 m2/s",
+   "fields": "h=0.2 mm: t50 15.6 h, t90 2.8 d, t99 5.9 d | h=0.4 mm: t50 2.6 d, t90 11.2 d, t99 23.6 d | h=0.6 mm: t50 5.9 d, t90 25.2 d, t99 53.0 d | h=0.8 mm: t50 10.4 d, t90 44.9 d, t99 13 wk (0.26 yr) | h=1.6 mm: t50 41.6 d, t90 26 wk (0.49 yr), t99 54 wk (1.03 yr)",
+   "source": "own calculation: D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/diffusion_kinetics.py (equilibration_table.csv has both exposures)"
+  },
+  {
+   "name": "GRID one-face exposed layer, D = 3.0e-13 m2/s",
+   "fields": "h=0.2 mm: t50 7.3 h, t90 31.4 h, t99 2.7 d | h=0.4 mm: t50 29.1 h, t90 5.2 d, t99 11.0 d | h=0.6 mm: t50 2.7 d, t90 11.8 d, t99 24.7 d | h=0.8 mm: t50 4.9 d, t90 20.9 d, t99 44.0 d | h=1.6 mm: t50 19.4 d, t90 12 wk (0.23 yr), t99 25 wk (0.48 yr)",
+   "source": "own calculation: D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/diffusion_kinetics.py (equilibration_table.csv has both exposures)"
+  },
+  {
+   "name": "GRID one-face exposed layer, D = 1.0e-12 m2/s",
+   "fields": "h=0.2 mm: t50 2.2 h, t90 9.4 h, t99 19.8 h | h=0.4 mm: t50 8.7 h, t90 37.7 h, t99 3.3 d | h=0.6 mm: t50 19.7 h, t90 3.5 d, t99 7.4 d | h=0.8 mm: t50 35.0 h, t90 6.3 d, t99 13.2 d | h=1.6 mm: t50 5.8 d, t90 25.1 d, t99 52.8 d",
+   "source": "own calculation: D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/diffusion_kinetics.py (equilibration_table.csv has both exposures)"
+  },
+  {
+   "name": "GRID one-face exposed layer, D = 3.0e-12 m2/s",
+   "fields": "h=0.2 mm: t50 44 min, t90 3.1 h, t99 6.6 h | h=0.4 mm: t50 2.9 h, t90 12.6 h, t99 26.4 h | h=0.6 mm: t50 6.6 h, t90 28.3 h, t99 2.5 d | h=0.8 mm: t50 11.7 h, t90 2.1 d, t99 4.4 d | h=1.6 mm: t50 46.6 h, t90 8.4 d, t99 17.6 d",
+   "source": "own calculation: D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/diffusion_kinetics.py (equilibration_table.csv has both exposures)"
+  },
+  {
+   "name": "GRID one-face exposed layer, D = 1.0e-11 m2/s",
+   "fields": "h=0.2 mm: t50 13 min, t90 57 min, t99 119 min | h=0.4 mm: t50 52 min, t90 3.8 h, t99 7.9 h | h=0.6 mm: t50 118 min, t90 8.5 h, t99 17.8 h | h=0.8 mm: t50 3.5 h, t90 15.1 h, t99 31.7 h | h=1.6 mm: t50 14.0 h, t90 2.5 d, t99 5.3 d",
+   "source": "own calculation: D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/diffusion_kinetics.py (equilibration_table.csv has both exposures)"
+  },
+  {
+   "name": "GRID one-face exposed layer, D = 3.0e-11 m2/s",
+   "fields": "h=0.2 mm: t50 4 min, t90 19 min, t99 40 min | h=0.4 mm: t50 17 min, t90 75 min, t99 2.6 h | h=0.6 mm: t50 39 min, t90 2.8 h, t99 5.9 h | h=0.8 mm: t50 70 min, t90 5.0 h, t99 10.6 h | h=1.6 mm: t50 4.7 h, t90 20.1 h, t99 42.2 h",
+   "source": "own calculation: D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/diffusion_kinetics.py (equilibration_table.csv has both exposures)"
+  },
+  {
+   "name": "GRID one-face exposed layer, D = 1.0e-10 m2/s",
+   "fields": "h=0.2 mm: t50 79 s, t90 6 min, t99 12 min | h=0.4 mm: t50 5 min, t90 23 min, t99 48 min | h=0.6 mm: t50 12 min, t90 51 min, t99 107 min | h=0.8 mm: t50 21 min, t90 90 min, t99 3.2 h | h=1.6 mm: t50 84 min, t90 6.0 h, t99 12.7 h",
+   "source": "own calculation: D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/diffusion_kinetics.py (equilibration_table.csv has both exposures)"
+  },
+  {
+   "name": "GRID one-face exposed layer, D = 1.0e-09 m2/s",
+   "fields": "h=0.2 mm: t50 8 s, t90 34 s, t99 71 s | h=0.4 mm: t50 31 s, t90 2 min, t99 5 min | h=0.6 mm: t50 71 s, t90 5 min, t99 11 min | h=0.8 mm: t50 2 min, t90 9 min, t99 19 min | h=1.6 mm: t50 8 min, t90 36 min, t99 76 min",
+   "source": "own calculation: D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/diffusion_kinetics.py (equilibration_table.csv has both exposures)"
+  }
+ ],
+ "recommendations": [
+  "Demonstration thickness: print the swelling layer at 0.2-0.4 mm and choose a high-D material (Flexible 80A V2 or a PEG-acrylate/hydrogel resin in Open Material Mode); expect 1-4 h for 0.2-0.4 mm Flexible 80A V2 at D about 1e-11 and minutes to an hour for PEG-acrylates. A stock rigid-resin or nylon active layer is a week-scale experiment.",
+  "Make the first measurement the one that is missing: immerse thickness-matched coupons (0.2, 0.4, 0.8, 1.6 mm, both faces open) and weigh at 1, 4, 24, 72 h and 7 d; fit D from the sqrt(t) slope and the plateau. This replaces my assumed-thickness inversions and also gives n, which decides Fickian versus relaxation-limited.",
+  "Report the exposure geometry and use h_eff = 2 h for a one-face bilayer; treat the time to read curvature as 1.65 h_a^2/D (99 %), not h^2/D.",
+  "If time is the constraint, warm the bath: PA11 data imply about 4x per 17 C (extrapolated about 10x at 50 C), but check the strain and modulus at that temperature separately.",
+  "Plan for drying being 2-4x slower than wetting if D rises with water content; time the dry half-cycle separately.",
+  "Do not read the Formlabs 24 h cube percentages as saturation values; use the 1 week figure or your own plateau."
+ ],
+ "reproduce": [
+  {
+   "what": "Check Python and libraries",
+   "command_or_url": "python --version ; python -c \"import numpy, scipy; print(numpy.__version__, scipy.__version__)\"",
+   "expected": "Python 3.14.2, numpy 2.5.3, scipy 1.18.1 were used (any Python >= 3.10 with numpy/scipy should work)"
+  },
+  {
+   "what": "Run the calculation (about 40 s, writes results.json, equilibration_table.csv; prints all tables)",
+   "command_or_url": "cd D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics && python -P diffusion_kinetics.py",
+   "expected": "half-time 0.04918 (finite-volume check 0.04918); one-face t90 = 0.848 h^2/D; Grey V5 D = 3.30e-12 (3.2 mm), M_inf 3.66 %; Flexible 80A V2 D 9.32e-12 (2 mm); desorption/sorption half-time 2.46 at D ratio 21.4; bilayer curvature t99 1.652 h^2/D; f = 1.5 at m^2 n = 1"
+  },
+  {
+   "what": "Rebuild the report JSON from results.json",
+   "command_or_url": "python -P build_result.py",
+   "expected": "writes D:/Users/ashenoy00000/delphi-work/agents2/bm-diffusion-kinetics.json"
+  },
+  {
+   "what": "Re-read the Formlabs Flexible 80A V2 data (PDF page 6; read by word position, e.g. PyMuPDF get_text('words'))",
+   "command_or_url": "https://media.formlabs.com/asset/af9d9268-d8c4-4019-9ccd-bd3af926c67e/-ENUS-Flexible-80A-V2-TDS.pdf",
+   "expected": "Deionized Water 1 day -26 / +8 % / +3 %; 1 week -27 / +9 % / +7 %"
+  },
+  {
+   "what": "Re-read the Grey V5 immersion tables (pages 9 and 10)",
+   "command_or_url": "https://formlabs-media.formlabs.com/filer_public/dd/7f/dd7f3de9-55ae-4c82-ac52-408a4b5df64d/clear_resin_v5_tds___formlabs.pdf",
+   "expected": "DI Water row, MASS column: 101.38 % at 1 day, 103.23 % at 1 week"
+  },
+  {
+   "what": "Re-read the Formlabs solvent table (water = 18th data column, isopropyl alcohol = 10th)",
+   "command_or_url": "https://formlabs.com/support/solvent-compatibility/",
+   "expected": "Elastic 50A Resin V2: IPA 39.2, water 0.7; Rigid 10K: IPA <0.1, water <0.1"
+  },
+  {
+   "what": "Re-fetch open-access source texts",
+   "command_or_url": "curl -s -A delphi-research/0.1 https://www.ebi.ac.uk/europepmc/webservices/rest/PMC10304609/fullTextXML (also PMC13258891, PMC6404017, PMC9457170, PMC11643832, PMC8124584, PMC11359223, PMC7023388, PMC9320715) ; https://arxiv.org/pdf/2406.15224 ; https://arxiv.org/pdf/2401.05139 ; https://pmc.ncbi.nlm.nih.gov/articles/PMC2838359/",
+   "expected": "Table values as quoted in findings; copies and sha256 listed in D:/Users/ashenoy00000/delphi-work/data/bm-diffusion-kinetics/MANIFEST.tsv"
+  },
+  {
+   "what": "Verify citations",
+   "command_or_url": "https://api.crossref.org/works/<doi> for each DOI in citations; https://export.arxiv.org/api/query?id_list=2406.15224 and 2401.05139",
+   "expected": "titles as listed; all resolved on 2026-11-12"
+  }
+ ],
+ "citations": [
+  {
+   "authors": "Aniskevich A., Bulderberga O., Stankevics L.",
+   "year": 2023,
+   "title": "Moisture Sorption and Degradation of Polymer Filaments Used in 3D Printing",
+   "doi_or_arxiv": "10.3390/polym15122600",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title, year and authors on 2026-11-12",
+   "used_for": "D of 12 filaments; humidity dependence; swelling strain; Nylon shrinkage (full text read via Europe PMC PMC10304609)",
+   "venue": "Polymers 15, 2600"
+  },
+  {
+   "authors": "Oliver-Ortega H., Mendez J.A., Espinach F.X. et al.",
+   "year": 2018,
+   "title": "Impact Strength and Water Uptake Behaviors of Fully Bio-Based PA11-SGW Composites",
+   "doi_or_arxiv": "10.3390/polym10070717",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title, year and authors on 2026-11-12",
+   "used_for": "neat PA11 D at 23 and 40 C; n exponents (Europe PMC PMC6404017)",
+   "venue": "Polymers 10, 717"
+  },
+  {
+   "authors": "Simunic L., Kostadin T., Hoster (first three authors per Crossref) et al.",
+   "year": 2026,
+   "title": "Hygroscopic Behaviour and Diffusion Characteristics of Flexible TPU Materials Fabricated by FDM for Potential Biomedical Applications",
+   "doi_or_arxiv": "10.3390/polym18111392",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title, year and authors on 2026-11-12",
+   "used_for": "TPU D range (Europe PMC PMC13258891; author list as returned by Crossref: first author Simunic)",
+   "venue": "Polymers 18, 1392"
+  },
+  {
+   "authors": "Sideridou I.D., Karabela M.M.",
+   "year": 2011,
+   "title": "Sorption of water, ethanol or ethanol/water solutions by light-cured dental dimethacrylate resins",
+   "doi_or_arxiv": "10.1016/j.dental.2011.06.007",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title, year and authors on 2026-11-12",
+   "used_for": "D of water in dimethacrylate resins (abstract only; Europe PMC search API and PubMed 21783239)",
+   "venue": "Dental Materials"
+  },
+  {
+   "authors": "Sideridou I.D., Karabela M.M., Vouvoudi E.C.",
+   "year": 2008,
+   "title": "Volumetric dimensional changes of dental light-cured dimethacrylate resins after sorption of water or ethanol",
+   "doi_or_arxiv": "10.1016/j.dental.2007.12.009",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title, year and authors on 2026-11-12",
+   "used_for": "linear relation of volume change to sorbed amount (abstract only)",
+   "venue": "Dental Materials"
+  },
+  {
+   "authors": "Cui, Yu, Ye et al. (first three authors per Crossref)",
+   "year": 2022,
+   "title": "Mechanism of temperature-induced asymmetric swelling and shrinking kinetics in self-healing hydrogels",
+   "doi_or_arxiv": "10.1073/pnas.2207422119",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title, year and authors on 2026-11-12",
+   "used_for": "tau ~ h^2, D_sw of hydrogels, D = (K+4mu/3)/f (Europe PMC PMC9457170)",
+   "venue": "PNAS"
+  },
+  {
+   "authors": "VanZanten A., Chen S.-Y., Driscoll M.M., Szczepanski C.R.",
+   "year": 2024,
+   "title": "Unconstrained dynamic gel swelling generates transient surface deformations",
+   "doi_or_arxiv": "arXiv:2406.15224",
+   "verified": true,
+   "how_verified": "arXiv export API https://export.arxiv.org/api/query?id_list=2406.15224 returned this title, published 2024-06-21",
+   "used_for": "PEGDA-700/PEGMEMA swelling time constants, 2 mm slabs (PDF read; values checked on page image)",
+   "venue": "arXiv cond-mat.soft preprint, not peer reviewed"
+  },
+  {
+   "authors": "authors not recorded in this run",
+   "year": 2024,
+   "title": "Directional drying of a colloidal dispersion: quantitative description with water potential measurements using water clusters in a poly(dimethylsiloxane) microfluidic chip",
+   "doi_or_arxiv": "arXiv:2401.05139",
+   "verified": true,
+   "how_verified": "arXiv export API https://export.arxiv.org/api/query?id_list=2401.05139 returned this title, published 2024-01-10",
+   "used_for": "second-hand D of water in PDMS, 6-8e-10 m2/s",
+   "venue": "arXiv preprint"
+  },
+  {
+   "authors": "Pino A., Ibanez-Felip I., Vidal R.",
+   "year": 2024,
+   "title": "Water Absorption of Underwater Products by Additive Manufacturing",
+   "doi_or_arxiv": "10.3390/ma17235953",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title, year and authors on 2026-11-12",
+   "used_for": "saturation times of 1 mm LCD-resin plates (Europe PMC PMC11643832)",
+   "venue": "Materials 17, 5953"
+  },
+  {
+   "authors": "Reyssat E., Mahadevan L.",
+   "year": 2009,
+   "title": "Hygromorphs: from pine cones to biomimetic bilayers",
+   "doi_or_arxiv": "10.1098/rsif.2009.0184",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title, year and authors on 2026-11-12",
+   "used_for": "tau ~ h^2/D, D ~ 1e-9, measured exponents 1.3 and 1.5 (PMC2838359 page read)",
+   "venue": "J. R. Soc. Interface 6"
+  },
+  {
+   "authors": "Sambale A.K., Stanko M., Emde J., Stommel M.",
+   "year": 2021,
+   "title": "Characterisation and FE Modelling of the Sorption and Swelling Behaviour of Polyamide 6 in Water",
+   "doi_or_arxiv": "10.3390/polym13091480",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title, year and authors on 2026-11-12",
+   "used_for": "concentration-dependent D of PA6; Case I = square-root-of-time (Europe PMC PMC8124584)",
+   "venue": "Polymers 13, 1480"
+  },
+  {
+   "authors": "Hassanpour B., Karbhari V.M.",
+   "year": 2024,
+   "title": "Characteristics and Models of Moisture Uptake in Fiber-Reinforced Composites: A Topical Review",
+   "doi_or_arxiv": "10.3390/polym16162265",
+   "verified": true,
+   "how_verified": "Crossref API returned title, year, first authors on 2026-11-12 (Hassanpour, Karbhari); full text read via Europe PMC",
+   "used_for": "definitions of Fickian, Case II, anomalous diffusion (Europe PMC PMC11359223)",
+   "venue": "Polymers 16, 2265"
+  },
+  {
+   "authors": "Yang Y., Xing Y., Li Y. et al.",
+   "year": 2020,
+   "title": "A Comprehensive Review on Water Diffusion in Polymers Focusing on the Polymer-Metal Interface Combination",
+   "doi_or_arxiv": "10.3390/polym12010138",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title, year and authors on 2026-11-12",
+   "used_for": "n = 0.5 / 1 exponents for Case I / Case II (Europe PMC PMC7023388)",
+   "venue": "Polymers 12, 138"
+  },
+  {
+   "authors": "Yuan, Satija, Murray et al.",
+   "year": 2025,
+   "title": "A Neutron Reflection Study of the Dissolution of Miscible Glassy Polymer Films over a Range of Temperature",
+   "doi_or_arxiv": "10.1021/acs.macromol.5c02222",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title, year and authors on 2026-11-12",
+   "used_for": "Case II as a propagating front in glassy polymers (Europe PMC PMC12574211)",
+   "venue": "Macromolecules"
+  },
+  {
+   "authors": "Zheng X., Meng J., Liu Y.",
+   "year": 2022,
+   "title": "Strain Rate Dependence of Compressive Mechanical Properties of Polyamide and Its Composite Fabricated Using Selective Laser Sintering under Saturated-Water Conditions",
+   "doi_or_arxiv": "10.3390/mi13071041",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title, year and authors on 2026-11-12",
+   "used_for": "sintered PA12 saturates in about 36 h and 5.47 % (Europe PMC PMC9320715)",
+   "venue": "Micromachines 13, 1041"
+  },
+  {
+   "authors": "Bahrami M., Abenojar J. et al.",
+   "year": 2021,
+   "title": "Comparative Characterization of Hot-Pressed Polyamide 11 and 12: Mechanical, Thermal and Durability Properties",
+   "doi_or_arxiv": "10.3390/polym13203553",
+   "verified": false,
+   "how_verified": "DOI read from the Europe PMC full-text XML of PMC8537549 on 2026-11-12; Crossref lookup not run for this one",
+   "used_for": "dense PA11/PA12 saturate after about two months (Europe PMC PMC8537549; DOI is the one printed in the full text, resolved there, not separately in Crossref)",
+   "venue": "Polymers 13, 3553"
+  },
+  {
+   "authors": "Altaf K., Ashcroft I.A., Saleh Y.",
+   "year": 2012,
+   "title": "Environmental aging of epoxy based stereolithography parts Part 1 - Moisture transport",
+   "doi_or_arxiv": "10.1179/1743289811y.0000000024",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title, year and authors on 2026-11-12",
+   "used_for": "anomalous uptake in epoxy SLA (abstract seen only as a web-search extract; paper not read)",
+   "venue": "Plastics, Rubber and Composites"
+  },
+  {
+   "authors": "Alfrey T., Gurnee E.F., Lloyd W.G.",
+   "year": 1966,
+   "title": "Diffusion in glassy polymers",
+   "doi_or_arxiv": "10.1002/polc.5070120119",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title, year and authors on 2026-11-12",
+   "used_for": "classical definition of Case II (DOI resolves; paper NOT read)",
+   "venue": "J. Polym. Sci. C 12"
+  },
+  {
+   "authors": "Thomas N.L., Windle A.H.",
+   "year": 1982,
+   "title": "A theory of case II diffusion",
+   "doi_or_arxiv": "10.1016/0032-3861(82)90093-3",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title, year and authors on 2026-11-12",
+   "used_for": "classical Case II theory (DOI resolves; paper NOT read)",
+   "venue": "Polymer 23"
+  },
+  {
+   "authors": "Ritger P.L., Peppas N.A.",
+   "year": 1987,
+   "title": "A simple equation for description of solute release II. Fickian and anomalous release from swellable devices",
+   "doi_or_arxiv": "10.1016/0168-3659(87)90035-6",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title, year and authors on 2026-11-12",
+   "used_for": "origin of the K t^n exponent classification (DOI resolves; paper NOT read)",
+   "venue": "J. Controlled Release 5"
+  },
+  {
+   "authors": "Tanaka T., Fillmore D.J.",
+   "year": 1979,
+   "title": "Kinetics of swelling of gels",
+   "doi_or_arxiv": "10.1063/1.437602",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title, year and authors on 2026-11-12",
+   "used_for": "origin of the cooperative-diffusion swelling theory (DOI resolves; paper NOT read)",
+   "venue": "J. Chem. Phys. 70"
+  }
+ ],
+ "could_not_find": [
+  "A directly measured water diffusion coefficient for any Formlabs resin or powder. The values here are my own inversions of Formlabs' 1 day and 1 week mass gains and depend on an assumed specimen thickness (3.2 mm bars for Grey V5, 2 mm slabs for Flexible 80A V2); neither thickness is stated in the TDS. If the true thickness differs, D scales with its square.",
+  "Water D for Formlabs Nylon 11/12, TPU 90A (SLS). PA11 (hot-pressed), TPU (FDM) and sintered PA12 data are used as analogues; laser-sintered parts differ in porosity and crystallinity. The 2024 Villani paper on sintered PA12 (10.1007/s40964-024-00826-3) was behind an access redirect, so the earlier agent's snippet D = 4.34e-11 vs 4.17e-12 m2/s is still unconfirmed.",
+  "Any measured Case II front speed or anomalous-diffusion exponent n for water in a Formlabs resin or a printed SLA photopolymer. Ashcroft/Altaf 2012 (epoxy SLA) reports anomalous uptake but I could not read the paper (repository 403/anti-bot page) and have no D values from it.",
+  "Primary reading of the classical Case II and swelling-kinetics papers (Alfrey 1966, Thomas-Windle 1982, Ritger-Peppas 1987, Tanaka-Fillmore 1979, Crank's book): DOIs resolve in Crossref but the texts are paywalled; the n = 0.5 and 1 definitions are taken from open-access reviews, and the Crank slab constants are reproduced by my own numerics.",
+  "The diffusion coefficient in the PDMS paper is quoted second-hand (arXiv:2401.05139 citing its ref. 33) and the Randall & Doyle 2005 figure (~1e-9 m2/s) came from a search-tool snippet that I did not open; both are medium confidence.",
+  "Sideridou 2011 specimen thickness and test temperature (abstract only), so the dimethacrylate D range cannot be tied to a thickness; I also could not confirm from the abstract which medium each listed D belongs to beyond the statement that D was highest in water.",
+  "Thickness of the PA11/PA12 durability specimens in Bahrami 2021 (1 mm sheet or 4 mm bulk), so no D from the 'two months' saturation; the Zheng 2022 sintered-PA12 uptake curve was a figure whose values I could not read, so its apparent D is a bracket from an assumed 90-99 % at 36-72 h.",
+  "Swollen thickness and exact equilibrium swelling of the PEGDA/PEGMEMA gels; D from tau used the dry 2 mm thickness (lower bound) and 3 mm (upper), not a measurement.",
+  "Whether the Formlabs Flexible 80A (cube table) and Flexible 80A V2 (TDS) are different resin versions; kinetics alone cannot explain the factor of about 5-10 between 0.7 % and 8 %, so this remains open (the earlier agents left it open too).",
+  "Humid-air (not immersion) diffusivities of any stock Formlabs resin; all Formlabs data are full-immersion, and Aniskevich shows D itself shifts 2-4x with humidity level for half of the filaments.",
+  "Crossref check of the Bahrami 2021 DOI (10.3390/polym13203553) was not run in this session; it is marked verified=false although it was printed in the Europe PMC XML that I read."
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/diffusion_kinetics.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/build_result.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/results.json (output)",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/equilibration_table.csv (output)",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-diffusion-kinetics/run_output.txt (captured stdout)"
+ ],
+ "earlier_work_checked": {
+  "confirmed": [
+   "Flexible 80A V2 +8 %/+9 % mass and +3 %/+7 % volume in DI water (spec-formlabs-materials.json), now by word coordinates",
+   "Grey V5 bars +1.38 % (1 d), +3.23 % (1 wk) with modulus 88.63 % and 65.29 % (spec-resin-chemistry.json): the 'scrambled table' mapping is correct",
+   "Elastic 50A V2 39.2 % in isopropanol vs <0.1 % for Rigid 10K (24 h, 1 cm cubes)",
+   "Aniskevich filament D 0.001-0.0151 mm2/h and swelling 0.15-0.25 % (spec-bilayer-physics.json)",
+   "Low-cost acrylate resins take 2.5 to >8 days to saturate (1 mm plates; spec-resin-chemistry.json)"
+  ],
+  "deepened": [
+   "No D for any Formlabs resin was found: still no direct measurement, but two derived estimates now exist (Grey V5 about 3e-12, Flexible 80A V2 >= 6e-12 m2/s, thickness assumed)",
+   "'Under 1 % in 24 h': the number is right but is a kinetic snapshot; equilibrium for Grey V5 is about 3.7 % (4x higher)",
+   "spec-bilayer-physics.json used tau = h^2/D: for a one-face layer this is within 18 % of t90 (0.848 h^2/D) but overstates both-face t90 by 4.7x; exact constants are now given"
+  ],
+  "contradicted_or_qualified": [
+   "design-biomaterial.json 'D about 1e-11 m2/s, 90 % in 4 h for a 0.8 mm layer' is a both-faces-open number (t90 = 0.212 l^2/D = 3.8 h); for a one-face bilayer layer it is 15.1 h. The D itself is consistent with my Flexible 80A V2 estimate (9e-12, >= 6e-12), but it rests on an unverified 2 mm slab.",
+   "The earlier note that Flexible 80A uptake differs ten-fold between cube table (0.7 %) and TDS (8 %) cannot be explained by diffusion kinetics (predicted cube value >= 3.8 %), which favours a resin-version difference."
+  ]
+ }
+}

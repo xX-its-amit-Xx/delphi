@@ -1,0 +1,960 @@
+{
+ "label": "t1-reporter-deep",
+ "topic": "Track 1 deep literature: threshold-steepness separability in translation-initiation-variant repressor gates (Cello gate libraries)",
+ "summary": "STATE OF THE ART, built from the ground up. Each step is tagged [measured], [derived] or [assumed].\n\n1. A gene is read in two steps. DNA is copied into messenger RNA (transcription) and the ribosome reads the RNA to make protein (translation). A ribosome binding site (RBS), the stretch of RNA just before the protein-coding part, controls how often ribosomes start. [measured] Shine and Dalgarno 1974 showed the ribosomal RNA end can pair with a conserved sequence in ribosome binding sites. Salis 2009: a model of RBS sequence predicted protein output within a factor of 2.3 over a 100,000-fold range for more than 100 designs; Espah Borujeni 2014: initiation rate follows binding free energy log-linearly and 5' structure moves it over 100-fold.\n\n2. A repressor gate. A repressor protein sits on a promoter and blocks transcription of a reporter. More input promoter activity makes more repressor, so reporter output falls. [measured] The shipped curves (Cello UCF files) have the form y = ymin + (ymax - ymin)/(1 + (x/K)^n), x and y in relative promoter units (RPU, a ratio to promoter BBa_J23101). K is the input giving half-maximum output (the threshold); n is the steepness; ymax and ymin are the ON and OFF levels.\n\n3. What n means. [derived/contested] The Hill form is a curve fit. Weiss 1997: the exponent is an interaction coefficient and equals the binding-site count only under strong cooperativity. TetR-family gates mostly show n about 2 (a dimer on one operator); some show n up to 6.1 [measured, Stanton 2014]. Steeper responses can also come from other mechanisms such as zero-order ultrasensitivity (Goldbeter-Koshland 1981) or repressor titration (Brewster 2014), which couple position and steepness.\n\n4. Why an RBS change should move K but not n. [assumed] Repressor level R is proportional to (input promoter activity x) times (a translation multiplier c set by the RBS); promoter occupancy is a Hill function of R; dilution and degradation are linear; nothing else changes. [derived] Then y_c(x) = y_1(c x), K -> K/c, and n, ymax, ymin are untouched (checked numerically in translation_law.py). This is the claim 'threshold and steepness are separable design axes'. The reviews (Brophy and Voigt 2014) say RBS changes the threshold and that cooperativity or DNA looping is a different knob; they do not state exact n invariance, and I found no paper that tests it directly.\n\n5. What the Cello data show. [measured, by me from the shipped files] Cassette = ribozyme insulator, RBS, repressor, terminator. Among pairs of gates with the same repressor that differ at exactly one position, being an RBS and moving K at least 2-fold: Eco1C1G1T1 has 6, max relative n difference dn = 0.1587; Eco1C2G2T2 has 9, max 0.2836 (shipped parameters); the phage-repressor set has 5, max 0.2124; yeast has 1, dn 0.2604. The earlier SrpR 'RBS-only family of 4' in Eco1C1G1T1 is not RBS-only: S1 differs from S2 to S4 also in terminator. Re-fitting the raw cytometry histograms reproduces shipped n in Eco1C1G1T1 (r = 0.977) but in Eco1C2G2T2 the answer depends on the fitting loss: a robust fit gives max dn 0.4254 and three of nine pairs above 0.25. Also ymin changes 1.5 to 2.2 fold (median) and ymax 1.1 to 1.2 fold (median) inside these pairs, so an RBS swap is not a pure sideways shift of the whole curve.\n\n6. Why the data are less decisive than they look. [measured] The RBS in each library was picked by screening for dynamic range (Stanton 2014), so the variants are survivors. Shipped parameters are rounded to 2 significant figures. The Eco1C2G2T2 library was already summarised by the earlier scout, so it is not an untouched test set. Kosuri 2013: translation affects mRNA stability, and protein is within 2-fold of a multiplicative model only 64% of the time (worst 5% off by 13-fold), so promoter and RBS effects are not exactly independent.\n\n7. Order of the key experiments: Shine-Dalgarno 1974; Goldbeter-Koshland 1981; Lutz-Bujard 1997; toggle switch and repressilator 2000; directed evolution of a circuit 2002; single-cell regulation function and noise 2005; combinatorial promoters 2007; RBS Calculator and RPU 2009; bicistronic elements, composability library and TetR-homolog gates 2013; circuit-design review 2014; Cello 2016; yeast and Bacteroides Cello 2020; Cello 2.0 protocol 2022. Best reviews: Brophy and Voigt 2014 (10.1038/nmeth.2926), Ferrell and Ha 2014 (10.1016/j.tibs.2014.08.003), Weiss 1997 (10.1096/fasebj.11.11.9285481).\n\n8. Open problems. (a) No published direct test of n invariance under RBS-only change with matched cassettes and raw single-cell data. (b) Which fit gives the truth for Eco1C2G2T2. (c) Whether ymin/ymax drift is basal-leak physics or a measurement floor. (d) Eukaryotes: only one genuine one-position yeast pair. (e) The law library (set 1.8.1, 59 laws) still has no Hill or reporter law; gene-regulatory-dynamics is an empty placeholder.",
+ "lay_summary": "A gene can be thought of as a dimmer switch: the more signal comes in, the lower the output light of a gate falls, along an S-shaped curve. Two numbers describe the S: where it bends (the threshold) and how sharply it bends (the steepness). Engineers can weaken or strengthen the 'start here' site that tells the cell's protein-making machines how often to read a repressor gene. Simple arithmetic says that should slide the S left or right without changing its sharpness, like sliding a ruler along a table. In the public data from the Cello gate libraries, that is roughly true for many gates but not exactly: the sharpness drifts by up to about a quarter in some pairs and the top and bottom of the curve also move. Whether the sharpness stays put is still an open question, because one of the datasets gives different answers depending on how the curve is fitted.",
+ "glossary": [
+  {
+   "term": "gene",
+   "plain": "a stretch of DNA that holds instructions for making one protein"
+  },
+  {
+   "term": "repressor",
+   "plain": "a protein that switches a gene off by sitting on its DNA"
+  },
+  {
+   "term": "gate",
+   "plain": "a small genetic part that turns an input signal into an output, like a switch in an electric circuit"
+  },
+  {
+   "term": "RBS (ribosome binding site)",
+   "plain": "the RNA stretch that tells the protein-making machine where and how strongly to start"
+  },
+  {
+   "term": "ribosome",
+   "plain": "the cell's machine that builds proteins from RNA instructions"
+  },
+  {
+   "term": "promoter",
+   "plain": "the DNA stretch where reading of a gene starts; its activity sets how much RNA is made"
+  },
+  {
+   "term": "threshold (K)",
+   "plain": "the input level at which the output is halfway between its high and low values"
+  },
+  {
+   "term": "steepness (Hill coefficient, n)",
+   "plain": "how sharply the output changes around the threshold"
+  },
+  {
+   "term": "Hill function",
+   "plain": "a standard S-shaped curve with a threshold and a steepness"
+  },
+  {
+   "term": "RPU (relative promoter unit)",
+   "plain": "promoter activity measured as a ratio to a standard reference promoter"
+  },
+  {
+   "term": "dn",
+   "plain": "the difference of two steepness values divided by their average, so 0.25 means a quarter apart"
+  },
+  {
+   "term": "Kfold",
+   "plain": "the larger threshold of a pair divided by the smaller"
+  },
+  {
+   "term": "cytometry",
+   "plain": "measuring light from thousands of single cells one by one"
+  },
+  {
+   "term": "UCF",
+   "plain": "the data file that lists the parts and measured curves of a gate library for the Cello software"
+  },
+  {
+   "term": "cassette",
+   "plain": "the short DNA unit holding one gate's repressor gene with its supporting parts"
+  },
+  {
+   "term": "terminator",
+   "plain": "the DNA signal that stops RNA copying"
+  },
+  {
+   "term": "ultrasensitivity",
+   "plain": "a response that switches from low to high over a narrow input range"
+  },
+  {
+   "term": "mRNA",
+   "plain": "the temporary RNA copy of a gene that the ribosome reads"
+  }
+ ],
+ "findings": [
+  {
+   "claim": "Cello NOT/NOR repressor gates are built so that the only handle for tuning each gate's repressor level is the RBS; the input promoter is fixed so inputs can be swapped.",
+   "source": "https://doi.org/10.1038/nchembio.1411 (PMC4165527 full text)",
+   "confidence": "high",
+   "evidence_quote": "we define the beginning of each gate to be the transcription start site and vary the repressor level by changing the strength of the RBS.",
+   "value": ""
+  },
+  {
+   "claim": "In Stanton et al. the RBS of each repressor was chosen by screening an RBS library and keeping the variant with the highest dynamic range (a selection step; RBS libraries built for 19 of 20 gates).",
+   "source": "https://doi.org/10.1038/nchembio.1411",
+   "confidence": "high",
+   "evidence_quote": "These libraries were screened and the RBS that produced the highest dynamic range was selected",
+   "value": ""
+  },
+  {
+   "claim": "Stanton et al. fit every gate response to a Hill function and define K as the input at which output is half-maximal.",
+   "source": "https://doi.org/10.1038/nchembio.1411",
+   "confidence": "high",
+   "evidence_quote": "K is the threshold level of input where the output is half-maximal.",
+   "value": ""
+  },
+  {
+   "claim": "Cooperativity of most TetR-family gates is about 2, consistent with dimers binding one operator; five repressors gave n > 3, the largest 6.1 (Orf2).",
+   "source": "https://doi.org/10.1038/nchembio.1411",
+   "confidence": "high",
+   "evidence_quote": "The cooperativity for the majority of gates is n ≈ 2, which is consistent with that measured for TetR, and a mechanism of dimers binding to a single operator",
+   "value": "n about 2 (most); max 6.1"
+  },
+  {
+   "claim": "16 of 73 mined TetR-family repressors were orthogonal and repressed their cognate promoter 5- to 207-fold.",
+   "source": "https://doi.org/10.1038/nchembio.1411",
+   "confidence": "high",
+   "evidence_quote": "16 were identified that both strongly repress their cognate promoter (5- to 207-fold) and exhibit minimal interactions with other promoters.",
+   "value": "16 of 73; 5-207 fold"
+  },
+  {
+   "claim": "Brophy and Voigt (review): a stronger or weaker RBS changes the threshold of a gate; multiple operators or operator position are other threshold knobs.",
+   "source": "https://doi.org/10.1038/nmeth.2926 (PMC4230274 full text)",
+   "confidence": "high",
+   "evidence_quote": "Selecting a stronger or weaker RBS, adding multiple operators, or changing operator positions within the repressible promoter can change the threshold",
+   "value": ""
+  },
+  {
+   "claim": "Brophy and Voigt define a gate response by three parameters: dynamic range, threshold, cooperativity.",
+   "source": "https://doi.org/10.1038/nmeth.2926",
+   "confidence": "high",
+   "evidence_quote": "the amount of input required to reach the half-maximum output (also referred to as the threshold), and 3. cooperativity of the switch",
+   "value": ""
+  },
+  {
+   "claim": "Brophy and Voigt: threshold mismatches between connected gates can be corrected by parts (for example mutated RBSs) that shift individual gate thresholds.",
+   "source": "https://doi.org/10.1038/nmeth.2926",
+   "confidence": "high",
+   "evidence_quote": "Connectivity mismatches can be corrected by selecting parts that shift the thresholds of individual gates.",
+   "value": ""
+  },
+  {
+   "claim": "Cello 1 (Nielsen 2016) designed 60 E. coli circuits; 45 worked in every output state and 92% of all output states matched prediction.",
+   "source": "https://doi.org/10.1126/science.aac7341 (abstract via Europe PMC)",
+   "confidence": "high",
+   "evidence_quote": "Of these, 45 circuits performed correctly in every output state (up to 10 regulators and 55 parts), and across all circuits 92% of the output states functioned as predicted.",
+   "value": "60 circuits; 45 perfect; 92% of states"
+  },
+  {
+   "claim": "Yeast Cello gates (Chen 2020): nine NOT/NOR gates with near-identical response functions and 400-fold dynamic range.",
+   "source": "https://doi.org/10.1038/s41564-020-0757-2",
+   "confidence": "high",
+   "evidence_quote": "we constructed nine NOT/NOR gates with nearly identical response functions and 400-fold dynamic range.",
+   "value": ""
+  },
+  {
+   "claim": "The Bacteroides thetaiotaomicron Cello library is based on dCas9 sgRNA NOT/NOR gates, not protein repressors with RBS tuning, so it cannot test an RBS law.",
+   "source": "https://doi.org/10.1038/s41587-020-0468-5",
+   "confidence": "medium",
+   "evidence_quote": "we characterize a set of genome-integrated NOT/NOR gates based on single guide RNAs (CRISPR-dCas9) to inform a Bt user constraint file (UCF) for Cello.",
+   "value": ""
+  },
+  {
+   "claim": "Relative Promoter Unit (RPU): activity relative to reference promoter BBa_J23101; cut variation across labs and instruments by about 50%. It is the unit of x and y in Cello Hill fits.",
+   "source": "https://doi.org/10.1186/1754-1611-3-4",
+   "confidence": "high",
+   "evidence_quote": "We defined a Relative Promoter Unit (RPU) in order to report promoter characterization data in compatible units",
+   "value": "about 50% variation reduction"
+  },
+  {
+   "claim": "Shine and Dalgarno (1974) showed the 3' end of E. coli 16S rRNA can pair with a conserved sequence in ribosome binding sites; this is the physical basis of an RBS.",
+   "source": "https://doi.org/10.1073/pnas.71.4.1342",
+   "confidence": "high",
+   "evidence_quote": "The sequence A-C-C-U-C-C could recognize a conserved sequence found in the ribosome binding sites of various coliphage mRNAs",
+   "value": ""
+  },
+  {
+   "claim": "The RBS Calculator predicts protein output from RBS sequence on a proportional scale; over 100 predictions were accurate within a factor of 2.3 across a 100,000-fold range.",
+   "source": "https://doi.org/10.1038/nbt.1568 (PMC2782888 full text)",
+   "confidence": "high",
+   "evidence_quote": "Experimental validation of over 100 predictions in Escherichia coli shows that the method is accurate to within a factor of 2.3 over a range of 100,000-fold.",
+   "value": "2.3-fold error; 1e5-fold range"
+  },
+  {
+   "claim": "The same RBS sequence in a different genetic context can give a different expression level (context dependence of an RBS change).",
+   "source": "https://doi.org/10.1038/nbt.1568",
+   "confidence": "high",
+   "evidence_quote": "The design method also correctly predicts that reusing a ribosome binding site sequence in different genetic contexts can result in different protein expression levels.",
+   "value": ""
+  },
+  {
+   "claim": "Translation initiation rate relates to ribosome-mRNA binding free energy by a log-linear formula, fluorescence tracked initiation rate in steady-state growth, and 5' structure/standby sites modulate initiation over 100-fold.",
+   "source": "https://doi.org/10.1093/nar/gkt1139 (PMC3936740 full text)",
+   "confidence": "high",
+   "evidence_quote": "fluorescence levels are proportional to translation initiation rates under our controlled growth conditions",
+   "value": "over 100-fold"
+  },
+  {
+   "claim": "Bicistronic-design translation elements gave arbitrary genes expression within twofold of target about 93% of the time (1000-fold range): RBS context dependence can be engineered down.",
+   "source": "https://doi.org/10.1038/nmeth.2404",
+   "confidence": "high",
+   "evidence_quote": "arbitrary genes are reliably expressed to within twofold relative target expression windows with ∼93% reliability.",
+   "value": "93% within 2-fold"
+  },
+  {
+   "claim": "In a 12,563-construct promoter x RBS library, protein was within twofold of a simple multiplicative model 64% of the time (RNA 80%) but the worst 5% deviated 13-fold on average. Promoter and RBS effects are close to, not exactly, separable.",
+   "source": "https://doi.org/10.1073/pnas.1301301110",
+   "confidence": "high",
+   "evidence_quote": "RNA and protein expression were within twofold of expected levels 80% and 64% of the time, respectively.",
+   "value": "64% / 80% within 2-fold; worst 5%: 13-fold"
+  },
+  {
+   "claim": "Kosuri: translation rate affects mRNA stability, so an RBS change can alter transcript level as well as translation.",
+   "source": "https://doi.org/10.1073/pnas.1301301110",
+   "confidence": "high",
+   "evidence_quote": "The large dataset allowed quantitation of global effects, such as translation rate on mRNA stability and mRNA secondary structure on translation rate.",
+   "value": ""
+  },
+  {
+   "claim": "The Hill coefficient is an 'interaction' coefficient, not a count of binding sites, except under marked positive cooperativity; the Hill equation is not a physical reaction scheme for multi-site binding.",
+   "source": "https://doi.org/10.1096/fasebj.11.11.9285481",
+   "confidence": "high",
+   "evidence_quote": "only under the very specific condition of marked positive cooperativity does the Hill coefficient accurately estimate the number of binding sites.",
+   "value": ""
+  },
+  {
+   "claim": "Hill form Output = Input^n/(K^n + Input^n); hemoglobin has an apparent Hill coefficient of 2.7 (textbook sigmoid).",
+   "source": "https://doi.org/10.1016/j.tibs.2014.08.003 (PMC4214216 full text)",
+   "confidence": "high",
+   "evidence_quote": "in reality the binding curve is sigmoidal with an apparent Hill coefficient of 2.7",
+   "value": "n=2.7"
+  },
+  {
+   "claim": "Goldbeter and Koshland 1981: covalent-modification cycles operated away from first-order kinetics give amplification equivalent to allosteric proteins with high Hill coefficients (a way to get steepness without cooperative binding).",
+   "source": "https://doi.org/10.1073/pnas.78.11.6840",
+   "confidence": "high",
+   "evidence_quote": "This amplification of the response to a stimulus can provide additional sensitivity in biological control, equivalent to that of allosteric proteins with high Hill coefficients.",
+   "value": ""
+  },
+  {
+   "claim": "Repressor titration by competing binding sites both shifts and sharpens the transition of a regulated gene against repressor copy number: a mechanism coupling threshold and steepness (counter to separability).",
+   "source": "https://doi.org/10.1016/j.cell.2014.02.022 (PMC4080642 full text)",
+   "confidence": "medium",
+   "evidence_quote": "The stronger binding sites shift and sharpen the transition of the gene of interest with respect to LacI copy number.",
+   "value": ""
+  },
+  {
+   "claim": "The gene regulation function fluctuates in single cells, limiting signal transfer accuracy: a population Hill curve hides single-cell variation.",
+   "source": "https://doi.org/10.1126/science.1106914",
+   "confidence": "high",
+   "evidence_quote": "fluctuates dynamically in individual living cells, thereby limiting the accuracy with which transcriptional genetic circuits can transfer signals.",
+   "value": ""
+  },
+  {
+   "claim": "Noise in a gene has intrinsic, upstream-transmitted and global parts, so output noise is not fixed by the mean transfer curve.",
+   "source": "https://doi.org/10.1126/science.1109090",
+   "confidence": "high",
+   "evidence_quote": "noise in a gene was determined by its intrinsic fluctuations, transmitted noise from upstream genes, and global noise affecting all genes.",
+   "value": ""
+  },
+  {
+   "claim": "Early synthetic circuits: the toggle switch showed a 'nearly ideal switching threshold'.",
+   "source": "https://doi.org/10.1038/35002131",
+   "confidence": "high",
+   "evidence_quote": "exhibits a nearly ideal switching threshold.",
+   "value": ""
+  },
+  {
+   "claim": "Repressilator (three repressors) oscillated with periods of hours, slower than the cell cycle.",
+   "source": "https://doi.org/10.1038/35002125",
+   "confidence": "high",
+   "evidence_quote": "The resulting oscillations, with typical periods of hours, are slower than the cell-division cycle",
+   "value": ""
+  },
+  {
+   "claim": "Directed evolution turned a non-functional circuit with mismatched components into a functional one and produced a library of devices with a range of behaviours.",
+   "source": "https://doi.org/10.1073/pnas.252535999",
+   "confidence": "high",
+   "evidence_quote": "a nonfunctional circuit containing improperly matched components can evolve rapidly into a functional one.",
+   "value": ""
+  },
+  {
+   "claim": "Combinatorial promoter libraries (288 promoters, up to 3 TF inputs) spanned five decades of promoter strength.",
+   "source": "https://doi.org/10.1038/msb4100187",
+   "confidence": "high",
+   "evidence_quote": "we observed varied promoter strength over five decades.",
+   "value": ""
+  },
+  {
+   "claim": "The PLtetO-1 promoter regulated expression over up to 5000-fold with aTc, an early well-controlled inducible input.",
+   "source": "https://doi.org/10.1093/nar/25.6.1203",
+   "confidence": "high",
+   "evidence_quote": "The novel promoter PLtetO-1 allows the regulation of gene expression over an up to 5000-fold range with anhydrotetracycline (aTc)",
+   "value": ""
+  },
+  {
+   "claim": "The Cello UCF response function is the four-parameter Hill form with linear input composition x = x1 + x2.",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C1G1T1.UCF.json (functions collection)",
+   "confidence": "high",
+   "evidence_quote": "ymin + (ymax - ymin) / (1.0 + (x / K)^n)",
+   "value": ""
+  },
+  {
+   "claim": "Each Eco1C1G1T1 gate cassette is [ribozyme insulator, RBS, repressor CDS, terminator]; for A1_AmtR: BydvJ, A1, AmtR, L3S2P55. Variant names (A1, B1..B3, P1..P3, Q1, Q2, S1..S4) are RBS parts, so RBS-only variants can be tested from the part list.",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C1G1T1.UCF.json (structures and parts collections)",
+   "confidence": "high",
+   "evidence_quote": "\"name\": \"A1_AmtR_cassette\", \"components\": [ \"BydvJ\", \"A1\", \"AmtR\", \"L3S2P55\" ]",
+   "value": ""
+  },
+  {
+   "claim": "Eco1C1G1T1 is a library of TetR homologs.",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C1G1T1.UCF.json (header)",
+   "confidence": "high",
+   "evidence_quote": "TetR homologs: PhlF, SrpR, BM3R1, HlyIIR, BetI, AmtR, AmeR, QacR, IcaRA, LitR, PsrA, LmrA",
+   "value": ""
+  },
+  {
+   "claim": "Eco1C1G1T1: 20 gates, shipped n 1.4 to 4.2, K 0.01 to 0.41 RPU (41-fold span of thresholds across gates).",
+   "source": "computed: scripts/t1-reporter-deep/pairs.py on data/t1-deep/Eco1C1G1T1.UCF.json (sha256 c702d6b9...)",
+   "confidence": "high",
+   "evidence_quote": "",
+   "value": "n 1.4-4.2; K 0.01-0.41 RPU"
+  },
+  {
+   "claim": "Eco1C1G1T1 same-regulator pairs: 13 pairs; 10 differ in exactly one cassette position that is an RBS; 3 (all S1_SrpR vs S2/S3/S4) differ in RBS and terminator (ECK120019600 vs ECK120029600). Of the 10, 6 move K by at least 2-fold (in scope). Max relative n difference dn = |n1-n2|/mean(n) over all 13 = 0.1587 (BM3R1 B1/B2 and B2/B3, n 3.4 vs 2.9).",
+   "source": "computed: pairs.py -> scratch/t1-reporter-deep/pairs.json",
+   "confidence": "high",
+   "evidence_quote": "",
+   "value": "13 / 10 / 6; max dn 0.1587"
+  },
+  {
+   "claim": "Eco1C2G2T2: all 13 same-regulator pairs differ at one RBS position; 9 have Kfold >= 2; max dn among those 9 is 0.2836 (BM3R1 B1/B2, Kfold 10.34); over all 13 the max is 0.2911 (PhlF P2/P3, Kfold 1.76, out of scope). One in-scope pair exceeds 0.25.",
+   "source": "computed: pairs.py",
+   "confidence": "high",
+   "evidence_quote": "",
+   "value": "9 in scope; max dn 0.2836"
+  },
+  {
+   "claim": "Eco2C1G5T1 (phage repressors): 5 in-scope RBS pairs, max dn 0.2124 (933W R8/R9, Kfold 2.70); Kfold up to 14.8 (P2 R13/R15, dn 0.053).",
+   "source": "computed: pairs.py",
+   "confidence": "high",
+   "evidence_quote": "",
+   "value": "max dn 0.2124"
+  },
+  {
+   "claim": "SC1C1G1T1 (yeast): only 1 pair is a one-position translation-initiation change (LexA Kozak24 vs Kozak14, Kfold 2.33, dn 0.2604). The CI and CI434 pairs have identical cassettes yet dn 0.397 and 0.015, so they differ outside the cassette and do not test translation alone.",
+   "source": "computed: pairs.py",
+   "confidence": "high",
+   "evidence_quote": "",
+   "value": "n=1 pair; dn 0.2604"
+  },
+  {
+   "claim": "Eco2C1G3T1 has 6 gates and no same-regulator pair, so it cannot test an RBS law.",
+   "source": "computed: pairs.py",
+   "confidence": "high",
+   "evidence_quote": "",
+   "value": ""
+  },
+  {
+   "claim": "Refit of Hill parameters from the shipped 12 x 250-bin cytometry histograms (median of each histogram, log10 least squares, 4 free parameters) reproduces the shipped values for Eco1C1G1T1: Pearson r of n = 0.977, of log K = 0.903; max refit dn over 6 in-scope pairs = 0.1153.",
+   "source": "computed: refit.py -> refit_linear.json, refit_soft_l1.json",
+   "confidence": "high",
+   "evidence_quote": "",
+   "value": "r(n)=0.977; max dn 0.115"
+  },
+  {
+   "claim": "The same refit on Eco1C2G2T2 depends on the loss. Plain least squares gives r(n)=0.70 and max dn 1.13 because one input level (x=0.0697 in S2_SrpR) is listed out of order with an output that belongs with the highest inputs. A robust soft-L1 fit gives r(n)=0.919, r(logK)=0.987, but max refit dn 0.4254 (S1/S4 SrpR) with 3 of 9 pairs above 0.25, against 0.2836 maximum from shipped parameters. Steepness invariance in Eco1C2G2T2 is therefore fit-dependent; no ground truth was found to decide.",
+   "source": "computed: refit.py linear and soft_l1",
+   "confidence": "medium",
+   "evidence_quote": "",
+   "value": "shipped max dn 0.2836; robust refit max 0.4254"
+  },
+  {
+   "claim": "Inside in-scope RBS pairs, shipped ymax changes by a median 1.11x (max 1.74x) in Eco1C1G1T1 and 1.20x (max 2.32x) in Eco1C2G2T2; shipped ymin by a median 2.17x (max 3.00x) and 1.49x (max 3.21x). An RBS change is therefore not a pure shift of the whole curve: floor and ceiling move too.",
+   "source": "computed: translation_law.py part 2",
+   "confidence": "high",
+   "evidence_quote": "",
+   "value": "ymax med 1.11/1.20; ymin med 2.17/1.49"
+  },
+  {
+   "claim": "Shipped parameters are rounded (n to 2 significant figures, K sometimes 0.01), so small dn and large K folds at low K are quantisation-limited; refit K folds are often smaller than shipped ones (BM3R1 B1/B3 shipped 6.5, refit 3.06).",
+   "source": "computed: pairs.py versus refit.py",
+   "confidence": "high",
+   "evidence_quote": "",
+   "value": "B1/B3 Kfold 6.5 vs 3.06"
+  },
+  {
+   "claim": "If repressor level is R = c*x (c = RBS translation multiplier) and promoter output is a Hill function of R, then y_c(x) = y_1(c*x): K = K_R/c with n, ymax and ymin unchanged. Numerical check: fitted K = K0/c and n = 2.8 for c = 0.25, 2, 10.",
+   "source": "derived and numerically checked: translation_law.py part 1",
+   "confidence": "high",
+   "evidence_quote": "",
+   "value": "K -> K/c, n fixed"
+  },
+  {
+   "claim": "In law set 1.8.1 (59 laws) the only gene-regulation law is the placeholder gene-regulatory-dynamics v1.0.0 (status proposed, class gap, no Lean module or theorem).",
+   "source": "lean/registry/lawsets/lawset-1.8.1.json ; lean/registry/laws/gene-regulatory-dynamics.json",
+   "confidence": "high",
+   "evidence_quote": "\"label\": \"Gene regulatory dynamics (not formalised)\"",
+   "value": ""
+  },
+  {
+   "claim": "The repo states that the Hill equation is not formalised; Altitude.lean uses only monotonicity of a Hill curve. No Lean file in lean/Delphi is named for Hill, reporter or gene regulation.",
+   "source": "lean/laws.json line 842; lean/Delphi/Altitude.lean lines 36-37",
+   "confidence": "high",
+   "evidence_quote": "Arterial content nondecreasing in partial pressure (a Hill curve is, but the Hill equation, the Bohr shift and the Root effect are not formalised).",
+   "value": ""
+  }
+ ],
+ "key_claims": [
+  {
+   "claim": "In Cello-style repressor gates the repressor level is set by choosing the RBS (the input promoter is fixed), so an RBS swap is the designed way to move the threshold.",
+   "source": "https://doi.org/10.1038/nchembio.1411 (PMC4165527 full text, fetched via NCBI efetch 2026-11-12)",
+   "evidence_quote": "we define the beginning of each gate to be the transcription start site and vary the repressor level by changing the strength of the RBS."
+  },
+  {
+   "claim": "Under the assumptions that repressor level is proportional to input times an RBS multiplier and occupancy is a Hill function of repressor, an RBS change rescales K by 1/c and leaves n, ymax, ymin unchanged (derived, not measured).",
+   "source": "scripts/t1-reporter-deep/translation_law.py part 1 (own calculation: y_c(x) = y_1(c x))",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "In the shipped Eco1C1G1T1 library the largest relative n difference among same-repressor pairs is 0.1587, while Eco1C2G2T2 reaches 0.2836 in an in-scope pair, and a robust refit of its raw histograms gives up to 0.4254; invariance of n is approximate and fit-dependent.",
+   "source": "computed from https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C1G1T1.UCF.json and Eco1C2G2T2.UCF.json (sha256 in data/t1-deep/SHA256.txt) by pairs.py and refit.py",
+   "evidence_quote": "ymin + (ymax - ymin) / (1.0 + (x / K)^n)"
+  },
+  {
+   "claim": "An RBS swap is not a pure translation of the whole curve: in-scope pairs show median ymin changes of 2.17x (Eco1C1G1T1) and 1.49x (Eco1C2G2T2).",
+   "source": "computed by translation_law.py part 2 from the same UCF files",
+   "evidence_quote": ""
+  }
+ ],
+ "table": [
+  {
+   "name": "UCF library Eco1C1G1T1 (E. coli, TetR homologs, calibration)",
+   "fields": "gates=20; same_regulator_pairs=13; one_position_RBS_pairs=10; in_scope_pairs_Kfold>=2=6; max_dn_in_scope=0.1587 (relative n difference, unitless); n_range=1.40-4.20; K_range_RPU=0.010-0.410",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C1G1T1.UCF.json"
+  },
+  {
+   "name": "UCF library Eco1C2G2T2 (E. coli, second set)",
+   "fields": "gates=18; same_regulator_pairs=13; one_position_RBS_pairs=13; in_scope_pairs_Kfold>=2=9; max_dn_in_scope=0.2836 (relative n difference, unitless); n_range=1.31-4.48; K_range_RPU=0.017-0.574",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C2G2T2.UCF.json"
+  },
+  {
+   "name": "UCF library Eco2C1G3T1 (E. coli, no same-regulator pair)",
+   "fields": "gates=6; same_regulator_pairs=0; one_position_RBS_pairs=0; in_scope_pairs_Kfold>=2=0; max_dn_in_scope=None (relative n difference, unitless); n_range=1.70-4.32; K_range_RPU=0.127-1.251",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco2C1G3T1.UCF.json"
+  },
+  {
+   "name": "UCF library Eco2C1G5T1 (E. coli, phage repressors)",
+   "fields": "gates=12; same_regulator_pairs=5; one_position_RBS_pairs=5; in_scope_pairs_Kfold>=2=5; max_dn_in_scope=0.2124 (relative n difference, unitless); n_range=1.53-2.66; K_range_RPU=0.029-0.482",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco2C1G5T1.UCF.json"
+  },
+  {
+   "name": "UCF library SC1C1G1T1 (S. cerevisiae)",
+   "fields": "gates=12; same_regulator_pairs=3; one_position_RBS_pairs=1; in_scope_pairs_Kfold>=2=1; max_dn_in_scope=0.2604 (relative n difference, unitless); n_range=2.06-4.46; K_range_RPU=0.070-0.355",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/SC1C1G1T1.UCF.json"
+  },
+  {
+   "name": "Eco1C1G1T1 pair B1_BM3R1 vs B2_BM3R1",
+   "fields": "K_a=0.04 RPU; K_b=0.15 RPU; Kfold=3.75; n_a=3.4; n_b=2.9; dn=0.1587; S=log2(Kfold)/dn=12.01; differing_parts=[['B1', 'B2']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C1G1T1.UCF.json"
+  },
+  {
+   "name": "Eco1C1G1T1 pair B1_BM3R1 vs B3_BM3R1",
+   "fields": "K_a=0.04 RPU; K_b=0.26 RPU; Kfold=6.5; n_a=3.4; n_b=3.4; dn=0.0; S=log2(Kfold)/dn=None; differing_parts=[['B1', 'B3']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C1G1T1.UCF.json"
+  },
+  {
+   "name": "Eco1C1G1T1 pair B2_BM3R1 vs B3_BM3R1",
+   "fields": "K_a=0.15 RPU; K_b=0.26 RPU; Kfold=1.733; n_a=2.9; n_b=3.4; dn=0.1587; S=log2(Kfold)/dn=5.0; differing_parts=[['B2', 'B3']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C1G1T1.UCF.json"
+  },
+  {
+   "name": "Eco1C1G1T1 pair P1_PhlF vs P2_PhlF",
+   "fields": "K_a=0.03 RPU; K_b=0.13 RPU; Kfold=4.333; n_a=4.0; n_b=3.9; dn=0.0253; S=log2(Kfold)/dn=83.56; differing_parts=[['P1', 'P2']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C1G1T1.UCF.json"
+  },
+  {
+   "name": "Eco1C1G1T1 pair P1_PhlF vs P3_PhlF",
+   "fields": "K_a=0.03 RPU; K_b=0.23 RPU; Kfold=7.667; n_a=4.0; n_b=4.2; dn=0.0488; S=log2(Kfold)/dn=60.24; differing_parts=[['P1', 'P3']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C1G1T1.UCF.json"
+  },
+  {
+   "name": "Eco1C1G1T1 pair P2_PhlF vs P3_PhlF",
+   "fields": "K_a=0.13 RPU; K_b=0.23 RPU; Kfold=1.769; n_a=3.9; n_b=4.2; dn=0.0741; S=log2(Kfold)/dn=11.11; differing_parts=[['P2', 'P3']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C1G1T1.UCF.json"
+  },
+  {
+   "name": "Eco1C1G1T1 pair Q1_QacR vs Q2_QacR",
+   "fields": "K_a=0.05 RPU; K_b=0.21 RPU; Kfold=4.2; n_a=2.7; n_b=2.4; dn=0.1176; S=log2(Kfold)/dn=17.6; differing_parts=[['Q1', 'Q2']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C1G1T1.UCF.json"
+  },
+  {
+   "name": "Eco1C1G1T1 pair S2_SrpR vs S3_SrpR",
+   "fields": "K_a=0.04 RPU; K_b=0.06 RPU; Kfold=1.5; n_a=2.6; n_b=2.8; dn=0.0741; S=log2(Kfold)/dn=7.9; differing_parts=[['S2', 'S3']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C1G1T1.UCF.json"
+  },
+  {
+   "name": "Eco1C1G1T1 pair S2_SrpR vs S4_SrpR",
+   "fields": "K_a=0.04 RPU; K_b=0.1 RPU; Kfold=2.5; n_a=2.6; n_b=2.8; dn=0.0741; S=log2(Kfold)/dn=17.85; differing_parts=[['S2', 'S4']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C1G1T1.UCF.json"
+  },
+  {
+   "name": "Eco1C1G1T1 pair S3_SrpR vs S4_SrpR",
+   "fields": "K_a=0.06 RPU; K_b=0.1 RPU; Kfold=1.667; n_a=2.8; n_b=2.8; dn=0.0; S=log2(Kfold)/dn=None; differing_parts=[['S3', 'S4']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C1G1T1.UCF.json"
+  },
+  {
+   "name": "Eco1C2G2T2 pair B1_BM3R1 vs B2_BM3R1",
+   "fields": "K_a=0.055519757 RPU; K_b=0.574115383 RPU; Kfold=10.341; n_a=2.888263374; n_b=3.842787839; dn=0.2836; S=log2(Kfold)/dn=11.88; differing_parts=[['B1', 'B2']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C2G2T2.UCF.json"
+  },
+  {
+   "name": "Eco1C2G2T2 pair B1_BM3R1 vs B3_BM3R1",
+   "fields": "K_a=0.055519757 RPU; K_b=0.211950504 RPU; Kfold=3.818; n_a=2.888263374; n_b=3.085977286; dn=0.0662; S=log2(Kfold)/dn=29.2; differing_parts=[['B1', 'B3']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C2G2T2.UCF.json"
+  },
+  {
+   "name": "Eco1C2G2T2 pair B2_BM3R1 vs B3_BM3R1",
+   "fields": "K_a=0.574115383 RPU; K_b=0.211950504 RPU; Kfold=2.709; n_a=3.842787839; n_b=3.085977286; dn=0.2185; S=log2(Kfold)/dn=6.58; differing_parts=[['B2', 'B3']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C2G2T2.UCF.json"
+  },
+  {
+   "name": "Eco1C2G2T2 pair F1_AmeR vs F2_AmeR",
+   "fields": "K_a=0.121548379 RPU; K_b=0.0346134 RPU; Kfold=3.512; n_a=1.542139516; n_b=1.314222122; dn=0.1596; S=log2(Kfold)/dn=11.36; differing_parts=[['F1', 'F2']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C2G2T2.UCF.json"
+  },
+  {
+   "name": "Eco1C2G2T2 pair P1_PhlF vs P2_PhlF",
+   "fields": "K_a=0.042126721 RPU; K_b=0.20384996 RPU; Kfold=4.839; n_a=3.804263913; n_b=4.481560106; dn=0.1635; S=log2(Kfold)/dn=13.91; differing_parts=[['P1', 'P2']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C2G2T2.UCF.json"
+  },
+  {
+   "name": "Eco1C2G2T2 pair P1_PhlF vs P3_PhlF",
+   "fields": "K_a=0.042126721 RPU; K_b=0.116044457 RPU; Kfold=2.755; n_a=3.804263913; n_b=3.342819362; dn=0.1291; S=log2(Kfold)/dn=11.32; differing_parts=[['P1', 'P3']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C2G2T2.UCF.json"
+  },
+  {
+   "name": "Eco1C2G2T2 pair P2_PhlF vs P3_PhlF",
+   "fields": "K_a=0.20384996 RPU; K_b=0.116044457 RPU; Kfold=1.757; n_a=4.481560106; n_b=3.342819362; dn=0.2911; S=log2(Kfold)/dn=2.79; differing_parts=[['P2', 'P3']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C2G2T2.UCF.json"
+  },
+  {
+   "name": "Eco1C2G2T2 pair S1_SrpR vs S2_SrpR",
+   "fields": "K_a=0.016906016 RPU; K_b=0.062531512 RPU; Kfold=3.699; n_a=3.095316853; n_b=2.655303675; dn=0.153; S=log2(Kfold)/dn=12.33; differing_parts=[['S1', 'S2']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C2G2T2.UCF.json"
+  },
+  {
+   "name": "Eco1C2G2T2 pair S1_SrpR vs S3_SrpR",
+   "fields": "K_a=0.016906016 RPU; K_b=0.087385601 RPU; Kfold=5.169; n_a=3.095316853; n_b=2.657349101; dn=0.1523; S=log2(Kfold)/dn=15.56; differing_parts=[['S1', 'S3']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C2G2T2.UCF.json"
+  },
+  {
+   "name": "Eco1C2G2T2 pair S1_SrpR vs S4_SrpR",
+   "fields": "K_a=0.016906016 RPU; K_b=0.110327837 RPU; Kfold=6.526; n_a=3.095316853; n_b=2.654076554; dn=0.1535; S=log2(Kfold)/dn=17.63; differing_parts=[['S1', 'S4']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C2G2T2.UCF.json"
+  },
+  {
+   "name": "Eco1C2G2T2 pair S2_SrpR vs S3_SrpR",
+   "fields": "K_a=0.062531512 RPU; K_b=0.087385601 RPU; Kfold=1.397; n_a=2.655303675; n_b=2.657349101; dn=0.0008; S=log2(Kfold)/dn=627.01; differing_parts=[['S2', 'S3']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C2G2T2.UCF.json"
+  },
+  {
+   "name": "Eco1C2G2T2 pair S2_SrpR vs S4_SrpR",
+   "fields": "K_a=0.062531512 RPU; K_b=0.110327837 RPU; Kfold=1.764; n_a=2.655303675; n_b=2.654076554; dn=0.0005; S=log2(Kfold)/dn=1772.09; differing_parts=[['S2', 'S4']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C2G2T2.UCF.json"
+  },
+  {
+   "name": "Eco1C2G2T2 pair S3_SrpR vs S4_SrpR",
+   "fields": "K_a=0.087385601 RPU; K_b=0.110327837 RPU; Kfold=1.263; n_a=2.657349101; n_b=2.654076554; dn=0.0012; S=log2(Kfold)/dn=272.94; differing_parts=[['S3', 'S4']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco1C2G2T2.UCF.json"
+  },
+  {
+   "name": "Eco2C1G5T1 pair R13_P2 vs R14_P2",
+   "fields": "K_a=0.481807912 RPU; K_b=0.092760168 RPU; Kfold=5.194; n_a=2.659059916; n_b=2.18283262; dn=0.1967; S=log2(Kfold)/dn=12.08; differing_parts=[['R13', 'R14']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco2C1G5T1.UCF.json"
+  },
+  {
+   "name": "Eco2C1G5T1 pair R13_P2 vs R15_P2",
+   "fields": "K_a=0.481807912 RPU; K_b=0.032525222 RPU; Kfold=14.813; n_a=2.659059916; n_b=2.521017808; dn=0.0533; S=log2(Kfold)/dn=72.96; differing_parts=[['R13', 'R15']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco2C1G5T1.UCF.json"
+  },
+  {
+   "name": "Eco2C1G5T1 pair R14_P2 vs R15_P2",
+   "fields": "K_a=0.092760168 RPU; K_b=0.032525222 RPU; Kfold=2.852; n_a=2.18283262; n_b=2.521017808; dn=0.1438; S=log2(Kfold)/dn=10.51; differing_parts=[['R14', 'R15']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco2C1G5T1.UCF.json"
+  },
+  {
+   "name": "Eco2C1G5T1 pair R1_Lambda vs R2_Lambda",
+   "fields": "K_a=0.043390621 RPU; K_b=0.162932102 RPU; Kfold=3.755; n_a=2.25481011; n_b=2.090738632; dn=0.0755; S=log2(Kfold)/dn=25.28; differing_parts=[['R1', 'R2']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco2C1G5T1.UCF.json"
+  },
+  {
+   "name": "Eco2C1G5T1 pair R8_933W vs R9_933W",
+   "fields": "K_a=0.02909727 RPU; K_b=0.078436787 RPU; Kfold=2.696; n_a=2.548280961; n_b=2.058969157; dn=0.2124; S=log2(Kfold)/dn=6.74; differing_parts=[['R8', 'R9']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/Eco2C1G5T1.UCF.json"
+  },
+  {
+   "name": "SC1C1G1T1 pair P1_LexA vs P2_LexA",
+   "fields": "K_a=0.123 RPU; K_b=0.286 RPU; Kfold=2.325; n_a=2.94; n_b=3.82; dn=0.2604; S=log2(Kfold)/dn=4.68; differing_parts=[['Kozak24', 'Kozak14']]",
+   "source": "https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/SC1C1G1T1.UCF.json"
+  },
+  {
+   "name": "Refit vs shipped, Eco1C1G1T1 (20 gates, least squares)",
+   "fields": "r_n=0.977; r_logK=0.903; max_dn_in_scope_refit=0.1153; max_dn_in_scope_shipped=0.1587",
+   "source": "scratch/t1-reporter-deep/refit_linear.json (computed by refit.py)"
+  },
+  {
+   "name": "Refit vs shipped, Eco1C2G2T2 (18 gates, soft-L1 loss)",
+   "fields": "r_n=0.919; r_logK=0.987; max_dn_in_scope_refit=0.4254; max_dn_in_scope_shipped=0.2836; pairs_above_0.25_refit=3 of 9",
+   "source": "scratch/t1-reporter-deep/refit_soft_l1.json (computed by refit.py soft_l1)"
+  },
+  {
+   "name": "Refit vs shipped, Eco1C2G2T2 (plain least squares)",
+   "fields": "r_n=0.701; r_logK=0.707; max_dn_in_scope_refit=1.1258 (driven by one out-of-order input level)",
+   "source": "scratch/t1-reporter-deep/refit_linear.json"
+  },
+  {
+   "name": "Refit vs shipped, SC1C1G1T1 (yeast)",
+   "fields": "r_n=0.504; r_logK=0.822; LexA pair dn_refit=0.2316 vs 0.2604 shipped",
+   "source": "scratch/t1-reporter-deep/refit_linear.json"
+  },
+  {
+   "name": "ymax/ymin change within in-scope RBS pairs",
+   "fields": "Eco1C1G1T1: ymax_ratio_median=1.11, max=1.74; ymin_ratio_median=2.17, max=3.00 | Eco1C2G2T2: ymax_median=1.20, max=2.32; ymin_median=1.49, max=3.21",
+   "source": "computed by translation_law.py"
+  },
+  {
+   "name": "RBS Calculator accuracy (Salis 2009)",
+   "fields": "error_factor=2.3; range=100000-fold; validation_predictions>100",
+   "source": "https://doi.org/10.1038/nbt.1568"
+  },
+  {
+   "name": "Promoter x RBS composability (Kosuri 2013)",
+   "fields": "constructs=12563; protein_within_2fold=64%; RNA_within_2fold=80%; worst_5pct_deviation=13-fold",
+   "source": "https://doi.org/10.1073/pnas.1301301110"
+  },
+  {
+   "name": "Bicistronic elements (Mutalik 2013)",
+   "fields": "dynamic_range=1000-fold; within_2fold_of_target=93%",
+   "source": "https://doi.org/10.1038/nmeth.2404"
+  },
+  {
+   "name": "TetR-homolog repressor library (Stanton 2014)",
+   "fields": "repressors_mined=73; orthogonal=16; repression=5-207 fold; typical_n=2; max_n=6.1 (Orf2)",
+   "source": "https://doi.org/10.1038/nchembio.1411"
+  },
+  {
+   "name": "Cello 1 circuits (Nielsen 2016)",
+   "fields": "circuits=60; fully_correct=45; output_states_correct=92%",
+   "source": "https://doi.org/10.1126/science.aac7341"
+  },
+  {
+   "name": "Timeline of key experiments",
+   "fields": "1974 Shine-Dalgarno RBS pairing; 1981 Goldbeter-Koshland; 1997 PLtetO-1, Hill misuse (Weiss); 2000 toggle and repressilator; 2002 directed evolution of a circuit; 2005 single-cell GRF and noise propagation; 2007 combinatorial promoters; 2009 RBS Calculator and RPU; 2013 BCD, composability, TetR-homolog gates; 2014 Brophy-Voigt review, titration effect; 2016 Cello; 2020 yeast and Bacteroides Cello; 2022 Cello 2.0 protocol",
+   "source": "see citations (all Crossref-verified)"
+  }
+ ],
+ "reproduce": [
+  {
+   "what": "Verify every cited DOI against Crossref (python 3.14, standard library only)",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents2/scripts/t1-reporter-deep/verify_dois.py",
+   "expected": "Each listed DOI prints True with the title; the entries Minami, Ramani, Wilson, Vilar, Golding, Volfson, Gottlieb resolve to unrelated papers and are not cited"
+  },
+  {
+   "what": "Fetch abstracts and PMC ids from Europe PMC",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents2/scripts/t1-reporter-deep/fetch_epmc.py",
+   "expected": "23 lines of DOI, PMCID, OA flag, abstract length; writes scratch/t1-reporter-deep/epmc.json"
+  },
+  {
+   "what": "Fetch OA full text (NCBI efetch) for quote checks",
+   "command_or_url": "curl -A delphi-research/0.1 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=4165527&rettype=xml' (also ids 4230274, 4214216, 3936740, 4080642) and https://www.ebi.ac.uk/europepmc/webservices/rest/PMC2782888/fullTextXML (also PMC2132448)",
+   "expected": "XML files of 100-250 KB; then python scripts/t1-reporter-deep/grep_text.py FILE 'regex' to print context"
+  },
+  {
+   "what": "Fetch the five Cello UCF libraries (about 10 MB total) and hash them",
+   "command_or_url": "for f in Eco1C1G1T1 Eco1C2G2T2 Eco2C1G3T1 Eco2C1G5T1 SC1C1G1T1: curl -O https://raw.githubusercontent.com/CIDARLAB/Cello-v2-1-Core/main/library/constraints/$f.UCF.json ; sha256sum",
+   "expected": "sizes 4834067, 2610885, 864264, 46518, 1744232 bytes; Eco1C1G1T1 sha256 c702d6b9b11bcd3c4fb9f7a77d24af1b549cecf3e7184b3a36692873735cd6f0 (all in data/t1-deep/SHA256.txt; fetched 2026-11-12)"
+  },
+  {
+   "what": "Pair analysis",
+   "command_or_url": "python -I scripts/t1-reporter-deep/pairs.py",
+   "expected": "Eco1C1G1T1 n_inscope=6 max_dn 0.1587; Eco1C2G2T2 n_inscope=9 max_dn 0.2836; Eco2C1G5T1 5 / 0.2124; SC1C1G1T1 1 / 0.2604"
+  },
+  {
+   "what": "Refit from cytometry histograms (numpy 2.5.3, scipy 1.18.1; run without -I so site packages load)",
+   "command_or_url": "python scripts/t1-reporter-deep/refit.py linear ; python scripts/t1-reporter-deep/refit.py soft_l1",
+   "expected": "Eco1C1G1T1 corr n 0.977, max dn about 0.115; Eco1C2G2T2 linear: corr n 0.70, max dn 1.13; soft_l1: corr n 0.919, max dn 0.4254; SC1C1G1T1 max dn 0.23"
+  },
+  {
+   "what": "Derivation check and ymax/ymin drift",
+   "command_or_url": "python scripts/t1-reporter-deep/translation_law.py",
+   "expected": "fitted K = K0/c and n = 2.8 for c = 0.25, 2, 10; ymin ratio medians 2.17 and 1.49"
+  },
+  {
+   "what": "Assemble this file and check each quote against the fetched sources",
+   "command_or_url": "python scripts/t1-reporter-deep/build_json.py",
+   "expected": "'quote problems: []' and a written agents2/t1-reporter-deep.json"
+  },
+  {
+   "what": "Law library state",
+   "command_or_url": "python -c \"import json;l=json.load(open('D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/lawsets/lawset-1.8.1.json'));print(l['version'],len(l['laws']),[x['law_id'] for x in l['laws'] if 'gene' in x['law_id']])\"",
+   "expected": "1.8.1 59 ['gene-regulatory-dynamics']"
+  }
+ ],
+ "citations": [
+  {
+   "authors": "Nielsen A, Der B, Shin J et al.",
+   "year": 2016,
+   "title": "Genetic circuit design automation",
+   "doi_or_arxiv": "10.1126/science.aac7341",
+   "verified": true,
+   "venue": "Science",
+   "used_for": "Cello design automation; E. coli gate libraries (Eco1C1G1T1 etc.) and 92% output states",
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1126/science.aac7341 fetched 2026-11-12 (title, year, journal matched); abstract via Europe PMC REST search DOI query (abstract only; full text not retrieved)"
+  },
+  {
+   "authors": "Salis H, Mirsky E, Voigt C",
+   "year": 2009,
+   "title": "Automated design of synthetic ribosome binding sites to control protein expression",
+   "doi_or_arxiv": "10.1038/nbt.1568",
+   "verified": true,
+   "venue": "Nature Biotechnology",
+   "used_for": "RBS Calculator: RBS sequence to expression on a proportional scale; context dependence",
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1038/nbt.1568 fetched 2026-11-12 (title, year, journal matched); abstract via Europe PMC REST search DOI query; full text read via NCBI efetch"
+  },
+  {
+   "authors": "Mutalik V, Guimaraes J, Cambray G et al.",
+   "year": 2013,
+   "title": "Precise and reliable gene expression via standard transcription and translation initiation elements",
+   "doi_or_arxiv": "10.1038/nmeth.2404",
+   "verified": true,
+   "venue": "Nature Methods",
+   "used_for": "Bicistronic translation elements; reliability of RBS-defined expression",
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1038/nmeth.2404 fetched 2026-11-12 (title, year, journal matched); abstract via Europe PMC REST search DOI query (abstract only; full text not retrieved)"
+  },
+  {
+   "authors": "Stanton B, Nielsen A, Tamsir A et al.",
+   "year": 2013,
+   "title": "Genomic mining of prokaryotic repressors for orthogonal logic gates",
+   "doi_or_arxiv": "10.1038/nchembio.1411",
+   "verified": true,
+   "venue": "Nature Chemical Biology",
+   "used_for": "Origin of the TetR-homolog NOT gates; RBS tuned to set repressor level; Hill fits, n about 2",
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1038/nchembio.1411 fetched 2026-11-12 (title, year, journal matched); abstract via Europe PMC REST search DOI query; full text read via NCBI efetch"
+  },
+  {
+   "authors": "Kosuri S, Goodman D, Cambray G et al.",
+   "year": 2013,
+   "title": "Composability of regulatory sequences controlling transcription and translation in Escherichia coli",
+   "doi_or_arxiv": "10.1073/pnas.1301301110",
+   "verified": true,
+   "venue": "Proceedings of the National Academy of Sciences",
+   "used_for": "Promoter x RBS composability at 12,563 constructs; limits of separability",
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1073/pnas.1301301110 fetched 2026-11-12 (title, year, journal matched); abstract via Europe PMC REST search DOI query (abstract only; full text not retrieved)"
+  },
+  {
+   "authors": "Ferrell J, Ha S",
+   "year": 2014,
+   "title": "Ultrasensitivity part I: Michaelian responses and zero-order ultrasensitivity",
+   "doi_or_arxiv": "10.1016/j.tibs.2014.08.003",
+   "verified": true,
+   "venue": "Trends in Biochemical Sciences",
+   "used_for": "Review: Hill function and ultrasensitivity",
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1016/j.tibs.2014.08.003 fetched 2026-11-12 (title, year, journal matched); abstract via Europe PMC REST search DOI query; full text read via NCBI efetch"
+  },
+  {
+   "authors": "Weiss J",
+   "year": 1997,
+   "title": "The Hill equation revisited: uses and misuses",
+   "doi_or_arxiv": "10.1096/fasebj.11.11.9285481",
+   "verified": true,
+   "venue": "The FASEB Journal",
+   "used_for": "Review: what the Hill coefficient does and does not mean",
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1096/fasebj.11.11.9285481 fetched 2026-11-12 (title, year, journal matched); abstract via Europe PMC REST search DOI query (abstract only; full text not retrieved)"
+  },
+  {
+   "authors": "Goldbeter A, Koshland D",
+   "year": 1981,
+   "title": "An amplified sensitivity arising from covalent modification in biological systems.",
+   "doi_or_arxiv": "10.1073/pnas.78.11.6840",
+   "verified": true,
+   "venue": "Proceedings of the National Academy of Sciences",
+   "used_for": "Zero-order ultrasensitivity (alternative route to steepness)",
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1073/pnas.78.11.6840 fetched 2026-11-12 (title, year, journal matched); abstract via Europe PMC REST search DOI query (abstract only; full text not retrieved)"
+  },
+  {
+   "authors": "Elowitz M, Leibler S",
+   "year": 2000,
+   "title": "A synthetic oscillatory network of transcriptional regulators",
+   "doi_or_arxiv": "10.1038/35002125",
+   "verified": true,
+   "venue": "Nature",
+   "used_for": "Repressilator",
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1038/35002125 fetched 2026-11-12 (title, year, journal matched); abstract via Europe PMC REST search DOI query (abstract only; full text not retrieved)"
+  },
+  {
+   "authors": "Gardner T, Cantor C, Collins J",
+   "year": 2000,
+   "title": "Construction of a genetic toggle switch in Escherichia coli",
+   "doi_or_arxiv": "10.1038/35002131",
+   "verified": true,
+   "venue": "Nature",
+   "used_for": "Toggle switch",
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1038/35002131 fetched 2026-11-12 (title, year, journal matched); abstract via Europe PMC REST search DOI query (abstract only; full text not retrieved)"
+  },
+  {
+   "authors": "Yokobayashi Y, Weiss R, Arnold F",
+   "year": 2002,
+   "title": "Directed evolution of a genetic circuit",
+   "doi_or_arxiv": "10.1073/pnas.252535999",
+   "verified": true,
+   "venue": "Proceedings of the National Academy of Sciences",
+   "used_for": "Directed evolution of circuit parameters",
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1073/pnas.252535999 fetched 2026-11-12 (title, year, journal matched); abstract via Europe PMC REST search DOI query (abstract only; full text not retrieved)"
+  },
+  {
+   "authors": "Rosenfeld N, Young J, Alon U et al.",
+   "year": 2005,
+   "title": "Gene Regulation at the Single-Cell Level",
+   "doi_or_arxiv": "10.1126/science.1106914",
+   "verified": true,
+   "venue": "Science",
+   "used_for": "Single-cell gene regulation function and its fluctuation",
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1126/science.1106914 fetched 2026-11-12 (title, year, journal matched); abstract via Europe PMC REST search DOI query (abstract only; full text not retrieved)"
+  },
+  {
+   "authors": "Cox R, Surette M, Elowitz M",
+   "year": 2007,
+   "title": "Programming gene expression with combinatorial promoters",
+   "doi_or_arxiv": "10.1038/msb4100187",
+   "verified": true,
+   "venue": "Molecular Systems Biology",
+   "used_for": "Combinatorial promoter library, five decades of strength",
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1038/msb4100187 fetched 2026-11-12 (title, year, journal matched); abstract via Europe PMC REST search DOI query; full text read via NCBI efetch"
+  },
+  {
+   "authors": "Brophy J, Voigt C",
+   "year": 2014,
+   "title": "Principles of genetic circuit design",
+   "doi_or_arxiv": "10.1038/nmeth.2926",
+   "verified": true,
+   "venue": "Nature Methods",
+   "used_for": "Review of circuit design principles and tuning knobs (RBS shifts threshold)",
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1038/nmeth.2926 fetched 2026-11-12 (title, year, journal matched); abstract via Europe PMC REST search DOI query; full text read via NCBI efetch"
+  },
+  {
+   "authors": "Kelly J, Rubin A, Davis J et al.",
+   "year": 2009,
+   "title": "Measuring the activity of BioBrick promoters using an in vivo reference standard",
+   "doi_or_arxiv": "10.1186/1754-1611-3-4",
+   "verified": true,
+   "venue": "Journal of Biological Engineering",
+   "used_for": "RPU unit used for Cello x and y",
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1186/1754-1611-3-4 fetched 2026-11-12 (title, year, journal matched); abstract via Europe PMC REST search DOI query (abstract only; full text not retrieved)"
+  },
+  {
+   "authors": "Chen Y, Zhang S, Young E et al.",
+   "year": 2020,
+   "title": "Genetic circuit design automation for yeast",
+   "doi_or_arxiv": "10.1038/s41564-020-0757-2",
+   "verified": true,
+   "venue": "Nature Microbiology",
+   "used_for": "Yeast Cello gates (SC1C1G1T1 library)",
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1038/s41564-020-0757-2 fetched 2026-11-12 (title, year, journal matched); abstract via Europe PMC REST search DOI query (abstract only; full text not retrieved)"
+  },
+  {
+   "authors": "Taketani M, Zhang J, Zhang S et al.",
+   "year": 2020,
+   "title": "Genetic circuit design automation for the gut resident species Bacteroides thetaiotaomicron",
+   "doi_or_arxiv": "10.1038/s41587-020-0468-5",
+   "verified": true,
+   "venue": "Nature Biotechnology",
+   "used_for": "Bacteroides Cello library (sgRNA gates; excluded as RBS test)",
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1038/s41587-020-0468-5 fetched 2026-11-12 (title, year, journal matched); abstract via Europe PMC REST search DOI query (abstract only; full text not retrieved)"
+  },
+  {
+   "authors": "Jones T, Oliveira S, Myers C et al.",
+   "year": 2022,
+   "title": "Genetic circuit design automation with Cello 2.0",
+   "doi_or_arxiv": "10.1038/s41596-021-00675-2",
+   "verified": true,
+   "venue": "Nature Protocols",
+   "used_for": "Cello 2.0 protocol (UCF format)",
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1038/s41596-021-00675-2 fetched 2026-11-12 (title, year, journal matched); abstract via Europe PMC REST search DOI query (abstract only; full text not retrieved)"
+  },
+  {
+   "authors": "Espah Borujeni A, Channarasappa A, Salis H",
+   "year": 2013,
+   "title": "Translation rate is controlled by coupled trade-offs between site accessibility, selective RNA unfolding and sliding at upstream standby sites",
+   "doi_or_arxiv": "10.1093/nar/gkt1139",
+   "verified": true,
+   "venue": "Nucleic Acids Research",
+   "used_for": "Biophysical model of translation initiation rate",
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1093/nar/gkt1139 fetched 2026-11-12 (title, year, journal matched); abstract via Europe PMC REST search DOI query; full text read via NCBI efetch"
+  },
+  {
+   "authors": "Shine J, Dalgarno L",
+   "year": 1974,
+   "title": "The 3′-Terminal Sequence of Escherichia coli 16S Ribosomal RNA: Complementarity to Nonsense Triplets and Ribosome Binding Sites",
+   "doi_or_arxiv": "10.1073/pnas.71.4.1342",
+   "verified": true,
+   "venue": "Proceedings of the National Academy of Sciences",
+   "used_for": "Shine-Dalgarno: ribosome binding site pairing",
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1073/pnas.71.4.1342 fetched 2026-11-12 (title, year, journal matched); abstract via Europe PMC REST search DOI query (abstract only; full text not retrieved)"
+  },
+  {
+   "authors": "Brewster R, Weinert F, Garcia H et al.",
+   "year": 2014,
+   "title": "The Transcription Factor Titration Effect Dictates Level of Gene Expression",
+   "doi_or_arxiv": "10.1016/j.cell.2014.02.022",
+   "verified": true,
+   "venue": "Cell",
+   "used_for": "Repressor titration shifts and sharpens transitions",
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1016/j.cell.2014.02.022 fetched 2026-11-12 (title, year, journal matched); abstract via Europe PMC REST search DOI query; full text read via NCBI efetch"
+  },
+  {
+   "authors": "Lutz R",
+   "year": 1997,
+   "title": "Independent and tight regulation of transcriptional units in Escherichia coli via the LacR/O, the TetR/O and AraC/I1-I2 regulatory elements",
+   "doi_or_arxiv": "10.1093/nar/25.6.1203",
+   "verified": true,
+   "venue": "Nucleic Acids Research",
+   "used_for": "PLtetO-1 inducible promoter, 5000-fold range",
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1093/nar/25.6.1203 fetched 2026-11-12 (title, year, journal matched); abstract via Europe PMC REST search DOI query (abstract only; full text not retrieved)"
+  },
+  {
+   "authors": "Pedraza J, van Oudenaarden A",
+   "year": 2005,
+   "title": "Noise Propagation in Gene Networks",
+   "doi_or_arxiv": "10.1126/science.1109090",
+   "verified": true,
+   "venue": "Science",
+   "used_for": "Noise propagation in gene networks",
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1126/science.1109090 fetched 2026-11-12 (title, year, journal matched); abstract via Europe PMC REST search DOI query (abstract only; full text not retrieved)"
+  }
+ ],
+ "could_not_find": [
+  "No paper was found that tests directly whether the Hill coefficient is preserved under RBS-only changes of a repressor gate. Statements that RBS shifts the threshold come from reviews and design papers (Stanton 2014, Brophy and Voigt 2014); invariance of n is my analysis of shipped parameters.",
+  "The Nielsen 2016 Science paper and its supplement were not retrievable as full text (paywalled; not in Europe PMC open access); only the abstract was read. Same for Mutalik 2013, Weiss 1997, Rosenfeld 2005, Pedraza 2005, Elowitz 2000, Gardner 2000, Chen 2020, Jones 2022 (abstract only). Their cited numbers come from abstracts.",
+  "Stanton 2014 supplementary tables 3-5 (RBS libraries, selected RBS, fitted parameters) were not fetched; I could not read the figure of per-gate dynamic range from the supplement.",
+  "RBS Calculator predictions for the RBS sequences in the UCF libraries were not computed (the tool is not installed locally and was not run), so I cannot say whether K fold tracks predicted translation-rate fold; this is the most direct available test of c in K -> K/c.",
+  "I could not decide which fit of Eco1C2G2T2 is right: shipped parameters (max dn 0.2836) or a robust refit of the histograms (max 0.4254). At least one input level in S2_SrpR is listed out of order with a suspicious output; I did not investigate the other 17 gates by hand.",
+  "Bth1C1G1T1 was not downloaded (15 MB, sgRNA gates, repressor identities unclear); Eco2C1G3T1 has no usable pair. The yeast arm has one true pair, so it supports no conclusion about eukaryotes.",
+  "Whether the original authors fitted Hill parameters themselves or the Cello toolchain re-derived them was not determined; I did not read the Cello fitting code.",
+  "OpenAlex was not used (budget exhausted). No Lean was run. The law library is unchanged: no Hill or reporter law exists in set 1.8.1.",
+  "Eco1C2G2T2 had already been summarised by the earlier scout (family K folds and n CVs), so it is not an untouched holdout for any prediction frozen after that scout run; the orchestrator should decide whether the pre-registration is affected."
+ ],
+ "recommendations": [
+  "Do not freeze 'n is invariant under RBS-only change' with a single numeric bound on shipped parameters: the bound that holds in Eco1C1G1T1 (0.1587) already fails by the shipped numbers in Eco1C2G2T2 (0.2836) and by robust refit (0.4254). Freeze the refit procedure (loss function, treatment of out-of-order input levels) before looking at holdout numbers.",
+  "State the law as the derived translation identity y_c(x) = y_1(c x) with named hypotheses (R proportional to c*x, occupancy Hill in R, linear loss) and test ymin and ymax separately; ymin moved by a median 1.5 to 2.2x.",
+  "Use only the 6 + 9 + 5 + 1 genuinely one-position RBS pairs; exclude the SrpR S1 pairs (terminator also differs) and the yeast CI and CI434 pairs (no cassette difference).",
+  "If a real test is wanted, compute RBS Calculator predicted translation-rate ratios for each pair and check Kfold against them; and look for a second source of raw single-cell data with RBS-only variants.",
+  "Add a Hill-function module and reporter steady-state law to lean/Delphi as the earlier law-mapper proposed; the 1.8.1 registry still has only the empty gene-regulatory-dynamics placeholder."
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t1-reporter-deep/verify_dois.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t1-reporter-deep/fetch_epmc.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t1-reporter-deep/grep_text.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t1-reporter-deep/pairs.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t1-reporter-deep/refit.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t1-reporter-deep/translation_law.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t1-reporter-deep/build_part1.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t1-reporter-deep/build_json.py"
+ ]
+}

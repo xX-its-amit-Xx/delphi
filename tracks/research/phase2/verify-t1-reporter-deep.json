@@ -1,0 +1,30 @@
+{
+ "label": "verify-t1-reporter-deep",
+ "claims": [
+  {
+   "claim": "In Cello-style repressor gates the repressor level is set by choosing the RBS (input promoter fixed), so an RBS swap is the designed way to move the threshold.",
+   "verdict": "supported",
+   "source_says": "we define the beginning of each gate to be the transcription start site and vary the repressor level by changing the strength of the RBS.",
+   "note": "I fetched PMC4165527 via NCBI efetch myself and found the sentence verbatim, preceded by the statement that inputs must be swappable without modification."
+  },
+  {
+   "claim": "Assuming repressor level = input x RBS multiplier c and Hill occupancy, an RBS change rescales K by 1/c and leaves n, ymax, ymin unchanged (derived).",
+   "verdict": "supported",
+   "source_says": "Script: y = hill(c*x, ymax, ymin, K0, n0); fits K and n for c=0.25, 2, 10 and compares with K0/c and n0.",
+   "note": "The identity y_c(x)=y_1(cx) gives K/c with n, ymax, ymin fixed by algebra; I could not run the script (numpy missing) but the derivation is trivially correct under the stated assumptions."
+  },
+  {
+   "claim": "Eco1C1G1T1 max relative n difference among same-repressor pairs is 0.1587; Eco1C2G2T2 reaches 0.2836 in an in-scope pair; robust refit gives up to 0.4254; n invariance is approximate and fit-dependent.",
+   "verdict": "supported",
+   "source_says": "My independent recomputation from the UCF files: Eco1C1G1T1 10 one-position pairs, 6 in scope, max dn 0.15873; Eco1C2G2T2 13 pairs, 9 in scope, max dn 0.28362 (0.2911 over all). Stored soft-L1 refit: max_refit_dn 0.4254.",
+   "note": "Shipped-parameter numbers reproduce exactly from the local UCF copies; the 0.4254 refit value I only read from the stored refit output, not re-ran (numpy unavailable)."
+  },
+  {
+   "claim": "An RBS swap is not a pure translation of the whole curve: median ymin changes of 2.17x (Eco1C1G1T1) and 1.49x (Eco1C2G2T2) in in-scope pairs.",
+   "verdict": "supported",
+   "source_says": "My recomputation of the ymin max/min ratio over in-scope one-position pairs: median 2.1667 (Eco1C1G1T1, 6 pairs) and 1.4911 (Eco1C2G2T2, 9 pairs).",
+   "note": "Reproduced from the UCF files; the pair filter used cassette position differences, and I did not separately confirm that every differing part is an RBS, but the counts match the agent's."
+  }
+ ],
+ "overall": "All four key claims hold up. The Stanton quote is verbatim in the paper's full text. The pair counts, dn maxima and ymin medians reproduce from the UCF files. The only items not re-run are the K/c script (numpy missing, algebra is trivial) and the 0.4254 robust-refit value, which I read from stored output."
+}

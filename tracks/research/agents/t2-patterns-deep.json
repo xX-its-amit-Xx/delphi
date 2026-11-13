@@ -1,0 +1,919 @@
+{
+ "label": "t2-patterns-deep",
+ "topic": "Track 2 deep literature: chemotactic range-expansion front of E. coli in soft agar (Cremer 2019, Narla 2021)",
+ "summary": "STATE OF THE ART, Track 2 (chemotactic range-expansion front of E. coli in soft agar). Each step is tagged MEASURED (seen in an experiment I read), DERIVED (follows by mathematics from stated assumptions) or ASSUMED.\n\n1. What the system is. [MEASURED] Motile E. coli placed at the centre of a 0.25 percent agar plate with a plentiful carbon source and a little amino-acid attractant (aspartate or serine, 100 uM) grow, and a visible ring moves outward at a steady speed. Classic papers saw this: Adler 1966 (bands made by cells that create their own gradient), Wolfe and Berg 1989 (soft agar also lets non-chemotactic, tumbling cells swarm), Croze 2011 (speed is weakly dependent on agar below 0.25 percent and drops sharply above).\n2. The baseline with no steering. [DERIVED] A population that only grows and diffuses advances as a Fisher-KPP wave at c_F = 2 sqrt(D r), D the cell diffusivity, r the growth rate (Fisher 1937; Aronson-Weinberger 1978 is the rigorous source cited by the law library). [MEASURED] Non-chemotactic E. coli follow this wave with no adjustable parameters (Cremer 2019). [ASSUMED] In the law library the diffusivity is taken from run-and-tumble motion: D about 50 um^2/s in agar.\n3. Why chemotaxis speeds it up. [MEASURED] Cells eat the attractant, which makes a gradient that points outward; cells at the front drift up it ('pioneers'), cells behind mostly grow ('settlers'). With an abundant carbon source plus 100 uM attractant the front moved about 3 to 4.3 mm/h in minimal media (source data, own table below). [MEASURED, own arithmetic] That is 4.4 to 5.4 times the Fisher speed computed with D = 50.2 um^2/s and the measured growth rate for the six wild-type carbon sources.\n4. The model. [ASSUMED] Growth-Expansion (GE) model: logistic growth plus diffusion plus drift velocity chi0 grad(a)/(a + a_m), with attractant consumed by Michaelis-Menten uptake. It is the Keller-Segel (1971) model plus growth, the 'Patlak-Keller-Segel with growth' family. Keller-Segel alone needs a_m = 0 to be stable (Narla 2021).\n5. Closed form. [DERIVED] Narla, Cremer, Hwa 2021: c = (chi0 - D) sqrt( r (a0/a_m) / (chi0 - D + D_a) ), valid when a0/a_m >> 1 + D_a/(chi0 - D). So c grows as sqrt(r) and sqrt(a0/a_m), does not depend on the uptake rate, and equals more than the Fisher speed; the Fisher speed is the lower bound. The derivation is a heuristic ansatz checked against numerical solutions, not a theorem.\n6. How well it fits. [MEASURED + own calc] With Cremer's published parameters (chi0 = 315, D = 50.2, D_a = 800 um^2/s, a0/a_m = 100) the closed form is 7 to 32 percent above the six wild-type speeds (ratios 1.07 to 1.32). A single-coefficient square-root law u^2 = k r fitted on those six rows (k = 16.9 mm^2/h) misses titrated-uptake strains by 10 to 64 percent. Inside an uptake-titration series the log-log slope of u on r is 1.12 (0.89 without the zero-inducer point), not 0.5, so the sqrt(r) law is a statement about varying r with other parameters fixed; Cremer 2019 says the observed trend needs growth-rate-dependent parameters in the full model.\n7. Dependence on attractant. [MEASURED] Speed rises with attractant concentration then falls: on glucose it peaks at 1000 uM (4.65 mm/h) and drops to 2.10 mm/h at 10 mM; on glycerol it peaks at 100 uM (3.67) and drops to 1.32 at 10 mM. The log-log slope over 10 to 100 uM is 0.30 (glucose) and 0.28 (glycerol), not 0.5. [DERIVED] The sqrt(a0) law cannot make a peak by itself. A peak needs an extra ingredient: the published simulation parameter file has an upper sensing limit of 30 uM (weber_offsetmax_1, read from the file), and Narla 2021 has a carrying-capacity correction (Eq 24 to 25) that I did not read myself, only through the earlier design report.\n8. Contested and unsettled. (a) The Patlak-Keller-Segel form itself: Phan 2024 measured the attractant directly in a microchannel and found it fails at high cell density (consumption and chemotaxis both suppressed); the soft-agar GE model has not been tested that way. (b) Whether cell motility depends on growth rate: Cremer found flat swimming speed and diffusion in exponential growth; Ni 2020 found motility gene expression rising linearly as growth rate falls. (c) Pushed versus pulled front: Bai 2021 argues the band is a pushed wave because drift velocities fall from back to front. (d) Cell-to-cell variability: Fu 2018, Salek 2019, Keegstra 2017 show large clonal differences yet the band holds together, which a single chi0 ignores. (e) The 1971 Keller-Segel instability and finite-time blow-up of some variants (Hillen and Painter 2009).\n9. Beyond the single ring. [MEASURED] Other microbial patterns on the same medium: Budrene-Berg spots and stripes from excreted attractant (1991); stripes from engineered density-dependent motility (Liu 2011); density-dependent motility with logistic growth gives spots without chemotaxis (Cates 2010); sectors from genetic drift at the edge (Hallatschek 2007). [DERIVED] The Turing law in the library (linear instability of a stationary mode) does not describe the travelling front.\n10. Evolutionary reading. [MEASURED] Liu 2019: after 50 cycles (about 600 generations) the optimal expansion speed depends on habitat size, with a stable strategy of speed = growth rate x habitat size.\n11. Law library (set 1.8.1, 2026-11-01). Only fisher-kpp-speed 1.1.0 (candidate, non-binding; constraint KPP1: c^2 >= 4 s D) and turing-ddi 1.1.0 (candidate) are pinned; turing-wavelength 1.1.0 is a candidate not yet pinned. The earlier law-mapper looked at 1.6.0 and found only the Turing law. There is no law for Keller-Segel or chemotactic fronts. Over the 23 aspartate/serine rows of the source data, speed over Fisher speed is between 2.49 and 7.09, so KPP1 holds in every row (own calculation, Fisher speed computed with the single D = 50.2 um^2/s for every strain, which is an approximation for the engineered strains).\nOPEN PROBLEMS. (i) A direct measurement of the attractant field and density in agar to test whether the PKS closure holds at the colony density, as Phan did in a channel. (ii) A reconciled growth-rate story: how chi0, D and uptake change with r, and whether the 0.5 exponent or about 1 is right across a titration. (iii) Unifying the sensing-limit ceiling (Cremer code, 30 uM upper limit in my reading of the published parameter file) with the closed form. (iv) Prediction in new conditions (mixtures of attractants, other strains, other gel stiffnesses) from single-cell parameters alone. (v) 2D and 3D front stability, finite-time blow-up and cell-density effects beyond the 1D wave. (vi) A Lean statement that fits the actual claim: only the arithmetic of c^2 >= 4 s D is proved; the chemotactic closed form is not.",
+ "lay_summary": "Imagine dropping bacteria in the middle of a dish of soft jelly with food. As they eat, they use up a little amino acid, which leaves a slope of less amino acid near them; the bacteria then swim up that slope, so a ring of cells races outward. Plain spreading by growing and wandering would move that ring only about one millimetre an hour, but the measured ring moves three to four and a half millimetres an hour. A short equation from the 1970s was improved in 2019 and 2021 to explain this, and it says the speed grows with the square root of how fast the cells divide. That rule fits roughly but not exactly, and a 2024 study shows the old equation fails when cells are very crowded. So the main picture is well supported, but the exact rule for how fast the ring moves is still being argued about.",
+ "glossary": [
+  {
+   "term": "chemotaxis",
+   "plain": "Swimming up (or down) a chemical slope by changing how often the cell tumbles."
+  },
+  {
+   "term": "attractant",
+   "plain": "A chemical, such as an amino acid, that cells swim towards."
+  },
+  {
+   "term": "soft agar",
+   "plain": "A very watery jelly (0.25 percent agar) that cells can swim through."
+  },
+  {
+   "term": "range expansion",
+   "plain": "A population spreading into empty territory."
+  },
+  {
+   "term": "front / band / ring",
+   "plain": "The moving edge of the population, seen as a ring on a plate."
+  },
+  {
+   "term": "growth rate (r)",
+   "plain": "How fast the cells multiply, in doublings-per-time units (here per hour)."
+  },
+  {
+   "term": "diffusivity (D)",
+   "plain": "How quickly random motion spreads cells out, in square micrometres per second."
+  },
+  {
+   "term": "Fisher-KPP wave",
+   "plain": "The speed of a front driven only by growth plus random spreading: 2 times the square root of D times r."
+  },
+  {
+   "term": "Keller-Segel model",
+   "plain": "Equations that describe cells following a chemical slope that they themselves make."
+  },
+  {
+   "term": "Growth-Expansion (GE) model",
+   "plain": "The Keller-Segel model plus cell growth, used by Cremer and Narla."
+  },
+  {
+   "term": "travelling wave",
+   "plain": "A shape that moves at constant speed without changing form."
+  },
+  {
+   "term": "chi0 (chemotactic coefficient)",
+   "plain": "How strongly the slope of attractant pushes cells."
+  },
+  {
+   "term": "a_m",
+   "plain": "The attractant level below which cells hardly sense a slope, about 1 micromolar for aspartate."
+  },
+  {
+   "term": "pioneers and settlers",
+   "plain": "Cells at the front that move forward, and cells behind that stay and grow."
+  },
+  {
+   "term": "Turing pattern",
+   "plain": "A stationary spotty or stripy pattern that arises from two spreading chemicals; different from the travelling ring."
+  },
+  {
+   "term": "pushed versus pulled front",
+   "plain": "A pulled front is led by the few cells at its tip; a pushed one is driven by the bulk behind."
+  },
+  {
+   "term": "Lean law, candidate",
+   "plain": "A formally checked statement in the project library that is listed but not yet binding."
+  },
+  {
+   "term": "OD600",
+   "plain": "Cloudiness of a culture at 600 nanometres, used as a stand-in for cell density."
+  }
+ ],
+ "findings": [
+  {
+   "claim": "Classic observation: motile E. coli placed in a capillary or on agar migrate out as visible bands (rings on plates) because the cells themselves create a gradient of oxygen or an energy source and then move up it.",
+   "source": "https://doi.org/10.1126/science.153.3737.708 (abstract via Europe PMC)",
+   "confidence": "high",
+   "evidence_quote": "The essence of the matter is that the bacteria create a gradient of oxygen or of an energy source, and then they move preferentially in the direction of the higher concentration of the chemical.",
+   "value": "1966; bands and rings"
+  },
+  {
+   "claim": "A different pattern, not a travelling front: E. coli on semi-solid agar with TCA-cycle intermediates form stationary spots or stripes that arise sequentially, driven by an attractant the cells excrete themselves.",
+   "source": "https://doi.org/10.1038/349630a0 (abstract via Europe PMC)",
+   "confidence": "high",
+   "evidence_quote": "they form symmetrical arrays of spots or stripes that arise sequentially.",
+   "value": "1991; aggregation"
+  },
+  {
+   "claim": "Keller and Segel gave the first mathematical travelling-wave account of the bands, but their model neglected cell growth.",
+   "source": "https://doi.org/10.1073/pnas.2105138118 (full text via Europe PMC PMC8640786)",
+   "confidence": "high",
+   "evidence_quote": "The first attempt to understand these migrating bands mathematically was made by Keller and Segel, who recovered a traveling-wave solution using a pair of reaction–diffusion–convection equations",
+   "value": "1971 model; the original paper has no abstract in Europe PMC and was not read by me, this is Narla 2021 reporting it"
+  },
+  {
+   "claim": "The Keller-Segel stable wave needs infinitely sensitive sensing (a_m = 0); with a finite threshold the part of the band with a < a_m cannot keep up and the band decays and slows.",
+   "source": "https://doi.org/10.1073/pnas.2105138118 (full text via Europe PMC PMC8640786)",
+   "confidence": "high",
+   "evidence_quote": "The latter assumption of the KS model is necessary for stable traveling waves",
+   "value": "a_m = 0 needed"
+  },
+  {
+   "claim": "Cremer 2019 also states that the original Keller-Segel front is unstable given a realistic limit of chemotactic sensitivity.",
+   "source": "https://doi.org/10.1038/s41586-019-1733-y (full text via Europe PMC PMC6883170)",
+   "confidence": "high",
+   "evidence_quote": "The original Keller–Segel front was unstable given a realistic limit of chemotactic sensitivity",
+   "value": ""
+  },
+  {
+   "claim": "Mathematical review: Keller-Segel-type chemotaxis models are a cornerstone of the field, but some formulations show finite-time blow-up (a density spike forming in finite time).",
+   "source": "https://doi.org/10.1007/s00285-008-0201-3 (abstract via Europe PMC)",
+   "confidence": "high",
+   "evidence_quote": "This phenomenon has been shown to lead to finite-time blow-up under certain formulations of the model",
+   "value": "review, 2009"
+  },
+  {
+   "claim": "Review of the molecular side: the E. coli signalling pathway (phosphorylated regulator acting on the flagellar motor) is a paradigm for sensory systems.",
+   "source": "https://doi.org/10.1038/nrm1524 (abstract via Europe PMC)",
+   "confidence": "high",
+   "evidence_quote": "This simple pathway has provided a paradigm for sensory systems in general.",
+   "value": "review, 2004"
+  },
+  {
+   "claim": "In soft agar non-chemotactic cells also swarm; tumbling lets cells back away from obstructions, and cells that tumble more formed larger swarms, so a large colony alone does not prove chemotaxis.",
+   "source": "https://doi.org/10.1073/pnas.86.18.6973 (abstract via Europe PMC)",
+   "confidence": "high",
+   "evidence_quote": "Surprisingly, the higher the tumble frequency, the larger the swarms.",
+   "value": "1989"
+  },
+  {
+   "claim": "Agar concentration matters: front speed is weakly dependent on agar concentration below 0.25 percent (w/v) but falls sharply above it.",
+   "source": "https://doi.org/10.1016/j.bpj.2011.06.023 (abstract via Europe PMC)",
+   "confidence": "high",
+   "evidence_quote": "The migration front speed is weakly dependent on agar concentration at C < 0.25%, but decreases sharply above this value.",
+   "value": "C = 0.15 to 0.5 % w/v"
+  },
+  {
+   "claim": "At 0.35 percent agar the bacteria migrate as broad growth/diffusion bands because the gel suppresses chemotaxis.",
+   "source": "https://doi.org/10.1016/j.bpj.2011.06.023 (abstract via Europe PMC)",
+   "confidence": "high",
+   "evidence_quote": "These are growth/diffusion waves arising because of suppression of chemotaxis by the agar",
+   "value": ""
+  },
+  {
+   "claim": "Central claim of the chosen system: chemotaxis along self-generated gradients of a low-dose attractant, with an abundant primary carbon source, speeds up population expansion before nutrients run out.",
+   "source": "https://doi.org/10.1038/s41586-019-1733-y (full text via Europe PMC PMC6883170)",
+   "confidence": "high",
+   "evidence_quote": "Chemotaxis in nutrient-replete conditions promotes the expansion of bacterial populations into unoccupied territories well before nutrients run out in the current environment.",
+   "value": ""
+  },
+  {
+   "claim": "Navigated expansion beats unguided Fisher-Kolmogorov expansion in speed and population gain.",
+   "source": "https://doi.org/10.1038/s41586-019-1733-y (full text via Europe PMC PMC6883170)",
+   "confidence": "high",
+   "evidence_quote": "This navigated range expansion process spreads faster and yields larger population gains than unguided expansion following the canonical Fisher-Kolmogorov dynamics",
+   "value": ""
+  },
+  {
+   "claim": "Measured: expansion speed increases with the batch growth rate across carbon sources, for aspartate or serine as attractant, and for two other motile E. coli strains.",
+   "source": "https://doi.org/10.1038/s41586-019-1733-y (full text via Europe PMC PMC6883170)",
+   "confidence": "high",
+   "evidence_quote": "The measured expansion speeds follow a common increasing trend with the batch culture growth rate in the respective medium",
+   "value": ""
+  },
+  {
+   "claim": "Without a supplemented attractant, or in a Delta-tar mutant that cannot sense aspartate, expansion is much slower.",
+   "source": "https://doi.org/10.1038/s41586-019-1733-y (full text via Europe PMC PMC6883170)",
+   "confidence": "high",
+   "evidence_quote": "In contrast, the expansion became much slower in the absence of a supplemented attractant",
+   "value": ""
+  },
+  {
+   "claim": "Measured: swimming speed and run duration showed no substantial variation with growth rate during steady exponential growth, so cell diffusion is nearly growth-rate independent in that study.",
+   "source": "https://doi.org/10.1038/s41586-019-1733-y (full text via Europe PMC PMC6883170)",
+   "confidence": "high",
+   "evidence_quote": "neither swimming speed nor run duration showed substantial variation at different growth rates",
+   "value": ""
+  },
+  {
+   "claim": "Reference condition (glycerol + aspartate, confocal run): the front bulge advanced at about 3.2 mm/h, followed by a broad exponentially rising density behind it.",
+   "source": "https://doi.org/10.1038/s41586-019-1733-y (full text via Europe PMC PMC6883170)",
+   "confidence": "high",
+   "evidence_quote": "the advance of the front bulge (~3.2 mm / h ) is steadily followed by a trailing region with a broad, exponentially increasing density profile",
+   "value": "3.2 mm/h here; the source-data table gives 3.675 mm/h for the same medium (different plates), a 13 percent gap"
+  },
+  {
+   "claim": "Without chemotaxis the populations follow the Fisher-Kolmogorov solution with no adjustable parameters.",
+   "source": "https://doi.org/10.1038/s41586-019-1733-y (full text via Europe PMC PMC6883170)",
+   "confidence": "high",
+   "evidence_quote": "Detailed quantitative analysis established that bacterial dynamics in these cases are indeed described by the FK solution without adjustable parameters",
+   "value": ""
+  },
+  {
+   "claim": "Growth-Expansion model: only one parameter, the chemotactic coefficient chi0, was left free, fixed by matching the asymptotic speed in the reference condition; the others came from independent experiments or literature.",
+   "source": "https://doi.org/10.1038/s41586-019-1733-y (full text via Europe PMC PMC6883170)",
+   "confidence": "high",
+   "evidence_quote": "only one parameter remained unknown, the chemotactic coefficient χ 0",
+   "value": ""
+  },
+  {
+   "claim": "Model prediction confirmed: changing the attractant uptake rate hardly changed the expansion, although uptake is what builds the gradient.",
+   "source": "https://doi.org/10.1038/s41586-019-1733-y (full text via Europe PMC PMC6883170)",
+   "confidence": "high",
+   "evidence_quote": "changing the uptake rate hardly affected the expansion dynamics, in agreement with model prediction",
+   "value": ""
+  },
+  {
+   "claim": "A simple scaling analysis gives the square-root growth-rate dependence; the authors say the full model with growth-rate-dependent parameters describes the data with no adjustable parameters.",
+   "source": "https://doi.org/10.1038/s41586-019-1733-y (full text via Europe PMC PMC6883170)",
+   "confidence": "medium",
+   "evidence_quote": "a simple scaling analysis captures the square-root form of the growth-rate dependence",
+   "value": ""
+  },
+  {
+   "claim": "Speed versus attractant concentration peaks at a moderate level (long known), reproduced by the model.",
+   "source": "https://doi.org/10.1038/s41586-019-1733-y (full text via Europe PMC PMC6883170)",
+   "confidence": "high",
+   "evidence_quote": "The model also adequately accounted for the dependence of the expansion speed on the attractant concentration, long known to peak at a moderate level",
+   "value": ""
+  },
+  {
+   "claim": "Pioneers and settlers: cells in the front bulge drift forward; cells behind drift little and only grow, seeding the territory the front passed.",
+   "source": "https://doi.org/10.1038/s41586-019-1733-y (full text via Europe PMC PMC6883170)",
+   "confidence": "high",
+   "evidence_quote": "cells in the front bulge region have positive drift velocities and move forward on average; they are the ‘pioneers’ of the population.",
+   "value": ""
+  },
+  {
+   "claim": "At chi0 = 0 the GE model reduces to Fisher-KPP, whose speed 2 sqrt(D_rho r) is the minimum expansion speed of the system.",
+   "source": "https://doi.org/10.1073/pnas.2105138118 (full text via Europe PMC PMC8640786)",
+   "confidence": "high",
+   "evidence_quote": "In the absence of chemotaxis ( χ 0 = 0 ), the GE model reduces to the Fisher–Kolmogorov–Petrovsky–Piskunov (F-KPP) equation",
+   "value": "c_F = 2 sqrt(D_rho r)"
+  },
+  {
+   "claim": "Derived (heuristic ansatz, checked against numerical solutions): speed is proportional to sqrt(growth rate r).",
+   "source": "https://doi.org/10.1073/pnas.2105138118 (full text via Europe PMC PMC8640786)",
+   "confidence": "high",
+   "evidence_quote": "First, there is a square root dependence on the growth rate r",
+   "value": "Eq 21: c = (chi0 - D_rho) sqrt( r (a0/a_m) / (chi0 - D_rho + D_a) )"
+  },
+  {
+   "claim": "Derived: speed rises with the square root of relative attractant a0/a_m.",
+   "source": "https://doi.org/10.1073/pnas.2105138118 (full text via Europe PMC PMC8640786)",
+   "confidence": "high",
+   "evidence_quote": "The expansion speed is further increased by the square root of the relative background attractant concentration",
+   "value": ""
+  },
+  {
+   "claim": "Derived: speed is independent of attractant uptake rate mu (bulge size is inversely proportional to mu so mu cancels).",
+   "source": "https://doi.org/10.1073/pnas.2105138118 (full text via Europe PMC PMC8640786)",
+   "confidence": "high",
+   "evidence_quote": "the expansion speed c does not depend on the specific rate of attractant uptake μ",
+   "value": ""
+  },
+  {
+   "claim": "Validity condition of the closed form: a0/a_m much greater than 1 + D_a/(chi0 - D_rho); independent of r.",
+   "source": "https://doi.org/10.1073/pnas.2105138118 (full text via Europe PMC PMC8640786)",
+   "confidence": "medium",
+   "evidence_quote": "",
+   "value": "Eq 22; equation is garbled in the PMC XML so no verbatim quote; read from extracted symbols"
+  },
+  {
+   "claim": "Parameter ranges: D_rho about 50 um^2/s in soft agar vs 300 to 1000 um^2/s in liquid; sensitivity phi = (chi0 - D_rho)/D_rho between 2 and 8 (cited); aspartate uptake and sensing constants about 1 uM (assumed equal, a_k = a_m).",
+   "source": "https://doi.org/10.1073/pnas.2105138118 (full text via Europe PMC PMC8640786)",
+   "confidence": "medium",
+   "evidence_quote": "D ρ ∼ 50 μ m 2 / s for E. coli swimming in soft agar ( 39 ) and D ρ ∼ 300 to 1 , 000 μ m 2 / s in liquid media",
+   "value": "phi 2 to 8; a_m about 1 uM"
+  },
+  {
+   "claim": "Predicted boost: speeds can exceed the Fisher speed by orders of magnitude when environmental attractant is high relative to the sensing limit.",
+   "source": "https://doi.org/10.1073/pnas.2105138118 (full text via Europe PMC PMC8640786)",
+   "confidence": "high",
+   "evidence_quote": "expansion speeds can be boosted by orders of magnitude when the environmental availability of chemicals relative to the cellular limits of chemical sensing is high",
+   "value": ""
+  },
+  {
+   "claim": "Earlier growth-including models restored stability but did not reproduce fast speeds or the rising density trailing the band.",
+   "source": "https://doi.org/10.1073/pnas.2105138118 (full text via Europe PMC PMC8640786)",
+   "confidence": "high",
+   "evidence_quote": "they fail to reproduce experimental observations such as fast expansion speeds and a trailing region of increasing bacterial density behind the migrating band",
+   "value": ""
+  },
+  {
+   "claim": "Contested: the standard Patlak-Keller-Segel model with growth was never directly verified; direct fluorescent measurement of the aspartate gradient shows it fits low-density waves but diverges at high cell density.",
+   "source": "https://doi.org/10.1073/pnas.2309251121 (PMC10801886)",
+   "confidence": "high",
+   "evidence_quote": "While the model agreed well with our data at low cell densities, it diverged at high cell densities.",
+   "value": "peak OD 0.6 (fits) vs 4.6 (fails); microchannel, not agar"
+  },
+  {
+   "claim": "Phan 2024 proposes that attractant consumption and chemotaxis are both suppressed at higher cell densities.",
+   "source": "https://doi.org/10.1073/pnas.2309251121 (PMC10801886)",
+   "confidence": "high",
+   "evidence_quote": "in which both attractant consumption and bacterial chemotaxis are suppressed at higher cell densities",
+   "value": ""
+  },
+  {
+   "claim": "Phan 2024 low-density fit: growth rate 0.38 +/- 0.02 per h; consumption 0.51 +/- 0.05; half-saturation 7.6 +/- 3.7 uM; D_B 400 +/- 100; chi 3300 +/- 230 (the XML prints the diffusion units as uM^2/s, which I read as um^2/s).",
+   "source": "https://doi.org/10.1073/pnas.2309251121 (PMC10801886)",
+   "confidence": "medium",
+   "evidence_quote": "These PDEs fit the data well for low cell density bacterial waves",
+   "value": "alpha 0.38 +/- 0.02 /h; A_h 7.6 +/- 3.7 uM; unit-symbol caveat"
+  },
+  {
+   "claim": "Phan 2024 wave speed 4.4 um/s at low density is 15.8 mm/h by my arithmetic (4.4 x 3.6), about four times the 3 to 5 mm/h of soft agar, so it is a different regime (assuming the XML symbol means um).",
+   "source": "own calculation, script D:/Users/ashenoy00000/delphi-work/agents2/scripts/t2-patterns-deep/calc.py on Cremer 2019 source data MOESM11/MOESM22",
+   "confidence": "low",
+   "evidence_quote": "",
+   "value": "4.4 um/s = 15.84 mm/h"
+  },
+  {
+   "claim": "Contested or at least unreconciled: motility gene expression rises linearly as growth rate falls on poorer carbon sources (anticipatory investment), whereas Cremer 2019 found swimming speed and run time flat against growth rate in steady exponential growth.",
+   "source": "https://doi.org/10.1073/pnas.1910849117 (PMC6955288)",
+   "confidence": "medium",
+   "evidence_quote": "the expression of motility genes increases linearly with the decrease of growth rate on poorer carbon sources",
+   "value": "different quantity (gene expression vs measured swimming); not a direct contradiction"
+  },
+  {
+   "claim": "Ni 2020: E. coli invests more in motility in poor media, in proportion to the fitness advantage of following gradients.",
+   "source": "https://doi.org/10.1073/pnas.1910849117 (PMC6955288)",
+   "confidence": "high",
+   "evidence_quote": "in poor nutritional conditions, Escherichia coli increases its investment in motility in proportion to the reproductive fitness advantage provided by the ability to follow nutrient gradients",
+   "value": ""
+  },
+  {
+   "claim": "Evolution at the front: an optimal expansion speed exists for a given habitat size; the stable strategy is speed equal to growth rate times habitat size.",
+   "source": "https://doi.org/10.1038/s41586-019-1734-x (PMC6883132)",
+   "confidence": "high",
+   "evidence_quote": "to expand at a speed given by the product of the growth rate and habitat size",
+   "value": ""
+  },
+  {
+   "claim": "Experimental evolution (50 cycles, about 600 generations, 0.25 percent TB agar): ancestor speed about 6 mm/h; samples from 15 mm from the centre stayed at ancestor speed.",
+   "source": "https://doi.org/10.1038/s41586-019-1734-x (PMC6883132)",
+   "confidence": "high",
+   "evidence_quote": "(position C, with distance X C = 15 mm) at which the expansion speed of the evolved populations fluctuated around that of the ancestor (~6 mm/h)",
+   "value": "6 mm/h in rich TB vs 3 to 4.3 mm/h in minimal medium (Cremer)"
+  },
+  {
+   "claim": "Within a travelling band, clonal cells of very different chemotactic ability stay together by sorting along the gradient.",
+   "source": "https://doi.org/10.1038/s41467-018-04539-4 (PMC5988668)",
+   "confidence": "high",
+   "evidence_quote": "despite substantial differences in individual chemotactic abilities, the cells are able to migrate as a coherent group by spontaneously sorting themselves within the moving band",
+   "value": ""
+  },
+  {
+   "claim": "In the microchannel higher aspartate gave a slower band, consistent with the peak-then-fall dose curve in agar.",
+   "source": "https://doi.org/10.1038/s41467-018-04539-4 (PMC5988668)",
+   "confidence": "medium",
+   "evidence_quote": "as the concentration of Asp increased, the speed of the band decreased",
+   "value": ""
+  },
+  {
+   "claim": "Individual drift velocity decreases from back to front of the band, so the band is a pushed wave front.",
+   "source": "https://doi.org/10.7554/eLife.67316 (PMC8563000)",
+   "confidence": "high",
+   "evidence_quote": "enables the bacterial population to migrate as a pushed wave front",
+   "value": ""
+  },
+  {
+   "claim": "Clonal E. coli differ strongly in chemotactic sensitivity (pathway gain).",
+   "source": "https://doi.org/10.1038/s41467-019-09521-2 (PMC6478840)",
+   "confidence": "high",
+   "evidence_quote": "strong heterogeneity in the chemotactic sensitivity coefficient exists even within clonal populations of bacteria",
+   "value": ""
+  },
+  {
+   "claim": "Signalling is variable across and within single cells (FRET).",
+   "source": "https://doi.org/10.7554/eLife.27455 (PMC5809149)",
+   "confidence": "high",
+   "evidence_quote": "pervasive signaling variability, both across cells in isogenic populations and within individual cells over time",
+   "value": ""
+  },
+  {
+   "claim": "Directional persistence of runs is larger up the gradient inside a travelling wave, improving collective migration.",
+   "source": "https://doi.org/10.1073/pnas.1101996108 (abstract via Europe PMC)",
+   "confidence": "high",
+   "evidence_quote": "not only the mean run length is longer in the direction of propagation, but also that the directional persistence is larger compared to the opposite direction",
+   "value": ""
+  },
+  {
+   "claim": "Information limit: E. coli climb gradients within a factor of two of a theoretical bound.",
+   "source": "https://doi.org/10.1038/s41567-021-01380-3 (abstract via Europe PMC)",
+   "confidence": "high",
+   "evidence_quote": "Despite these limitations, E. coli climb gradients at speeds within a factor of two of the theoretical bound.",
+   "value": ""
+  },
+  {
+   "claim": "Populations can smooth out large-scale perturbations of the front in a 3D porous medium through spatial variation of sensing.",
+   "source": "https://doi.org/10.7554/eLife.71226 (PMC8903832)",
+   "confidence": "high",
+   "evidence_quote": "bacterial populations autonomously smooth out large-scale perturbations in their overall morphology",
+   "value": ""
+  },
+  {
+   "claim": "Alternative route to stable spots and rings without chemotaxis: density-dependent motility with logistic growth (arrested phase separation).",
+   "source": "https://doi.org/10.1073/pnas.1001994107 (abstract via Europe PMC)",
+   "confidence": "high",
+   "evidence_quote": "No chemotaxis is assumed in the model, yet it predicts the formation of patterns strikingly similar to some of those believed to result from chemotactic behavior.",
+   "value": ""
+  },
+  {
+   "claim": "Engineered stripes: a synthetic circuit coupling cell density to motility makes E. coli form periodic stripes in an expanding population.",
+   "source": "https://doi.org/10.1126/science.1209042 (abstract via Europe PMC)",
+   "confidence": "high",
+   "evidence_quote": "This system enabled programmed Escherichia coli cells to form periodic stripes of high and low cell densities sequentially and autonomously.",
+   "value": ""
+  },
+  {
+   "claim": "Genetic sectoring at the edge of expanding colonies is driven by fluctuations in a thin band of pioneers.",
+   "source": "https://doi.org/10.1073/pnas.0710150104 (abstract via Europe PMC)",
+   "confidence": "high",
+   "evidence_quote": "The formation of these regions is driven by random fluctuations that originate in a thin band of pioneers at the expanding frontier.",
+   "value": ""
+  },
+  {
+   "claim": "Law set 1.8.1 pins two relevant laws, fisher-kpp-speed 1.1.0 and turing-ddi 1.1.0, both status candidate (advisory, non-binding). turing-wavelength exists as an unpinned candidate. No law covers chemotactic fronts or Keller-Segel (grep of the lean tree found none).",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/laws/fisher-kpp-speed.json (law set 1.8.1)",
+   "confidence": "high",
+   "evidence_quote": "Fisher-KPP: c^2 = 4sD is the minimum of the linear speed relation, attained at one decay rate",
+   "value": "lawset-1.8.1.json created 2026-11-01"
+  },
+  {
+   "claim": "The Fisher-KPP law explicitly does not prove a wave exists or that organisms disperse diffusively; its checkable direction is the lower bound c^2 >= 4 s D (constraint KPP1).",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/laws/fisher-kpp-speed.json (law set 1.8.1)",
+   "confidence": "high",
+   "evidence_quote": "it does not establish that a travelling wave exists, that compactly supported initial data converge to it, or that any population disperses diffusively.",
+   "value": ""
+  },
+  {
+   "claim": "The Turing law gives linear instability of a spatial mode only, not a pattern; it does not describe the chemotactic front, which is a growth-and-drift travelling wave.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/laws/turing-ddi.json (law set 1.8.1)",
+   "confidence": "high",
+   "evidence_quote": "Establishes linear instability of a spatial mode, not that a pattern forms",
+   "value": ""
+  },
+  {
+   "claim": "Narla states the Fisher speed is the minimum expansion speed of the GE system, so KPP1 (c^2 >= 4 s D with s = r, D = D_rho) is a testable lower bound for this track.",
+   "source": "https://doi.org/10.1073/pnas.2105138118 (full text via Europe PMC PMC8640786)",
+   "confidence": "medium",
+   "evidence_quote": "The green dashed line represents the stable Fisher speed, c F = 2 D ρ r , the minimum expansion speed of our system.",
+   "value": "link between Narla and the law is my mapping"
+  }
+ ],
+ "key_claims": [
+  {
+   "claim": "Chemotaxis along a self-made gradient of a low-dose attractant, with an abundant carbon source, makes the E. coli front in soft agar faster than the Fisher-Kolmogorov front; speed rises with growth rate.",
+   "source": "https://doi.org/10.1038/s41586-019-1733-y (full text via Europe PMC PMC6883170)",
+   "evidence_quote": "This navigated range expansion process spreads faster and yields larger population gains than unguided expansion following the canonical Fisher-Kolmogorov dynamics"
+  },
+  {
+   "claim": "Narla 2021 gives a closed-form speed for the Growth-Expansion model: proportional to sqrt(r) and sqrt(a0/a_m), independent of uptake rate; at chi0 = 0 it is the Fisher-KPP wave.",
+   "source": "https://doi.org/10.1073/pnas.2105138118 (full text via Europe PMC PMC8640786)",
+   "evidence_quote": "The expansion speed is further increased by the square root of the relative background attractant concentration"
+  },
+  {
+   "claim": "The Patlak-Keller-Segel closure underneath the model is not directly verified in agar and fails at high cell density in a channel; the dependence of the front on growth rate beyond sqrt(r) is therefore the main open point.",
+   "source": "https://doi.org/10.1073/pnas.2309251121 (PMC10801886)",
+   "evidence_quote": "While the model agreed well with our data at low cell densities, it diverged at high cell densities."
+  },
+  {
+   "claim": "The law library (set 1.8.1) has no chemotactic-front law; fisher-kpp-speed (candidate, non-binding) gives only the lower bound c^2 >= 4 s D, and turing-ddi is not the right mechanism for a travelling front.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/laws/fisher-kpp-speed.json (law set 1.8.1)",
+   "evidence_quote": "it does not establish that a travelling wave exists, that compactly supported initial data converge to it, or that any population disperses diffusively."
+  }
+ ],
+ "table": [
+  {
+   "name": "WT HE206, 60 mM acetate, 100 uM Asp, 0.25% agar",
+   "fields": "speed_mm_per_h=2.959; growth_rate_per_h=0.542; n_speed=2; fisher_cF_mm_per_h=0.626 (own calc, D=50.2 um2/s); u_over_cF=4.73",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM11_ESM.xlsx"
+  },
+  {
+   "name": "WT HE206, 20 mM glucose-6-phosphate, 100 uM Asp",
+   "fields": "speed_mm_per_h=3.926; growth_rate_per_h=1.1253; n_speed=2; fisher_cF=0.902; u_over_cF=4.35",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM11_ESM.xlsx"
+  },
+  {
+   "name": "WT HE206, 20 mM galactose, 100 uM Asp",
+   "fields": "speed_mm_per_h=3.768; growth_rate_per_h=0.686; n_speed=2; fisher_cF=0.704; u_over_cF=5.35",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM11_ESM.xlsx"
+  },
+  {
+   "name": "WT HE206, 20 mM glucose, 100 uM Asp",
+   "fields": "speed_mm_per_h=4.335; sd=0.442; n=5; growth_rate_per_h=0.9985; fisher_cF=0.850; u_over_cF=5.10; narla_eq21_pred_mm_per_h=4.87 (ratio 1.12)",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM11_ESM.xlsx"
+  },
+  {
+   "name": "WT HE206, 40 mM glycerol, 100 uM Asp",
+   "fields": "speed_mm_per_h=3.675; sd=0.318; n=9; growth_rate_per_h=0.7735; fisher_cF=0.748; u_over_cF=4.91; narla_eq21_pred=4.28 (ratio 1.17)",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM11_ESM.xlsx"
+  },
+  {
+   "name": "WT HE206, 11 mM mannose, 100 uM Asp",
+   "fields": "speed_mm_per_h=3.034; sd=0.182; n=3; growth_rate_per_h=0.5152; fisher_cF=0.610; u_over_cF=4.97; narla_eq21_pred=3.49 (ratio 1.15)",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM11_ESM.xlsx"
+  },
+  {
+   "name": "Pu-glpFK uptake titration on glycerol + 100 uM Asp (0, 10, 25, 50, 800 uM inducer)",
+   "fields": "speed_mm_per_h=0.999,2.009,2.362,2.769,4.171; growth_rate_per_h=0.222,0.3275,0.4198,0.5273,0.7382; loglog_slope_all=1.12; loglog_slope_without_zero_inducer=0.89 (own calc)",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM11_ESM.xlsx"
+  },
+  {
+   "name": "Held-out strains vs fitted u=sqrt(k r), k=16.90 mm2/h",
+   "fields": "Pu-ptsG1 +11%,+15%; Pu-ptsG2 +64%,+34%,+10%; glpK22 -17% (own calc; predicted minus measured over measured)",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM11_ESM.xlsx"
+  },
+  {
+   "name": "Same growth rate, different speed",
+   "fields": "glpK22 glycerol r=0.9956/h u=4.95 mm/h vs WT glucose r=0.9985/h u=4.33 mm/h; speed_ratio=1.14 (own calc)",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM11_ESM.xlsx"
+  },
+  {
+   "name": "Serine as attractant, WT, 100 uM",
+   "fields": "glucose u=4.922 mm/h (r=0.917/h); glycerol u=4.203 mm/h (r=0.7695/h); both 1.14 x the aspartate speed (own calc)",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM11_ESM.xlsx"
+  },
+  {
+   "name": "Casamino acids (0.05 as listed), WT",
+   "fields": "glycerol+cAA u=7.632 mm/h r=1.397/h; glucose+cAA u=7.358 mm/h r=1.505/h; u_over_cF=7.59,7.05 (own calc)",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM11_ESM.xlsx"
+  },
+  {
+   "name": "Aspartate dose series, WT on 20 mM glucose (10..10000 uM)",
+   "fields": "speed_mm_per_h=2.204,3.040,3.711,4.335,4.519,4.615,4.650,3.379,2.728,2.104 at 10,30,50,100,300,500,1000,3000,5000,10000 uM; peak=1000 uM; slope_10_to_100uM=0.30",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM22_ESM.xlsx"
+  },
+  {
+   "name": "Aspartate dose series, WT on 40 mM glycerol",
+   "fields": "speed_mm_per_h=1.919,2.582,2.995,3.675,3.208,2.856,2.776,2.572,1.771,1.537,1.317 at 10,30,50,100,200,300,500,1000,3000,5000,10000 uM; peak=100 uM; slope_10_to_100uM=0.28",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM22_ESM.xlsx"
+  },
+  {
+   "name": "Cremer 2019 published simulation parameters (mainsimulation block)",
+   "fields": "D_chemotaxis_1=50.2e-12 m2/s (=50.2 um2/s=0.1807 mm2/h); D_nutrients=8.0e-10 m2/s (=800 um2/s=2.88 mm2/h); xhi_1=0.315e-9 m2/s (=315 um2/s); weber_offset_1=0.001 mM (=1 uM); weber_offsetmax_1=0.03 mM (=30 uM); lambda_1=0.00019166 /s (=0.69 /h)",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM3_ESM.txt"
+  },
+  {
+   "name": "Narla 2021 closed form, validity",
+   "fields": "validity_threshold_a0_over_am >> 1+Da/(chi0-D) = 4.02 with the published parameters; a0/am=100 for 100 uM aspartate (own calc)",
+   "source": "https://doi.org/10.1073/pnas.2105138118"
+  },
+  {
+   "name": "Narla 2021 parameter ranges",
+   "fields": "D_rho_agar~50 um2/s; D_rho_liquid=300-1000 um2/s; phi=(chi0-D_rho)/D_rho=2-8; a_m~a_k~1 uM (aspartate)",
+   "source": "https://doi.org/10.1073/pnas.2105138118"
+  },
+  {
+   "name": "Cremer 2019 reference confocal run",
+   "fields": "front_speed~3.2 mm/h (glycerol+aspartate); source-data table says 3.675 mm/h",
+   "source": "https://doi.org/10.1038/s41586-019-1733-y"
+  },
+  {
+   "name": "Liu 2019 experimental evolution",
+   "fields": "ancestor_speed~6 mm/h (0.25% TB agar); cycles=50 (~600 generations); neutral selection radius=15 mm; seeded cells per transfer~7.4e6; two-strain simulation c_slow=652 um2/s u=4.95 mm/h, c_fast=727 um2/s u=5.17 mm/h",
+   "source": "https://doi.org/10.1038/s41586-019-1734-x"
+  },
+  {
+   "name": "Phan 2024 low-density fit (microchannel)",
+   "fields": "peak_OD=0.6; growth_rate=0.38+/-0.02 /h; gamma=0.51+/-0.05; A_h=7.6+/-3.7 uM; D_B=400+/-100; chi=3300+/-230; wave_speed=4.4+/-0.1 (um/s, symbol printed as uM; =15.8 mm/h)",
+   "source": "https://doi.org/10.1073/pnas.2309251121"
+  },
+  {
+   "name": "Law fisher-kpp-speed 1.1.0 (candidate, lawset 1.8.1)",
+   "fields": "statement=c^2>=4*s*D bound (KPP1); inputs=spread_speed, selection_coefficient, dispersal_D; consistency_over_23_rows=min 2.49, max 7.09 for u/cF",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/laws/fisher-kpp-speed.json"
+  },
+  {
+   "name": "Law turing-ddi 1.1.0 (candidate, lawset 1.8.1)",
+   "fields": "statement=two-species linear instability needs unequal diffusivities; not applicable to travelling chemotactic front",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/laws/turing-ddi.json"
+  }
+ ],
+ "recommendations": [
+  "Use the Narla closed form only as a baseline within its stated validity band (a0/a_m >> 4 with Cremer parameters, so 100 uM is fine); do not use sqrt(r) across an uptake-titration series, where the measured slope is about 1.",
+  "If a law is added to the library for this track, the honest scope is algebra on Eq 21 (monotone in r and a0, independent of mu, bounded below by the Fisher speed), tagged as theorem-from-hypothesis with the PKS closure as the named hypothesis, not as a statement that colonies obey it. fisher-kpp-speed can be reused for the lower bound; turing-ddi should not be applied to this system.",
+  "Treat the Phan 2024 high-density failure as the main threat to the model: any frozen prediction involving dense bulges or high attractant should be labelled as exploring the PKS breakdown.",
+  "Report ratios to the Fisher speed alongside absolute speeds so that results from different media (3 to 4.3 mm/h minimal, 6 mm/h TB, 7 mm/h casamino acids) compare on one scale.",
+  "Next literature step: read the Narla SI (Table S1, section S6) and the Cremer SI Text 2 to settle which parameters were tuned on which conditions."
+ ],
+ "reproduce": [
+  {
+   "what": "Resolve DOIs and title queries on Crossref (metadata check)",
+   "command_or_url": "python -X utf8 D:/Users/ashenoy00000/delphi-work/agents2/scripts/t2-patterns-deep/crossref_check.py ; then crossref_check2.py (Python 3.14; may hit HTTP 429 on rapid reruns, the scripts retry)",
+   "expected": "Titles match: e.g. 10.1038/s41586-019-1733-y -> Chemotaxis as a navigation strategy to boost range expansion; 10.1073/pnas.2309251121 -> Direct measurement of dynamic attractant gradients reveals breakdown of the Patlak-Keller-Segel chemotaxis model. Three DOIs I first guessed from memory (Croze, Saragosti, Brenner) were wrong and are NOT used."
+  },
+  {
+   "what": "Fetch full text of open-access papers via Europe PMC",
+   "command_or_url": "cd D:/Users/ashenoy00000/delphi-work/agents2/scripts/t2-patterns-deep ; python -I epmc_fetch.py \"<exact title>\" <slug>  (titles in the report; slugs cremer2019, narla2021, fu2018, liu2019, phan2024, bhatt2022, ni2020, bai2021, salek2019, keegstra2017). Endpoint: https://www.ebi.ac.uk/europepmc/webservices/rest/<PMCID>/fullTextXML",
+   "expected": "Text files in D:/Users/ashenoy00000/delphi-work/agents2/scratch/t2-patterns-deep/ (cremer2019.txt about 94 kB, narla2021.txt about 80 kB)"
+  },
+  {
+   "what": "Fetch abstracts of the paywalled papers",
+   "command_or_url": "python -X utf8 abstracts.py (Europe PMC search, resultType=core, by DOI)",
+   "expected": "abstracts.json with non-empty abstracts for all except 10.1016/0022-5193(71)90051-8 and 10.1038/239500a0"
+  },
+  {
+   "what": "Download Cremer 2019 source data (3 files, 29 kB)",
+   "command_or_url": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM11_ESM.xlsx ; https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM22_ESM.xlsx ; https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM3_ESM.txt (curl -A delphi-research/0.1 into D:/Users/ashenoy00000/delphi-work/data/t2-patterns-deep/)",
+   "expected": "Downloaded 2026-11-12. MOESM11.xlsx 11512 bytes sha256 685b5e376f51345e26b8f307a0403a0dff45088a9a075325a1507ed623d9cb42; MOESM22.xlsx 11707 bytes sha256 7f758405641324bc28c5740cf004be42c8d9160528aa42c7b53ee6f0ef778b68; MOESM3.txt 5908 bytes sha256 40072304946f8e5ff32ec7dfcbcd5efba11b97bdb54dda0dd0a6214df0f78d38"
+  },
+  {
+   "what": "Own calculations (Fisher speed ratios, exponents, Narla Eq 21 vs data, dose peaks, KPP1 check)",
+   "command_or_url": "python -X utf8 D:/Users/ashenoy00000/delphi-work/agents2/scripts/t2-patterns-deep/calc.py (needs numpy, openpyxl)",
+   "expected": "k=16.90 mm2/h; WT u/cF 4.35 to 5.35; Narla/measured 1.07 to 1.32; Pu-glpFK slope 1.12 (0.89 without zero point); dose-series slopes 0.30 and 0.28; peaks 1000 uM (glucose) and 100 uM (glycerol); KPP1 u/cF min 2.49 max 7.09 over 23 rows"
+  },
+  {
+   "what": "Check the law library state",
+   "command_or_url": "python -c \"import json;d=json.load(open(r'D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/lawsets/lawset-1.8.1.json'));print([l for l in d['laws'] if l['law_id'] in ('fisher-kpp-speed','turing-ddi')])\"  (read-only)",
+   "expected": "both listed with status candidate; fisher-kpp-speed.json sha256 635cebac6fa37af67e6649a6d984a460d7f8a4bac7d3f72d6195252320c85812, turing-ddi.json sha256 270076b69392386a5d2ed3dca9800786cbfb96b3480f701043f956af326cf299"
+  },
+  {
+   "what": "Rebuild and quote-check this report",
+   "command_or_url": "python -X utf8 D:/Users/ashenoy00000/delphi-work/agents2/scripts/t2-patterns-deep/build.py",
+   "expected": "Writes D:/Users/ashenoy00000/delphi-work/agents2/t2-patterns-deep.json; aborts if any evidence_quote is not found in its saved source text (all 51 quoted findings passed)"
+  }
+ ],
+ "citations": [
+  {
+   "authors": "Cremer J, Honda T, Tang Y, Wong-Ng J, Vergassola M, Hwa T",
+   "year": 2019,
+   "title": "Chemotaxis as a navigation strategy to boost range expansion",
+   "doi_or_arxiv": "10.1038/s41586-019-1733-y",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; full text read via Europe PMC PMC6883170",
+   "used_for": "chosen system, data, GE model",
+   "venue": "Nature"
+  },
+  {
+   "authors": "Narla AV, Cremer J, Hwa T",
+   "year": 2021,
+   "title": "A traveling-wave solution for bacterial chemotaxis with growth",
+   "doi_or_arxiv": "10.1073/pnas.2105138118",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; full text read via Europe PMC PMC8640786",
+   "used_for": "closed-form speed law",
+   "venue": "PNAS"
+  },
+  {
+   "authors": "Liu W, Cremer J, Li D, Hwa T, Liu C",
+   "year": 2019,
+   "title": "An evolutionarily stable strategy to colonize spatially extended habitats",
+   "doi_or_arxiv": "10.1038/s41586-019-1734-x",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; full text read via PMC6883132",
+   "used_for": "evolution of expansion speed",
+   "venue": "Nature"
+  },
+  {
+   "authors": "Phan TV, Mattingly HH, Vo L, Marvin JS, Looger LL, Emonet T",
+   "year": 2024,
+   "title": "Direct measurement of dynamic attractant gradients reveals breakdown of the Patlak-Keller-Segel chemotaxis model",
+   "doi_or_arxiv": "10.1073/pnas.2309251121",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; full text read via PMC10801886",
+   "used_for": "contested PKS closure",
+   "venue": "PNAS"
+  },
+  {
+   "authors": "Fu X, Kato S, Long J, Mattingly HH, He C, Vural DC, Zucker SW, Emonet T",
+   "year": 2018,
+   "title": "Spatial self-organization resolves conflicts between individuality and collective migration",
+   "doi_or_arxiv": "10.1038/s41467-018-04539-4",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; text read via PMC5988668 (abstract, introduction, first results)",
+   "used_for": "heterogeneity in bands",
+   "venue": "Nat Commun"
+  },
+  {
+   "authors": "Bhattacharjee T, Amchin DB, Alert R, Ott JA, Datta SS",
+   "year": 2022,
+   "title": "Chemotactic smoothing of collective migration",
+   "doi_or_arxiv": "10.7554/eLife.71226",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; abstract and methods read via PMC8903832",
+   "used_for": "front stability in porous media",
+   "venue": "eLife"
+  },
+  {
+   "authors": "Ni B, Colin R, Link H, Endres RG, Sourjik V",
+   "year": 2020,
+   "title": "Growth-rate dependent resource investment in bacterial motile behavior quantitatively follows potential benefit of chemotaxis",
+   "doi_or_arxiv": "10.1073/pnas.1910849117",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12 (Crossref year 2019 online, published 2020); full text read via PMC6955288",
+   "used_for": "growth-rate dependence of motility",
+   "venue": "PNAS"
+  },
+  {
+   "authors": "Bai Y, He C, Chu P, Long J, Li X, Fu X",
+   "year": 2021,
+   "title": "Spatial modulation of individual behaviors enables an ordered structure of diverse phenotypes during bacterial group migration",
+   "doi_or_arxiv": "10.7554/eLife.67316",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; abstract read via PMC8563000",
+   "used_for": "pushed wave front",
+   "venue": "eLife"
+  },
+  {
+   "authors": "Salek MM, Carrara F, Fernandez V, Guasto JS, Stocker R",
+   "year": 2019,
+   "title": "Bacterial chemotaxis in a microfluidic T-maze reveals strong phenotypic heterogeneity in chemotactic sensitivity",
+   "doi_or_arxiv": "10.1038/s41467-019-09521-2",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; abstract read via PMC6478840",
+   "used_for": "clonal heterogeneity",
+   "venue": "Nat Commun"
+  },
+  {
+   "authors": "Keegstra JM, Kamino K, Anquez F, Lazova MD, Emonet T, Shimizu TS",
+   "year": 2017,
+   "title": "Phenotypic diversity and temporal variability in a bacterial signaling network revealed by single-cell FRET",
+   "doi_or_arxiv": "10.7554/eLife.27455",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; abstract read via PMC5809149",
+   "used_for": "signalling variability",
+   "venue": "eLife"
+  },
+  {
+   "authors": "Adler J",
+   "year": 1966,
+   "title": "Chemotaxis in Bacteria",
+   "doi_or_arxiv": "10.1126/science.153.3737.708",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; abstract read via Europe PMC",
+   "used_for": "origin of the bands",
+   "venue": "Science"
+  },
+  {
+   "authors": "Wolfe AJ, Berg HC",
+   "year": 1989,
+   "title": "Migration of bacteria in semisolid agar",
+   "doi_or_arxiv": "10.1073/pnas.86.18.6973",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; abstract read via Europe PMC",
+   "used_for": "swarming in agar needs tumbling",
+   "venue": "PNAS"
+  },
+  {
+   "authors": "Croze OA, Ferguson GP, Cates ME, Poon WCK",
+   "year": 2011,
+   "title": "Migration of Chemotactic Bacteria in Soft Agar: Role of Gel Concentration",
+   "doi_or_arxiv": "10.1016/j.bpj.2011.06.023",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; abstract read via Europe PMC",
+   "used_for": "agar concentration dependence",
+   "venue": "Biophys J"
+  },
+  {
+   "authors": "Saragosti J, Calvez V, Bournaveas N, Perthame B, Buguin A, Silberzan P",
+   "year": 2011,
+   "title": "Directional persistence of chemotactic bacteria in a traveling concentration wave",
+   "doi_or_arxiv": "10.1073/pnas.1101996108",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; abstract read via Europe PMC",
+   "used_for": "single-cell behaviour in a wave",
+   "venue": "PNAS"
+  },
+  {
+   "authors": "Budrene EO, Berg HC",
+   "year": 1991,
+   "title": "Complex patterns formed by motile cells of Escherichia coli",
+   "doi_or_arxiv": "10.1038/349630a0",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; abstract read via Europe PMC",
+   "used_for": "spots and stripes",
+   "venue": "Nature"
+  },
+  {
+   "authors": "Budrene EO, Berg HC",
+   "year": 1995,
+   "title": "Dynamics of formation of symmetrical patterns by chemotactic bacteria",
+   "doi_or_arxiv": "10.1038/376049a0",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; not read (metadata only)",
+   "used_for": "companion paper, not used for a number",
+   "venue": "Nature"
+  },
+  {
+   "authors": "Cates ME, Marenduzzo D, Pagonabarraga I, Tailleur J",
+   "year": 2010,
+   "title": "Arrested phase separation in reproducing bacteria creates a generic route to pattern formation",
+   "doi_or_arxiv": "10.1073/pnas.1001994107",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; abstract read via Europe PMC",
+   "used_for": "pattern without chemotaxis",
+   "venue": "PNAS"
+  },
+  {
+   "authors": "Liu C, Fu X, Liu L, Ren X, et al.",
+   "year": 2011,
+   "title": "Sequential Establishment of Stripe Patterns in an Expanding Cell Population",
+   "doi_or_arxiv": "10.1126/science.1209042",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; abstract read via Europe PMC",
+   "used_for": "engineered stripes",
+   "venue": "Science"
+  },
+  {
+   "authors": "Hallatschek O, Hersen P, Ramanathan S, Nelson DR",
+   "year": 2007,
+   "title": "Genetic drift at expanding frontiers promotes gene segregation",
+   "doi_or_arxiv": "10.1073/pnas.0710150104",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; abstract read via Europe PMC",
+   "used_for": "sectoring at the edge",
+   "venue": "PNAS"
+  },
+  {
+   "authors": "Mattingly HH, Kamino K, Machta BB, Emonet T",
+   "year": 2021,
+   "title": "Escherichia coli chemotaxis is information limited",
+   "doi_or_arxiv": "10.1038/s41567-021-01380-3",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; abstract read via Europe PMC",
+   "used_for": "upper bound on gradient climbing",
+   "venue": "Nat Phys"
+  },
+  {
+   "authors": "Hillen T, Painter KJ",
+   "year": 2009,
+   "title": "A user's guide to PDE models for chemotaxis",
+   "doi_or_arxiv": "10.1007/s00285-008-0201-3",
+   "verified": true,
+   "how_verified": "Crossref returned title (issued 2008 online); abstract read via Europe PMC",
+   "used_for": "review of Keller-Segel variants",
+   "venue": "J Math Biol"
+  },
+  {
+   "authors": "Wadhams GH, Armitage JP",
+   "year": 2004,
+   "title": "Making sense of it all: bacterial chemotaxis",
+   "doi_or_arxiv": "10.1038/nrm1524",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; abstract read via Europe PMC",
+   "used_for": "molecular review",
+   "venue": "Nat Rev Mol Cell Biol"
+  },
+  {
+   "authors": "Keller EF, Segel LA",
+   "year": 1970,
+   "title": "Initiation of slime mold aggregation viewed as an instability",
+   "doi_or_arxiv": "10.1016/0022-5193(70)90092-5",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; not read (paywalled)",
+   "used_for": "origin of the model family, cited via Hillen and Painter",
+   "venue": "J Theor Biol"
+  },
+  {
+   "authors": "Fisher RA",
+   "year": 1937,
+   "title": "The wave of advance of advantageous genes",
+   "doi_or_arxiv": "10.1111/j.1469-1809.1937.tb02153.x",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; not read, cited by the law record",
+   "used_for": "Fisher wave",
+   "venue": "Ann Eugenics"
+  },
+  {
+   "authors": "Aronson DG, Weinberger HF",
+   "year": 1978,
+   "title": "Multidimensional nonlinear diffusion arising in population genetics",
+   "doi_or_arxiv": "10.1016/0001-8708(78)90130-5",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; not read, cited by the law record",
+   "used_for": "rigorous spreading speed",
+   "venue": "Adv Math"
+  },
+  {
+   "authors": "Keller EF, Segel LA",
+   "year": 1971,
+   "title": "Traveling bands of chemotactic bacteria: A theoretical analysis",
+   "doi_or_arxiv": "10.1016/0022-5193(71)90051-8",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; not read (paywalled, no abstract)",
+   "used_for": "the original travelling-band model; content taken from Narla 2021",
+   "venue": "J Theor Biol"
+  },
+  {
+   "authors": "Berg HC, Brown DA",
+   "year": 1972,
+   "title": "Chemotaxis in Escherichia coli analysed by Three-dimensional Tracking",
+   "doi_or_arxiv": "10.1038/239500a0",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/<doi> returned this title on 2026-11-12; not read",
+   "used_for": "run-and-tumble background, no number used",
+   "venue": "Nature"
+  }
+ ],
+ "could_not_find": [
+  "Original Keller and Segel 1971 paper (10.1016/0022-5193(71)90051-8): paywalled, no abstract in Europe PMC; its content is reported only as described by Narla 2021 and Hillen and Painter 2009.",
+  "Berg and Brown 1972 and Budrene and Berg 1995: metadata only, not read; no number depends on them.",
+  "Extended Data figures of Cremer 2019 (growth-rate and diffusion plots, uptake, review of earlier models in ED Fig 6) are figures; I could not read their values from the XML. I deliberately did NOT open the other Cremer source-data sheets (MOESM12 to 21, 23, 24) or the 168 MB confocal archive, because the design agent quarantined them for blind predictions; I used only MOESM11, MOESM22 and MOESM3 which that agent had already seen.",
+  "Narla 2021 SI Appendix (Table S1 defaults, section S6 for the carrying-capacity factor gamma) was not fetched; Eq 24 and 25 (the dose-curve peak) were not read by me in this run, only noted from the design report. Eq 22 and Eq 21 were read from the garbled XML symbols.",
+  "Phan 2024 symbols for units appear as uM in the XML where context requires um; I did not resolve this against the PDF. The cell-density-dependent fix equations (Eq 6) were not transcribed.",
+  "No independent second-laboratory table of front speed against growth rate for the same medium was found; Liu 2019 (6 mm/h in rich TB) and Fu 2018 are in different media/geometries so are not comparable.",
+  "Fu 2018, Bai 2021, Salek 2019, Keegstra 2017, Bhattacharjee 2022: I read abstracts and selected passages only, not every section.",
+  "Whether Narla Eq 21 passes or fails the held-out strains is not a literature fact; I give only the arithmetic comparisons with Cremer published parameters, which are not independent of the paper authors parameter choice.",
+  "The data licence of the Springer supplementary files was not found (no explicit licence); files kept only as 3 small files with hashes.",
+  "OpenAlex not used per rule; no citation graph counts reported. Review literature is thin: I found no recent single review article on chemotactic range expansion; the two reviews cited (Hillen and Painter 2009; Wadhams and Armitage 2004) are of the model family and the molecular pathway, and Cremer 2019 itself summarises earlier growth-including models (ED Fig 6, not readable here)."
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t2-patterns-deep/crossref_check.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t2-patterns-deep/crossref_check2.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t2-patterns-deep/epmc_fetch.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t2-patterns-deep/abstracts.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t2-patterns-deep/calc.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t2-patterns-deep/build_part1.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t2-patterns-deep/build.py"
+ ]
+}

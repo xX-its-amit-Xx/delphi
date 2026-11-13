@@ -1,0 +1,511 @@
+{
+ "label": "bm-open-hardware-repro",
+ "topic": "Reproducibility pack: parts list, files and costs",
+ "summary": "Reproduction pack for the first bilayer swelling experiment on Formlabs hardware, with prices read from official Formlabs store pages on 2026-11-12. Bought new, the core kit costs about $9.0k to $11.5k: $5,133 is read directly from Formlabs and Adafruit pages (Form 4 Basic $2,625, Form Wash V2 $699, Form Cure V2 $999, two extra tanks $238, three 1 L resins $547, two humidity sensors $25), $3.4k to $4.7k comes from search-result snippets (mostly the 0.1 mg balance at $2.8k to $3.7k) and $0.4k to $1.7k from unverified guesses. Most of it can be borrowed (printer, wash, cure, balance, scanner, microscope, camera); the unavoidable purchases are resin, tanks, IPA, sensors, salts and small items, about $920 to $1,230. It contradicts an earlier file on one point: Open Material Mode has an official price, $875 for the Form 4, not about $3.7k. It amends the design: a 90 %RH salt jar is not a clean fixed point, so use NaCl (75 %RH) and K2SO4 (about 97 %RH). Instrument needs follow from the signal: a 40x4x1 mm strip weighs about 174 mg, so a 0.1 mg balance gives 0.3 % error at 8 % uptake and a 1 mg balance 2.9 %; length needs optical measurement at about 10 um per pixel with a certified scale, thickness about 2 um pixels. Included: a file-naming and logging convention with a tested validator, a pinned open-source Python stack that resolves under Python 3.14, and SHA-256 manifests of every saved page. The step most likely to differ between labs is conditioning each layer to a defined dry reference mass after the IPA wash: Flexible 80A V2 takes up about 45 % IPA by mass in a day, nobody has measured drying rates, and Formlabs gives two different wash times. PreForm is free but not open source.",
+ "lay_summary": "This is a shopping list and instruction sheet so another lab can repeat our first test without asking us anything. The test needs a resin 3D printer, a rinse-and-bake station, a very fine scale and a way to hold air at a known dampness. Bought new it costs about as much as a small used car, but most of it can be borrowed from a university lab or makerspace, leaving about a thousand dollars of materials to buy. The step most likely to go differently from lab to lab is getting each printed strip properly dry after its alcohol rinse, because the soft rubber-like resin soaks up almost half its weight in alcohol and nobody has measured how fast it dries. If one lab leaves a trace of alcohol inside, it will read that as the strip swelling in water. So every lab should first record a drying curve, like weighing laundry until it stops getting lighter.",
+ "findings": [
+  {
+   "claim": "Form 4 Basic Package list price is $2,625 (SKU PKG-F4-BASIC), excluding sales tax, on the official Formlabs store page fetched 2026-11-12.",
+   "source": "https://formlabs.com/store/form-4/ ; saved D:/Users/ashenoy00000/delphi-work/data/bm-hw-repro/store_form-4_.html",
+   "confidence": "high",
+   "evidence_quote": "SKU: PKG-F4-BASIC $2,625 excl. sales tax",
+   "value": "USD 2625"
+  },
+  {
+   "claim": "The Basic Package contains one printer, one resin tank, one mixer, one build platform and one Finish Kit; no resin and no wash or cure station.",
+   "source": "https://formlabs.com/store/form-4/",
+   "confidence": "high",
+   "evidence_quote": "What’s Included Form 4 Printer Form 4 Resin Tank Form 4 Mixer Form 4 Build Platform Form 4 Finish Kit"
+  },
+  {
+   "claim": "Formlabs sells a separate Form 4 Resin Tank at $119 and a Form 4 Mixer at $50, and describes one tank per resin type as the intended workflow, so the three-resin design needs two extra tanks ($238).",
+   "source": "https://formlabs.com/store/materials/tough-1000-resin/ ; https://formlabs.com/products/flexible-50a-resin/",
+   "confidence": "high",
+   "evidence_quote": "With a separate tank for each individual resin color or type, switching materials is as easy as sliding in a new tank.",
+   "value": "tank USD 119; mixer USD 50"
+  },
+  {
+   "claim": "Form Wash V2 costs $699 (SKU FH-WA-03) and Form Cure V2 120V costs $999 (SKU FH-CU-120V-02); Form Wash takes 7-15 L of solvent.",
+   "source": "https://formlabs.com/store/form-wash/ ; https://formlabs.com/store/form-cure/",
+   "confidence": "high",
+   "evidence_quote": "7 - 15 Liters Flexible solvent volumes to wash parts of all sizes.",
+   "value": "wash USD 699; cure USD 999"
+  },
+  {
+   "claim": "Resin 1 L Form 4 cartridges: Flexible 80A Resin V2 $199 (RS-C2-FL80-02); Flexible 50A $199 (RS-C2-ELCL-02); Tough 1000 $149 (RS-C2-TO10-01); Rigid 10K $299 (RS-C2-RG10-11); Silicone 40A $349 (RS-C2-SI40-01).",
+   "source": "https://formlabs.com/products/flexible-80a-resin/ ; /flexible-50a-resin/ ; /store/materials/tough-1000-resin/ ; /rigid-10k-resin/ ; /silicone-40a-resin/ (JSON-LD in saved pages; script extract_offers.py)",
+   "confidence": "high",
+   "evidence_quote": "\"name\":\"1 L - Form 4\",\"sku\":\"RS-C2-FL80-02\" ... \"price\":199,\"priceCurrency\":\"USD\""
+  },
+  {
+   "claim": "CONTRADICTS bm-formlabs-printing-workflows.json: Open Material Mode has an official Formlabs price. Form 4 (non-biocomp) is $875, lifetime, per printer (SKU SFT-OMM-F4-02); Form 4L $4,999; Form 4B $2,499; Fuse 1 generation $11,899. That file said Formlabs pages give none and quoted a reseller $3,748.50, which matches none of these tiers.",
+   "source": "https://formlabs.com/store/materials/open-material-mode/ ; saved D:/Users/ashenoy00000/delphi-work/data/bm-hw-repro/omm.html",
+   "confidence": "high",
+   "evidence_quote": "Open Material Mode for Form 4 (non-biocomp) $875",
+   "value": "USD 875"
+  },
+  {
+   "claim": "Open Material Mode is a one-time purchase per printer for lifetime access and cannot be transferred.",
+   "source": "https://formlabs.com/store/materials/open-material-mode/",
+   "confidence": "high",
+   "evidence_quote": "Optional, one-time purchase per printer for lifetime access."
+  },
+  {
+   "claim": "Form 4 Flex Build Platform is $339 (SKU BP-F4-02), tool-free part release; useful for thin strips.",
+   "source": "https://formlabs.com/products/form-4-flex-build-platform/",
+   "confidence": "high",
+   "evidence_quote": "Form 4 Flex Build Platform with Quick Release Technology allows you to quickly and easily remove parts from the print surface without tools in seconds.",
+   "value": "USD 339"
+  },
+  {
+   "claim": "Fuse path priced for completeness, not needed for the first experiment: Fuse 1+ 30W Starter Package $25,797; Fuse Sift $9,999; Fuse Blast $13,999; Nylon 12 Powder 10 kg $999; Nylon 12 White 10 kg $1,099; Nylon 11 6 kg $699.",
+   "source": "https://formlabs.com/store/fuse-1/ ; /store/fuse-sift/ ; /store/fuse-blast/ ; /store/materials/nylon-12-powder/ ; /nylon-12-white-powder/ ; /nylon-11-powder/ (JSON-LD, extract_offers.py)",
+   "confidence": "high",
+   "value": "Starter 25797 + Sift 9999 + Blast 13999 = USD 49,795 before powder"
+  },
+  {
+   "claim": "Formlabs wash table (confirmed): Flexible 80A Resin V2 5 min + 5 min IPA; Tough 1000 10 + 10 min with at least 30 min air dry; Rigid 10K 10 + 10 min in its own bucket; Silicone 40A 20 min with a special solvent route; Flexible 50A 20 min.",
+   "source": "https://formlabs.com/support/Form-Wash-Time-Settings/",
+   "confidence": "high",
+   "evidence_quote": "Flexible 80A Resin V2 5 minutes + 5 minutes** Wash parts printed in Flexible 80A Resin V2 in two cycles, preferably using fresh solvent for the second wash."
+  },
+  {
+   "claim": "Formlabs cure table (confirmed): Flexible 80A V2 two cycles, cycle 1 5 min no heat with parts submerged in water in a glass beaker, cycle 2 5 min 80 C; Tough 1000 12 min 70 C or Low warp 12 min no heat; Flexible 50A 7 min 70 C; Rigid 10K 3 min preheat + 7 min 80 C; Silicone 40A 10 min 60 C.",
+   "source": "https://formlabs.com/support/Form-Cure-2nd-Generation-time-and-temperature-settings/",
+   "confidence": "high",
+   "evidence_quote": "5: Place dry parts in a glass beaker (or other UV-transparent container) and completely submerge the parts in room temperature water."
+  },
+  {
+   "claim": "PreForm is free proprietary software (not open source) for Windows 10 1809+ or macOS 13+. It is the only non-open-source item in the chain; no open slicer for Form 4 is named on Formlabs pages.",
+   "source": "https://formlabs.com/software/preform/",
+   "confidence": "high",
+   "evidence_quote": "Offered totally for free, with no licenses, annual fees, or installation limits, PreForm ensures your workflow is smooth and worry-free."
+  },
+  {
+   "claim": "PreForm 3.62.0 and later supports projects with builds across different printers and materials, so the two-resin strip is one project of two builds, not one two-resin job.",
+   "source": "https://formlabs.com/support/Opening-a-model-in-PreForm/",
+   "confidence": "high",
+   "evidence_quote": "Starting with PreForm 3.62.0, PreForm supports projects—you can set up builds across different printers and materials, switch between them from the new project panel"
+  },
+  {
+   "claim": "PreForm opens FORM, FPS, STL, OBJ, 3MF, STEP/STP/STPZ, SLDPRT/SLDASM, PRT/ASM, JT, CATPart/CATProduct and IPT files. Use STL or 3MF as the archived geometry.",
+   "source": "https://formlabs.com/support/Opening-a-model-in-PreForm/",
+   "confidence": "high",
+   "evidence_quote": "PreForm can open 3D models in following formats: PreForm jobs FORM Formlabs print settings FPS STL files STL Wavefront OBJ files OBJ 3MF files 3MF"
+  },
+  {
+   "claim": "Humidity fixed points of saturated salts at 25 C (Greenspan 1977, Table 2, read from OCR of the NIST PDF): MgCl2 32.78 +-0.16, K2CO3 43.16 +-0.39, Mg(NO3)2 52.89 +-0.22, NaCl 75.29 +-0.12 %RH. K2SO4 is 97.59 (20 C) and 97.00 (30 C) in Table 3, so about 97.3 at 25 C by my linear interpolation.",
+   "source": "https://doi.org/10.6028/jres.081A.011 -> https://nvlpubs.nist.gov/nistpubs/jres/81A/jresv81An1p89_A1b.pdf ; saved D:/Users/ashenoy00000/delphi-work/data/bm-hw-repro/greenspan/g.pdf",
+   "confidence": "medium",
+   "evidence_quote": "25 32. 78 � 0.16 38.17 � 0.50 43.16 � 0.39 52.89 � 0.22 57.057 � 0 .40 64 .92 � 3.5 68.86 � 0.24 70.85 � 0.04 74.25 � 0.32 75.29 � 0.12",
+   "value": "MgCl2 32.78; NaCl 75.29; K2SO4 ~97.3 %RH at 25 C"
+  },
+  {
+   "claim": "Salt-jar temperature coefficients from Greenspan Table 3 (20 to 30 C): MgCl2 -0.063, NaCl -0.038, K2SO4 -0.059 %RH per C, so a +-2 C room gives at most +-0.13 %RH; the jar is not the weak link, the sensor is.",
+   "source": "own calculation D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/resolution.py from Greenspan Table 3",
+   "confidence": "medium",
+   "value": "see resolution_out.txt"
+  },
+  {
+   "claim": "DEVIATION from design-biomaterial.json: its 90 %RH jar is not one of the clean saturated-salt points I could read; the readable wet points are NaCl 75 %RH and K2SO4 about 97 %RH. Use those (or log the real RH with a sensor) and call the target RH nominal.",
+   "source": "https://doi.org/10.6028/jres.081A.011 (Tables 2-3) and agents/design-biomaterial.json",
+   "confidence": "medium"
+  },
+  {
+   "claim": "Adafruit SHT45 board is $12.50 with stated accuracy +-1.0 %RH, +-0.1 C, so it cannot separate a 75 % jar from 74 % by itself; the salt jars (+-0.12 to +-0.4 %RH) are the better reference than the sensor.",
+   "source": "https://www.adafruit.com/product/5665",
+   "confidence": "high",
+   "evidence_quote": "Accuracy Specification: ΔRH = ±1.0 %RH, ΔT = ±0.1 °C",
+   "value": "USD 12.50"
+  },
+  {
+   "claim": "A 0.1 mg, 220 g analytical balance (Ohaus Pioneer PX224 class) is the largest non-Formlabs cost: US listings in search results ran from $2,805 to $3,747.40; Explorer-class 0.1 mg models $5,700-7,000.",
+   "source": "search results 2026-11-12 pointing at https://www.dscbalances.com/products/ohaus-px224-analytical-balance-replacement-for-pa224c ; https://www.wardsci.com/us/en/product/24723193/ohaus-pioneer-px-analytical-and-precision-balances ; https://new.marshallscientific.com/Ohaus-PX224-Pioneer-Analytical-Balance-p/30430053.htm",
+   "confidence": "low",
+   "value": "USD 2805-3747 (snippets; vendor pages were rate-limited for me)"
+  },
+  {
+   "claim": "Mitutoyo 500-196-30 150 mm caliper with 0.01 mm resolution: US listings $192.03 to $288.86; some listings quote +-0.03 mm accuracy.",
+   "source": "search results 2026-11-12 pointing at https://ebay.com/itm/115884484976 ; https://www.transcat.ca/mitutoyo-500-196-30-500-196-30",
+   "confidence": "low",
+   "value": "USD 192-289"
+  },
+  {
+   "claim": "Epson Perfection V600 has 6400 dpi optical resolution; its US price in a search result was $349.99 (the page I fetched did not show a clear price).",
+   "source": "https://epson.com/For-Home/Scanners/Photo-Scanners/Epson-Perfection-V600-Photo-Scanner/p/B11B198011",
+   "confidence": "medium",
+   "evidence_quote": "Flatbed color image scanner Optical Resolution: 6400 dpi",
+   "value": "USD 349.99"
+  },
+  {
+   "claim": "IPA 99 % per US gallon: $29.99 (USA Lab) to $57.80 (Techni-Pro ACS/USP); Form Wash needs 7-15 L = 2 to 4 gal, so a first fill costs about $60-231 before hazmat shipping (own arithmetic in bom.csv).",
+   "source": "search results 2026-11-12 pointing at https://usalab.com/usa-lab-isopropyl-alcohol-99-concentrate-1-gallon ; https://www.tequipment.net/Techni-Pro/141-196/Cleaning-Fluids%2C-Degreasers/",
+   "confidence": "low",
+   "value": "USD 60-231"
+  },
+  {
+   "claim": "Salt prices from search snippets: MgCl2 hexahydrate ACS 500 g $40.50-73.79; K2SO4 ACS 500 g $109.99-126; NaCl price not read (unverified background $5-30).",
+   "source": "search results pointing at https://www.zoro.com/labchem-magnesium-chloride-hexahydrate-acs-500g-lc163801/i/G705922758/ ; https://usabluebook.com/usabluebook-potassium-sulfate-acs-500-g-74129",
+   "confidence": "low"
+  },
+  {
+   "claim": "BOM totals (bom.py): all core items bought new $9,016.50-$11,524.24, of which $5,133 is read from Formlabs/Adafruit pages, $3,447.50-4,691.24 from search snippets and $436-1,700 unverified background. Items I flag as commonly borrowable are $8,096.52-10,293.04 of that, leaving $919.98-1,231.20 to buy. Buying only the Formlabs chain new and borrowing the rest: about $5,243-5,554 (own arithmetic).",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/bom.py -> bom_out.txt",
+   "confidence": "medium",
+   "value": "core all-new USD 9,017-11,524; must-buy USD 920-1,231"
+  },
+  {
+   "claim": "Resin demand is tiny against the 1 L minimum: total part volume of the planned ~170 strips is 16.9 mL (supports, rafts and tank fill not counted, unknown), 1.7 % of one cartridge.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/resin_use.py (counts from agents/design-biomaterial.json physical_build)",
+   "confidence": "medium",
+   "value": "16.9 mL"
+  },
+  {
+   "claim": "Balance need: a 40x4x1 mm Flexible 80A V2 strip weighs about 174 mg (1.09 g/cm3). At 8 % uptake (14 mg) a 0.1 mg balance reads uptake to 0.3 % and a 1 mg balance to 2.9 %. At 0.1 % uptake (0.17 mg) even 0.1 mg gives 23 % error; reading 0.1 % to 5 % needs 0.82 g of material on a 0.1 mg balance (8.2 g on a 1 mg one). A 1 mg balance suffices for the swelling candidate, not for proving a passive layer inert on strip-sized coupons.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/resolution.py",
+   "confidence": "medium",
+   "value": "174 mg; 0.3 % vs 2.9 %"
+  },
+  {
+   "claim": "Length need: 0.2 % strain on 40 mm is 80 um, so the project target of 5 % of that is 4 um; 2400 dpi scanning is 10.6 um/pixel, a 4056-px camera over a 60 mm field is 14.8 um/pixel, a 10 um-step caliper has a difference sd of 4.1 um before contact error on a soft elastomer. So use optical measurement with sub-pixel edge fitting and a certified scale, not callipers; the Flexible 80A V2 1-day strain of about 1 % (400 um) is easy with anything.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/resolution.py; project record",
+   "confidence": "medium",
+   "value": "80 um; 4 um; 10.6 um/px"
+  },
+  {
+   "claim": "Thickness need: 3 % of a 200 um layer is 6 um, so cut-edge images need pixels of about 2 um or finer; callipers cannot do this.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/resolution.py",
+   "confidence": "medium"
+  },
+  {
+   "claim": "Rough conditioning-time estimate (assumption-laden): with water D >= 6e-12 m2/s (bm-diffusion-kinetics), t90 for a 1 mm slab with both faces open is about 9.8 h and drying about 25 h at 2.5x slower; for 0.2 mm about 0.4 h and 1 h. IPA D is not measured. This conflicts with the minutes-scale scaling (low confidence) in bm-formlabs-printing-workflows.json unless IPA moves much faster than water, so it must be measured as a dry-down curve.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/resolution.py; agents2/bm-diffusion-kinetics.json; agents2/bm-formlabs-printing-workflows.json",
+   "confidence": "low"
+  },
+  {
+   "claim": "The Python analysis stack resolves together on Python 3.14: numpy 2.5.4, scipy 1.18.1, scikit-image 0.26.0, opencv-python-headless 5.0.0.93, matplotlib 3.11.2, pillow 13.0.0, pytest 9.2.0 (pip --dry-run succeeded; not installed or run, C: is nearly full). Other tools: ExifTool 13.63, FreeCAD 1.1.4, darktable 5.6.2, OpenSCAD 2021.01, git 2.52.0.",
+   "source": "https://pypi.org/pypi/<pkg>/json ; https://exiftool.org/ver.txt ; GitHub releases API for FreeCAD, darktable, openscad; D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/requirements.txt",
+   "confidence": "high",
+   "value": "pins in requirements.txt"
+  },
+  {
+   "claim": "All scripts shipped here use only the Python standard library and were run as saved on Python 3.14.2; naming.py selftest passes 3 good names, rejects 6 bad names and a bad log with 4 errors.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/naming.py ; naming_selftest_out.txt",
+   "confidence": "high",
+   "value": "selftest ok"
+  }
+ ],
+ "key_claims": [
+  {
+   "claim": "Every Formlabs line in the BOM is priced from the official store page on 2026-11-12: Form 4 Basic $2,625, Form Wash V2 $699, Form Cure V2 $999, two extra tanks $238, 1 L resins $149-$199 for the three core resins; the Formlabs core is $5,108.",
+   "source": "https://formlabs.com/store/form-4/ ; /store/form-wash/ ; /store/form-cure/ ; https://formlabs.com/products/flexible-80a-resin/",
+   "evidence_quote": "SKU: PKG-F4-BASIC $2,625 excl. sales tax"
+  },
+  {
+   "claim": "Open Material Mode for Form 4 is officially $875, lifetime, per printer, contradicting the earlier file that found no official price and quoted $3,748.50 from a reseller.",
+   "source": "https://formlabs.com/store/materials/open-material-mode/",
+   "evidence_quote": "Open Material Mode for Form 4 (non-biocomp) $875"
+  },
+  {
+   "claim": "A bilayer is built as one PreForm project of two builds (one resin per build, one tank per resin); I found no Formlabs statement of two resins in one job.",
+   "source": "https://formlabs.com/support/Opening-a-model-in-PreForm/ ; https://formlabs.com/products/flexible-50a-resin/",
+   "evidence_quote": "With a separate tank for each individual resin color or type, switching materials is as easy as sliding in a new tank."
+  },
+  {
+   "claim": "Instruments are set by the signal: a 0.1 mg balance for strip-sized coupons (1 mg only for the 8 %-uptake resin), optical length measurement at about 10 um/pixel or finer with a certified scale rather than callipers, and about 2 um pixels for layer thickness.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/resolution.py (own calculation from the project record)"
+  }
+ ],
+ "table": [
+  {
+   "name": "Form 4 Basic Package",
+   "fields": "sku=PKG-F4-BASIC; price=USD 2625; includes=printer+1 tank+1 mixer+1 build platform+Finish Kit; fetched=2026-11-12",
+   "source": "https://formlabs.com/store/form-4/"
+  },
+  {
+   "name": "Form 4 Resin Tank / Mixer",
+   "fields": "tank=USD 119; mixer=USD 50; extra tanks needed=2 (3 resins); fetched=2026-11-12",
+   "source": "https://formlabs.com/store/materials/tough-1000-resin/"
+  },
+  {
+   "name": "Form Wash V2",
+   "fields": "sku=FH-WA-03; price=USD 699; solvent volume=7-15 L; default wash=10 min; prints per IPA refill=120; fetched=2026-11-12",
+   "source": "https://formlabs.com/store/form-wash/"
+  },
+  {
+   "name": "Form Cure V2 120V",
+   "fields": "sku=FH-CU-120V-02; price=USD 999; turntable=23.5 cm; fetched=2026-11-12",
+   "source": "https://formlabs.com/store/form-cure/"
+  },
+  {
+   "name": "Flexible 80A Resin V2 1 L",
+   "fields": "sku=RS-C2-FL80-02; price=USD 199; wash=5+5 min IPA; cure=cycle1 5 min no heat in water, cycle2 5 min 80 C",
+   "source": "https://formlabs.com/products/flexible-80a-resin/"
+  },
+  {
+   "name": "Flexible 50A Resin 1 L",
+   "fields": "sku=RS-C2-ELCL-02; price=USD 199; wash=20 min IPA; cure=7 min 70 C",
+   "source": "https://formlabs.com/products/flexible-50a-resin/"
+  },
+  {
+   "name": "Tough 1000 Resin 1 L",
+   "fields": "sku=RS-C2-TO10-01; price=USD 149; 5 L=USD 695 (needs resin pump); wash=10+10 min then air dry >=30 min; cure=12 min 70 C or low-warp 12 min no heat",
+   "source": "https://formlabs.com/store/materials/tough-1000-resin/"
+  },
+  {
+   "name": "Rigid 10K / Silicone 40A 1 L (optional)",
+   "fields": "rigid10k sku=RS-C2-RG10-11 price=USD 299; silicone40a sku=RS-C2-SI40-01 price=USD 349",
+   "source": "https://formlabs.com/products/rigid-10k-resin/ ; https://formlabs.com/products/silicone-40a-resin/"
+  },
+  {
+   "name": "Open Material Mode Form 4",
+   "fields": "sku=SFT-OMM-F4-02; price=USD 875; lifetime per printer; Form 4B USD 2499; Form 4L USD 4999; Fuse 1 USD 11899",
+   "source": "https://formlabs.com/store/materials/open-material-mode/"
+  },
+  {
+   "name": "Form 4 Flex Build Platform (optional)",
+   "fields": "sku=BP-F4-02; price=USD 339",
+   "source": "https://formlabs.com/products/form-4-flex-build-platform/"
+  },
+  {
+   "name": "Analytical balance 0.1 mg",
+   "fields": "readability=0.1 mg; capacity>=100 g; price=USD 2805-3747 (snippets); borrow=yes; strip mass ~174 mg",
+   "source": "https://www.dscbalances.com/products/ohaus-px224-analytical-balance-replacement-for-pa224c"
+  },
+  {
+   "name": "Caliper 0.01 mm",
+   "fields": "resolution=0.01 mm; price=USD 192-289 (snippets); gross checks only",
+   "source": "https://www.transcat.ca/mitutoyo-500-196-30-500-196-30"
+  },
+  {
+   "name": "Flatbed scanner",
+   "fields": "optical resolution=6400 dpi; use=2400 dpi = 10.6 um/pixel; price=USD 349.99 (search result); needs scale calibration",
+   "source": "https://epson.com/For-Home/Scanners/Photo-Scanners/Epson-Perfection-V600-Photo-Scanner/p/B11B198011"
+  },
+  {
+   "name": "Humidity/temperature sensor",
+   "fields": "part=Adafruit SHT45; price=USD 12.50; accuracy=+-1.0 %RH, +-0.1 C; qty=2",
+   "source": "https://www.adafruit.com/product/5665"
+  },
+  {
+   "name": "Saturated-salt jars",
+   "fields": "MgCl2 32.78 %RH; NaCl 75.29 %RH; K2SO4 ~97.3 %RH (interpolated) at 25 C; coefficient -0.04 to -0.06 %RH per C",
+   "source": "https://doi.org/10.6028/jres.081A.011"
+  },
+  {
+   "name": "Software stack (open source)",
+   "fields": "python=3.14.2; numpy=2.5.4; scipy=1.18.1; scikit-image=0.26.0; opencv-python-headless=5.0.0.93; matplotlib=3.11.2; pillow=13.0.0; pytest=9.2.0; ExifTool=13.63; FreeCAD=1.1.4; darktable=5.6.2; OpenSCAD=2021.01; git=2.52.0; Fiji=version not read",
+   "source": "https://pypi.org/ ; https://exiftool.org/ver.txt ; https://api.github.com/repos/FreeCAD/FreeCAD/releases/latest"
+  },
+  {
+   "name": "PreForm (not open source)",
+   "fields": "price=free; OS=Windows 10 1809+ or macOS 13+; reads STL, OBJ, 3MF, STEP; projects across materials from 3.62.0",
+   "source": "https://formlabs.com/software/preform/ ; https://formlabs.com/support/Opening-a-model-in-PreForm/"
+  },
+  {
+   "name": "BOM totals (USD)",
+   "fields": "core all-new=9017-11524; borrowable part=8097-10293; must-buy=920-1231; Formlabs chain new + rest borrowed=5243-5554; Formlabs/Adafruit-page-priced share=5133; snippet-priced=3448-4691; unverified=436-1700",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/bom.py"
+  }
+ ],
+ "recommendations": [
+  "RUN ORDER FOR A LAB STARTING FROM NOTHING (design says about 5 weeks): (1) install PreForm and record versions; (2) borrow what bom.csv flags Y; (3) buy resin, tanks, IPA, salts, sensors; (4) set up the jars and log RH for 48 h before any specimen goes in; (5) check the balance with check weights and the scanner or camera with a certified scale; (6) run the dry-down curve below before any swelling measurement; (7) then follow agents/design-biomaterial.json.",
+  "FOLDER LAYOUT: BM1/PREREG.md; BM1/CAD/ (STL or 3MF per build plus the .form project file); BM1/RAW/<batch>/ (camera DNG, scanner TIFF, edge images, named by naming.py); BM1/LOGS/ (measurements CSV, humidity CSV, one file per day, LF line ends, equipment.csv for printer firmware, PreForm version, resin lot and tank id); BM1/MANIFEST.tsv from naming.py manifest. Git for text files, the manifest for binaries.",
+  "FILE NAMES: BM1_<batch P##>_<specimen S### or bilayer B###>_<MASS|IMG|SCN|EDG|RHL|NOTE>_<DRY|R##|H2O|IPA|PRE|WSH>_t####h_<UTC YYYYMMDDTHHMMSSZ>.<csv|json|dng|tif|png|txt>. Example BM1_P01_S003_IMG_H2O_t0024h_20261113T143000Z.dng. Validate with naming.py check; log columns utc,batch,specimen,quantity,value,unit,uncertainty,instrument,operator_code,rh_pct,temp_c,note validated by naming.py log-check.",
+  "LOGGING RULES: UTC always; one reading per row; instrument id, operator code, RH and temperature on every row; raw values never overwritten, corrections appended as new rows; every photograph carries the scale target and a grey card in frame.",
+  "LENGTH PROTOCOL: scan or photograph at fixed height with the certified scale in the frame; edge position by sub-pixel fit (scikit-image) with a hand cross-check in Fiji on 10 percent of images; callipers only as a gross sanity check on elastomers.",
+  "FLAGGED STEP most likely to differ between labs: conditioning each printed layer to a defined dry reference mass after the IPA wash and post-cure (solvent age and time, drying time and RH, and the criterion for constant mass). Why: Flexible 80A V2 takes up about 45 % mass of IPA in a day (data sheet via project record) against 6.9 % for Tough 1000 and under 0.1 % for Rigid 10K; Formlabs prefers fresh solvent for the second wash and rates one IPA refill at 120 prints; the project record has a 10 min versus 5 + 5 min wash disagreement for the same resin; no leaching or drying rate is measured (my estimate is 1 to 25 h depending on thickness). Leftover solvent or leachable monomer would be read as water gain or swelling. Runner-up: UV dose, because a lab without Form Cure V2 will not reproduce the cure. Control: record a dry-down mass curve for 3 strips per resin, define constant mass as under 0.05 % change over 24 h at 22 +-2 C and 33 %RH (my proposed threshold, not from a source), use fresh IPA for the second wash, and log solvent batch and age.",
+  "AMENDMENTS TO THE EARLIER DESIGN: wet jar 97 %RH (K2SO4) or 75 %RH (NaCl) instead of 90 %RH; the Flex Build Platform ($339) is optional; Open Material Mode is $875, not about $3.7k, so the hydrogel fallback is cheaper than bm-formlabs-printing-workflows.json said.",
+  "IF NO FORMLABS PRINTER IS ACCESSIBLE: ask a makerspace to print the two layers and hand them over unwashed (or washed to your protocol) with resin lot numbers. The Fuse path (about $49.8k before powder) is not realistic to reproduce in-house; keep it as an outsourced option."
+ ],
+ "reproduce": [
+  {
+   "what": "Self-test the naming and log convention",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/naming.py selftest",
+   "expected": "selftest ok: 3 good names pass, 6 bad names fail, good log passes, bad log fails with 4 errors"
+  },
+  {
+   "what": "Recompute BOM totals",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/bom.py",
+   "expected": "('ALL', 'core') $ 9016.50 - $ 11524.24 ; MUST_BUY core $919.98 - $1231.20"
+  },
+  {
+   "what": "Recompute instrument-resolution requirements",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/resolution.py",
+   "expected": "Flexible 80A V2 strip 174.4 mg; 0.1 mg balance relative error 0.3 % at 8 % uptake; 80 um and 4.0 um length targets"
+  },
+  {
+   "what": "Resin volume",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/resin_use.py",
+   "expected": "total part volume 16.9 mL = 1.7 % of one cartridge"
+  },
+  {
+   "what": "Re-read Formlabs prices (SKU, price, currency) from the store pages; prices may have changed since 2026-11-12",
+   "command_or_url": "curl -sL -A \"delphi-research/0.1\" https://formlabs.com/store/form-4/ -o f4.html ; python -I D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/extract_offers.py f4.html",
+   "expected": "('Form 4 Basic Package', 'PKG-F4-BASIC', 2625, 'USD', ...)"
+  },
+  {
+   "what": "Same for Open Material Mode",
+   "command_or_url": "curl -sL -A \"delphi-research/0.1\" https://formlabs.com/store/materials/open-material-mode/ -o omm.html ; python -I D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/extract_offers.py omm.html",
+   "expected": "('Open Material Mode for Form 4 (non-biocomp)', 'SFT-OMM-F4-02', 875, 'USD', ...)"
+  },
+  {
+   "what": "Check saved pages against their hashes",
+   "command_or_url": "compare D:/Users/ashenoy00000/delphi-work/data/bm-hw-repro/MANIFEST.tsv (path, source URL, date, bytes, sha256) with sha256sum of each file; regenerate with python -I D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/data_manifest.py",
+   "expected": "hashes match the saved copies; live pages will drift over time"
+  },
+  {
+   "what": "Check the pinned Python stack resolves",
+   "command_or_url": "python -I -m pip install --dry-run --no-cache-dir --target <empty dir> -r D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/requirements.txt",
+   "expected": "Would install ... numpy-2.5.4 ... scikit-image-0.26.0 ... scipy-1.18.1 ..."
+  },
+  {
+   "what": "Salt humidity values",
+   "command_or_url": "https://doi.org/10.6028/jres.081A.011 (Table 2 row 25 C; Table 3); pdftotext -layout on the PDF",
+   "expected": "MgCl2 32.78, NaCl 75.29; K2SO4 97.59 at 20 C and 97.00 at 30 C. The text layer is OCR-garbled: check against the page image"
+  }
+ ],
+ "citations": [
+  {
+   "authors": "Greenspan, L.",
+   "year": 1977,
+   "title": "Humidity fixed points of binary saturated aqueous solutions",
+   "doi_or_arxiv": "10.6028/jres.081A.011",
+   "verified": true,
+   "how_verified": "Crossref API returned the record; doi.org resolved to the NIST PDF, downloaded and read (sha256 in MANIFEST.tsv)",
+   "used_for": "Reference humidities of saturated-salt jars and their temperature dependence",
+   "venue": "J. Res. Natl. Bur. Stand. A 81A"
+  },
+  {
+   "authors": "Timoshenko, S.",
+   "year": 1925,
+   "title": "Analysis of Bi-Metal Thermostats",
+   "doi_or_arxiv": "10.1364/JOSA.11.000233",
+   "verified": true,
+   "how_verified": "Crossref API returned the record",
+   "used_for": "Origin of the bilayer curvature formula the project record rests on (not re-derived here)",
+   "venue": "Journal of the Optical Society of America"
+  },
+  {
+   "authors": "van der Walt, S.; Schonberger, J. L.; Nunez-Iglesias, J.; et al.",
+   "year": 2014,
+   "title": "scikit-image: image processing in Python",
+   "doi_or_arxiv": "10.7717/peerj.453",
+   "verified": true,
+   "how_verified": "Crossref API returned the record",
+   "used_for": "Citation for the image-analysis library in the analysis stack",
+   "venue": "PeerJ"
+  },
+  {
+   "authors": "Harris, C. R.; Millman, K. J.; van der Walt, S. J.; et al.",
+   "year": 2020,
+   "title": "Array programming with NumPy",
+   "doi_or_arxiv": "10.1038/s41586-020-2649-2",
+   "verified": true,
+   "how_verified": "Crossref API returned the record",
+   "used_for": "Citation for numpy in the analysis stack",
+   "venue": "Nature"
+  },
+  {
+   "authors": "Virtanen, P.; Gommers, R.; Oliphant, T. E.; et al.",
+   "year": 2020,
+   "title": "SciPy 1.0: fundamental algorithms for scientific computing in Python",
+   "doi_or_arxiv": "10.1038/s41592-019-0686-2",
+   "verified": true,
+   "how_verified": "Crossref API returned the record",
+   "used_for": "Citation for scipy in the analysis stack",
+   "venue": "Nature Methods"
+  },
+  {
+   "authors": "Schindelin, J.; Arganda-Carreras, I.; Frise, E.; et al.",
+   "year": 2012,
+   "title": "Fiji: an open-source platform for biological-image analysis",
+   "doi_or_arxiv": "10.1038/nmeth.2019",
+   "verified": true,
+   "how_verified": "Crossref API returned the record",
+   "used_for": "Citation for Fiji, the manual cross-check of scale calibration and edge measurements",
+   "venue": "Nature Methods"
+  }
+ ],
+ "could_not_find": [
+  "Prices for the balance, caliper, IPA and salts come only from search-result snippets: the vendor pages I tried (DSC Balances, Hisco, Raspberry Pi, Flinn) returned HTTP 429, 403 or 404 to me. They are low confidence and not dated per vendor.",
+  "Unverified-background price ranges (no source) are used for: stage micrometer, microscope, camera/lens/stand, LED panel, I2C board, jars, NaCl, DI water, glassware, small tools, 1 TB drive, check weights. Together $436-1,700.",
+  "Contents of the Form 4 Complete Package ($5,461) and Premium Package ($8,123) are chosen client-side and I could not read them; I priced the Basic Package plus Wash plus Cure separately ($4,323), $1,138 below the Complete Package.",
+  "Form 4 tank SKU, tank fill volume, and real resin consumption including supports, raft and priming were not found. The 1.7 % figure counts part volume only.",
+  "No Formlabs or independent source gives IPA diffusivity or drying time for these resins, so the conditioning time is an estimate from water D.",
+  "Wash-time disagreement for Flexible 80A V2 (data sheet 10 min per bm-formlabs-printing-workflows.json; wash table 5 + 5 min): I re-read the wash table only, not the data sheet PDF.",
+  "Fiji/ImageJ version not pinned (no release API found); record Help > About when used. The Python stack was not installed or exercised on image data (C: nearly full); only dependency resolution was checked.",
+  "PreForm and printer firmware versions: I did not read a current version number from Formlabs; record the versions shown in the app and on the printer with every build. No open-source alternative to PreForm for Form 4 was found.",
+  "Which universities or makerspaces hold a Form 4, Form Wash, Form Cure or a 0.1 mg balance: no source. The borrow flags in bom.csv are my judgement, not data.",
+  "Whether the Raspberry Pi HQ camera is still in production in 2026-11: unconfirmed (one retailer said production to at least January 2026).",
+  "Greenspan Table 2 was read from OCR of a scanned PDF; K2SO4 at 25 C was not readable and is interpolated; check the digits against the page image before citing them.",
+  "No source measures bond strength, curl of 0.2-1 mm strips or minimum elastomer wall on Form 4 (carried over unchanged from bm-formlabs-printing-workflows.json); the pilot has to settle them."
+ ],
+ "glossary": [
+  {
+   "term": "Bill of materials",
+   "plain": "The shopping list: every part, its price and where the price came from."
+  },
+  {
+   "term": "Resin",
+   "plain": "The liquid plastic a Formlabs printer hardens with light, layer by layer."
+  },
+  {
+   "term": "Wash and cure station",
+   "plain": "Two boxes: one rinses uncured liquid off the part in alcohol, the other bakes it in UV light until it is hard."
+  },
+  {
+   "term": "Isopropyl alcohol (IPA)",
+   "plain": "Rubbing alcohol at high strength, used as the rinse."
+  },
+  {
+   "term": "Saturated-salt jar",
+   "plain": "A sealed jar with a salt slurry at the bottom; the air inside settles at a known, fixed dampness."
+  },
+  {
+   "term": "Analytical balance",
+   "plain": "A very sensitive scale; 0.1 mg is a ten-thousandth of a gram."
+  },
+  {
+   "term": "Readability",
+   "plain": "The smallest step the scale or ruler can show on its display."
+  },
+  {
+   "term": "Open Material Mode",
+   "plain": "A paid Formlabs unlock that lets the printer use other companies' resins."
+  },
+  {
+   "term": "Dry reference mass",
+   "plain": "The weight of a part once it has dried to a steady, agreed state, so later weight gain can be counted from there."
+  },
+  {
+   "term": "Pre-registration",
+   "plain": "Writing down what you will measure and what counts as success before looking at the data."
+  },
+  {
+   "term": "SHA-256 hash",
+   "plain": "A fingerprint of a file that changes if even one byte changes."
+  },
+  {
+   "term": "Bilayer",
+   "plain": "A strip of two stuck-together layers that bends when one layer swells more than the other."
+  },
+  {
+   "term": "Elastomer",
+   "plain": "A rubber-like plastic that stretches and springs back."
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/bom.csv",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/bom.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/resolution.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/resin_use.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/naming.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/extract_offers.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/html2txt.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/data_manifest.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/requirements.txt",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/build_result.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-open-hardware-repro/build_result2.py"
+ ]
+}

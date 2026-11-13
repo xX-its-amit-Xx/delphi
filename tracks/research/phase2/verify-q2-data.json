@@ -1,0 +1,30 @@
+{
+ "label": "verify-q2-data",
+ "claims": [
+  {
+   "claim": "Independent-document pooled SD of Ki replicates is 0.61 pKi (95% CI [0.588, 0.637]), consistent with the literature 0.54",
+   "verdict": "partly",
+   "source_says": "results_Ki.json: inter_document sd 0.6122, ci95 [0.588, 0.637]. Kramer abstract: \"a standard deviation of 0.54 pK(i) units\".",
+   "note": "The 0.61 and CI reproduce exactly, but 0.54 lies outside that CI, so 'consistent' means 'similar', not statistically the same."
+  },
+  {
+   "claim": "Between-target variance is only 8% (Ki) to 15% (IC50) of total in my 39-target ChEMBL set; target-only predictor r=0.28/0.38",
+   "verdict": "partly",
+   "source_says": "results_Ki.json: eta2_between 0.0771, r_LOO 0.2764; results_IC50.json: eta2_between 0.1470, r_LOO 0.3824. Decomposition n_targets_ge50: 35 (Ki), 38 (IC50).",
+   "note": "All numbers reproduce, but the decomposition used 35 and 38 targets (those with at least 50 pairs), not 39."
+  },
+  {
+   "claim": "Noise ceiling on within-target Pearson r is about 0.87 (Ki) and 0.72 (IC50); pooled Ki R2 ceiling 0.77 vs Kramer 0.81",
+   "verdict": "supported",
+   "source_says": "Ki within_target_r_max 0.8665, pooled 0.8775 (squared 0.770); IC50 within_target_r_max 0.7199. Kramer: \"maximum possible squared Pearson correlation coefficient (R(2)) on large data sets is estimated to be 0.81.\"",
+   "note": "All figures reproduce from the results files and Kramer's 0.81 is quoted correctly."
+  },
+  {
+   "claim": "Mixed-assay noise is heavy-tailed (many pairs differ by more than 1 log), so SD-based ceilings are pessimistic relative to robust ones",
+   "verdict": "partly",
+   "source_says": "Landrum and Riniker: \"almost 65% of the points differ by more than 0.3 log units, 27% differ by more than one log unit\" (IC50, minimal curation). Own data: 16% (Ki), 23% (IC50) differ by more than 1 log.",
+   "note": "The paper supports a heavy tail but does not discuss SD versus robust ceilings; the 'pessimistic' step is the agent's own inference, and the 27% figure is for IC50 under minimal curation."
+  }
+ ],
+ "overall": "The numbers reproduce from the local results files, and the Kramer and Landrum quotes are accurate. Two claims overreach: 0.54 sits outside the CI of 0.61, and the decomposition used 35 and 38 targets, not 39. The inference that SD-based ceilings are pessimistic is the agent's own, not the source's."
+}

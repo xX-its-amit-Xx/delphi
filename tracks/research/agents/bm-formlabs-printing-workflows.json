@@ -1,0 +1,858 @@
+{
+ "label": "bm-formlabs-printing-workflows",
+ "topic": "How to actually print a bilayer on Formlabs hardware",
+ "summary": "Can a bilayer strip be printed on Formlabs hardware? Not in one job. A Form 4 job holds one resin: the manual says changing resin means changing both the tank and the cartridge, and I found no Formlabs page that offers two resins per job (one Insider-release line, 'multi-material capability across multiple build volumes', is unexplained). So a two-layer strip is two prints plus a bond; Open Material Mode (a paid per-printer licence, reseller price about $3.7k, low confidence) is only needed for non-Formlabs resins such as a hydrogel. Confirmed: stock resins barely take up water in Formlabs' 1 cm cube test, Elastic/Flexible 50A takes 39.2 % IPA against under 0.1 % for Rigid 10K. Contradicted: the blanket 'every current resin gains under 1 % mass in water' (spec-resin-chemistry.json); the Flexible 80A V2 data sheet gives +8 % mass, +3 % volume in 1 day (ASTM D471 slabs), and design-biomaterial.json's -28 Shore A should read -26. Deeper: (1) printing a strip flat on the platform loses about 0.1 mm of thickness to first-layer compression, which is half of a 0.2 mm layer, and the Timoshenko factor for a stiff-on-soft pair drops from 1.13 to 0.61 as the Tough 1000 layer grows from 0.2 to 0.3 mm, so every strip's layers must be measured; (2) the ceiling of 3/2 needs the stiff layer to be 0.07 mm (Tough 1000) or 0.02 mm (Rigid 10K) thick for a 1 mm strip with Flexible 80A V2, below the 0.2 mm wall Formlabs lists, so Rigid 10K is a poor passive partner; (3) the IPA wash, not humidity, is the dominant swelling event (Flexible 80A V2 +45 % mass in IPA in a day; a thin strip equilibrates in minutes by a scaling estimate), so wash and dry each layer before bonding and never re-wash the bonded stack; (4) a 1 mm tip sag over 40 mm is a curvature of 1.25 1/m, equal to the ceiling signal of a 0.083 % strain, so print curl must be measured and subtracted. No source measures bond strength to a green first layer, curl of 0.2-1 mm strips on a Formlabs printer, Z tolerance, or elastomer minimum walls; those are guesses to settle with a pilot. The step-by-step plan and the guess list are in 'recommendations'.",
+ "lay_summary": "Think of gluing a thin strip of hard plastic to a thin strip of rubber. If one side swells and the other does not, the pair curls, like a drying leaf. A Formlabs printer can only print one kind of liquid plastic at a time, so we must print the two strips in two separate runs and glue them. The surprise is that the washing alcohol swells the rubber far more than water does, and a thin strip also comes out about a tenth of a millimetre thinner than drawn, which for a strip only two-tenths of a millimetre thick is huge. So each strip has to be measured, washed, dried, and only then glued. We still do not know how well glue holds on a half-hardened strip, so the plan includes a test of that.",
+ "findings": [
+  {
+   "claim": "Form 4 cannot hold two resins in one print job: one resin tank and one cartridge are used per print, and changing material means changing both. (Direct statement of the swap rule; no Formlabs page was found that offers a two-resin job.)",
+   "source": "https://cdn.goengineer.com/formlabs-form4-user-guide-enus.pdf (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/form4_manual.txt)",
+   "confidence": "high",
+   "value": "1 tank + 1 cartridge per print; change both to change resin",
+   "evidence_quote": "When changing resin types, always change both the resin tank and resin cartridge."
+  },
+  {
+   "claim": "Form 4 manual: the printer checks the consumables before each print, so a tank/cartridge pair is validated for one material.",
+   "source": "https://cdn.goengineer.com/formlabs-form4-user-guide-enus.pdf (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/form4_manual.txt)",
+   "confidence": "high",
+   "value": "sensor check of tank, cartridge, platform",
+   "evidence_quote": "Accessories: Sensors check for the proper installation of the build platform, resin tank,"
+  },
+  {
+   "claim": "Replacing the tank is the documented way to change materials between prints.",
+   "source": "https://cdn.goengineer.com/formlabs-form4-user-guide-enus.pdf (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/form4_manual.txt)",
+   "confidence": "high",
+   "value": "tank replacement = material change",
+   "evidence_quote": "Replace the resin tank to change materials between prints or when a resin tank is damaged"
+  },
+  {
+   "claim": "PreForm job setup asks for one material per job: 'Select the material you wish to print in.' A Formlabs forum reply says each job is only compatible with the resin and layer thickness chosen when it is sent.",
+   "source": "https://forum.formlabs.com/t/incompatible-resin/11706 (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/forum_incompat.txt)",
+   "confidence": "medium",
+   "value": "one material per job",
+   "evidence_quote": "So each job sent to the printer is only compatible with the resi"
+  },
+  {
+   "claim": "PreForm Insider (pre-release) notes from 28 April 2026 list 'Multi-material capability across multiple build volumes' and from 1 April 2026 'Multiple build volumes in one window in PreForm'. No description is given. My reading (inference, not stated): each build volume (= separate print job) can carry its own material; it does not put two resins into one tank. Needs checking with Formlabs before the plan relies on either reading.",
+   "source": "https://formlabs.com/support/PreForm-Insider-Program-release-notes/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/insider_notes.txt)",
+   "confidence": "low",
+   "value": "Insider 3.58.0 build 405, 2026-04-28",
+   "evidence_quote": "Multi-material capability across multiple build volumes"
+  },
+  {
+   "claim": "A Formlabs forum thread on multi-material prints contains no Formlabs staff answer. A commenter says two resins mixed in one tank cannot be cured selectively and that no narrow-wavelength resin pair is known to them.",
+   "source": "https://forum.formlabs.com/t/multi-material-prints/30098 (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/forum_multimat.txt)",
+   "confidence": "low",
+   "value": "no staff answer"
+  },
+  {
+   "claim": "The Form 4 manual lists a pause control only as 'Pause > Abort'; no documented pause-and-swap-resin workflow was found.",
+   "source": "https://cdn.goengineer.com/formlabs-form4-user-guide-enus.pdf (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/form4_manual.txt)",
+   "confidence": "medium",
+   "value": "no resume-after-swap procedure documented",
+   "evidence_quote": "To stop a print in progress, tap Pause > Abort on the printer's touchscreen."
+  },
+  {
+   "claim": "Printing onto a part already attached to the build platform is not supported on Form 3 per a forum reply: the mixer sweeps across the platform face at start-up and detaches with an error if anything is on it. The Form 4 manual says its mixer and sensors check for debris on the platform; I found no Form 4 statement about a pre-attached part. Untested on Form 4.",
+   "source": "https://forum.formlabs.com/t/print-on-a-previously-positionned-material-sheet-on-build-platform/33499 (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/forum_printon.txt)",
+   "confidence": "medium",
+   "value": "Form 3: blocked; Form 4: unknown",
+   "evidence_quote": "the mixer runs across that face of the build platform and if there is anything on the build platform the mixer detaches with an error that stops the startup.",
+   "also_see": [
+    "https://cdn.goengineer.com/formlabs-form4-user-guide-enus.pdf"
+   ]
+  },
+  {
+   "claim": "Form 4 start-up check: debris on the build platform is checked by the mixer and sensors.",
+   "source": "https://cdn.goengineer.com/formlabs-form4-user-guide-enus.pdf (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/form4_manual.txt)",
+   "confidence": "high",
+   "value": "debris check",
+   "evidence_quote": "Debris: The mixer and sensors check for debris left on the build platform."
+  },
+  {
+   "claim": "Forum advice for printing on a glass slide on Form 3B: glue the glass to the build plate, reset the height offset in the printer settings, and expect suction and peel risk. This is user opinion, not Formlabs guidance.",
+   "source": "https://forum.formlabs.com/t/printing-on-an-object/38823 (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/forum_printobj.txt)",
+   "confidence": "low",
+   "value": "workaround, not supported",
+   "evidence_quote": "Because the Formlabs printers are hanging you would need to attach the glass to the build plate, reset the height offset, and hope it sticks and doesn't get pulled off from the suction forces."
+  },
+  {
+   "claim": "Open Material Mode (OMM) lets Formlabs SLA printers (Form 3, 3L, 4, 4L generations) print any 405 nm photopolymer resin; it is a one-time lifetime fee per printer.",
+   "source": "https://formlabs.com/support/Printing-with-Open-Material-Mode/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/omm_sla.txt)",
+   "confidence": "high",
+   "value": "405 nm resins; one-time fee",
+   "evidence_quote": "With Open Material Mode, you can print with any type of 405 nm photopolymer resin on Formlabs SLA printers. Open Material Mode is available for a one-time lifetime fee per printer."
+  },
+  {
+   "claim": "OMM minimum software on Form 4 generation: printer firmware 1.6.0 and PreForm 3.38.1 or later; OMM jobs can only be set up in the Standard Workspace.",
+   "source": "https://formlabs.com/support/Printing-with-Open-Material-Mode/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/omm_sla.txt)",
+   "confidence": "high",
+   "value": "Form 4: firmware >=1.6.0, PreForm >=3.38.1",
+   "evidence_quote": "Open Material Mode jobs can only be set up in the Standard Workspace."
+  },
+  {
+   "claim": "OMM activation needs an activation code and a temporary internet connection; no connection is needed afterwards. Form 4B / 4BL printers come with OMM access.",
+   "source": "https://formlabs.com/support/Setting-up-Open-Material-Mode/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/omm_setup.txt)",
+   "confidence": "high",
+   "value": "internet only at activation",
+   "evidence_quote": "An active internet connection is not required after activation to print with Open Material Mode."
+  },
+  {
+   "claim": "With OMM you create a custom print setting in the PreForm Print Settings Editor by copying a validated Formlabs setting and toggling 'Open Material' on, then editing other parameters.",
+   "source": "https://formlabs.com/support/Printing-with-Open-Material-Mode/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/omm_sla.txt)",
+   "confidence": "high",
+   "value": "copy a Formlabs setting; toggle Open Material",
+   "evidence_quote": "Toggle Open Material to ON . The toggle turns blue."
+  },
+  {
+   "claim": "OMM printer behaviour: resin is poured by hand, a dedicated tank is required (the printer programs the tank for open materials), resin level is not sensed, the tank/cartridge mismatch check is disabled, and tank-lifetime warnings are off.",
+   "source": "https://formlabs.com/support/Printing-with-Open-Material-Mode/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/omm_sla.txt)",
+   "confidence": "high",
+   "value": "manual fill; dedicated tank; no level sensing",
+   "evidence_quote": "Use a dedicated tank for printing with Open Material Mode. The printer automatically programs the tank for use with open materials."
+  },
+  {
+   "claim": "OMM: if the tank runs dry the print fails; the user must keep the level between the printed min/max fill lines on a Form 4 tank.",
+   "source": "https://formlabs.com/support/Printing-with-Open-Material-Mode/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/omm_sla.txt)",
+   "confidence": "high",
+   "value": "min/max fill lines on Form 4 tank",
+   "evidence_quote": "If the resin tank runs dry, your print will fail."
+  },
+  {
+   "claim": "OMM may shorten tank life and heating can evaporate volatile components from third-party resins (ventilation advised).",
+   "source": "https://formlabs.com/support/Printing-with-Open-Material-Mode/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/omm_sla.txt)",
+   "confidence": "high",
+   "value": "tank life may shorten",
+   "evidence_quote": "Depending on the non-Formlabs resin you are printing with, the tank lifetime may be shortened."
+  },
+  {
+   "claim": "Formlabs store: with OMM some failure modes more likely caused by third-party materials are excluded from the standard warranty. A reseller FAQ lists them: resin spill, resin tank damage/wear/leak, mixer damage/wear/decoupling, build platform damage, hardware damage from volatile ingredients; and says Formlabs Customer Support cannot help troubleshoot non-Formlabs resins.",
+   "source": "https://formlabs.com/asia/store/materials/open-material-mode (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/omm_store2.txt)",
+   "confidence": "high",
+   "value": "warranty carve-out",
+   "evidence_quote": "When using Open Material Mode, some failure modes that are more likely to be caused by third-party materials are excluded from our standard warranty.",
+   "also_see": [
+    "https://www.matterhackers.com/store/l/open-material-license-for-formlabs-3d-printers"
+   ]
+  },
+  {
+   "claim": "Reseller FAQ text (MatterHackers): the exclusions are listed as resin spill, tank damage/wear/leak, mixer damage/wear, build platform damage and volatile-evaporation damage.",
+   "source": "https://www.matterhackers.com/store/l/open-material-license-for-formlabs-3d-printers (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/omm_mh.txt)",
+   "confidence": "medium",
+   "value": "reseller restatement of Formlabs terms",
+   "evidence_quote": "Resin Tank damage, wear, or leak"
+  },
+  {
+   "claim": "OMM price: Formlabs pages say 'Because pricing can change, visit the Open Material Mode product page for current pricing' and state no number. A reseller (Proto3000) listed SKU SFT-OMM-F4-1 at a current price of $3,748.50 (currency not stated on the fetched page; original-price range $2,998.50 to $5,998.50), listed as out of stock when fetched. A search snippet attributed a launch figure of about $2,500 for Form 4 to a trade article; I did not fetch that article.",
+   "source": "https://store.proto3000.com/products/open-material-mode (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/omm_proto.txt)",
+   "confidence": "low",
+   "value": "~$3.7k (reseller, 2026-11-12)",
+   "evidence_quote": "Current price $3,748.50",
+   "also_see": [
+    "https://formlabs.com/asia/store/materials/open-material-mode"
+   ]
+  },
+  {
+   "claim": "OMM for SLS (Fuse 1, Fuse 1+ 30W, Fuse X1) is the same mechanism for 1064 nm powders; Fuse 1+ needs firmware 1.20.0 and PreForm 3.41.0 or later.",
+   "source": "https://formlabs.com/support/Printing-with-Open-Material-Mode-SLS/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/omm_sls.txt)",
+   "confidence": "high",
+   "value": "Fuse 1+ 30W: fw >=1.20.0",
+   "evidence_quote": "With Open Material Mode, you can print with any type of 1064 nm powder on Formlabs SLS printers."
+  },
+  {
+   "claim": "Mixer: when switching resin types the mixer must be cleaned with IPA or TPM (wipe or in a Form Wash) and dried before reinserting; Formlabs also recommends replacing the mixer whenever the tank is replaced.",
+   "source": "https://formlabs.com/global/support/Schedule-of-maintenance-Form-4-generation/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/form4_maint.txt)",
+   "confidence": "high",
+   "value": "clean 0.2 h per swap",
+   "evidence_quote": "If you are reusing the same mixer with multiple resin types, fully clean the mixer when you change to a new resin.",
+   "also_see": [
+    "https://cdn.goengineer.com/formlabs-form4-user-guide-enus.pdf"
+   ]
+  },
+  {
+   "claim": "Build platform: when switching resin type, clean the platform surface and edges with IPA and low-fibre towels; with the same resin no cleaning is needed between prints.",
+   "source": "https://cdn.goengineer.com/formlabs-form4-user-guide-enus.pdf (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/form4_manual.txt)",
+   "confidence": "high",
+   "value": "IPA wipe of platform at swap",
+   "evidence_quote": "clean the surface and edges of the build platform with isopropyl alcohol and low-fiber"
+  },
+  {
+   "claim": "Each Form 4 tank carries an RFID tag that records tank ID and current resin type.",
+   "source": "https://cdn.goengineer.com/formlabs-form4-user-guide-enus.pdf (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/form4_manual.txt)",
+   "confidence": "medium",
+   "value": "RFID tank tag",
+   "evidence_quote": "unique tank ID and current resin type."
+  },
+  {
+   "claim": "Remove the cartridge before the tank to stop the bite valves dripping resin into the printer cavity; inspect bite valves for cured resin when switching cartridges.",
+   "source": "https://cdn.goengineer.com/formlabs-form4-user-guide-enus.pdf (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/form4_manual.txt)",
+   "confidence": "high",
+   "value": "order: cartridge first, then tank",
+   "evidence_quote": "Remove the resin cartridge before removing the resin tank to prevent the bite valves from dripping resin"
+  },
+  {
+   "claim": "Rigid 10K (glass-filled) needs its own wash bucket so glass particles do not stick to parts of other resins; Silicone 40A may only be washed in an unused Form Wash bucket with an IPA/n-butyl acetate mixture and that bucket must never go back to pure IPA.",
+   "source": "https://formlabs.com/support/Form-Wash-Time-Settings/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/wash_times.txt)",
+   "confidence": "high",
+   "value": "separate buckets",
+   "evidence_quote": "Rigid 10K Resin contains glass particles, which strengthens printed parts. Maintain separate wash buckets to prevent glass particles adhering to parts printed with other resins."
+  },
+  {
+   "claim": "Do not pour used resin back into the cartridge: cured pieces and debris can cause print failures.",
+   "source": "https://cdn.goengineer.com/formlabs-form4-user-guide-enus.pdf (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/form4_manual.txt)",
+   "confidence": "high",
+   "value": "contamination via cured bits",
+   "evidence_quote": "Pouring resin back into the original resin cartridge may risk contaminating the resin"
+  },
+  {
+   "claim": "Formlabs solvent-compatibility method: printed 1 cm cubes (washed and post-cured per the resin's standard settings) weighed before and after 24 h immersion; results are % weight gain at 24 h.",
+   "source": "https://formlabs.com/support/solvent-compatibility/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/solvent.txt)",
+   "confidence": "high",
+   "value": "1 cm cube, 24 h",
+   "evidence_quote": "Results are reported as weight gain percentage after 24 hours of exposure to solvent."
+  },
+  {
+   "claim": "CONFIRMS earlier agents: Elastic 50A Resin V2 (now sold as Flexible 50A; the BioMed Elastic 50A row is identical) takes up 39.2 % mass in IPA and 0.7 % in water in 24 h; Rigid 10K takes up <0.1 % in both. Header-aware parse of the HTML table (script solvent_table.py): IPA is the 10th data column, Water the 18th.",
+   "source": "https://formlabs.com/support/solvent-compatibility/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/solvent.txt)",
+   "confidence": "high",
+   "value": "Elastic 50A V2: IPA 39.2 %, water 0.7 %, xylene 163.9 % | Rigid 10K: IPA <0.1 %, water <0.1 %",
+   "evidence_quote": "15.6 | 39.2 | 0.4 | 0.7 | 0.6 | 41.2 | 0.7 | 45.6 | 43.6 | 0.7 | 163.9 |"
+  },
+  {
+   "claim": "NEW: Tough 1000 takes up 6.9 % mass in IPA (24 h cube) although only 0.0 % in water; so even the 'stiff' passive layer swells in the wash solvent. Silicone 40A: IPA 5.9 %, water <0.1 %, but n-butyl acetate 92.3 % (its alternative wash solvent is 80/20 IPA/n-butyl acetate).",
+   "source": "https://formlabs.com/support/solvent-compatibility/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/solvent.txt)",
+   "confidence": "high",
+   "value": "Tough 1000: IPA 6.9 %, water 0 % | Silicone 40A: IPA 5.9 %, butyl acetate 92.3 %",
+   "evidence_quote": "Tough 1000 Resin | 0.2 | 30.4 | 0 | 38.9 | 0.7 | 6.9 | 0.1 | 0.2 | 39.8 | 6.9 |"
+  },
+  {
+   "claim": "The solvent table row 'Flexible 80A Resin' has no version label and no Flexible 80A V2 row exists on the page; it gives 0.7 % water and 11.7 % IPA.",
+   "source": "https://formlabs.com/support/solvent-compatibility/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/solvent.txt)",
+   "confidence": "high",
+   "value": "Flexible 80A (unlabelled version): water 0.7 %, IPA 11.7 %",
+   "evidence_quote": "Flexible 80A Resin | 0.9 | 37.4 | 0.6 | 51.4 | 2.3 | 19.3 | 1 | 0.7 | 1.6 | 11.7 |"
+  },
+  {
+   "claim": "CONTRADICTS the blanket reading in spec-resin-chemistry.json ('every current SLA resin gains under 1 % mass in water at 24 h', citing Flexible 80A 0.7 %): the Flexible 80A V2 data sheet (ASTM D471 slabs, wiped dry, no conditioning) reports DI water +8 % mass, +3 % volume, -26 Shore A after 1 day and +9 % mass, +7 % volume after 1 week. The 0.7 % cube figure is for an unversioned/older Flexible 80A row, and the two methods differ (cube vs slab). spec-formlabs-materials.json already carried the 8 % figure; I confirm that one. Row-to-label mapping was done by vertical position (flex80_d471.py); the plain-text table is scrambled.",
+   "source": "https://cdn.goengineer.com/flexible-80a-resin-v2-material-spec-sheet.pdf (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/flex80_spec.txt)",
+   "confidence": "medium",
+   "value": "DI water: 1 day -26 pts, +8 % mass, +3 % vol; 1 week -27 pts, +9 %, +7 %",
+   "evidence_quote": "Test specimens are fully immersed for intervals of 1 day and 1 week.",
+   "also_see": [
+    "D:/Users/ashenoy00000/delphi-work/agents/spec-formlabs-materials.json"
+   ]
+  },
+  {
+   "claim": "NEW: the same Flexible 80A V2 data sheet reports IPA +45 % mass, +113 % volume, -32 Shore A, tensile strength 90 % of baseline after 1 day (week: +48 %, +119 %, -33, 68 %). The volume figure is about 1.9 times what simple additivity of the mass gain predicts (own calculation, calc.py section G), so treat the volume column with caution; the direction (very large IPA swelling) is not in doubt.",
+   "source": "https://cdn.goengineer.com/flexible-80a-resin-v2-material-spec-sheet.pdf (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/flex80_spec.txt)",
+   "confidence": "medium",
+   "value": "IPA 1 day: +45 % mass, +113 % vol; 1 week: +48 %, +119 %",
+   "evidence_quote": "Chemical compatibility is evaluated by measuring the change in physical properties following full immersion in various chemicals"
+  },
+  {
+   "claim": "Flexible 80A V2 data sheet footnote: samples for the post-cured properties were washed in a Form Wash for 10 minutes in 99 % IPA and post-cured at room temperature for 5 minutes in water and at 80 C for 5 minutes in air in a Form Cure V2 L. Data sheet date reads 'Prepared 12/05/2026' (format ambiguous).",
+   "source": "https://cdn.goengineer.com/flexible-80a-resin-v2-material-spec-sheet.pdf (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/flex80_spec.txt)",
+   "confidence": "high",
+   "value": "wash 10 min IPA; cure 5 min in water + 5 min 80 C",
+   "evidence_quote": "for 10 minutes in 99% Isopropyl Alcohol, and post-cured at room"
+  },
+  {
+   "claim": "Flexible 80A V2 product page: compatible with Form 4, 4B, 4L, 4BL and Form Studio 1; 10 MPa ultimate tensile strength, 230 % elongation at break. No minimum layer thickness is listed on the page.",
+   "source": "https://formlabs.com/products/flexible-80a-resin/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/flex80_page.txt)",
+   "confidence": "high",
+   "value": "UTS 10 MPa; EAB 230 %",
+   "evidence_quote": "Compatible Printer Form 4, Form 4B, Form 4L, Form 4BL, Form Studio 1"
+  },
+  {
+   "claim": "Tough 1000 product page: tensile modulus 932 MPa, ultimate tensile strength 26.3 MPa, elongation 180 %; Form 4 / 4B / 4L / 4BL / Form Studio 1; data taken on Form 4 at 100 um, post-cured 12 min at 70 C in a Form Cure V2.",
+   "source": "https://formlabs.com/products/tough-1000-resin/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/tough1000_page.txt)",
+   "confidence": "high",
+   "value": "E = 932 MPa; 100 um settings",
+   "evidence_quote": "Tensile Modulus 932.0 MPa"
+  },
+  {
+   "claim": "Flexible 50A product page: minimum layer thickness 100 um; Shore 55.0 A listed; compatible with Form 4 series and Form 3 series.",
+   "source": "https://formlabs.com/products/flexible-50a-resin/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/flex50_page.txt)",
+   "confidence": "high",
+   "value": "min layer 100 um",
+   "evidence_quote": "Minimum Layer Thickness 100 micron"
+  },
+  {
+   "claim": "Rigid 10K product page: minimum layer thickness 50 um; compatible with Form 4 series.",
+   "source": "https://formlabs.com/products/rigid-10k-resin/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/rigid10k_page.txt)",
+   "confidence": "high",
+   "value": "min layer 50 um",
+   "evidence_quote": "Minimum Layer Thickness 50 micron"
+  },
+  {
+   "claim": "Wash times (Form Wash support table): Flexible 50A 20 min or until clean; Flexible 80A V2 two cycles of 5 min with fresh solvent for the second; Tough 1000 10 + 10 min; Rigid 10K V1/V1.1 10 + 10 min; Silicone 40A 20 min in IPA sonication wash or 80/20 IPA/n-butyl acetate (not IPA alone).",
+   "source": "https://formlabs.com/support/Form-Wash-Time-Settings/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/wash_times.txt)",
+   "confidence": "high",
+   "value": "see claim",
+   "evidence_quote": "Wash parts for 20 minutes or until clean."
+  },
+  {
+   "claim": "DISAGREEMENT between Formlabs sources on Flexible 80A V2 washing: the support table says 5 min + 5 min; the data sheet footnote says 10 min in 99 % IPA. Both are Formlabs documents; I do not know which is current (the data sheet is the newer-dated copy I fetched).",
+   "source": "https://formlabs.com/support/Form-Wash-Time-Settings/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/wash_times.txt)",
+   "confidence": "high",
+   "value": "5+5 min (table) vs 10 min (TDS)",
+   "evidence_quote": "Wash parts printed in Flexible 80 A Resin V2 in two cycles, preferably using fresh solvent for the second wash.",
+   "also_see": [
+    "https://cdn.goengineer.com/flexible-80a-resin-v2-material-spec-sheet.pdf"
+   ]
+  },
+  {
+   "claim": "Tough 1000: Formlabs recommends air-drying at least 30 minutes before handling or post-curing for best surface finish.",
+   "source": "https://formlabs.com/support/Form-Wash-Time-Settings/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/wash_times.txt)",
+   "confidence": "high",
+   "value": "dry >= 30 min",
+   "evidence_quote": "For best surface finish, Formlabs recommends allowing parts printed in Tough 1000 Resin to air dry for at least 30 minutes prior to handling or post-curing."
+  },
+  {
+   "claim": "Form Cure V2 settings: Tough 1000 default 12 min at 70 C, or a 'Low warp' option 12 min with no heat; Flexible 80A V2 default is two cycles (cycle 1 5 min with no heat, cycle 2 5 min at 80 C); Flexible 50A full post-cure 7 min at 70 C; Silicone 40A 10 min at 60 C; Rigid 10K 3 min preheat + 7 min at 80 C; Grey V5 default 1 min no heat, 'full cure' 5 min at 60 C.",
+   "source": "https://formlabs.com/support/Form-Cure-2nd-Generation-time-and-temperature-settings/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/cure2_times.txt)",
+   "confidence": "high",
+   "value": "Tough 1000 'Low warp' 12 min no heat",
+   "evidence_quote": "Tough 1000 Resin | Default | 12 min | 70 °C | Low warp | 12 min | No heat |"
+  },
+  {
+   "claim": "Flexible 50A and Flexible 80A V2 are post-cured with the dry parts submerged in room-temperature water in a UV-transparent container (footnote 5), i.e. oxygen is excluded and the part is wet-cured; this matters for any later water-uptake test and for bonding.",
+   "source": "https://formlabs.com/support/Form-Cure-2nd-Generation-time-and-temperature-settings/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/cure2_times.txt)",
+   "confidence": "high",
+   "value": "cure in water (cycle 1)",
+   "evidence_quote": "Place dry parts in a glass beaker (or other UV-transparent container) and completely submerge the parts in room temperature water."
+  },
+  {
+   "claim": "Formlabs on green state: printing cures resin to a 'green' state in which some polymer connections are not yet reacted; post-curing raises strength and stiffness and 'causes minor shrinkage'; settings are designed to account for the expected shrinkage. No shrinkage percentage is given.",
+   "source": "https://formlabs.com/support/Introduction-to-Post-Curing-Prints/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/intro_postcure.txt)",
+   "confidence": "high",
+   "value": "post-cure shrinkage: qualitative only",
+   "evidence_quote": "Therefore, post-curing also causes minor shrinkage, and each material's print settings are designed to account for the expected shrinkage during printing and post-curing."
+  },
+  {
+   "claim": "Formlabs: long washes let the part absorb solvent so the outer edges expand and warp it; heat and light shrink the part in post-cure; if one side cures and not the other, or the part is under-supported, it warps. Symptom listed: 'Unexpected curvature on parts'.",
+   "source": "https://formlabs.com/uk/support/Warping-SLA/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/warping_sla.txt)",
+   "confidence": "high",
+   "value": "wash and cure both bend parts",
+   "evidence_quote": "While washing parts, long wash times allow the printed part to absorb solvent, causing the outer edges to expand and warp the part."
+  },
+  {
+   "claim": "Formlabs: thin walls may absorb IPA during washing and deform, so minimise immersion time; thin wires are 'weakened by IPA'.",
+   "source": "https://formlabs.com/support/Design-specifications-for-3D-models-Form-4-generation/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/design_form4.txt)",
+   "confidence": "high",
+   "value": "limit IPA time",
+   "evidence_quote": "Spending an extended duration in a washing solution can cause deformation of the part, so minimize how long the part is immersed in IPA to limit this effect."
+  },
+  {
+   "claim": "Formlabs: leave parts on supports while post-curing; heavy or soft parts sag in the cure chamber ('longer cure times and softer materials are more prone to this defect').",
+   "source": "https://formlabs.com/support/Model-Orientation/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/model_orient.txt)",
+   "confidence": "high",
+   "value": "support parts during cure",
+   "evidence_quote": "Longer cure times and softer materials are more prone to this defect."
+  },
+  {
+   "claim": "Form 4 (Grey Resin V5, 50 um layers): recommended minimum supported wall 0.2 mm and unsupported wall 0.2 mm; measured printed values 0.17 mm and 0.18 mm for 0.2 mm CAD; walls of 0.2 mm or less 'may warp' (supported) or 'may warp or detach' (unsupported).",
+   "source": "https://formlabs.com/support/Design-specifications-for-3D-models-Form-4-generation/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/design_form4.txt)",
+   "confidence": "high",
+   "value": "wall 0.2 mm (printed 0.17 / 0.18)",
+   "evidence_quote": "A supported wall with a thickness of 0.2 mm or less may warp due to the peel forces exerted on the part during the peel process."
+  },
+  {
+   "claim": "Form 4 other limits (Grey V5): max unsupported overhang 5.0 mm; max horizontal span 29 mm for a 5 x 3 mm beam; vertical wire 0.3 mm diameter up to 7 mm tall and 0.6 mm up to 30 mm tall; embossed 0.1 mm; engraved 0.15 mm; clearance 0.4 mm; hole 0.5 mm; drain hole 0.75 mm.",
+   "source": "https://formlabs.com/support/Design-specifications-for-3D-models-Form-4-generation/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/design_form4.txt)",
+   "confidence": "high",
+   "value": "see claim",
+   "evidence_quote": "Recommended for a 30 mm-tall wire: 0.6 mm/600 micron diameter"
+  },
+  {
+   "claim": "Form 4 XY tolerance (Grey V5, 100 um layers, post-cured 5 min at room temperature): 1-30 mm features +/-0.15 % (floor +/-0.02 mm); 31-80 mm +/-0.2 % (floor +/-0.06 mm); 81-150 mm +/-0.3 % (floor +/-0.15 mm). No Z tolerance and no elastomer tolerance published.",
+   "source": "https://formlabs.com/support/Design-specifications-for-3D-models-Form-4-generation/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/design_form4.txt)",
+   "confidence": "high",
+   "value": "+/-0.15 % (>= 0.02 mm) for 1-30 mm",
+   "evidence_quote": "1–30 mm features: ±0.15% (lower limit: ±0.02 mm)"
+  },
+  {
+   "claim": "Layer thickness: current Formlabs tech-specs page gives 25-200 um for the Form 4 column; the 2024 Form 4 manual gives 25-300 microns. Availability varies by material (footnote). This corrects the 25-200 vs manual difference not noted in spec-formlabs-materials.json.",
+   "source": "https://formlabs.com/3d-printers/resin/tech-specs/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/form4_techspecs.txt)",
+   "confidence": "medium",
+   "value": "25-200 um (web 2026) vs 25-300 um (manual 2024)",
+   "evidence_quote": "Layer thickness availability varies by material.",
+   "also_see": [
+    "https://cdn.goengineer.com/formlabs-form4-user-guide-enus.pdf"
+   ]
+  },
+  {
+   "claim": "Form 4 pixel size is 50 um with pre-tuned anti-aliasing (manual); the thin dimension of a strip printed on edge is set by XY pixels, not by layers.",
+   "source": "https://cdn.goengineer.com/formlabs-form4-user-guide-enus.pdf (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/form4_manual.txt)",
+   "confidence": "medium",
+   "value": "50 um pixel",
+   "evidence_quote": "50 micron pixel size with pretuned anti-aliasing"
+  },
+  {
+   "claim": "Fuse (Nylon 12 Powder, 110 um): minimum wall 0.6 mm vertical / 0.3 mm horizontal, supported or unsupported; minimum hole 1.0 mm. Thin flat SLS parts should sit mid-height in the build (top/bottom placement curls edges).",
+   "source": "https://formlabs.com/support/Design-specifications-for-3D-models-Fuse-1/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/fuse_design.txt)",
+   "confidence": "high",
+   "value": "0.3 mm horizontal wall",
+   "evidence_quote": "Horizontal walls: 0.3 mm/300 microns"
+  },
+  {
+   "claim": "Fuse orientation: thin, flat features belong at the centre of the vertical build height, not at top or bottom; thin features at top and bottom curl at the edges.",
+   "source": "https://formlabs.com/support/Model-orientation-best-practices-for-SLS-printing/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/fuse_orient.txt)",
+   "confidence": "high",
+   "value": "mid-height placement",
+   "evidence_quote": "To prevent warping, thin, flat features should be placed towards the center of the vertical height of the build rather than at the top or bottom."
+  },
+  {
+   "claim": "NEW and decisive for 0.2-1 mm strips: parts printed directly on the build platform (no raft) come out about 0.1 mm shorter than designed along Z, because the first layers are compressed for adhesion. For a 0.2 mm layer that is a 50 % thickness error, for 1.0 mm 10 % (own arithmetic, calc.py section E).",
+   "source": "https://formlabs.com/support/Printing-directly-on-the-build-platform-in-PreForm/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/direct_platform.txt)",
+   "confidence": "high",
+   "value": "-0.1 mm in Z; 50 % of a 0.2 mm layer",
+   "evidence_quote": "expect each model to be approximately 0.1 mm shorter than designed along the Z-axis in the model's first layers."
+  },
+  {
+   "claim": "PreForm 'early layer merging' rewrites the first 0.75 mm of any on-build-platform print (perimeter and fill of those layers are combined) to guarantee adhesion; a strip thinner than 0.75 mm printed flat lies wholly inside this zone.",
+   "source": "https://formlabs.com/support/Printing-directly-on-the-build-platform-in-PreForm/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/direct_platform.txt)",
+   "confidence": "high",
+   "value": "first 0.75 mm merged",
+   "evidence_quote": "PreForm automatically revises the first 0.75 mm of all on-build-platform prints to increase adhesion."
+  },
+  {
+   "claim": "Formlabs orientation guidance: printing directly on the build platform generally gives the least warpage and shrinkage and fewer supports; but the platform constrains shrinkage so bottom layers are often oversized in XY.",
+   "source": "https://formlabs.com/support/Model-Orientation/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/model_orient.txt)",
+   "confidence": "high",
+   "value": "on-platform: least warp, XY oversize",
+   "evidence_quote": "Parts printed directly to the build platform will generally have the least amount of warpage and shrinkage, in addition to using fewer supports."
+  },
+  {
+   "claim": "Formlabs orientation guidance (Form 4/4L): to stop curling of edges and large surfaces, reorient so the part sits at 45 degrees to the horizontal; parts parallel to the platform on supports are more likely to warp; faces at a shallow angle can 'bat-wing' unless support density is raised.",
+   "source": "https://formlabs.com/support/Model-Orientation/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/model_orient.txt)",
+   "confidence": "high",
+   "value": "45 deg to horizontal",
+   "evidence_quote": "Reorient the model so it is oriented at 45° to the horizontal, minimizing the shrinkage."
+  },
+  {
+   "claim": "CONFLICT inside Formlabs guidance for a flat thin strip: 'print directly on the platform' (least warp, but -0.1 mm Z loss and merged first 0.75 mm) versus '45 degrees on supports' (less curl, but support marks and thickness set by the layer stack). Neither page treats strips under 1 mm; the choice is a guess to be settled by the pilot print.",
+   "source": "https://formlabs.com/uk/support/Warping-SLA/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/warping_sla.txt)",
+   "confidence": "medium",
+   "value": "unresolved",
+   "evidence_quote": "Some orientations, such as printing a part parallel to the build platform on supports, are more likely to cause warping during printing.",
+   "also_see": [
+    "https://formlabs.com/support/Model-Orientation/",
+    "https://formlabs.com/support/Printing-directly-on-the-build-platform-in-PreForm/"
+   ]
+  },
+  {
+   "claim": "Formlabs forum report (Form 1 era, 2016) of 100 x 10 mm strips 0.1-2 mm thick in several resins: strips began to warp while printing and warped more during cure and cooling; reply: orient a thin flat plane at 45 degrees in X and Y and post-cure on supports. User report, not a measurement.",
+   "source": "https://forum.formlabs.com/t/shape-distortion-in-long-thin-sections/10940 (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/forum_distort.txt)",
+   "confidence": "low",
+   "value": "warp starts in print, grows in cure",
+   "evidence_quote": "A thin flat plane should be oriented at 45 degree angles in the X and Y to evenly distribute internal forces."
+  },
+  {
+   "claim": "Peer-reviewed: for mask-image-projection stereolithography, polymerisation shrinkage and thermal cooling are the two major causes of curl distortion; temperature rise of a cured layer depends mainly on layer thickness; lower photocuring temperature (grayscale or mask-pattern exposure) reduces curl at the cost of build time. Not a Formlabs machine; no strip-curvature numbers in the abstract.",
+   "source": "https://api.crossref.org/works/10.1115/1.4034305 (retrieved 2026-11-12)",
+   "confidence": "high",
+   "value": "doi 10.1115/1.4034305 (Xu & Chen, J Manuf Sci Eng 2016)",
+   "evidence_quote": "Polymerization shrinkage and thermal cooling effect have been identified as two major factors that lead to the curl distortion in the stereolithography apparatus (SLA) process."
+  },
+  {
+   "claim": "Formlabs-documented bonding routes: epoxy (large parts), cyanoacrylate (small/medium parts), or liquid resin cured with a 405 nm UV laser light pen (small parts); resin joints are listed as low impact strength. Nothing is said about bonding green parts.",
+   "source": "https://formlabs.com/support/3d-printing-post-processing-faqs/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/postproc_faq.txt)",
+   "confidence": "high",
+   "value": "resin bond: small area, low impact strength",
+   "evidence_quote": "Apply a small amount of liquid resin to the surface to be bonded using a dropper or syringe, then cure with a 405 nm UV laser light pen."
+  },
+  {
+   "claim": "Formlabs blog: resin bonding with a 5 mW 405 nm light pen 'will create a chemical bond, just as if the part was printed' but only suits small bonding surfaces because the low-power pen cannot penetrate the model deeply enough. A 40 x 4 mm interface (160 mm2) is arguably not 'small'; a flood cure (Form Cure) is the alternative.",
+   "source": "https://formlabs.com/blog/how-to-create-models-larger-than-your-3d-printers-build-volume/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/blog_large.txt)",
+   "confidence": "high",
+   "value": "5 mW pen; small areas",
+   "evidence_quote": "This method will create a chemical bond, just as if the part was printed on your SLA 3D printer, but is only applicable to small bonding surfaces"
+  },
+  {
+   "claim": "Formlabs forum users (anecdotal): a thin coat of uncured resin between mating faces cured with UV gives a joint 'as strong as if the parts had been printed monolithically', and epoxy / cyanoacrylate joints crack because their mechanics differ from the printed resin; one user wipes excess with IPA-damp towel, clamps, then cures, but notes surfaces sometimes warp. Another notes uncured resin is slick so parts slide when clamped.",
+   "source": "https://forum.formlabs.com/t/bonding-resin-surfaces/36157 (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/forum_bonding.txt)",
+   "confidence": "low",
+   "value": "anecdotal",
+   "evidence_quote": "This yields a bond that (done correctly) is as strong as if the parts had been printed monolithically."
+  },
+  {
+   "claim": "No Formlabs or peer-reviewed source read gives a measured bond strength between a green first layer and a second layer of a DIFFERENT resin. The nearest evidence: (a) Formlabs says green parts still hold unreacted polymer connections; (b) a DLP study found each printed layer interface of ONE resin is a weak zone (about 11 um thick, 22 % of a 50 um layer, local stiffness down up to 30 %), attributed to oxygen inhibition and molecular diffusion across the interface; (c) a dental-composite study states the oxygen-inhibited surface layer is a layer of unreacted monomer and that reports on whether it raises bond strength are inconsistent. So green-state bonding is plausible chemically but is an untested assumption here.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7033657 (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/pmc7033657.txt)",
+   "confidence": "medium",
+   "value": "interface 11 um, 22 % of 50 um layer, stiffness -30 %",
+   "evidence_quote": "The thickness values of the interfacial layers were approximately 11 μm, which corresponds to ∼22% of the total layer thickness (50 μm).",
+   "also_see": [
+    "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2843537/",
+    "https://formlabs.com/support/Introduction-to-Post-Curing-Prints/"
+   ]
+  },
+  {
+   "claim": "Dental composite study (not a printing study): 'Reports on how this oxygen-inhibited layer affects the bond strength have been inconsistent.'",
+   "source": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2843537/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/pmc2843537.txt)",
+   "confidence": "medium",
+   "value": "inconsistent literature",
+   "evidence_quote": "Reports on how this oxygen-inhibited layer affects the bond strength have been inconsistent."
+  },
+  {
+   "claim": "Formlabs forum (2017): users report joining separate SLA parts with resin then curing under UV works; resin cures slowly so holding the parts is the challenge; one user says resin-to-resin bonds were stronger than cyanoacrylate. Anecdotal.",
+   "source": "https://forum.formlabs.com/t/glue-big-parts/13238 (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/forum_gluebig.txt)",
+   "confidence": "low",
+   "value": "anecdotal; clamping is the problem",
+   "evidence_quote": "There is no more of an effective bond than one created by joining resin with resin."
+  },
+  {
+   "claim": "OWN CALCULATION (confirms the project record): the Timoshenko factor f(m,n)=6(1+m)^2/[3(1+m)^2+(1+mn)(m^2+1/(mn))] evaluates to exactly 1.5 at m=n^-1/2 for n = 1, 3.2, 160 and 1724 (checked numerically in calc.py to 12 decimals). The Lean proof itself was not re-run.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/calc.py (retrieved 2026-11-12)",
+   "confidence": "high",
+   "value": "{\"1\": 1.5, \"3.2\": 1.5, \"160\": 1.5, \"1724\": 1.5}"
+  },
+  {
+   "claim": "OWN CALCULATION, NEW: for a 1.0 mm strip with Flexible 80A V2 as the active layer, the thickness of the passive layer needed to reach the ceiling (m = n^-1/2, m = passive/active thickness, n = passive/active modulus) is 0.073 mm for Tough 1000, 0.024 mm for Rigid 10K, 0.64 mm for Flexible 50A and 0.73 mm for Silicone 40A. Moduli are Tough 1000 932 MPa and Rigid 10K 10,000 MPa (Formlabs pages) and secant estimates 5.8 / 1.8 / 0.8 MPa for Flexible 80A V2 / 50A / Silicone 40A (stress at 50 % strain divided by 0.5, from the project record; NOT small-strain moduli, and the swollen layer is softer). The two stiff passives therefore need layers far below the 0.2 mm printable-wall figure; Rigid 10K is a poor passive partner at any printable thickness (f = 0.29 at 0.2 mm).",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/calc.py (retrieved 2026-11-12)",
+   "confidence": "medium",
+   "value": "{\"Flex50A\": {\"h_passive_at_ceiling_mm\": 0.6422, \"f(hp=0.2)\": 0.503, \"f(hp=0.3)\": 0.825, \"f(hp=0.4)\": 1.134, \"f(hp=0.5)\": 1.369}, \"Tough1000\": {\"h_passive_at_ceiling_mm\": 0.0731, \"f(hp=0.2)\": 1.131, \"f(hp=0.3)\": 0.613, \"f(hp=0.4)\": 0.29, \"f(hp=0.5)\": 0.137}, \"Rigid10K\": {\"h_passive_at_ceiling_mm\": 0.0235, \"f(hp=0.2)\": 0.287, \"f(hp=0.3)\": 0.086, \"f(hp=0.4)\": 0.032, \"f(hp=0.5)\": 0.014}, \"Silicone40A\": {\"h_passive_at_ceiling_mm\": 0.7292, \"f(hp=0.2)\": 0.27, \"f(hp=0.3)\": 0.505, \"f(hp=0.4)\": 0.805, \"f(hp=0.5)\": 1.122}}",
+   "also_see": [
+    "D:/Users/ashenoy00000/delphi-work/agents/spec-formlabs-materials.json"
+   ]
+  },
+  {
+   "claim": "OWN CALCULATION, NEW: with Tough 1000 passive / Flexible 80A V2 active at 1.0 mm total, f falls steeply with the passive layer thickness: 1.49 at 0.05-0.10 mm, 1.36 at 0.15, 1.13 at 0.20, 0.86 at 0.25, 0.61 at 0.30 mm. A 0.1 mm Z error in a 0.2 mm layer (see on-platform compression) moves f by about 0.3 to 0.4, i.e. the thin passive layer's printed thickness must be measured on every strip.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/calc.py (retrieved 2026-11-12)",
+   "confidence": "medium",
+   "value": "{\"hp=0.05\": 1.488, \"hp=0.1\": 1.484, \"hp=0.15\": 1.361, \"hp=0.2\": 1.131, \"hp=0.25\": 0.859, \"hp=0.3\": 0.613}"
+  },
+  {
+   "claim": "OWN CALCULATION: if the Flexible 80A V2 slab volume gains (+3 % at 1 day, +7 % at 1 week in water) were isotropic and the passive layer did not swell, the free linear strain would be 0.99 % and 2.28 %; at the ceiling (f=1.5, h=1.0 mm) curvature is 14.9 and 34.2 1/m (radius 67 and 29 mm; 40 mm strip tip rises 11.5 and 23.4 mm). At f = 0.5 the 1-day tip rise is 4.0 mm. Isotropy, equilibrium of the slab and the volume column's reliability (see additivity check) are all assumptions.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/calc.py (retrieved 2026-11-12)",
+   "confidence": "low",
+   "value": "{\"curvature_h1mm_water_1 day\": {\"d_eps_linear_%\": 0.99, \"rows\": [{\"f\": \"ceiling 1.5\", \"kappa_1/m\": 14.85, \"R_mm\": 67.3, \"tip_mm\": 11.54, \"turn_deg\": 34.0}, {\"f\": \"f=1.0\", \"kappa_1/m\": 9.9, \"R_mm\": 101.0, \"tip_mm\": 7.82, \"turn_deg\": 22.7}, {\"f\": \"f=0.5\", \"kappa_1/m\": 4.95, \"R_mm\": 202.0, \"tip_mm\": 3.95, \"turn_deg\": 11.3}]}, \"curvature_h1mm_water_1 week\": {\"d_eps_linear_%\": 2.281, \"rows\": [{\"f\": \"ceiling 1.5\", \"kappa_1/m\": 34.21, \"R_mm\": 29.2, \"tip_mm\": 23.36, \"turn_deg\": 78.4}, {\"f\": \"f=1.0\", \"kappa_1/m\": 22.81, \"R_mm\": 43.8, \"tip_mm\": 17.02, \"turn_deg\": 52.3}, {\"f\": \"f=0.5\", \"kappa_1/m\": 11.4, \"R_mm\": 87.7, \"tip_mm\": 8.97, \"turn_deg\": 26.1}]}}"
+  },
+  {
+   "claim": "OWN CALCULATION: residual curl from printing is not small against the signal. A strip whose tip sags 1 mm over 40 mm has curvature 1.25 1/m, equal to the ceiling signal of a 0.083 % differential strain at h = 1 mm; 0.5 mm sag = 0.62 1/m. Any control that cannot resolve ~0.3 1/m (0.25 mm tip sag) cannot see a 0.1 % strain.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/calc.py (retrieved 2026-11-12)",
+   "confidence": "medium",
+   "value": "{\"tip_sag_to_kappa_1/m\": {\"0.25 mm\": 0.31, \"0.5 mm\": 0.62, \"1.0 mm\": 1.25, \"2.0 mm\": 2.5}, \"eq_deps_for_1mm_sag_%\": 0.083}"
+  },
+  {
+   "claim": "OWN CALCULATION (scaling estimate, assumes Fickian uptake with constant diffusivity): a 1 cm cube is slow to fill because time scales with half-thickness squared. A 1.0 mm strip reaches in 14 min the uptake a cube reaches in 24 h; a 0.4 mm strip in 2.3 min. So a 20 min Flexible 50A IPA wash is equivalent to about 33 h (1.0 mm) or 208 h (0.4 mm) of cube soak, i.e. above the 39.2 % 24 h cube figure; the 10 min Flexible 80A V2 wash is equivalent to 17 h or 104 h. Formlabs' own wash limits (Elastic 50A V1: 'avoid washing longer than 20 minutes, as this may degrade parts') are consistent with this. No diffusivity was measured.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/calc.py (retrieved 2026-11-12)",
+   "confidence": "low",
+   "value": "{\"thin_strip_equivalent_time_to_cube_24h_min\": {\"t=0.2 mm\": 0.58, \"t=0.4 mm\": 2.3, \"t=0.5 mm\": 3.6, \"t=1.0 mm\": 14.4}, \"wash_equivalent_cube_hours\": {\"Flexible 50A wash (support table: 20 min), strip t=0.4 mm\": 208.3, \"Flexible 50A wash (support table: 20 min), strip t=1.0 mm\": 33.3, \"Flexible 80A V2 TDS wash 10 min, strip t=0.4 mm\": 104.2, \"Flexible 80A V2 TDS wash 10 min, strip t=1.0 mm\": 16.7, \"Flex 80A V2 support table 5+5, strip t=0.4 mm\": 104.2, \"Flex 80A V2 support table 5+5, strip t=1.0 mm\": 16.7}}"
+  },
+  {
+   "claim": "OWN CALCULATION: data-sheet mass versus volume for Flexible 80A V2 is inconsistent with simple volume additivity (resin density 1.04 g/mL from the data sheet; IPA density 0.785 is unverified background). Water 1 day: +8 % mass predicts +8.3 % volume, reported +3 %. IPA 1 day: +45 % mass predicts +60 % volume, reported +113 %. The strain inputs to any bilayer prediction should be measured on the strips, not taken from this table.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/calc.py (retrieved 2026-11-12)",
+   "confidence": "medium",
+   "value": "{\"DI water 1 day\": {\"reported_dm\": 0.08, \"reported_dV\": 0.03, \"dV_if_volumes_additive\": 0.083}, \"DI water 1 week\": {\"reported_dm\": 0.09, \"reported_dV\": 0.07, \"dV_if_volumes_additive\": 0.094}, \"IPA 1 day\": {\"reported_dm\": 0.45, \"reported_dV\": 1.13, \"dV_if_volumes_additive\": 0.596}, \"IPA 1 week\": {\"reported_dm\": 0.48, \"reported_dV\": 1.19, \"dV_if_volumes_additive\": 0.636}}"
+  },
+  {
+   "claim": "OWN CALCULATION: layer count. At 100 um layers (the minimum listed for Flexible 50A, Silicone 40A) a 0.2 mm layer is 2 layers and a 1.0 mm strip 10 layers; thickness is quantised to the layer height, and the 0.1 mm on-platform compression equals one such layer.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/calc.py (retrieved 2026-11-12)",
+   "confidence": "medium",
+   "value": "{\"0.2\": 2.0, \"0.4\": 4.0, \"0.5\": 5.0, \"0.8\": 8.0, \"1.0\": 10.0}"
+  },
+  {
+   "claim": "CONTRADICTS design-biomaterial.json: it reads Flexible 80A V2 as losing 28 Shore A points after one day in water ('my row count'). With rows assigned to solvents by vertical position the 1-day water hardness change is -26 (week -27); 28 corresponds to no water row. The sibling spec-formlabs-materials.json value (26) is correct.",
+   "source": "https://cdn.goengineer.com/flexible-80a-resin-v2-material-spec-sheet.pdf (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/flex80_spec.txt)",
+   "confidence": "medium",
+   "value": "water hardness: -26 (1 d), -27 (1 wk)",
+   "evidence_quote": "Rectangular slabs, used for hardness, mass, and volume change, are evaluated immediately after wiping dry without a conditioning period.",
+   "also_see": [
+    "D:/Users/ashenoy00000/delphi-work/agents/spec-formlabs-materials.json"
+   ]
+  },
+  {
+   "claim": "CONFIRMS spec-formlabs-materials.json: the Form 4 minimum supported / unsupported wall is 0.2 mm and no value is published for elastomers; and no Formlabs page offers multi-material printing in one job.",
+   "source": "https://formlabs.com/support/Design-specifications-for-3D-models-Form-4-generation/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/design_form4.txt)",
+   "confidence": "high",
+   "value": "0.2 mm; Grey V5 only",
+   "evidence_quote": "Recommended: 0.2 mm/200 microns"
+  },
+  {
+   "claim": "CONFIRMS spec-resin-chemistry.json on IPA: Flexible 80A (unversioned row) 11.7 %, Elastic 50A V2 39.2 %, and on the solvent table being easy to misread (Elastic 50A V2 xylene 163.9 %, water 0.7 %).",
+   "source": "https://formlabs.com/support/solvent-compatibility/ (retrieved 2026-11-12; local copy D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/solvent.txt)",
+   "confidence": "high",
+   "value": "as stated",
+   "evidence_quote": "Flexible 80A Resin | 0.9 | 37.4 | 0.6 | 51.4 | 2.3 | 19.3 | 1 | 0.7 | 1.6 | 11.7 |"
+  }
+ ],
+ "key_claims": [
+  {
+   "claim": "A Form 4 print uses a single resin tank and cartridge; changing resin type means changing both, so a two-resin strip needs two separate prints.",
+   "source": "https://cdn.goengineer.com/formlabs-form4-user-guide-enus.pdf (retrieved 2026-11-12)",
+   "evidence_quote": "When changing resin types, always change both the resin tank and resin cartridge."
+  },
+  {
+   "claim": "Open Material Mode is a paid, per-printer licence needed for any non-Formlabs resin (for example a hydrogel active layer); stock Formlabs resins do not need it.",
+   "source": "https://formlabs.com/support/Printing-with-Open-Material-Mode/ (retrieved 2026-11-12)",
+   "evidence_quote": "With Open Material Mode, you can print with any type of 405 nm photopolymer resin on Formlabs SLA printers. Open Material Mode is available for a one-time lifetime fee per printer."
+  },
+  {
+   "claim": "Elastic/Flexible 50A takes up 39.2 % mass in isopropanol in 24 h (1 cm cube) against <0.1 % for Rigid 10K, so wash solvent is a far stronger swelling stimulus than humidity for the elastomers.",
+   "source": "https://formlabs.com/support/solvent-compatibility/ (retrieved 2026-11-12)",
+   "evidence_quote": "Elastic 50A Resin V2 | 1.5 | 43.4 | 0.6 | 133.1 | 7.9 | 31.4 | 3.9 | 0.9 | 15.6 | 39.2 |"
+  },
+  {
+   "claim": "A strip printed flat on the build platform loses about 0.1 mm of thickness to first-layer compression (Formlabs), which is half of a 0.2 mm layer; thin-layer thickness must therefore be measured, not trusted from CAD.",
+   "source": "https://formlabs.com/support/Printing-directly-on-the-build-platform-in-PreForm/ (retrieved 2026-11-12)",
+   "evidence_quote": "expect each model to be approximately 0.1 mm shorter than designed along the Z-axis in the model's first layers."
+  }
+ ],
+ "table": [
+  {
+   "name": "Form 4 printer",
+   "fields": "pixel=50 um; layer=25-200 um (web 2026) or 25-300 um (manual 2024); build volume=200x125x210 mm; wavelength=405 nm; optical power=16 mW/cm2; tank life=75,000+ layers; resin cartridges=1",
+   "source": "https://formlabs.com/3d-printers/resin/tech-specs/ ; https://cdn.goengineer.com/formlabs-form4-user-guide-enus.pdf"
+  },
+  {
+   "name": "Form 4 design minima (Grey V5, 50 um)",
+   "fields": "supported wall=0.2 mm; unsupported wall=0.2 mm; printed wall=0.17/0.18 mm; overhang=5.0 mm; span=29 mm; wire=0.3 mm at 7 mm tall; hole=0.5 mm; clearance=0.4 mm; XY tol=+/-0.15 % (>=0.02 mm) for 1-30 mm",
+   "source": "https://formlabs.com/support/Design-specifications-for-3D-models-Form-4-generation/"
+  },
+  {
+   "name": "Fuse (Nylon 12, 110 um) design minima",
+   "fields": "wall vertical=0.6 mm; wall horizontal=0.3 mm; hole=1.0 mm; pin=0.8 mm",
+   "source": "https://formlabs.com/support/Design-specifications-for-3D-models-Fuse-1/"
+  },
+  {
+   "name": "Flexible 80A V2 (active candidate)",
+   "fields": "UTS=10 MPa; EAB=230 %; water 1 d (D471 slab)=+8 % mass,+3 % vol,-26 Shore A; water 1 wk=+9 %,+7 %,-27; IPA 1 d=+45 % mass,+113 % vol; wash=5+5 min (table) or 10 min (TDS) IPA; cure=cycle1 5 min no heat in water, cycle2 5 min 80 C",
+   "source": "https://cdn.goengineer.com/flexible-80a-resin-v2-material-spec-sheet.pdf ; https://formlabs.com/support/Form-Wash-Time-Settings/ ; https://formlabs.com/support/Form-Cure-2nd-Generation-time-and-temperature-settings/"
+  },
+  {
+   "name": "Flexible 50A (= Elastic 50A V2) (soft passive/active)",
+   "fields": "min layer=100 um; water 24 h cube=0.7 %; IPA 24 h cube=39.2 %; wash=20 min IPA; cure=7 min 70 C, parts submerged in water",
+   "source": "https://formlabs.com/products/flexible-50a-resin/ ; https://formlabs.com/support/solvent-compatibility/ ; https://formlabs.com/support/Form-Wash-Time-Settings/ ; https://formlabs.com/support/Form-Cure-2nd-Generation-time-and-temperature-settings/"
+  },
+  {
+   "name": "Tough 1000 (stiff passive candidate)",
+   "fields": "E=932 MPa; UTS=26.3 MPa; water 24 h=0.0 %; IPA 24 h=6.9 %; wash=10+10 min IPA, air-dry >=30 min; cure=12 min 70 C or 'Low warp' 12 min no heat",
+   "source": "https://formlabs.com/products/tough-1000-resin/ ; https://formlabs.com/support/solvent-compatibility/ ; https://formlabs.com/support/Form-Wash-Time-Settings/ ; https://formlabs.com/support/Form-Cure-2nd-Generation-time-and-temperature-settings/"
+  },
+  {
+   "name": "Rigid 10K (very stiff passive)",
+   "fields": "E=10-11 GPa (project record); min layer=50 um; water 24 h=<0.1 %; IPA 24 h=<0.1 %; wash=10+10 min IPA own bucket (glass); cure=3 min preheat + 7 min 80 C",
+   "source": "https://formlabs.com/products/rigid-10k-resin/ ; https://formlabs.com/support/solvent-compatibility/ ; https://formlabs.com/support/Form-Cure-2nd-Generation-time-and-temperature-settings/"
+  },
+  {
+   "name": "Silicone 40A (soft passive option)",
+   "fields": "min layer=100 um; water 24 h=<0.1 %; IPA 24 h=5.9 %; n-butyl acetate 24 h=92.3 %; wash=IPA sonication guide or 80/20 IPA/n-butyl acetate in an unused bucket; cure=10 min 60 C",
+   "source": "https://formlabs.com/support/solvent-compatibility/ ; https://formlabs.com/support/Form-Wash-Time-Settings/ ; https://formlabs.com/support/Form-Cure-2nd-Generation-time-and-temperature-settings/"
+  },
+  {
+   "name": "Open Material Mode (SLA)",
+   "fields": "cost=one-time lifetime fee per printer (reseller listing $3,748.50, low confidence); Form 4 fw>=1.6.0, PreForm>=3.38.1; Standard Workspace only; manual fill; dedicated tank; no level sensing; warranty carve-out for tank/mixer/platform",
+   "source": "https://formlabs.com/support/Printing-with-Open-Material-Mode/ ; https://formlabs.com/asia/store/materials/open-material-mode ; https://store.proto3000.com/products/open-material-mode"
+  },
+  {
+   "name": "Swap checklist (Form 4)",
+   "fields": "change both cartridge and tank; remove cartridge first; clean mixer with IPA/TPM (0.2 h); wipe platform with IPA; separate wash bucket for Rigid 10K; never pour resin back into cartridge",
+   "source": "https://cdn.goengineer.com/formlabs-form4-user-guide-enus.pdf ; https://formlabs.com/global/support/Schedule-of-maintenance-Form-4-generation/ ; https://formlabs.com/support/Form-Wash-Time-Settings/"
+  },
+  {
+   "name": "Own: f for Flex80A V2 active + passive, h=1.0 mm",
+   "fields": "Tough1000 hp=0.2/0.3/0.4 -> f=1.13/0.61/0.29; Rigid10K hp=0.2 -> 0.29; Flex50A hp=0.2/0.4/0.5 -> 0.50/1.13/1.37; Silicone40A hp=0.4/0.5 -> 0.81/1.12 (secant moduli are estimates)",
+   "source": "calc.py (D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/calc.py)"
+  },
+  {
+   "name": "Own: print-induced curl vs signal",
+   "fields": "tip sag 1 mm on 40 mm = 1.25 1/m = ceiling signal of d_eps 0.083 % at h 1 mm; ceiling signal at d_eps 0.5 %, h 1 mm = 7.5 1/m",
+   "source": "calc.py (D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/calc.py)"
+  }
+ ],
+ "recommendations": [
+  "PLAN, ROUTE R1 (two Form 4 prints plus a resin bond; no Open Material Mode needed). Chosen because a Form 4 job holds one resin (Form 4 manual, 'When changing resin types, always change both the resin tank and resin cartridge'). All 'GUESS' tags are listed again at the end.",
+  "STEP 1 - Choose the pair and thicknesses. Active layer Flexible 80A V2; passive layer Tough 1000. Total 1.0 mm. Because f falls from 1.13 at 0.20 mm passive to 0.61 at 0.30 mm (own calc; moduli are estimates), print passive targets of 0.1, 0.2 and 0.3 mm (1, 2, 3 layers at 100 um) with the active layer making up the rest of 1.0 mm (0.9, 0.8, 0.7 mm). Also print single-resin strips of each material and a Flexible 80A V2 / Flexible 50A pair as controls. GUESS: a Tough 1000 minimum layer thickness below 100 um was not found on its page. Sources: Tough 1000 and Flexible 80A V2 product pages (Form 4 compatible); calc.py.",
+  "STEP 2 - Geometry in CAD. Design each layer as a 44 x 6 mm blank to be trimmed to 40 x 4 mm after bonding (GUESS: trimming removes bond flash and registration error; not from Formlabs). Keep one flat face as the base: Formlabs says the flat base must resist peel forces. Source: Printing directly on the build platform in PreForm; Design specifications for 3D models (Form 4 generation).",
+  "STEP 3 - Orientation pilot (cheap, do it first). Print 3 test orientations of the 0.2 mm Tough 1000 and 0.8 mm Flexible 80A V2 blanks: (a) flat, directly on the platform (raft none), (b) flat on PreForm supports, (c) 45 degrees in X and Y on supports. Measure thickness (microscope on a cut face) and tip sag. Reason: Formlabs says on-platform gives the least warp, but the part comes out ~0.1 mm thin in Z and the first 0.75 mm is merged; Formlabs also says 45 degrees reduces curl; the two pieces of advice conflict for strips under 1 mm. Sources: Printing directly on the build platform in PreForm; Model Orientation; Warping (SLA).",
+  "STEP 4 - Print job 1 (passive, Tough 1000). Load a Tough 1000 cartridge and its tank; PreForm material Tough 1000, layer 100 um; add 5 sacrificial twins. Use a Form 4 Flex Build Platform if available to free thin parts (Formlabs sells it for this). Source: Form 4 manual; direct-on-platform page.",
+  "STEP 5 - Wash and dry job 1. Form Wash IPA, 10 min then 10 min fresh IPA (Formlabs table), then air-dry at least 30 min; for 0.2 mm strips minimise IPA time (Formlabs warns thin walls absorb IPA and deform; Tough 1000 takes 6.9 % IPA by mass in a 24 h cube test). Weigh against the pre-wash dry mass until constant (GUESS: drying time for thin strips, probably hours). Do not post-cure yet if bonding green (STEP 9 option G). Sources: Form Wash time table; solvent compatibility; Design specifications.",
+  "STEP 6 - Swap resin. Remove the cartridge first, then the tank (manual); fit the Flexible 80A V2 cartridge and a tank for it; clean the mixer with IPA/TPM and dry it (or fit a new mixer with the new tank); wipe the build platform and edges with IPA. Keep Tough 1000 wash IPA away from Flexible 80A V2 parts (separate bucket or fresh solvent; GUESS: cross-contamination of wash IPA with a different resin was not quantified by Formlabs). Sources: Form 4 manual sections on changing resin types and cleaning the mixer; maintenance schedule.",
+  "STEP 7 - Print job 2 (active, Flexible 80A V2) with the same orientation chosen in STEP 3, 100 um layers, plus sacrificial twins and single-resin controls. Source: Flexible 80A V2 product page (Form 4 compatible); orientation as piloted.",
+  "STEP 8 - Wash job 2. Two IPA cycles (Formlabs table 5 + 5 min; data sheet says 10 min: unresolved disagreement). Flexible 80A V2 takes about 45 % mass of IPA in 1 day (data sheet) and the scaling estimate says a 1 mm strip is saturated within the wash; so use the shorter 5 + 5, dry fully (mass back to baseline) BEFORE bonding and never re-immerse the bonded stack in IPA, because the IPA mismatch between layers (45 % vs 6.9 %) would itself bend the strip. Sources: Form Wash table; Flexible 80A V2 data sheet; own scaling estimate (low confidence).",
+  "STEP 9 - Bond. Run two arms in parallel so the data decide: (G) bond both layers while still green (no post-cure yet): thin film of liquid Flexible 80A V2 resin from the cartridge, applied with a syringe on the Tough 1000 face, strip pressed between two glass slides with 0.05 mm shims, excess wiped with IPA-damp towel, flood-cure; (P) the same after each layer has had its full Form Cure V2 schedule. Cure the stack with the Form Cure at its no-heat/low-warp option (Tough 1000 'Low warp' 12 min no heat), then the Flexible 80A V2 two-cycle schedule with cycle 1 in water, and test whether the stack stays flat. Sources for pieces: Formlabs resin-bond method (FAQ, blog), Form Cure V2 table; the green-versus-cured choice and the film thickness are GUESSES (no source measures them).",
+  "STEP 10 - Post-cure geometry control. Leave strips on a flat glass plate or on their supports during cure (Formlabs: leave parts on supports; soft materials sag). Where heat is used, preheat per the Form Cure table. Source: Warping (SLA); Model Orientation.",
+  "STEP 11 - Trim and measure. Trim the blank to 40 x 4 mm with a fresh scalpel on glass (GUESS: trimming method), measure thickness of each layer on the cut edge with a microscope (do not trust CAD: -0.1 mm Z loss on platform prints), mass on a 0.1 mg balance, photograph flat and on edge for baseline curvature. Subtract baseline curl from all later readings; a 1 mm tip sag over 40 mm is 1.25 1/m, comparable to a 0.083 % ceiling-signal strain. Source: own calc; direct-on-platform page.",
+  "STEP 12 - Check route G versus P: soak 24 h in DI water; inspect for delamination at the cut edge. Any delamination in G or P eliminates that arm. Formlabs gives no measured bond strength, so this is the test (GUESS-level assumption that either arm survives). Source: Formlabs resin-bond text; no strength data exist.",
+  "ROUTE R2 (needs Open Material Mode, about $3.7k at one reseller, low confidence): print the passive layer with a recessed pocket, then cast a hydrogel or other third-party resin into the pocket and flood-cure with 405 nm; requires a dedicated manual-fill tank and a custom print setting; warranty carve-out for tank damage. Included only for completeness: stock resins do not need it. Sources: Printing with Open Material Mode; Open Material Mode store page.",
+  "ROUTE R3 (Fuse 1+): one powder per build is assumed (no source read states otherwise; GUESS). Horizontal walls down to 0.3 mm are listed for Nylon 12; place thin flat parts at mid-height; Nylon 12 White takes 1.40 % water by D570 (project record) so SLS Nylon is a possible single-material hygromorph control, but there is no passive partner in the same build. Sources: Fuse design specifications; Model orientation best practices for SLS.",
+  "GUESS: that a 40 x 4 x 0.2 mm elastomer layer prints and releases at all on Form 4; the 0.2 mm wall minimum is published for Grey V5 only.",
+  "GUESS: which orientation (platform, supported flat, 45 degrees) gives the lowest residual curl for 0.2-1 mm strips; Formlabs advice conflicts and no strip data exist.",
+  "GUESS: Z accuracy of thin parts beyond the stated ~0.1 mm compression; Formlabs publishes only XY tolerances (and for Grey V5, not elastomers).",
+  "GUESS: the minimum layer thickness of Tough 1000 and Flexible 80A V2 (not on the pages read); 100 um is assumed from the data-sheet print settings.",
+  "GUESS: that a green-state bond (both layers un-post-cured) works, is stronger than a post-cured bond, or even survives post-cure and a week in water; no source measures it.",
+  "GUESS: bond-line thickness, the right resin for the adhesive film (Flexible 80A V2, Tough 1000, or a blend) and the clamping pressure.",
+  "GUESS: that Form 4 will accept a pre-printed part left on or glued to the build platform; Form 3 refuses, Form 4 is undocumented.",
+  "GUESS: diffusion-time scaling of IPA uptake (assumes constant diffusivity); no diffusivity measured for any Formlabs resin.",
+  "GUESS: the small-strain moduli of Flexible 80A V2, Flexible 50A and Silicone 40A (the 5.8 / 1.8 / 0.8 MPa secant figures are 50 % strain secants, not moduli); the wet layer is softer (-26 Shore A).",
+  "GUESS: that the free swelling strain is isotropic (1 % per +3 % volume) and that the Flexible 80A V2 volume column is right (it fails an additivity check).",
+  "GUESS: drying time for IPA-saturated thin strips, and that the washed strips return to dry mass.",
+  "GUESS: any hydrogel or third-party resin behaviour on a Form 4; no Formlabs data exist.",
+  "GUESS: whether 'multi-material across build volumes' in the PreForm Insider notes means anything useful here.",
+  "GUESS: that one powder per Fuse build is a hard limit; not checked in a Formlabs source."
+ ],
+ "reproduce": [
+  {
+   "what": "Re-download every source page, convert to text, and record size/date/sha256",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/fetch.py name=url ...  (URLs are in the source field of each finding; output D:/Users/ashenoy00000/delphi-work/data/formlabs-printing/ with MANIFEST.tsv)",
+   "expected": "HTTP 200 per page; MANIFEST.tsv lists URL, date, byte size, sha256. Pages may change after 2026-11-12, so hashes can differ."
+  },
+  {
+   "what": "Header-aware parse of the Formlabs solvent-compatibility table (IPA and water for each resin)",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/solvent_table.py",
+   "expected": "Elastic 50A Resin V2: Isopropyl Alcohol 39.2, Water 0.7; Rigid 10K: <0.1 and <0.1; Tough 1000: IPA 6.9, water 0; Silicone 40A: IPA 5.9, Butyl Acetate 92.3."
+  },
+  {
+   "what": "Position-based row mapping of the Flexible 80A V2 ASTM D471 table",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/flex80_d471.py   (needs pymupdf; Python 3.14 here)",
+   "expected": "Deionized -> day -26 / +8% / +3%; week -27 / +9% / +7%; IPA day -32 / +45% / +113%."
+  },
+  {
+   "what": "All own calculations (Timoshenko factor, pair table, curvature, Z-compression, diffusion scaling, additivity check)",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/calc.py",
+   "expected": "f=1.5 at m=n^-0.5; Tough 1000 passive f=1.131 at 0.2 mm and 0.613 at 0.3 mm; 1 mm tip sag = 1.25 1/m; strip time-to-cube-24h 14.4 min at 1.0 mm."
+  },
+  {
+   "what": "Verify every evidence_quote against the local copies and rebuild the result JSON",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/build.py",
+   "expected": "'quote failures: 0' and the result written to D:/Users/ashenoy00000/delphi-work/agents2/bm-formlabs-printing-workflows.json"
+  },
+  {
+   "what": "Verify the Crossref records",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/crossref_doi.py 10.1115/1.4034305 10.1021/acsami.9b22272 10.4103/0972-0707.48840   (Crossref rate-limits with HTTP 429; the script retries)",
+   "expected": "titles and years as in the citations list."
+  }
+ ],
+ "citations": [
+  {
+   "authors": "Xu; Chen (family names as returned by Crossref)",
+   "year": 2016,
+   "title": "Photocuring Temperature Study for Curl Distortion Control in Projection-Based Stereolithography",
+   "doi_or_arxiv": "10.1115/1.4034305",
+   "venue": "Journal of Manufacturing Science and Engineering",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1115/1.4034305 returned title, year, journal and the abstract in this run (script crossref_doi.py); only the abstract was read.",
+   "used_for": "Polymerisation shrinkage and cooling as the two causes of curl in projection stereolithography."
+  },
+  {
+   "authors": "Gojzewski, H.; Guo, Z.; Grzelachowska, W.; Ridwan, M. G.; Hempenius, M. A.; Grijpma, D. W.; Vancso, G. J.",
+   "year": 2020,
+   "title": "Layer-by-Layer Printing of Photopolymers in 3D: How Weak is the Interface?",
+   "doi_or_arxiv": "10.1021/acsami.9b22272",
+   "venue": "ACS Applied Materials & Interfaces 12(7):8908-8914",
+   "verified": true,
+   "how_verified": "Crossref API resolved the DOI in this run; full text fetched from PMC7033657 (open access) and the quoted passage checked verbatim.",
+   "used_for": "Interlayer zone of ~11 um and reduced stiffness within a single printed resin (oxygen inhibition and diffusion)."
+  },
+  {
+   "authors": "Sehgal; Rao; Joshua (first three family names as returned by Crossref)",
+   "year": 2008,
+   "title": "Evaluation of the effects of the oxygen-inhibited layer on shear bond strength of two resin composites",
+   "doi_or_arxiv": "10.4103/0972-0707.48840",
+   "venue": "Journal of Conservative Dentistry 11(4):159-161",
+   "verified": true,
+   "how_verified": "Crossref API resolved this DOI in this run (author list Sehgal, Rao, Joshua; the PMC page header shows the same DOI); full text fetched from PMC2843537.",
+   "used_for": "Dental analogy: reports on the oxygen-inhibited layer's effect on layer-to-layer bond strength are inconsistent."
+  }
+ ],
+ "could_not_find": [
+  "Any Formlabs statement that a Form 4 or Fuse 1+ job can carry two resins or powders; what I found says one tank plus one cartridge per print, and an unexplained Insider-release line 'Multi-material capability across multiple build volumes' (see findings).",
+  "Whether a Form 4 will print on top of a part already attached to the platform (Form 3: refused per a forum reply).",
+  "Official OMM price: Formlabs pages give none; one reseller listing ($3,748.50, currency unstated) is the only number, and it was out of stock.",
+  "Any measurement of bond strength between a green first layer and a second layer of a different resin, from Formlabs or the literature (only Formlabs qualitative text, one DLP interface study, one dental-composite study).",
+  "Post-cure shrinkage percentages for any candidate resin, and Z tolerances for thin parts.",
+  "A measured curvature or sag for thin (0.2-1 mm) strips on a Formlabs printer; evidence is Formlabs guidance, a 2016 user report, and a peer-reviewed curl study on another projection machine (abstract only).",
+  "Minimum feature and wall sizes for elastomers (Flexible 50A, Flexible 80A V2, Silicone 40A) and for Tough 1000.",
+  "A clean copy of the Flexible 80A V2 data sheet text: the D471 table in the PDF is scrambled; rows were assigned to solvents by vertical position (script flex80_d471.py), and the copy read is hosted by a reseller (goengineer) rather than Formlabs.",
+  "The yield of the Yang et al. 2025 vat-photopolymerisation-assisted multi-material printing paper (doi 10.1016/j.polymer.2025.129147): the DOI resolves in Crossref but I could not read its abstract or text; not used.",
+  "Form 4 manual text of the 'Tasks before switching resin types' section beyond mixer cleaning (read) - the manual copy is reseller-hosted and dated 2024.",
+  "The Standard Resin V5 'Form Now' page figure of 1.0 mm minimum wall (seen only in a search summary, not fetched).",
+  "Fuse 1+ single-powder-per-build rule, and Fuse post-processing effects on thin strips (not researched in depth)."
+ ],
+ "glossary": [
+  {
+   "term": "bilayer",
+   "plain": "a strip made of two glued layers that behave differently, so it bends when one layer swells."
+  },
+  {
+   "term": "green part",
+   "plain": "a printed part that is not yet fully hardened; it still has unreacted chemistry on board."
+  },
+  {
+   "term": "post-cure",
+   "plain": "a second hardening step with light (and sometimes heat) after washing."
+  },
+  {
+   "term": "IPA",
+   "plain": "isopropyl alcohol, the rubbing-alcohol solvent used to wash uncured resin off prints."
+  },
+  {
+   "term": "resin",
+   "plain": "the liquid plastic that a resin printer hardens with light."
+  },
+  {
+   "term": "Open Material Mode",
+   "plain": "a paid unlock that lets a Formlabs printer use other companies' resins."
+  },
+  {
+   "term": "tank / cartridge",
+   "plain": "the shallow tray where printing happens, and the bottle that refills it."
+  },
+  {
+   "term": "warping / curl",
+   "plain": "a part changing shape because it shrinks or swells unevenly."
+  },
+  {
+   "term": "ceiling 3/2",
+   "plain": "the proven upper limit on how much a two-layer strip can curve for a given swelling difference."
+  },
+  {
+   "term": "modulus",
+   "plain": "how stiff a material is; a high number is stiff."
+  },
+  {
+   "term": "secant modulus",
+   "plain": "stiffness taken as a straight line from zero to one point on a stress curve; a rough estimate for rubbers."
+  },
+  {
+   "term": "differential strain",
+   "plain": "the difference in how much the two layers stretch or swell."
+  },
+  {
+   "term": "diffusivity",
+   "plain": "how fast a liquid creeps into a solid."
+  },
+  {
+   "term": "Shore A",
+   "plain": "a scale for rubber hardness; lower is softer."
+  },
+  {
+   "term": "SLS / Fuse",
+   "plain": "printing by melting nylon powder with a laser."
+  },
+  {
+   "term": "early layer merging",
+   "plain": "software changing the first layers so the part sticks to the platform."
+  },
+  {
+   "term": "ASTM D471 / D570",
+   "plain": "standard lab tests for how much a plastic swells in liquids or takes up water."
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/fetch.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/solvent_table.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/flex80_d471.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/calc.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/crossref_doi.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/crossref_search.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/epmc_search.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/pdf_table_words.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/build.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/build_part1.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/build_part2.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/build_part3.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-formlabs-printing-workflows/build_part4.py"
+ ]
+}

@@ -1,0 +1,405 @@
+{
+ "label": "t2-patterns-crit",
+ "topic": "Track 2 adversarial critique of the frozen design: E. coli chemotactic range-expansion front (Cremer 2019 data, Narla 2021 travelling-wave law)",
+ "summary": "Referee verdict on the six frozen predictions (design-patterns.json). ARITHMETIC: every number I could recompute from MOESM11, MOESM22, MOESM3 and the cited equations is right (k=16.904 vs 16.907, X=0.7873 vs 0.7874 mm2/h, 0.893, 0.876, 12.2% overshoot, L_G 4.751 and 4.341 mm, mixture max and quadrature values, uptake ratios 1.395/1.485/2.849, tau^-1/2 values 0.816/0.707, slopes 1.124/0.895/0.294-0.300/0.282). The design is honest about what was seen. THE PROBLEMS ARE NOT ARITHMETIC. (1) F1: tolerance 0.20 is smaller than the data's own ambiguity (5-point slope 1.124 vs 4-point 0.895 differ by 0.23; SE of the 5-point slope is 0.128, 95% CI 0.72 to 1.53); even if the theory is exactly right it passes only 50-86% of the time, and a clearly wrong alpha (0.3) still passes 13-27%. (2) F3: Narla's own Eq 24 says speed DOES depend on uptake once the bulge is a non-negligible fraction of carrying capacity; speed-slope magnitude exceeds the frozen 0.15 as soon as K (the Eq 24 correction in the wild type) exceeds 0.25, i.e. bulge trough above about 4.5% of rho_c. The density slope test on 4 strains (2 df) has about 22-78% power depending on noise and a 26-45% false-refutation rate. The speed half is already published agreement. (3) F5: not blind; the 100 uM points are the same numbers as two calibration rows; the glucose plateau 300-1000 uM differs by 3% (noise 6-10%) so 'peak within a factor of 3' is nearly unfalsifiable; and the authors' own published simulated curve in MOESM22 (ED8b) has a low-dose slope of 0.185 and no maximum at all, which already differs from the seen 0.294 by 0.109 > the 0.10 threshold and runs 3.5x below the measured speed at 100 uM, with no parameter file given for it, so the planned 'regression check' anchor is undefined. (4) F6 confuses two definitions of tortuosity (the 'naive tau^-1' is the correct answer if tau is the path-length ratio) and cannot be done without a lab; drop it. (5) F4 omits the mechanistically natural additive-chemotaxis rule (gives 7.1 and 9.6 mm/h vs max 4.20/5.85 and quadrature 5.58/7.66) and does not know the mixture concentrations. (6) F2 is sound, zero-parameter, nearly tautological (cells left behind keep growing at r; diffusive correction 1%), and the only prediction I would keep unchanged. (7) Law set 1.8.1 does contain a relevant law the earlier mapper missed (fisher-kpp-speed@1.1.0, candidate, introduced 1.8.0, constraint KPP1: c^2 >= 4sD); all 25 seen rows satisfy it with margin 2.49x to 7.59x in speed, so it cannot fail here. Keep F2, rewrite F1 and F4 with interval-based decision rules, demote F3-density and F5-ablation to exploratory, drop F3-speed, F5-peak and F6.",
+ "lay_summary": "A team wrote down, in advance, six predictions about how fast a swarm of gut bacteria spreads across a soft jelly dish. I rechecked their sums and the sums are correct. The weak spot is how they decide pass or fail. Several tests are so loose, or use so few data points, that a correct theory would often fail and a wrong one would often pass, like grading a marathon runner's pace with a stopwatch that is off by a minute. Two of the six use numbers the team had already looked at, so they cannot count as blind. I recommend keeping one prediction as it is, tightening two, treating two as exploratory, and dropping the rest.",
+ "glossary": [
+  {
+   "term": "front speed",
+   "plain": "How fast the edge of the spreading bacterial colony moves outward, in millimetres per hour."
+  },
+  {
+   "term": "chemotaxis",
+   "plain": "Cells swimming up a gradient of a food-like chemical."
+  },
+  {
+   "term": "attractant",
+   "plain": "A chemical, here aspartate or serine, that cells swim toward."
+  },
+  {
+   "term": "log-log slope",
+   "plain": "How many percent one quantity changes when another changes by one percent; a slope of 0.5 means a square-root law."
+  },
+  {
+   "term": "power (statistical)",
+   "plain": "The chance a test catches a real effect; low power means a real failure often goes unseen."
+  },
+  {
+   "term": "SE / 95% CI",
+   "plain": "Standard error and the range that would contain the true value in 95 of 100 repeats."
+  },
+  {
+   "term": "bulge / trough",
+   "plain": "The dense band of cells riding at the front, and the thin region just behind it."
+  },
+  {
+   "term": "carrying capacity",
+   "plain": "The densest the cells can pack in the dish."
+  },
+  {
+   "term": "Fisher speed",
+   "plain": "The minimum spreading speed of a population that spreads only by random wandering plus growth: 2 times the square root of diffusivity times growth rate."
+  },
+  {
+   "term": "tortuosity",
+   "plain": "How much obstacles lengthen or slow diffusion through a maze."
+  },
+  {
+   "term": "leakage",
+   "plain": "When information from the data used to tune a model quietly reaches the data used to test it."
+  }
+ ],
+ "table": [
+  {
+   "name": "M0/M1 calibration (6 WT carbon rows, ED Fig 1c)",
+   "fields": "k=16.904 mm2/h (design 16.907); per-row u2/r=16.15,13.70,20.70,18.82,17.46,17.86 mm2/h (CV 13.7%); X=chi0-Drho=0.7873 mm2/h=218.7 um2/s; chi0=268.9 um2/s; phi=4.36; check X2*100/(X+2.88)=16.904",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM11_ESM.xlsx (script recompute.py)"
+  },
+  {
+   "name": "M1 with published parameters, zero fit",
+   "fields": "X=0.9533 mm2/h; c(r=0.9985)=4.865 mm/h; ratio to measured 4.3347 = 1.122; dlnc/dlnD_rho: 0.893 fitted, 0.876 published; 1+Da/X=4.66 (a0/am=100 is 21.5x, a0/am=10 is only 2.15x); Fisher speed 2sqrt(D r)=0.85 mm/h so measured is 5.1x Fisher",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM3_ESM.txt (D_chemotaxis_1=50.2e-12, xhi_1=0.315e-9, D_nutrients=8.0e-10 m2/s) and recompute.py"
+  },
+  {
+   "name": "M0 control on 17 non-training Asp/Ser rows",
+   "fields": "within 15%: 7 of 17; errors range -31.8% (glpK22 Ser) to +94.0% (Pu-glpFK 0 inducer); +63.9% (Pu-ptsG2 100 uM), +76.8% (Pu-glpFK 10 uM Ser)",
+   "source": "MOESM11 via recompute.py"
+  },
+  {
+   "name": "F1 slopes of ln u on ln r",
+   "fields": "Pu-glpFK Asp 5pt=1.124 (SE 0.128, df 3, 95%CI 0.72 to 1.53); 4pt=0.895 (SE 0.107, df 2, CI 0.44 to 1.35); Pu-glpFK Ser 3pt=1.434 (SE 0.029, df 1); Pu-ptsG2 3pt=2.307 (CI -0.11 to 4.73); WT 6 carbons=0.424 (CI 0.13 to 0.71); WT to glpK22 pair=1.18",
+   "source": "MOESM11 via recompute.py"
+  },
+  {
+   "name": "F1 pass probability (my calc)",
+   "fields": "P(|s_pred-s_obs|<=0.2 | true colony exponent 1.12): alpha_true=0.69 -> 0.86/0.80/0.64/0.50 for SE_alpha=0.05/0.1/0.2/0.3; alpha_true=0.3 -> 0.13/0.16/0.24/0.27; alpha_true=0 -> 0.00-0.08",
+   "source": "recompute.py section B (normal approximation, SE_obs=0.128)"
+  },
+  {
+   "name": "F2 predicted e-fold lengths",
+   "fields": "glycerol+Asp 4.751 mm; glucose+Asp 4.341 mm; glycerol+Ser 5.462 mm; diffusive correction Drho*r/u2 = 0.0104, 0.0096, 0.0079; CV of prediction from means 3.0% and 4.6%; usable window ln(k/X/2)=2.37 e-folds = 10.3 mm",
+   "source": "MOESM11 via recompute.py"
+  },
+  {
+   "name": "F3 numbers and power",
+   "fields": "ratios 1.02/x = 1.000, 1.395, 1.485, 2.849; Sxx(ln uptake)=0.5754 so SE_slope=1.318*sigma; P(density slope estimate outside [-1.3,-0.7]): true -1.0 -> 0.02/0.26/0.45 and true -0.5 -> 0.94/0.78/0.72 for sigma_lnrho=0.1/0.2/0.3; Eq24 speed ratio lowest-uptake/WT = 0.982,0.951,0.925,0.854,0.775,0.721 for K=0.02,0.06,0.1,0.25,0.56,1.0; slope reaches 0.15 at K=0.249",
+   "source": "recompute.py section D; uptake labels from design-patterns.json (MOESM21 quarantined, not opened)"
+  },
+  {
+   "name": "F4 rules vs data",
+   "fields": "max/quadrature: WT glycerol 4.203/5.583; glpK22 5.846/7.660; Pu-glpFK 10/50/800 uM: 2.009/2.394, 2.769/3.750, 4.171/5.834 mm/h; quad/max 1.19-1.40; additive-chi alternative 7.1 (WT) and 9.6 (glpK22); replicate CV of speed 5.4-11.7% (median 8.7%), SE of mean at n=2 about 6.4%",
+   "source": "MOESM11 via recompute.py"
+  },
+  {
+   "name": "F5 dose series and published simulation",
+   "fields": "slope 10 to 100 uM: glucose 0.2937 (two-point) / 0.300 (OLS 4pt, SE 0.017); glycerol 0.2822 / 0.282 (SE 0.005); glucose speeds 300/500/1000 uM = 4.519/4.615/4.650 (3% spread, replicate SD ~10%); glycerol max 3.675 at 100 uM; simulated curve ED8b: 0.928 at 20 uM, 1.250 at 100, 1.923 at 1000 mm/h, monotone, log-log slope 20 to 100 = 0.185, 100 to 300 = 0.199; sim/data at 100 uM = 0.288",
+   "source": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-019-1733-y/MediaObjects/41586_2019_1733_MOESM22_ESM.xlsx via recompute.py"
+  },
+  {
+   "name": "Registry law relevant to Track 2 (set 1.8.1)",
+   "fields": "fisher-kpp-speed@1.1.0 candidate, introduced_in 1.8.0, constraint KPP1 c^2>=4sD; 25/25 seen rows satisfy it, u/(2 sqrt(Drho r)) from 2.49 to 7.59; turing-ddi@1.1.0 candidate (1.8.0); turing-wavelength@1.1.0 candidate (introduced_in null)",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/laws/fisher-kpp-speed.json and lawsets/lawset-1.8.1.json; extra.py"
+  }
+ ],
+ "findings": [
+  {
+   "claim": "Arithmetic of the calibration is correct: k = 16.904 mm2/h (design 16.907), X = chi0 - Drho = 0.7873 mm2/h (0.7874), phi = 4.36, published-parameter zero-fit c = 4.865 mm/h which is 12.2% above the measured 4.3347.",
+   "source": "recompute.py on MOESM11 and MOESM3",
+   "confidence": "high",
+   "value": "k=16.904 mm2/h; X=0.7873 mm2/h; ratio 1.122",
+   "evidence_quote": "HE206 | wt | 20mM glucose | Aspartate | 100 | 0.25 | Mean ES 4.3347312336 | Mean GR 0.9985"
+  },
+  {
+   "claim": "The sensitivity coefficient 0.893 (fitted X) and 0.876 (published X) in F1 are correctly computed as 1 - 0.5 X/(X+Da); the pass window alpha in [0.47, 0.92] for s_obs=1.12 +-0.20 is correct.",
+   "source": "recompute.py",
+   "confidence": "high",
+   "value": "0.893; 0.876; alpha 0.470 to 0.918",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "F1 tolerance (0.20) is below the data's own ambiguity: the Pu-glpFK Asp slope is 1.124 with 5 points (SE 0.128, 95% CI 0.72 to 1.53) and 0.895 with 4 points (SE 0.107); the 0.23 difference exceeds the tolerance.",
+   "source": "recompute.py on MOESM11 rows 15-19",
+   "confidence": "high",
+   "value": "1.124 vs 0.895",
+   "evidence_quote": "HE443 | Pu-glpFK | 40mM glycerol | 3MBA | 0 | Aspartate | 100 | 0.25 | 0.9986998405 | n 2 | GR 0.222"
+  },
+  {
+   "claim": "F1 has low power and low specificity: if the single-cell exponent gives s_pred exactly equal to the colony exponent 1.12 (alpha 0.69), P(pass) is 0.86 at SE_alpha 0.05 and 0.50 at SE_alpha 0.3; if alpha is clearly wrong (0.3, s_pred 0.77) P(pass) is still 0.13 to 0.27.",
+   "source": "recompute.py section B (normal approximation, my calculation)",
+   "confidence": "medium",
+   "value": "0.86 to 0.50; 0.13 to 0.27",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Every seen titration series gives an exponent near or above 1 while the 6 WT carbon sources give 0.424 (CI 0.13 to 0.71): Pu-glpFK Ser 1.434 (3 pts), Pu-ptsG2 2.307 (3 pts, CI spans zero), WT to glpK22 1.18 (2 points). The F1 'target' is therefore a post-hoc description of already-seen series, and the 0.20 tolerance was set with s_obs known.",
+   "source": "recompute.py on MOESM11",
+   "confidence": "high",
+   "value": "0.424; 1.434; 2.307; 1.18",
+   "evidence_quote": "HE433 | glpK22 | 40mM glycerol | Aspartate | 100 | Mean ES 4.95017794225 | Mean GR 0.9956232342"
+  },
+  {
+   "claim": "Narla's closed form is stated only for infinite carrying capacity; for finite carrying capacity the speed is c_inf divided by a factor that contains the uptake rate mu, so 'speed independent of uptake' (F3 speed half) is not the theory's prediction once the bulge is a few percent of carrying capacity. Speed-vs-uptake slope exceeds the frozen 0.15 when K > 0.249, i.e. trough density above about 4.5% of rho_c (using gamma = 0.26, a0/am = 100).",
+   "source": "Narla, Cremer, Hwa 2021 PNAS full text https://europepmc.org/article/PMC/PMC8640786 (Eq 24); recompute.py section D",
+   "confidence": "medium",
+   "value": "K_crit=0.249; rho_min/rho_c=0.0447",
+   "evidence_quote": "where c ∞ is the expansion speed for infinitely large carrying capacities, ρ c → ∞ as given by Eq. 21 , and γ is a dimensionless function determined by the shape of the density bulge."
+  },
+  {
+   "claim": "The factor gamma in Eq 24 is a fitted constant (0.26 for Drho=50 um2/s, 0.36 for Drho=1000), so any prediction using Eq 24 or Eq 25 is not zero-parameter, contrary to the design's 'zero free parameters' wording for the finite-capacity regime.",
+   "source": "Narla et al. 2021 full text, text near Eq 24",
+   "confidence": "high",
+   "value": "gamma=0.26",
+   "evidence_quote": "While we are unable to determine the exact functional form of γ , we find an excellent agreement between the numerical results and analytical solution for the best-fit value of γ (found to be γ = 0.26"
+  },
+  {
+   "claim": "Narla already reports the independence of speed from uptake as agreeing with experiment, so the speed half of F3 is a replication of published agreement, not a blind test.",
+   "source": "Narla et al. 2021 full text",
+   "confidence": "high",
+   "value": "",
+   "evidence_quote": "The independence on μ is in contrast to the KS model, which predicts that c = μ N K S / a 0 (where N KS is the inoculum population size), but is in agreement with experimental results ( 23 , 39 )."
+  },
+  {
+   "claim": "Phan et al. 2024 directly measured aspartate gradients and report that the standard Patlak-Keller-Segel model breaks down at high cell density, with density-dependent chemotaxis and consumption; this attacks the constant-per-cell uptake mu behind F3's 1/uptake density law and the bulge predictions generally, and pre-empts part of F5.",
+   "source": "Europe PMC record of doi 10.1073/pnas.2309251121 (PMC10801886), abstract fetched",
+   "confidence": "high",
+   "value": "",
+   "evidence_quote": "Our measurements show that the standard Patlak-Keller-Segel model for collective chemotactic bacterial migration breaks down at high cell densities."
+  },
+  {
+   "claim": "F3 density-slope test has 4 strains (2 df); Sxx of ln uptake is 0.5754 so SE(slope)=1.318*sigma. With sigma(ln density)=0.2, P(point estimate falls outside [-1.3,-0.7]) is 0.26 when the truth is -1.0 and only 0.78 when the truth is -0.5. A 95% t-interval (t=4.30, df 2) would be +-1.1, too wide to refute anything.",
+   "source": "recompute.py section D (uptake labels 1.02, 0.731, 0.687, 0.358 as given by the design; MOESM21 not opened)",
+   "confidence": "medium",
+   "value": "0.26; 0.78; +-1.1",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "F5 is contaminated by calibration: the 100 uM glucose (4.3347312336) and glycerol (3.67462190077778) dose points are the identical numbers used as two of the six calibration rows in ED Fig 1c.",
+   "source": "MOESM11 and MOESM22 compared in recompute.py",
+   "confidence": "high",
+   "value": "4.3347312336; 3.67462190077778",
+   "evidence_quote": "HE206 | wt | 40mM glycerol | Aspartate | 100 | 0.25 | 3.67462190077778 | 0.318230325273003 | 9"
+  },
+  {
+   "claim": "The glucose dose maximum is statistically undefined: speeds at 300/500/1000 uM are 4.519/4.615/4.650 mm/h (3% spread) while replicate CV is about 10%, so 'maximum within a factor of 3' (333 to 3000 uM) cannot fail for any plausible simulation that has a plateau there.",
+   "source": "MOESM22 ED8c via recompute.py",
+   "confidence": "high",
+   "value": "4.519; 4.615; 4.650",
+   "evidence_quote": "HE206 | wt | 20mM glucose | Aspartate | 1000 | 0.25 | 4.6503824175 | n 2"
+  },
+  {
+   "claim": "The authors' published simulated dose curve (MOESM22 columns A-B, ED Fig 8b) is monotone to 1000 uM with log-log slope 0.185 (20 to 100 uM) and reads 1.250 mm/h at 100 uM, 0.288 of the measured 4.335. If this is M2's output it differs from the seen slope 0.294 by 0.109, already over F5's 0.10 refutation threshold, and has no declining branch. The sheet gives no parameter file for ED8b (notes exist only for 8d-h), so the design's step-4 'regression check against the ED Fig 8b curve' lacks a defined target. I could not read the figure legend, so the units and condition of that curve are unresolved.",
+   "source": "MOESM22.xlsx columns A-B, recompute.py section F",
+   "confidence": "medium",
+   "value": "slope 0.185; 1.250 vs 4.335 mm/h",
+   "evidence_quote": "100 | 1.25021645021644"
+  },
+  {
+   "claim": "M1 (no upper sensing limit) and M2 (a_plus = 30 uM) differ exactly where the calibration lives: per unit gradient the Weber drive 1/(a_minus+a) - 1/(a_plus+a) at a = 100 uM is 1/101 - 1/130 = 0.0099 - 0.0077 = 0.0022 against 0.0099 without the ceiling (evaluated at a single concentration, so qualitative). The one fitted number X may therefore absorb the ceiling at a0 = 100 uM and not be a clean chi0 - Drho. The design acknowledges the structural difference but not this contamination.",
+   "source": "MOESM3 parameter block (weber_offset_1=0.001 mM, weber_offsetmax_1=0.03 mM); own arithmetic",
+   "confidence": "low",
+   "value": "0.0022 vs 0.0099 (qualitative)",
+   "evidence_quote": "\"weber_offset_1\": 0.001,"
+  },
+  {
+   "claim": "M1 with the published parameters at the mainsimulation growth rate (lambda_1 = 0.00019166 /s = 0.69 /h) gives 4.044 mm/h; the sheet's simulated u^2 vs chi column (ED8k, label 'chi (um^2/h)', values to 600) interpolates to u=3.407 mm/h at chi=315 (u^2 11.607), so M1 exceeds that simulation by 18.7%. Conditional on that column being the mainsimulation run, which the sheet does not state.",
+   "source": "MOESM22 columns S-T and extra.py",
+   "confidence": "low",
+   "value": "4.044 vs 3.407 mm/h; +18.7%",
+   "evidence_quote": "300 | 10.8924177165934"
+  },
+  {
+   "claim": "F2 numbers are correct (4.751 mm and 4.341 mm) and the diffusive correction to e-fold length is about 1% (Drho*r/u2 = 0.0104 and 0.0096), so L = u/r is accurate to 1% inside the model. F2 is nearly tautological (cells left behind multiply at the batch rate r at speed u). Narla states that behind the trough drift is negligible and the F-KPP equation is recovered.",
+   "source": "recompute.py section C; Narla full text",
+   "confidence": "high",
+   "value": "4.751 mm; 4.341 mm; 1%",
+   "evidence_quote": "Eliminating the term associated with chemotactic drift removes the dependence of ρ ( z ) on a ( z ) in Eq. 4 , with the only remaining processes determining ρ ( z ) being growth and diffusion."
+  },
+  {
+   "claim": "F2's +-30% window is about 6 times the CV of the prediction (3.0% glycerol, 4.6% glucose from SEs of means), so it is not too tight on the prediction side; fit uncertainty from the confocal profile is unknown. Usable exponential window predicted by Eq 33 is 2.37 e-folds = 10.3 mm, comfortably above the 2 mm minimum, but Eq 33 and Eq 36 are scalings (written with ~), so factors of order one are not guaranteed.",
+   "source": "recompute.py section C; design-patterns.json model text",
+   "confidence": "medium",
+   "value": "3.0%; 4.6%; 10.3 mm",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "F4's 10% windows around max and quadrature rules do not overlap (quad/max = 1.19 to 1.40), and replicate speed CV is 5.4 to 11.7% (median 8.7%), so at n=2 the SE of a mean is about 6.4% and a +-10% window is only about +-1.6 SE: a correct rule would be refuted by noise about 12% of the time. The additive-chemotaxis rule (X_mix = X_asp + X_ser in Eq 21) predicts 7.1 (WT) and 9.6 (glpK22) mm/h, outside both windows, and is not on the design's list. The seen casamino-acid rows already show u2/r = 41.7 and 36.0 mm2/h (2.1 to 2.4 times the single-attractant 16.9) though growth rate also rose to 1.40 and 1.51 /h.",
+   "source": "recompute.py section E and extra.py on MOESM11",
+   "confidence": "medium",
+   "value": "7.1; 9.6; 41.7; 36.0",
+   "evidence_quote": "HE206 | wt | 40mM glycerol+cAA | cAA | 0.05 | 0.25 | 7.631555924 | n 2 | GR 1.397"
+  },
+  {
+   "claim": "Serine changes growth rate relative to aspartate in the same strain and carbon (glucose 0.917 vs 0.9985; glpK22 0.93945 vs 0.9956 /h), so the 'max rule' on speeds ignores a changing r; the mixture's own r will differ from both.",
+   "source": "MOESM11",
+   "confidence": "high",
+   "value": "0.917 vs 0.9985; 0.93945 vs 0.9956",
+   "evidence_quote": "HE206 | wt | 20mM glucose | Serine | 100 | 0.25 | 4.9217755185 | n 2 | GR 0.917"
+  },
+  {
+   "claim": "F6 conflates tortuosity definitions: if tau is the path-length ratio, D_eff = D/tau^2 and c scales as 1/tau (the 'naive' value); the design's tau^-1/2 is correct only if tau is the diffusivity ratio D_open/D_eff measured by dye. The algebra tau^-1/2 under D->D/tau, chi0->chi0/tau, Da->Da/tau is verified numerically (ratio 0.7071 at tau=2). The design itself notes pore size (about 0.2 mm) is not separated from the 0.18-0.22 mm bulge rise length, and a wet lab is required. Drop F6.",
+   "source": "recompute.py section G",
+   "confidence": "high",
+   "value": "0.8165; 0.7071; 0.6667; 0.5",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Numbers in the design's M1 text that compare to Narla: Narla states the speed has a square-root dependence on r and on a0/am as 'validated by numerical results', i.e. simulation of the same equations, not experiment; the design correctly treats the experimental exponents (1.12 on r, 0.28-0.30 on a0) as contradictions of those stated dependencies.",
+   "source": "Narla et al. 2021 full text",
+   "confidence": "high",
+   "value": "",
+   "evidence_quote": "First, there is a square root dependence on the growth rate r , as validated by numerical results in Fig. 2 A ."
+  },
+  {
+   "claim": "Eq 22 validity is satisfied at the calibration point but not at the low end of the dose series: a0/am must be much greater than 1 + Da/X = 4.66, which is 21.5 at 100 uM but only 2.15 at 10 uM, so the 10 to 100 uM slope compares M1 to data partly outside M1's stated validity.",
+   "source": "recompute.py; design Eq 22",
+   "confidence": "high",
+   "value": "21.5; 2.15; 4.66",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "The earlier law mapping used lawset 1.6.0; lawset 1.8.1 pins fisher-kpp-speed@1.1.0 (candidate, introduced_in 1.8.0) whose checkable direction is c^2 >= 4 s D. All 25 seen conditions satisfy it (speed 2.49 to 7.59 times 2 sqrt(Drho r)), so it is consistent but cannot fail on this track; the colony runs 5.1 times faster than Fisher speed for WT glucose, which is why growth-only Fisher theory is the wrong baseline and chemotaxis matters. turing-ddi@1.1.0 and turing-wavelength@1.1.0 are also candidates and do not apply (no reaction-diffusion pattern formation here).",
+   "source": "lean/registry/laws/fisher-kpp-speed.json, lawsets/lawset-1.8.1.json, extra.py",
+   "confidence": "high",
+   "value": "min 2.49, max 7.59",
+   "evidence_quote": "c^2 >= 4 s D, i.e. c >= c* = 2 sqrt(s D)  (no front is slower than the Fisher-KPP minimal speed)"
+  },
+  {
+   "claim": "Structure of the quarantined sheets (counts only, no values opened): MOESM13 sheet '3e' has about 5 numeric points per series and carries the authors' own 'Growth expansion model' and 'Square root scaling' columns; MOESM15 'ED Figure 1g' has 5 numeric rows (so F4 has 5 conditions); MOESM16 'ED2' has 17 numeric rows (alpha is estimated from at most 17 points, in 3 to 4 blocks of different conditions, not a clean growth-rate series); MOESM21 has 'E7g' with 4 strains and 'ED7h,j' with the authors' simulated profiles for uptake 1.02, 0.731, 0.687, 0.358.",
+   "source": "structure_only.py on local copies of MOESM13, 15, 16, 21",
+   "confidence": "medium",
+   "value": "5; 5; 17; 4",
+   "evidence_quote": "uptake 1.02 | uptake 0.731 | uptake 0.687 | uptake 0.358"
+  },
+  {
+   "claim": "Quarantine is only as good as the file system: all fourteen source-data sheets, including the 'quarantined' ones, sit unsealed in agents/scratch/scout-patterns/dl/cremer/ readable by any later session, and the sheets contain the authors' model curves (3e 'Growth expansion model', 'Square root scaling'; 7g 'es model'), so pre-registered 'predictions' could be compared with the authors' own predictions by any reader.",
+   "source": "directory listing of D:/Users/ashenoy00000/delphi-work/agents/scratch/scout-patterns/dl/cremer and structure_only.py",
+   "confidence": "high",
+   "value": "14 xlsx files + MOESM3.txt",
+   "evidence_quote": "es (mm/h) | es model (mm/h)"
+  }
+ ],
+ "key_claims": [
+  {
+   "claim": "Every recomputable number in the frozen predictions is arithmetically correct (k, X, 0.893, 12% overshoot, L_G, mixture values, uptake ratios, tau^-1/2); the weakness is decision rules and independence, not sums.",
+   "source": "recompute.py on MOESM11/MOESM22/MOESM3",
+   "evidence_quote": "HE206 | wt | 20mM glucose | Aspartate | 100 | 0.25 | 4.3347312336 | 0.442176708335675 | 5 | GR 0.9985"
+  },
+  {
+   "claim": "F1 as frozen cannot discriminate: tolerance 0.20 is smaller than the 5-point vs 4-point slope ambiguity (1.124 vs 0.895) and about 1.6 SE of the 5-point slope (0.128); a correct theory passes only 50-86%, a wrong alpha=0.3 still passes 13-27%.",
+   "source": "recompute.py section B",
+   "evidence_quote": "HE443 | Pu-glpFK | 40mM glycerol | 3MBA | 800 | Aspartate | 100 | 0.25 | 4.170896515 | 0.261539354546182 | 3 | GR 0.738211488"
+  },
+  {
+   "claim": "F3's speed-independence is not what Narla's finite-capacity Eq 24 predicts, and Narla already reports it as agreeing with experiment; the density half has 2 df and low power. F5 is contaminated (100 uM points equal calibration rows), its plateau-maximum test cannot fail, and the authors' own published simulated curve has low-dose slope 0.185 against the seen 0.294.",
+   "source": "Narla 2021 full text (Eq 24 text) and MOESM22",
+   "evidence_quote": "where c ∞ is the expansion speed for infinitely large carrying capacities, ρ c → ∞ as given by Eq. 21 , and γ is a dimensionless function determined by the shape of the density bulge."
+  },
+  {
+   "claim": "F2 (e-fold length u/r) is the one prediction that is sound as frozen: zero-parameter, correct arithmetic (4.751 and 4.341 mm), diffusive correction only 1%, prediction CV 3-5% against a 30% window.",
+   "source": "recompute.py section C; Narla full text",
+   "evidence_quote": "Eliminating the term associated with chemotactic drift removes the dependence of ρ ( z ) on a ( z ) in Eq. 4 , with the only remaining processes determining ρ ( z ) being growth and diffusion."
+  }
+ ],
+ "recommendations": [
+  "KEEP F2 as frozen. Add a two-tier outcome declared in advance: strong pass within +-15%, pass within +-30%, refuted if the 95% CI of the fitted e-fold length (over at least 3 plates per condition) lies entirely outside +-30%, inconclusive if the exponential window is under 2 mm or R2 < 0.90. Fix the imaging time and radial-geometry correction in the recipe before the freeze. Say in the pre-registration that it tests only that cells behind the trough grow at the batch rate.",
+  "REWRITE F1. Use the unseen Fig 3e Pu-glpFK series as the only primary target and list the seen ED Fig 1c slope as a declared non-blind diagnostic. Fix the point set (all 5 points, with the 4-point slope reported as a sensitivity run) before opening any data. Decision rule on intervals: compute alpha with a bootstrap 95% CI over the MOESM16 rows, map to s_pred = 0.5 + 0.893 alpha; refuted if the s_pred interval and the 95% CI of s_obs are disjoint; confirmed if the s_pred interval lies within s_obs +-0.25 AND the CI of s_obs excludes 0.5; inconclusive if either interval is wider than 0.6 (the present seen CI is 0.81 wide, so expect inconclusive unless Fig 3e adds points). Pool the Pu-glpFK Asp (5), Ser (3) and Fig 3e rows in one regression to shrink the SE. Drop the redundant 'alpha <= 0' clause (it duplicates the interval rule) and the AND of two targets.",
+  "DROP the speed half of F3 (already published agreement; Eq 24 contradicts a flat zero-slope once K > 0.25). Keep the density half only as EXPLORATORY: pre-register the expected K = 5.58 x rho_min/rho_c from the measured WT trough and carrying capacity, predict the peak ratio lowest-uptake/WT as 2.85 corrected for saturation, require at least 3 plates per strain, and report the density exponent with a 95% CI; call it inconclusive if the CI is wider than 1.0. Do not use 'point estimate in [-1.3,-0.7]' (false-refutation rate 26-45%). Cross-check against the authors' own simulated profiles for the same uptake values (ED7h,j).",
+  "REWRITE F4 as exploratory with three candidate rules: max, quadrature, and additive chemotaxis (X_mix = X_asp + X_ser, 7.1 and 9.6 mm/h for WT glycerol and glpK22). Read only the header cells of ED Figure 1g to record the mixture concentrations before the freeze; if they are not 100 + 100 uM, recompute all inputs. Window +-12% (about 2 SE at n=2 with CV 9%) and require n>=3. Report which rule is within the window; if none or more than one, inconclusive. State that the mixture's own growth rate will differ.",
+  "DEMOTE F5 to a replication/diagnostic, not a blind prediction: its 100 uM points are calibration rows, the data are seen, and the M1 exponent 0.5 is already contradicted (slope 0.294 and 0.282). Replace the 'concentration of maximum speed within a factor of 3' with a crossing statistic that has a defined location: the concentration at which speed falls to 70% of its maximum on the high-dose side (glucose roughly 3,400 uM by linear interpolation between 3000 and 5000 uM; glycerol about 1,000 uM; my arithmetic from MOESM22), tolerance a factor of 2. Keep the sensing-ceiling ablation (weber_offsetmax 0.03 to 1000 mM) as the only genuinely informative piece, with the threshold 'slope shifts by at least 0.10' replaced by the shift expected from the port at the same parameters, and run the authors' own published curve through the port first. Do NOT promise to regression-test against ED8b until its parameter file and units are identified; the sheet's curve reads 3.5 times below the data at 100 uM.",
+  "DROP F6 (needs a wet lab; tau defined inconsistently; pores not scale-separated; 'naive' 1/tau is the correct answer for a path-length tortuosity). If kept at all, define tau as D_open/D_eff measured by dye with the same molecule class, and call the tau^-1/2 relation a Lean-able algebra statement with no organism claim.",
+  "SEAL THE QUARANTINE. Move MOESM13, 15, 16, 21 and the profile sheets out of the readable working tree into a hash-locked archive; record sha256 of each in PREREGISTRATION.md; have the analysis code, not a person, open them. Note that the sheets contain the authors' own model curves (Fig 3e 'Growth expansion model' and 'Square root scaling'; E7g 'es model'), so the right comparison for each blind prediction is also against the authors' curve.",
+  "LAW LIBRARY. Replace the 'nothing on travelling fronts' statement with the 1.8.1 facts: fisher-kpp-speed@1.1.0 (KPP1, lower bound) is pinned as candidate and is satisfied by all 25 seen rows with factor 2.49 to 7.59; register Track 2's own candidate statements (c increasing in r and a0, 1/2 < dlnc/dlnD < 1 at fixed phi, Eq 22 side-condition) as hypotheses with the measured validity domain a0/am > 4.66 and state that the 10 uM dose point is outside it. Do not claim a Lean law 'tests' a colony.",
+  "FREEZE ORDER. Record in the pre-registration which thresholds were set after seeing data (F1 tolerance 0.20, all of F5) and which were set blind (F2, F3 bounds, F4 10%). Fix the regression recipe for the dose slope (two-point 0.294 vs OLS-4 0.300 differ at the second decimal; the design quotes 0.30)."
+ ],
+ "reproduce": [
+  {
+   "what": "Install openpyxl into the scratch dir (no system changes)",
+   "command_or_url": "pip install --target D:/Users/ashenoy00000/delphi-work/agents2/scratch/t2-patterns-crit/pylib openpyxl",
+   "expected": "openpyxl 3.1.5 installed (Python 3.14.2)"
+  },
+  {
+   "what": "Recompute all seen-data numbers (k, X, slopes with SE, F1 power, F2, F3 power, F4, F5, F6)",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents2/scripts/t2-patterns-crit/recompute.py",
+   "expected": "k 16.904; X 0.7873; slopes 1.124/0.895/0.424; F2 4.751 and 4.341 mm; F5 slopes 0.2937/0.2822, sim slope 0.185; M0 within 15%: 7 of 17. Output saved in scratch/t2-patterns-crit/recompute_out.txt"
+  },
+  {
+   "what": "Fisher-KPP lower-bound check on all 25 seen rows, cAA rows, M1 vs ED8k",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents2/scripts/t2-patterns-crit/extra.py",
+   "expected": "u/(2 sqrt(Drho r)) min 2.49 max 7.59, 0 violations; cAA u2/r 41.7 and 36.0; M1 4.044 vs sim 3.407"
+  },
+  {
+   "what": "Structure-only (counts, no values) look at quarantined sheets",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents2/scripts/t2-patterns-crit/structure_only.py",
+   "expected": "MOESM13 3e 1005x25; MOESM15 ED Figure 1g 8x14; MOESM16 ED2 21x33; MOESM21 E7g 17x8"
+  },
+  {
+   "what": "Fetch Narla 2021 full text and read Eq 24 and the independence-of-mu paragraph",
+   "command_or_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC8640786/fullTextXML (strip tags, search 'infinitely large carrying capacities' and 'in agreement with experimental results')",
+   "expected": "gamma = 0.26 for Drho 50 um2/s; independence of mu stated as agreeing with experiment"
+  },
+  {
+   "what": "Fetch Phan 2024 abstract",
+   "command_or_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.1073/pnas.2309251121&resultType=core&format=json",
+   "expected": "abstract states Patlak-Keller-Segel breaks down at high cell densities (PMC10801886)"
+  },
+  {
+   "what": "Read the registry law",
+   "command_or_url": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/laws/fisher-kpp-speed.json and registry/lawsets/current.json (read only)",
+   "expected": "version 1.8.1; fisher-kpp-speed 1.1.0 candidate introduced_in 1.8.0; browser_check c^2 >= 4 s D"
+  }
+ ],
+ "citations": [
+  {
+   "authors": "Narla AV, Cremer J, Hwa T",
+   "year": 2021,
+   "title": "A traveling-wave solution for bacterial chemotaxis with growth",
+   "doi_or_arxiv": "10.1073/pnas.2105138118",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1073/pnas.2105138118 returned the title, PNAS, 2021-11-24; full text read from Europe PMC PMC8640786",
+   "venue": "PNAS",
+   "used_for": "Eq 24 finite carrying capacity, fitted gamma, independence-of-mu statement, F-KPP recovery behind the trough"
+  },
+  {
+   "authors": "Cremer J, Honda T, Tang Y, Wong-Ng J, Vergassola M, Hwa T",
+   "year": 2019,
+   "title": "Chemotaxis as a navigation strategy to boost range expansion",
+   "doi_or_arxiv": "10.1038/s41586-019-1733-y",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1038/s41586-019-1733-y returned the title, Nature, 2019-11-06 (first five authors confirmed: Cremer, Honda, Tang, Wong-Ng, Vergassola)",
+   "venue": "Nature",
+   "used_for": "Source-data sheets MOESM11, MOESM22, parameter file MOESM3"
+  },
+  {
+   "authors": "Phan TV, Mattingly HH, Vo L, Marvin JS, Looger LL, et al.",
+   "year": 2024,
+   "title": "Direct measurement of dynamic attractant gradients reveals breakdown of the Patlak-Keller-Segel chemotaxis model",
+   "doi_or_arxiv": "10.1073/pnas.2309251121",
+   "verified": true,
+   "how_verified": "Crossref API returned title, PNAS, 2024-01-09 (first authors Phan, Mattingly, Vo, Marvin, Looger); abstract read from Europe PMC PMC10801886. Only the first five authors were read.",
+   "venue": "PNAS",
+   "used_for": "Density-dependent chemotaxis and consumption undermines constant-uptake bulge law (F3) and parts of F5"
+  },
+  {
+   "authors": "Fisher RA",
+   "year": 1937,
+   "title": "The wave of advance of advantageous genes",
+   "doi_or_arxiv": "10.1111/j.1469-1809.1937.tb02153.x",
+   "verified": true,
+   "how_verified": "Crossref API https://api.crossref.org/works/10.1111/j.1469-1809.1937.tb02153.x returned THE WAVE OF ADVANCE OF ADVANTAGEOUS GENES, Annals of Eugenics",
+   "venue": "Annals of Eugenics",
+   "used_for": "Fisher speed 2 sqrt(D r) lower-bound check (registry law fisher-kpp-speed)"
+  }
+ ],
+ "could_not_find": [
+  "The legend or parameter file for the simulated dose curve in MOESM22 columns A-B (ED Fig 8b). Its units and conditions are unresolved, so whether it is M2's output and why it sits 3.5 times below the measured speed is not established.",
+  "The values in the quarantined sheets (MOESM13, 15, 16, 21): deliberately not opened, to protect the pre-registration, so I could not compute the real power of F1 target 2 (alpha, CI), F3 density slope noise, or the mixture concentrations in F4; I give power as a function of assumed noise instead.",
+  "The Narla PDF and SI Appendix (Table S1, section on gamma): only the Europe PMC XML text was read; I did not independently transcribe the MathML equations, so Eq 21-25, 33, 36, 40 were not re-checked beyond the numeric consistency of Eq 21/23 (dimensions and the tau scaling) and the quoted text.",
+  "Whether the typical bulge trough to carrying-capacity ratio in the real plates is above or below 4.5 percent, which decides whether Eq 24 breaks F3's speed claim in practice (K is unknown without the trough and rho_c values).",
+  "A figure-free source for the claim that the sensing ceiling at 30 uM contributes to the calibration offset; my 0.0022 vs 0.0099 comparison is qualitative (evaluated at a single concentration)."
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t2-patterns-crit/recompute.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t2-patterns-crit/extra.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t2-patterns-crit/structure_only.py"
+ ]
+}

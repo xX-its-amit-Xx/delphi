@@ -1,0 +1,333 @@
+{
+ "label": "q2-data",
+ "topic": "Q2 binding-affinity prediction: public data and a first analysis",
+ "summary": "Data: 80 ChEMBL_37 REST downloads (Ki and IC50, pChEMBL, relation '=', biochemical assays, 40 hand-picked well-studied targets, 39 returned data; ~95 MB). (1) Noise: pooled SD between independent documents for the same compound-target pair is 0.61 pKi (CI [0.588, 0.637]) and 0.84 pIC50 (CI [0.805, 0.870]); a robust MAD estimate is lower (0.32, 0.55) because errors are heavy-tailed (16% of Ki pairs and 23% of IC50 pairs differ by more than 1 log). (2) Between-target share of variance in pooled data is 7.7% (Ki) and 14.7% (IC50); the rest is within-target. (3) A predictor knowing only the target reaches pooled Pearson r=0.28 (Ki) / 0.38 (IC50) with zero within-target correlation. (4) Attenuation ceiling for a perfect predictor scored against one noisy measurement: pooled r <= 0.88 (Ki) / 0.77 (IC50); within-target r <= 0.87 / 0.72 (robust-noise ceilings 0.96 / 0.89). So noise caps achievable correlation but leaves large headroom; it does not by itself explain poor within-target performance, and it matters more for IC50. Caveats: targets are a hand-picked set, not a random ChEMBL sample; two IC50 targets were capped at 12,000 rows; the Lean registry was not opened.",
+ "lay_summary": "People build computer programs to guess how tightly a drug sticks to a protein. We asked how much of their shortfall can be blamed on the measurements they learn from. When different labs measure the same drug on the same protein, answers typically differ by about 0.6 on a scale where one unit is a ten-fold change, and sometimes by ten-fold or more. That noise puts a ceiling on how well any program can score, like marking a spelling test against an answer key that has typos. The ceiling is fairly high (about 0.87 out of 1 for the best-case correlation), so noise explains only part of the problem. Also, knowing only which protein is involved explains under a sixth of the variation, so the hard part is ranking similar drugs for the same protein.",
+ "glossary": [
+  {
+   "term": "pKi / pIC50 / pChEMBL",
+   "plain": "Minus the base-10 log of a molar binding strength; one unit means ten-fold tighter binding."
+  },
+  {
+   "term": "Ki / IC50",
+   "plain": "Two ways of reporting how much drug is needed to block a protein; smaller means tighter."
+  },
+  {
+   "term": "Replicate",
+   "plain": "The same compound measured again on the same protein."
+  },
+  {
+   "term": "Standard deviation (SD)",
+   "plain": "Typical size of the scatter around the average."
+  },
+  {
+   "term": "Variance decomposition",
+   "plain": "Splitting total spread into the part between proteins and the part within each protein."
+  },
+  {
+   "term": "eta squared",
+   "plain": "The fraction of spread explained by which protein it is."
+  },
+  {
+   "term": "Pearson r",
+   "plain": "Correlation from -1 to 1 between predictions and measurements."
+  },
+  {
+   "term": "Attenuation bound",
+   "plain": "The best correlation any predictor could get when the answer key itself is noisy."
+  },
+  {
+   "term": "MAD",
+   "plain": "Median absolute deviation, a spread measure that ignores wild outliers."
+  },
+  {
+   "term": "ChEMBL",
+   "plain": "A public database of drug-like molecules and measured activities."
+  }
+ ],
+ "findings": [
+  {
+   "claim": "Pooled SD of independent (different-document) replicate Ki measurements of the same compound-target pair, pChEMBL units",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scratch/q2-data/results_Ki.json",
+   "value": "0.612 (95% CI [0.588, 0.637]; 2311 pairs, 4027 df)",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Variance share between targets in pooled Ki data (my 40-target selection)",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scratch/q2-data/results_Ki.json",
+   "value": "eta2=0.077 CI [0.074, 0.081]; within share 0.923",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Leave-one-out target-mean predictor Pearson r, Ki",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scratch/q2-data/results_Ki.json",
+   "value": "0.276 CI [0.271, 0.282]",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Attenuation ceiling on within-target Pearson r, Ki, inter-document noise",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scratch/q2-data/results_Ki.json",
+   "value": "0.866 CI [0.855, 0.877]",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Pooled SD of independent (different-document) replicate IC50 measurements of the same compound-target pair, pChEMBL units",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scratch/q2-data/results_IC50.json",
+   "value": "0.839 (95% CI [0.805, 0.870]; 2260 pairs, 4568 df)",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Variance share between targets in pooled IC50 data (my 40-target selection)",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scratch/q2-data/results_IC50.json",
+   "value": "eta2=0.147 CI [0.143, 0.152]; within share 0.853",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Leave-one-out target-mean predictor Pearson r, IC50",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scratch/q2-data/results_IC50.json",
+   "value": "0.382 CI [0.377, 0.388]",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Attenuation ceiling on within-target Pearson r, IC50, inter-document noise",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scratch/q2-data/results_IC50.json",
+   "value": "0.720 CI [0.694, 0.746]",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Kramer et al. estimate Ki experimental uncertainty SD 0.54 pKi and max R2 0.81; my unfiltered Ki estimate (0.61) is consistent",
+   "source": "https://doi.org/10.1021/jm300131x",
+   "value": "SD 0.54; R2 max 0.81",
+   "confidence": "high",
+   "evidence_quote": "The experimental uncertainty is estimated to yield a mean error of 0.44 pK(i) units, a standard deviation of 0.54 pK(i) units, and a median error of 0.34 pK(i) units."
+  },
+  {
+   "claim": "Landrum and Riniker: combining literature IC50 from different assays is noisy",
+   "source": "https://doi.org/10.1021/acs.jcim.4c00049",
+   "value": "27% differ >1 log (minimal curation); Kendall tau 0.51",
+   "confidence": "high",
+   "evidence_quote": "almost 65% of the points differ by more than 0.3 log units, 27% differ by more than one log unit, and the correlation between the assays, as measured by Kendall's \u03c4, is only 0.51."
+  },
+  {
+   "claim": "Kalliokoski et al.: IC50 SD about 25% larger than Ki SD; mine is 0.839/0.612 = 1.37x (a larger gap; disagreement reported, not smoothed)",
+   "source": "https://doi.org/10.1371/journal.pone.0061007",
+   "value": "1.25x (paper) vs 1.37x (mine)",
+   "confidence": "medium",
+   "evidence_quote": "The standard deviation of IC50 data is only 25% larger than the standard deviation of Ki data"
+  },
+  {
+   "claim": "Same-assay Ki duplicates in ChEMBL are mostly repeated numbers (median abs diff 0.01) with a heavy tail from errors, so pooled SD 0.45 is far above robust SD 0.01",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scratch/q2-data/results_Ki.json",
+   "value": "median_abs_diff=0.010; frac_gt_1=0.094",
+   "confidence": "high",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Kramer et al. report ChEMBL contains unit-transcription errors and repeated citations (90% of pairs)",
+   "source": "https://doi.org/10.1021/jm300131x",
+   "value": "90% repeated citations",
+   "confidence": "high",
+   "evidence_quote": "ChEMBL contains unit-transcription errors, undifferentiated stereoisomers, and repeated citations of single measurements (90% of all pairs)"
+  },
+  {
+   "claim": "Brown, Muchmore, Hajduk: expected model performance is often unsupported given assay and prediction error",
+   "source": "https://doi.org/10.1016/j.drudis.2009.01.012",
+   "value": "qualitative",
+   "confidence": "high",
+   "evidence_quote": "the expected performance of many models is simply not supported by the underlying data, because of often neglected effects of assay and prediction errors"
+  },
+  {
+   "claim": "Data provenance: ChEMBL_37, release 2026-05-01, 80 files, about 95 MB, retrieved 2026-11-12",
+   "source": "https://www.ebi.ac.uk/chembl/api/data/status.json",
+   "value": "sha256 per file in D:/Users/ashenoy00000/delphi-work/data/chembl-q2/SHA256SUMS.txt",
+   "confidence": "high",
+   "evidence_quote": ""
+  }
+ ],
+ "key_claims": [
+  {
+   "claim": "Independent-document pooled SD of Ki replicates is 0.61 pKi (95% CI [0.588, 0.637]), consistent with the literature 0.54",
+   "source": "https://doi.org/10.1021/jm300131x and own results_Ki.json",
+   "evidence_quote": "a standard deviation of 0.54 pK(i) units"
+  },
+  {
+   "claim": "Between-target variance is only 8% (Ki) to 15% (IC50) of total in my 39-target ChEMBL set (selection-dependent); target-only predictor r=0.28/0.38",
+   "source": "own calculation results_Ki.json, results_IC50.json",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Noise ceiling on within-target Pearson r is about 0.87 (Ki) and 0.72 (IC50); pooled Ki R2 ceiling 0.77 vs Kramer 0.81",
+   "source": "own calculation; https://doi.org/10.1021/jm300131x",
+   "evidence_quote": "The maximum possible squared Pearson correlation coefficient (R(2)) on large data sets is estimated to be 0.81."
+  },
+  {
+   "claim": "Mixed-assay noise is heavy-tailed (many pairs differ by more than 1 log), so SD-based ceilings are pessimistic relative to robust ones",
+   "source": "https://doi.org/10.1021/acs.jcim.4c00049",
+   "evidence_quote": "27% differ by more than one log unit"
+  }
+ ],
+ "recommendations": [
+  "Report both pooled-SD and robust-SD noise ceilings; treat 0.87 (Ki) and 0.72 (IC50) within-target r as pessimistic and 0.96/0.89 as optimistic.",
+  "Evaluate models per target (within-target correlation), not pooled; pooled r is inflated by between-target spread.",
+  "Curate to same-assay or same-lab pairs when claiming near-ceiling performance; a Lean statement should take noise SD and variance split as parameters, with these numbers as test inputs.",
+  "Repeat on a random target sample and the full ChEMBL dump to remove selection bias."
+ ],
+ "reproduce": [
+  {
+   "what": "Download data (resumable, ~40 min, ~95 MB)",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents2/scripts/q2-data/fetch_chembl.py (Python 3.14.2, stdlib only; ChEMBL REST, ChEMBL_37)",
+   "expected": "80 JSON files in D:/Users/ashenoy00000/delphi-work/data/chembl-q2; sha256 per file in SHA256SUMS.txt (sha256 of that file c82e26852996db3e98aadad99b6d8889b2c9b6cfd71131df53e706fc2bcf5d11). A newer ChEMBL release could change counts."
+  },
+  {
+   "what": "Analysis (run from a neutral cwd; do not use python -I because numpy is in the user site)",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents2/scripts/q2-data/analyze.py Ki ; same with IC50 (numpy 2.5.3, scipy 1.18.1, seed 20261112)",
+   "expected": "results_Ki.json / results_IC50.json in agents2/scratch/q2-data with the numbers above; IC50 takes about 6 minutes"
+  },
+  {
+   "what": "Build this report",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents2/scratch/q2-data/build.py",
+   "expected": "writes agents2/q2-data.json"
+  },
+  {
+   "what": "Citations",
+   "command_or_url": "https://api.crossref.org/works/10.1021/jm300131x (also 10.1021/acs.jcim.4c00049, 10.1371/journal.pone.0061007, 10.1016/j.drudis.2009.01.012)",
+   "expected": "titles as listed"
+  }
+ ],
+ "citations": [
+  {
+   "authors": "Kramer, Kalliokoski, Gedeck, Vulpetti",
+   "year": 2012,
+   "title": "The Experimental Uncertainty of Heterogeneous Public Ki Data",
+   "doi_or_arxiv": "10.1021/jm300131x",
+   "verified": true,
+   "venue": "J Med Chem",
+   "used_for": "literature Ki noise SD 0.54, R2 max 0.81",
+   "how_verified": "Crossref works API (bibliographic search) returned this DOI and title; abstract read via Europe PMC"
+  },
+  {
+   "authors": "Kalliokoski, Kramer, Vulpetti, Gedeck",
+   "year": 2013,
+   "title": "Comparability of Mixed IC50 Data - A Statistical Analysis",
+   "doi_or_arxiv": "10.1371/journal.pone.0061007",
+   "verified": true,
+   "venue": "PLoS ONE",
+   "used_for": "IC50 vs Ki SD ratio",
+   "how_verified": "Crossref works/<doi> resolved; abstract via Europe PMC"
+  },
+  {
+   "authors": "Landrum, Riniker",
+   "year": 2024,
+   "title": "Combining IC50 or Ki Values from Different Sources Is a Source of Significant Noise",
+   "doi_or_arxiv": "10.1021/acs.jcim.4c00049",
+   "verified": true,
+   "venue": "J Chem Inf Model",
+   "used_for": "cross-assay disagreement fractions",
+   "how_verified": "Crossref works/<doi> resolved; abstract via Europe PMC"
+  },
+  {
+   "authors": "Brown, Muchmore, Hajduk",
+   "year": 2009,
+   "title": "Healthy skepticism: assessing realistic model performance",
+   "doi_or_arxiv": "10.1016/j.drudis.2009.01.012",
+   "verified": true,
+   "venue": "Drug Discovery Today",
+   "used_for": "assay error limits model performance",
+   "how_verified": "Crossref bibliographic search returned this DOI and title; abstract via Europe PMC"
+  }
+ ],
+ "could_not_find": [
+  "Lean registry in delphisci/lean was not opened; no Lean statement was formalised or checked against these numbers.",
+  "No sourced threshold for the within-target rank correlation needed for lead optimisation; ceilings are reported instead and any threshold would be unverified background.",
+  "BindingDB and a leakage-controlled benchmark (e.g. LP-PDBbind) were not downloaded; only ChEMBL_37 was used, so no second-database cross-check.",
+  "Targets are 40 hand-picked well-studied ones (39 returned data; IC50 CHEMBL203 and CHEMBL279 capped at 12,000 rows); between-target share and target-mean r depend on this selection.",
+  "Pairs are not curated for stereochemistry or assay conditions; pooled SD includes unit/transcription errors (ChEMBL-flagged records and potential duplicates excluded), so pooled SD may overestimate and MAD underestimate true noise.",
+  "Same-assay duplicates are mostly repeated citations (median diff 0.01), not independent replicates; the inter-document estimate is the relevant one.",
+  "Only leave-one-out target-mean prediction was evaluated; no machine-learning model was trained, and no scaffold split was done."
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/q2-data/fetch_chembl.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/q2-data/analyze.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scratch/q2-data/build.py"
+ ],
+ "table": [
+  {
+   "name": "Ki noise, inter-document replicates",
+   "fields": "n_groups=2311; df=4027; pooled_SD_pChEMBL=0.612; CI95=[0.588, 0.637]; robust_MAD_SD=0.325; robust_CI95=[0.304, 0.356]; frac_abs_diff_gt_1=0.163; median_abs_diff=0.317",
+   "source": "https://www.ebi.ac.uk/chembl/api/data/activity.json (ChEMBL_37); analyze.py"
+  },
+  {
+   "name": "Ki noise, same-assay duplicates",
+   "fields": "n_groups=3336; pooled_SD=0.449; CI95=[0.427, 0.472]; robust_MAD_SD=0.010; median_abs_diff=0.010",
+   "source": "https://www.ebi.ac.uk/chembl/api/data/activity.json (ChEMBL_37)"
+  },
+  {
+   "name": "Ki variance decomposition",
+   "fields": "n_targets=35; n_pairs=91547; var_total=1.600; var_between=0.123; var_within=1.476; eta2_between=0.077; eta2_CI95=[0.074, 0.081]",
+   "source": "https://www.ebi.ac.uk/chembl/api/data/activity.json (ChEMBL_37)"
+  },
+  {
+   "name": "Ki target-mean-only predictor",
+   "fields": "Pearson_r_leave_one_out=0.276; CI95=[0.271, 0.282]; within_target_r=0 by construction",
+   "source": "https://www.ebi.ac.uk/chembl/api/data/activity.json (ChEMBL_37)"
+  },
+  {
+   "name": "Ki attenuation bound using inter_document noise",
+   "fields": "pooled_r_max=0.877; CI95=[0.867, 0.888]; within_target_r_max=0.866; CI95=[0.855, 0.877]; within_target_spearman_ceiling_sim=0.856",
+   "source": "own calculation r_max=sqrt(1-SD_noise^2/Var_obs); Var_obs single-measurement=1.629 pooled, 1.504 within-target"
+  },
+  {
+   "name": "Ki attenuation bound using inter_document_robust noise",
+   "fields": "pooled_r_max=0.967; CI95=[0.960, 0.971]; within_target_r_max=0.964; CI95=[0.957, 0.969]; within_target_spearman_ceiling_sim=0.961",
+   "source": "own calculation r_max=sqrt(1-SD_noise^2/Var_obs); Var_obs single-measurement=1.629 pooled, 1.504 within-target"
+  },
+  {
+   "name": "Ki attenuation bound using intra_assay noise",
+   "fields": "pooled_r_max=0.936; CI95=[0.929, 0.942]; within_target_r_max=0.930; CI95=[0.923, 0.937]; within_target_spearman_ceiling_sim=0.924",
+   "source": "own calculation r_max=sqrt(1-SD_noise^2/Var_obs); Var_obs single-measurement=1.629 pooled, 1.504 within-target"
+  },
+  {
+   "name": "IC50 noise, inter-document replicates",
+   "fields": "n_groups=2260; df=4568; pooled_SD_pChEMBL=0.839; CI95=[0.805, 0.870]; robust_MAD_SD=0.545; robust_CI95=[0.503, 0.594]; frac_abs_diff_gt_1=0.233; median_abs_diff=0.530",
+   "source": "https://www.ebi.ac.uk/chembl/api/data/activity.json (ChEMBL_37); analyze.py"
+  },
+  {
+   "name": "IC50 noise, same-assay duplicates",
+   "fields": "n_groups=1643; pooled_SD=0.560; CI95=[0.527, 0.590]; robust_MAD_SD=0.178; median_abs_diff=0.170",
+   "source": "https://www.ebi.ac.uk/chembl/api/data/activity.json (ChEMBL_37)"
+  },
+  {
+   "name": "IC50 variance decomposition",
+   "fields": "n_targets=38; n_pairs=87298; var_total=1.638; var_between=0.241; var_within=1.397; eta2_between=0.147; eta2_CI95=[0.143, 0.152]",
+   "source": "https://www.ebi.ac.uk/chembl/api/data/activity.json (ChEMBL_37)"
+  },
+  {
+   "name": "IC50 target-mean-only predictor",
+   "fields": "Pearson_r_leave_one_out=0.382; CI95=[0.377, 0.388]; within_target_r=0 by construction",
+   "source": "https://www.ebi.ac.uk/chembl/api/data/activity.json (ChEMBL_37)"
+  },
+  {
+   "name": "IC50 attenuation bound using inter_document noise",
+   "fields": "pooled_r_max=0.771; CI95=[0.751, 0.792]; within_target_r_max=0.720; CI95=[0.694, 0.746]; within_target_spearman_ceiling_sim=0.702",
+   "source": "own calculation r_max=sqrt(1-SD_noise^2/Var_obs); Var_obs single-measurement=1.737 pooled, 1.462 within-target"
+  },
+  {
+   "name": "IC50 attenuation bound using inter_document_robust noise",
+   "fields": "pooled_r_max=0.910; CI95=[0.893, 0.924]; within_target_r_max=0.893; CI95=[0.871, 0.909]; within_target_spearman_ceiling_sim=0.884",
+   "source": "own calculation r_max=sqrt(1-SD_noise^2/Var_obs); Var_obs single-measurement=1.737 pooled, 1.462 within-target"
+  },
+  {
+   "name": "IC50 attenuation bound using intra_assay noise",
+   "fields": "pooled_r_max=0.905; CI95=[0.894, 0.917]; within_target_r_max=0.886; CI95=[0.873, 0.900]; within_target_spearman_ceiling_sim=0.876",
+   "source": "own calculation r_max=sqrt(1-SD_noise^2/Var_obs); Var_obs single-measurement=1.737 pooled, 1.462 within-target"
+  }
+ ]
+}

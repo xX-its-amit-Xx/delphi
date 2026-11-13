@@ -1,0 +1,301 @@
+{
+ "label": "q1-critic",
+ "topic": "Q1 enhancer-promoter specificity: adversarial review of \"rank reversals prove interaction\"",
+ "summary": "Under a strictly multiplicative (additive-in-log) model with NO enhancer x promoter interaction, measurement noise alone produces large fractions of discordant enhancer pairs. In my simulation (100 enhancers, 4950 pairs, 200 sims per cell) the discordant-pair fraction ranges from 1.3% (spread SD 2 log2, replicate noise SD 0.1, 3 replicates) to 43.7% (spread 0.5, noise 1.0, 1 replicate), and matches the closed form arccos(rho)/pi within 0.003. So a raw count of reversals is uninformative unless compared with the null at the study's own noise/spread ratio. Pairs that are individually significantly ordered in opposite directions on both promoters (uncorrected alpha=0.05) still occur at 0.1-5.3 per library of 100 enhancers under the null; with Bonferroni across all 4950 pairs the null count is ~0. Regression to the mean: top-10 enhancers on promoter A land at only the 59th-95th percentile on promoter B under the null. Saturating (ceiling) readout compresses spread and so raises noise-driven reversals (disc 0.030 to 0.170 for noise 0.1 to 0.6) without any true interaction. Literature: the largest human ExP STARR-seq study found multiplicative combination (R2=0.82) with only subtle class-specific preferences, while a mouse CRE x promoter study reported more than half of CREs selective and a Drosophila study found two enhancer classes with core-promoter specificity; the referee conclusion is that reversals support interaction only when (i) they exceed the noise-matched null, (ii) replicate across independent library/barcode/context, and (iii) survive a monotone-transform (ceiling/scale) explanation. Not done: no real dataset was reanalysed, the Lean registry was not read, and the multiplicity/barcode/episomal points are argued, not simulated.",
+ "lay_summary": "Imagine ranking 100 runners by their times on two different tracks. Even if every runner is just a fixed amount slower on the second track, timing errors will shuffle the order of some runners. We simulated exactly this for enhancers (DNA switches that turn genes up) on two promoters (the gene's start switch), with no real interaction at all. With noisy measurements, up to four in ten pairs swapped order by chance alone. So seeing swaps does not prove the enhancer and promoter interact. Swaps only count if there are clearly more of them than this chance baseline predicts.",
+ "findings": [
+  {
+   "claim": "Under a purely multiplicative model, the fraction of enhancer pairs whose order differs between two promoters spans 0.013 to 0.437 across tested noise/spread settings (N=100, 200 sims/cell).",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/q1-critic/null_reversals_output.txt (own simulation, seed 20261112)",
+   "confidence": "high",
+   "value": "min 0.013 (s=2, e=0.1, r=3); max 0.437 (s=0.5, e=1.0, r=1)",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Simulated discordant fraction equals the analytic value arccos(rho)/pi, rho = 2s^2/(2s^2+2e^2/r), to within 0.003 in all 24 cells.",
+   "source": "null_reversals_output.txt columns disc_frac vs analytic",
+   "confidence": "high",
+   "value": "e.g. s=1,e=0.6,r=1: 0.236 vs 0.237",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Discordance depends on the ratio of per-pair noise to spread: halving spread at fixed noise roughly doubles it; averaging 3 replicates cuts it by about 1/sqrt(3) in the SD, e.g. 0.236 to 0.148 at s=1,e=0.6.",
+   "source": "null_reversals_output.txt",
+   "confidence": "high",
+   "value": "0.236 (r=1) vs 0.148 (r=3)",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Spearman rank correlation between promoters under the null falls to 0.18-0.40 when replicate noise SD is 1.0 log2 with spread 0.5, despite zero interaction.",
+   "source": "null_reversals_output.txt",
+   "confidence": "high",
+   "value": "rho=0.184 (r=1), 0.399 (r=3)",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Pairs significantly ordered in opposite directions on both promoters (two-sided z, alpha 0.05 each, uncorrected) still occur under the null: 0.1 to 5.3 pairs per 100-enhancer library; with Bonferroni over 4950 pairs the mean is 0.00 in every cell.",
+   "source": "null_reversals_output.txt columns sigRev_unc, sigRev_Bonf",
+   "confidence": "high",
+   "value": "0.1-5.3 uncorrected; 0.00 Bonferroni",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Regression to the mean: the top 10 enhancers selected on promoter A rank at only the 0.59-0.95 percentile (mean) on promoter B under the null.",
+   "source": "null_reversals_output.txt column top10->pctB",
+   "confidence": "high",
+   "value": "0.59 (s=0.5,e=1,r=1) to 0.95",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "A monotone saturating readout on one promoter (ceiling 4x median, s=1, r=3) creates no true reversal but raises measured discordance from 0.030 to 0.170 as noise rises 0.1 to 0.6, i.e. ceiling/floor effects act through compressed spread plus noise.",
+   "source": "null_reversals_output.txt ceiling block",
+   "confidence": "medium",
+   "value": "disc 0.030, 0.090, 0.170; rho 0.994, 0.954, 0.847",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "ExP STARR-seq of 1,000 enhancers x 1,000 promoters in K562 found most enhancers activate all promoters by similar amounts and activities combine multiplicatively (R2=0.82), with two classes showing subtle preferential effects.",
+   "source": "https://doi.org/10.1038/s41586-022-04877-w (Europe PMC abstract)",
+   "confidence": "high",
+   "value": "R2 = 0.82",
+   "evidence_quote": "most enhancers activate all promoters by similar amounts, and intrinsic enhancer and promoter activities multiplicatively combine to determine RNA output (R2 = 0.82)"
+  },
+  {
+   "claim": "A mouse CRE x promoter combinatorial reporter study reports more than half of tested CREs have significant promoter selectivity.",
+   "source": "https://doi.org/10.1016/j.molcel.2022.04.009 (Europe PMC abstract)",
+   "confidence": "high",
+   "value": "> 50% of CREs",
+   "evidence_quote": "More than half of the tested CREs exhibit significant promoter selectivity."
+  },
+  {
+   "claim": "Drosophila S2/OSC enhancers show marked specificity to one of two core promoters (housekeeping vs developmental).",
+   "source": "https://doi.org/10.1038/nature13994 (Europe PMC abstract)",
+   "confidence": "high",
+   "value": "2 classes",
+   "evidence_quote": "thousands of enhancers in Drosophila melanogaster S2 and ovarian somatic cells (OSCs) exhibit a marked specificity to one of two core promoters"
+  },
+  {
+   "claim": "The two mammalian studies disagree in emphasis (mostly multiplicative/promiscuous vs more than half selective); the difference may reflect noise thresholds, library design, or cell type, which I could not resolve here.",
+   "source": "comparison of the two abstracts above",
+   "confidence": "medium",
+   "value": "",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Reasoned (not simulated) artefact risks: barcode/plasmid-context effects and episomal vs genomic differences can add promoter-specific, non-biological variance that inflates reversals; multiplicity over thousands of pairs inflates false reversals unless corrected.",
+   "source": "argument; no fetched source",
+   "confidence": "low",
+   "value": "",
+   "evidence_quote": ""
+  }
+ ],
+ "key_claims": [
+  {
+   "claim": "With zero interaction, noise alone makes 1.3% to 43.7% of enhancer pairs change order between promoters, depending on replicate noise, replicate count and enhancer spread; any observed reversal fraction must be compared with this noise-matched null.",
+   "source": "own simulation: D:/Users/ashenoy00000/delphi-work/agents2/scripts/q1-critic/null_reversals.py; confirmed by closed form arccos(rho)/pi",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "Significant-in-both-directions reversals appear under the null at uncorrected alpha 0.05 (0.1-5.3 per 100 enhancers) but essentially vanish under Bonferroni, so a reversal claim needs multiplicity correction and replication.",
+   "source": "own simulation output null_reversals_output.txt",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "The best human dataset cited reports multiplicative combination (R2=0.82) with only subtle class effects, so interaction is not the default expectation.",
+   "source": "https://doi.org/10.1038/s41586-022-04877-w",
+   "evidence_quote": "intrinsic enhancer and promoter activities multiplicatively combine to determine RNA output (R2 = 0.82)"
+  }
+ ],
+ "reproduce": [
+  {
+   "what": "Run the null simulation (Python 3.14.2, numpy 2.5.3; seed fixed 20261112; seconds)",
+   "command_or_url": "cd D:/Users/ashenoy00000/delphi-work/agents2/scripts/q1-critic && python null_reversals.py null_reversals_results.json",
+   "expected": "Table of 24 cells plus 3 ceiling cells; e.g. s=1.0,e=0.6,r=1 gives disc 0.236, analytic 0.237, spearman 0.716"
+  },
+  {
+   "what": "Saved output for diffing",
+   "command_or_url": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/q1-critic/null_reversals_output.txt",
+   "expected": "identical text (sha256 prefixes: script 0875239f, results.json 9f95a44d, output 51c4b005)"
+  },
+  {
+   "what": "Check citations resolve",
+   "command_or_url": "https://api.crossref.org/works/10.1038/s41586-022-04877-w ; /10.1016/j.molcel.2022.04.009 ; /10.1038/nature13994",
+   "expected": "Titles as listed in citations"
+  }
+ ],
+ "citations": [
+  {
+   "authors": "Bergman DT et al.",
+   "year": 2022,
+   "title": "Compatibility rules of human enhancer and promoter sequences",
+   "doi_or_arxiv": "10.1038/s41586-022-04877-w",
+   "verified": true,
+   "how_verified": "Crossref query.bibliographic returned the DOI and title (Nature 2022); Europe PMC returned PMID 35594906 and abstract",
+   "used_for": "Multiplicative model R2=0.82 in human K562",
+   "venue": "Nature"
+  },
+  {
+   "authors": "Martinez-Ara M et al.",
+   "year": 2022,
+   "title": "Systematic analysis of intrinsic enhancer-promoter compatibility in the mouse genome",
+   "doi_or_arxiv": "10.1016/j.molcel.2022.04.009",
+   "verified": true,
+   "how_verified": "Crossref returned DOI/title (Molecular Cell 2022); Europe PMC PMID 35594855 abstract",
+   "used_for": "More than half of CREs promoter-selective",
+   "venue": "Molecular Cell"
+  },
+  {
+   "authors": "Zabidi MA et al.",
+   "year": 2015,
+   "title": "Enhancer-core-promoter specificity separates developmental and housekeeping gene regulation",
+   "doi_or_arxiv": "10.1038/nature13994",
+   "verified": true,
+   "how_verified": "Crossref returned DOI/title (Nature); Europe PMC PMID 25517091 abstract",
+   "used_for": "Two enhancer classes with core-promoter specificity in Drosophila",
+   "venue": "Nature"
+  }
+ ],
+ "could_not_find": [
+  "Author lists in citations are from memory (unverified background); DOIs, titles and abstracts were fetched. Crossref gave 2022 for Bergman/Martinez-Ara and 2014 online for Zabidi (Europe PMC says 2015 issue); I listed 2015.",
+  "Did not read the Lean registry at delphisci/lean or reanalyse any real dataset, so no observed reversal count is compared with the null.",
+  "Barcode, plasmid-context and episomal-vs-genomic artefacts were not simulated and no source for their magnitude was fetched.",
+  "Simulation assumes Gaussian log-scale noise, equal noise on both promoters, independent errors and no shared barcode/library effects; real heteroscedastic count noise (low-activity enhancers noisier) will give higher null rates for weak enhancers.",
+  "Output JSON at D:/Users/ashenoy00000/delphi-work/agents2/q1-critic.json is only a pointer stub, not the full result, so a resume would not parse it as complete; the full result is this StructuredOutput.",
+  "Environment: python -I failed because numpy is in user site-packages, so the script is run without -I; disk/RAM headroom was not formally checked (df on D: failed) but the run was a few-second numpy job."
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/q1-critic/null_reversals.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/q1-critic/null_reversals_output.txt",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/q1-critic/null_reversals_results.json"
+ ],
+ "table": [
+  {
+   "name": "Null discordance s=0.5 e=0.1 r=1",
+   "fields": "enhancers=100; spread_sd_log2=0.5; rep_noise_sd_log2=0.1; replicates=1; discordant_pair_frac=0.090; analytic=0.089; spearman=0.953; sig_rev_uncorrected=1.0; sig_rev_bonferroni=0.00",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/q1-critic/null_reversals_output.txt"
+  },
+  {
+   "name": "Null discordance s=0.5 e=0.6 r=1",
+   "fields": "spread=0.5; noise=0.6; r=1; discordant=0.365; analytic=0.366; spearman=0.393; sig_rev_unc=4.9; sig_rev_bonf=0.00",
+   "source": "same"
+  },
+  {
+   "name": "Null discordance s=0.5 e=1.0 r=1",
+   "fields": "spread=0.5; noise=1.0; r=1; discordant=0.437; analytic=0.436; spearman=0.184; sig_rev_unc=5.3; sig_rev_bonf=0.00; top10_pctile_on_B=0.59",
+   "source": "same"
+  },
+  {
+   "name": "Null discordance s=0.5 e=1.0 r=3",
+   "fields": "spread=0.5; noise=1.0; r=3; discordant=0.362; analytic=0.359; spearman=0.399; sig_rev_unc=4.6; top10_pctile_on_B=0.71",
+   "source": "same"
+  },
+  {
+   "name": "Null discordance s=1.0 e=0.1 r=3",
+   "fields": "spread=1.0; noise=0.1; r=3; discordant=0.026; analytic=0.026; spearman=0.995; sig_rev_unc=0.3",
+   "source": "same"
+  },
+  {
+   "name": "Null discordance s=1.0 e=0.3 r=1",
+   "fields": "spread=1.0; noise=0.3; r=1; discordant=0.131; analytic=0.130; spearman=0.903; sig_rev_unc=1.7",
+   "source": "same"
+  },
+  {
+   "name": "Null discordance s=1.0 e=0.3 r=3",
+   "fields": "spread=1.0; noise=0.3; r=3; discordant=0.078; analytic=0.077; spearman=0.964; sig_rev_unc=0.8",
+   "source": "same"
+  },
+  {
+   "name": "Null discordance s=1.0 e=0.6 r=1",
+   "fields": "spread=1.0; noise=0.6; r=1; discordant=0.236; analytic=0.237; spearman=0.716; sig_rev_unc=2.7; top10_pctile_on_B=0.85",
+   "source": "same"
+  },
+  {
+   "name": "Null discordance s=1.0 e=0.6 r=3",
+   "fields": "spread=1.0; noise=0.6; r=3; discordant=0.148; analytic=0.149; spearman=0.878; sig_rev_unc=1.4",
+   "source": "same"
+  },
+  {
+   "name": "Null discordance s=1.0 e=1.0 r=1",
+   "fields": "spread=1.0; noise=1.0; r=1; discordant=0.331; analytic=0.333; spearman=0.483; sig_rev_unc=3.5",
+   "source": "same"
+  },
+  {
+   "name": "Null discordance s=1.0 e=1.0 r=3",
+   "fields": "spread=1.0; noise=1.0; r=3; discordant=0.229; analytic=0.230; spearman=0.730; sig_rev_unc=2.2",
+   "source": "same"
+  },
+  {
+   "name": "Null discordance s=2.0 e=0.1 r=3",
+   "fields": "spread=2.0; noise=0.1; r=3; discordant=0.013; analytic=0.013; spearman=0.998; sig_rev_unc=0.1",
+   "source": "same"
+  },
+  {
+   "name": "Null discordance s=2.0 e=0.6 r=3",
+   "fields": "spread=2.0; noise=0.6; r=3; discordant=0.077; analytic=0.077; spearman=0.964; sig_rev_unc=0.8",
+   "source": "same"
+  },
+  {
+   "name": "Null discordance s=2.0 e=1.0 r=1",
+   "fields": "spread=2.0; noise=1.0; r=1; discordant=0.204; analytic=0.205; spearman=0.782; sig_rev_unc=1.9",
+   "source": "same"
+  },
+  {
+   "name": "Ceiling variant e=0.6",
+   "fields": "spread=1.0; noise=0.6; r=3; ceiling=4x; discordant=0.170 (vs 0.148 without ceiling); spearman=0.847; sig_rev_unc=2.3; sig_rev_bonf=0.00",
+   "source": "same"
+  }
+ ],
+ "recommendations": [
+  "Compare every observed reversal count with the noise-matched null: estimate replicate noise SD and enhancer spread from the data, then use arccos(rho)/pi (rho = spread variance / (spread variance + noise variance/replicates)) or rerun null_reversals.py with those values.",
+  "Count only pairs significantly ordered in opposite directions on both promoters, with Bonferroni or BH over all pairs, and require replication in an independent library (different barcodes/plasmid backbone).",
+  "Test an interaction model against a multiplicative model with a monotone link (saturation) fitted per promoter before calling a reversal evidence of interaction.",
+  "Use held-out replicates for selecting top enhancers to avoid regression to the mean.",
+  "In the Lean statement, state that reversal at finite noise is compatible with the multiplicative class unless the margin exceeds the noise bound."
+ ],
+ "glossary": [
+  {
+   "term": "enhancer",
+   "plain": "a stretch of DNA that turns a gene's activity up"
+  },
+  {
+   "term": "promoter",
+   "plain": "the DNA switch at the start of a gene where reading begins"
+  },
+  {
+   "term": "rank reversal",
+   "plain": "two enhancers swapping order of strength when moved to another promoter"
+  },
+  {
+   "term": "multiplicative",
+   "plain": "effects combine by multiplying, so each enhancer is a fixed factor stronger or weaker everywhere"
+  },
+  {
+   "term": "interaction",
+   "plain": "an enhancer's effect that depends on which promoter it is paired with"
+  },
+  {
+   "term": "regression to the mean",
+   "plain": "extreme measurements tend to look less extreme when remeasured"
+  },
+  {
+   "term": "ceiling effect",
+   "plain": "readout maxes out so strong things look alike"
+  },
+  {
+   "term": "Bonferroni correction",
+   "plain": "a strict adjustment for doing many tests at once"
+  },
+  {
+   "term": "log2",
+   "plain": "a scale where each step of 1 means doubling"
+  },
+  {
+   "term": "replicate",
+   "plain": "a repeat of the same measurement"
+  },
+  {
+   "term": "Spearman correlation",
+   "plain": "how similar two rankings are, 1 meaning identical"
+  }
+ ]
+}

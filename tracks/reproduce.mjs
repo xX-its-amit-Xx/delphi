@@ -50,10 +50,14 @@ console.log(`reproduce: ${ROOT}\n`);
 run('lean', 'Timoshenko ceiling, Lean kernel + axiom audit', 'bash', ['tracks/lean/check.sh'],
   { skipIf: !bash ? 'bash not found' : !lean ? 'no Lean toolchain at C:/Temp/elan' : null, expect: /ALL CHECKED/ });
 // every checkable file the research agents produced and the build kept
-const agentLean = fs.existsSync(path.join(ROOT, 'tracks/research/lean'))
+const allLean = fs.existsSync(path.join(ROOT, 'tracks/research/lean'))
   ? fs.readdirSync(path.join(ROOT, 'tracks/research/lean')).filter((f) => f.endsWith('.lean')).map((f) => `tracks/research/lean/${f}`) : [];
+// a negative control is a file that MUST fail; it is checked separately so a pass there is a failure here
+const agentLean = allLean.filter((f) => !/NegativeControl/.test(f)), controls = allLean.filter((f) => /NegativeControl/.test(f));
 if (agentLean.length) run('lean', `${agentLean.length} agent-written Lean files`, 'bash', ['tracks/lean/check.sh', ...agentLean],
   { skipIf: !bash || !lean ? 'no Lean toolchain' : null, expect: /ALL CHECKED/ });
+for (const c of controls) run('lean', `negative control must be REJECTED: ${path.basename(c)}`, 'bash', ['-c', `! bash tracks/lean/check.sh ${c} >/dev/null`],
+  { skipIf: !bash || !lean ? 'no Lean toolchain' : null });
 
 // 2. the same claim, numerically and independently
 run('numeric', 'Timoshenko ceiling: grid, exact, 4000 climbs', 'python', ['tracks/scripts/check-timoshenko-ceiling.py'],

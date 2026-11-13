@@ -1,0 +1,30 @@
+{
+ "label": "verify-t6-flyingfish-crit",
+ "claims": [
+  {
+   "claim": "M3 stall-floor bound is exceeded by lofted launches (13-58% for printed glider, 7.5-12 m/s); P5 1.10 cannot absorb it; no-floor bound held in every case.",
+   "verdict": "supported",
+   "source_says": "printed glider v0=7.5: ratio x/M3=1.58, x/noFloor=0.57; v0=12: ratio x/M3=1.13, x/noFloor=0.80. Registry scope: \"A single steady glide with no thrust and lift equal to weight\"",
+   "note": "Printed outputs match the claim and the registry quote is exact; these are the agent's own simulation results and I did not rerun the script."
+  },
+  {
+   "claim": "P2 cannot fail independently of P1: ratio>1 needs v0<13.77, P1 demands v0>=16.09, and the 0.30 floor corresponds to v0=25.13 m/s.",
+   "verdict": "supported",
+   "source_says": "Abstract: \"the flying fish can achieve a distance up to 45.4 m, and reach a height of 13.2 m\". I recomputed sqrt(2g*45.4/4.7)=13.77 and sqrt(2g*45.4/(4.7*0.3))=25.13; sqrt(2g*13.2)=16.09.",
+   "note": "Arithmetic reproduces and the Europe PMC abstract confirms 45.4 m and 13.2 m; the P2 ratio form comes from the design file, which I did not open."
+  },
+  {
+   "claim": "P3 0.50 s threshold is only 20% above ballistic time in its extreme case and is exceeded by angle error alone (0.632 s at 30 deg, the field angle in the project data).",
+   "verdict": "supported",
+   "source_says": "recompute.out: v 5.15 th 23.3: T_M5 0.500 T_ballistic 0.415; th 30: T_M5 0.632. takeoff-data.csv: \"previous field studies cited there give about 30 deg\"",
+   "note": "0.500/0.415 is 1.205, and the 30 deg value is in the data file; the 0.632 s is the model time with lift, not a measured time."
+  },
+  {
+   "claim": "P6 cannot fail on 1.8.1: the 1.7.0 fix made the checker return out-of-scope for declared glides and added a standing test.",
+   "verdict": "supported",
+   "source_says": "CHANGELOG 1.7.0: \"the checker now returns out-of-scope for a declared unpowered glide, and a standing registry test asserts no accepted law is violated by a real organism making a realistic claim.\"",
+   "note": "Quote is verbatim and browser-check.mjs line 1828 returns out-of-scope for E3 when fm.unpowered; whether that makes P6 unfailable is partly the agent's inference."
+  }
+ ],
+ "overall": "All four key claims hold up against the sources I could read: the simulation outputs, the arithmetic, the data file, the changelog quote and the Europe PMC abstract. The simulations are the agent's own and I did not rerun them."
+}

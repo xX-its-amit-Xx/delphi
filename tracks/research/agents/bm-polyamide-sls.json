@@ -1,0 +1,723 @@
+{
+ "label": "bm-polyamide-sls",
+ "topic": "Polyamide 11 and 12 (SLS) and TPU: moisture, swelling, kinetics",
+ "summary": "Polyamide SLS parts and TPU hold little water from humid air and respond slowly. Sintered PA12 (EOS PA 2200 sheet) holds 0.52 wt% at 23 C/50 % RH, 1.33 wt% at 96 % RH and 1.93 wt% in 100 C water; dense PA12 saturates at 1.6 % and dense PA11 at 0.8 % (50 % RH) and 1.9 % (immersion) per Arkema ISO 62; Formlabs lists 0.66 % (Nylon 12), 0.07 % (Nylon 11, 2021 TDS) and 0.89 % (TPU 90A) by ASTM D570. A TPU (Estane 87A) isotherm goes 0.25, 0.53, 0.91, 1.35 wt% at 20, 40, 60, 80 % RH. The 5.5-10.5 % uptakes reported for immersed sintered PA12 are mostly pore filling: sintered density 0.90-0.95 against 1.01 dense gives 6-12 % void capacity, while Kelvin-radius arithmetic shows humid air cannot fill micrometre voids. Measured diffusivity: PA11 4.95e-13 m2/s (23 C); PA12 not measured in open sources, bounded by my calculation at 3e-13 to 1.4e-12 m2/s; FDM TPU 1.4e-13 to 3.4e-12. With t90 = 0.212 h^2/D, 0.4 / 0.8 / 1.6 mm strips need about 19 / 76 / 305 h (both faces open, D = 4.95e-13; range 7-31 h, 27-126 h, 108-503 h for D 1.4e-12 to 3e-13), 4 times longer with one face sealed. No measured hygroscopic expansion coefficient exists; a vendor figure (0.2 % at 1.4 % uptake) implies 0.1-0.2 % free strain over 30-80 % RH, i.e. bending radii of 130-1000 mm and 1-6 mm tip rise on a 40 mm strip even against an inert partner. Wet/dry modulus sources disagree from -4 % to -52 %. Moisture softening costs at most 3 % of the 3/2 curvature ceiling. A same-powder filled partner gives little (CF fill cut uptake ~16 %); a dissimilar rigid, non-hygroscopic partner is needed. Usable only as a slow (days to weeks), small humidity layer.",
+ "lay_summary": "Nylon-type 3D prints take up a little water from the air, much as a wooden spoon does. At normal indoor humidity a printed nylon 12 part holds about half a percent of its weight in water, and at very humid air about one and a third percent. If you dunk a printed part in water it can soak up five to ten percent, but most of that is just water filling the tiny gaps left by the printing process, like a sponge, and not water inside the plastic. Water moves into the plastic itself very slowly: a strip 0.8 mm thick, about as thick as a few sheets of card, needs three to five days to fill most of the way, and a 1.6 mm strip needs two to three weeks. The plastic also grows only about a tenth to a fifth of one percent, so a 40 mm strip glued to a water-proof partner would curl up only a few millimetres, slowly. That makes nylon a possible slow humidity-sensing skin for a building over days or seasons, but not a quick-reacting one, and nobody has yet measured the exact growth, so the first job is a simple bench test.",
+ "glossary": [
+  {
+   "term": "polyamide 12 / 11 (PA12, PA11, nylon)",
+   "plain": "Tough plastics made of long chains with water-attracting links; the number is how many carbon atoms sit between the links."
+  },
+  {
+   "term": "TPU",
+   "plain": "Thermoplastic polyurethane, a rubbery plastic."
+  },
+  {
+   "term": "SLS (selective laser sintering)",
+   "plain": "A printing method that fuses plastic powder with a laser, layer by layer, leaving tiny gaps inside."
+  },
+  {
+   "term": "relative humidity (RH)",
+   "plain": "How full of water vapour the air is, as a percentage of the most it can hold."
+  },
+  {
+   "term": "sorption isotherm",
+   "plain": "A curve (or a few points) showing how much water a material holds at each humidity once it has settled."
+  },
+  {
+   "term": "diffusion coefficient (D)",
+   "plain": "A number that says how fast water creeps into a material; bigger means faster."
+  },
+  {
+   "term": "t90",
+   "plain": "The time to take up 90 percent of the water the strip will eventually hold."
+  },
+  {
+   "term": "pore-filling water",
+   "plain": "Liquid water sitting in the empty gaps of a sintered part, like water in a sponge; it adds weight but does not make the plastic itself swell."
+  },
+  {
+   "term": "absorbed (bound) water",
+   "plain": "Water that has actually entered the plastic between its chains; this is what swells and softens it."
+  },
+  {
+   "term": "hygroscopic expansion",
+   "plain": "How much a material grows in length when it takes up water."
+  },
+  {
+   "term": "modulus",
+   "plain": "A measure of stiffness; a lower number means the material bends more easily."
+  },
+  {
+   "term": "bilayer",
+   "plain": "Two layers glued together so that if one swells more than the other, the strip curls."
+  },
+  {
+   "term": "Kelvin radius",
+   "plain": "The biggest gap that humid air can fill with liquid water by itself; larger gaps stay dry until they are wetted directly."
+  },
+  {
+   "term": "Fickian (Fick's law)",
+   "plain": "The standard maths for steady creeping of a substance into a solid, in which time grows with the square of thickness."
+  }
+ ],
+ "findings": [
+  {
+   "claim": "Laser-sintered PA12 (EOS PA 2200 data sheet) takes up 0.52 wt% water at 23 C / 50 % RH, 1.33 wt% at 23 C / 96 % RH and 1.93 wt% when saturated in water at 100 C (DIN 53495 / ISO 62). This is a three-point sorption isotherm for a sintered part. The PDF text layer splits the labels from the numbers; the order of conditions and values is the order printed (monotonic).",
+   "source": "https://www.sculpteo.com/media/imagecontent/PA2200_Product_information_03-10_en.pdf ; https://www.amf.uzh.ch/dam/jcr:59a8b14a-c212-4693-8443-d5e543aeabe2/Material-Data-PA2200-ENGLISH.pdf",
+   "confidence": "high",
+   "value": "0.52 % (50 % RH); 1.33 % (96 % RH); 1.93 % (water, 100 C)",
+   "evidence_quote": "Water absorption 100°C, saturation in water 1,93 | 23°C, 96% RF 1,33 | 23°C, 50% RF 0,52 (pdftotext of EOS 2007/2010 product information; labels and numbers in separate columns)"
+  },
+  {
+   "claim": "Dense moulded PA12 (Arkema Rilsamid AESNO MED) absorbs 1.6 % water at equilibrium by immersion at 23 C (ISO 62); density 1.01 g/cm3; tensile modulus 1500 MPa dry (DAM) and 1440 MPa conditioned, i.e. -4 % (conditioning protocol not stated in the sheet).",
+   "source": "https://hpp.arkema.com/assets/arkema/TDS_RILSAMID%C2%AE%20AESNO%20MED_en_WW.pdf",
+   "confidence": "high",
+   "value": "1.6 % immersion; 1.01 g/cm3; E 1500 -> 1440 MPa",
+   "evidence_quote": "Tensile modulus, 23°C (73°F) 1500 / 1440 MPa ISO 527-1/-2 ... Water absorption, at equilibrium at 23°C (73°F) / Immersion 1.6 % ISO 62 ... * DRY / COND"
+  },
+  {
+   "claim": "Dense moulded PA11 (Arkema Rilsan BMNO TLD) absorbs 0.8 % at 23 C / 50 % RH and 1.9 % by immersion at equilibrium (ISO 62); density 1.03 g/cm3; conditioned tensile modulus 1250 MPa (dry value not given).",
+   "source": "https://hpp.arkema.com/assets/arkema/TDS_RILSAN%C2%AE%20BMNO%20TLD_en_WW.pdf",
+   "confidence": "high",
+   "value": "0.8 % (50 % RH); 1.9 % immersion",
+   "evidence_quote": "Water absorption, at equilibrium at 23°C (73°F) / 50%RH 0.8 % ISO 62 ... Water absorption, at equilibrium at 23°C (73°F) / Immersion 1.9 % ISO 62"
+  },
+  {
+   "claim": "Hot-pressed PA11 and PA12 sheets (20 x 20 x 4 mm) reached the same saturation after about two months: 1.5 wt% in water and 0.8 wt% at 50 % RH. The authors report no dimension change (qualitative, no number).",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8537549/ (doi 10.3390/polym13203553)",
+   "confidence": "high",
+   "value": "1.5 % water; 0.8 % at 50 % RH; l = 4 mm; ~2 months to saturation",
+   "evidence_quote": "After around two months, both PAs had the same saturation level for water and moisture absorption, i.e., 1.5% and 0.8%, respectively."
+  },
+  {
+   "claim": "Protolabs PA12 laser-sintered (supplier data attributed to EOS PA 2200 Balance): 0.5 +/- 0.2 % water at 20 C / 50 % RH and 2.0 +/- 0.3 % after 24 h in boiling water, DIN EN ISO 62.",
+   "source": "https://protolabs.com/media/ytzjjomn/pa12-vapour-smooth-white-en-24_10.pdf",
+   "confidence": "high",
+   "value": "0.5 +/- 0.2 % (50 % RH); 2.0 +/- 0.3 % (boiling 24 h)",
+   "evidence_quote": "Water absorption, 20 °C, 50% Relative Humidity DIN EN ISO 62 0.5 ± 0.2% Water absorption, 24 hrs. in boiling water 2.0 ± 0.3%"
+  },
+  {
+   "claim": "Formlabs printed-part water absorption (ASTM D570, immersion time not stated): Nylon 12 Powder 0.66 %, Nylon 11 Powder 0.07 % (2021 TDS), TPU 90A Powder 0.89 %. Parts were conditioned at 50 % RH and 23 C for 7 days before tests. Nylon 12 tensile modulus 1850 MPa. I could not re-fetch the 0.4 % Nylon 11 figure the earlier agent saw on the current product page, so the two-value disagreement is neither confirmed nor refuted here; the 0.07 % in the 2021 TDS is confirmed.",
+   "source": "https://media.formlabs.com/m/2a02034348060e54/original/-ENUS-Nylon-12-TDS.pdf ; https://media.formlabs.com/m/151bd67a83b2334f/original/-ENUS-Nylon-11-TDS.pdf ; https://epfl.ch/schools/sti/ateliers/wp-content/uploads/2024/09/TPU_90A-SLS-EN.pdf",
+   "confidence": "high",
+   "value": "N12 0.66 %; N11 0.07 %; TPU 0.89 %",
+   "evidence_quote": "Water Absorption (printed part) 0.66% 0.66% ASTM D570 (Nylon 12); Water Absorption (printed part) 0.07% ASTM D570 (Nylon 11); Water Absorption (Printed Part) 0.89% ASTM D570 (TPU 90A)"
+  },
+  {
+   "claim": "Measured bulk water diffusivity of injection-moulded PA11 at 23 C by immersion: D = 4.95e-13 m2/s (= 1.78e-3 mm2/h), equilibrium uptake 1.43 %; at 40 C D = 22.0e-13 m2/s and uptake 1.58 %. D from the initial-slope Fick formula; the sample thickness L is the ASTM D638 Type I tensile bar (3.2 mm in the standard, not stated in the extracted text: unverified background).",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6404017/ (Table 3; doi 10.3390/polym10070717)",
+   "confidence": "medium-high",
+   "value": "D(23 C)=4.95e-13 m2/s; D(40 C)=22.0e-13 m2/s; Minf 1.43 % / 1.58 %",
+   "evidence_quote": "D (10−13 m2·s−1) column: 23 0 1.43 ± 0.02 0.305 ± 0.045 0.088 ± 0.023 4.95 ± 0.02 | 40 0 1.58 ± 0.03 0.272 ± 0.007 0.155 ± 0.007 22.00 ± 1.65"
+  },
+  {
+   "claim": "No primary measured water diffusivity for PA12 at 23 C was found in open sources. Two own bounds from published kinetics: (a) Grilamid L25 injection-moulded bars took up 0.91 % in 40 days at 23 C; if the full extra capacity above the ambient state is 1.6 % (Arkema saturation) D = 3.0e-13 m2/s, if only 1.0 % D = 1.0e-12, and if the 0.91 % were itself saturation D >= 4.2e-12 (thickness 4 mm assumed from ISO 527-2 1A, cross-section ~40 mm2); (b) Bahrami's 4 mm hot-pressed PA12/PA11 sheets saturated in about 2 months, giving D = 6.5e-13 (90 %) to 1.4e-12 m2/s (99 %). A secondary aggregator page quotes 1-3e-13 m2/s for nylon 12 (unverified, no primary source). Working range for PA12: 3e-13 to 1.4e-12 m2/s, central about 5e-13 (the measured PA11 value).",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py (output D:/Users/ashenoy00000/delphi-work/agents2/scratch/bm-polyamide-sls/calc_stdout.txt); inputs https://pmc.ncbi.nlm.nih.gov/articles/PMC8549196/ and https://pmc.ncbi.nlm.nih.gov/articles/PMC8537549/",
+   "confidence": "low-medium",
+   "value": "3e-13 to 1.4e-12 m2/s (own calculation)",
+   "evidence_quote": "The water uptake of the specimens immersed in water was around 0.91% (interquartile range (IQR) = 0.15)."
+  },
+  {
+   "claim": "Laser-sintered PA12 immersed in water reaches saturation in 2 days at 10.49 % weight gain with a diffusion coefficient one order of magnitude greater than the base material, which the authors attribute to porosity. The number itself is not in the abstract (paywalled); I used 10 x the PA11 value (5e-12 m2/s) only as an optimistic bound.",
+   "source": "https://link.springer.com/article/10.1007/s40964-024-00826-3",
+   "confidence": "medium",
+   "value": "10.49 % at saturation; t_sat ~ 2 d; D ~ 10 x base",
+   "evidence_quote": "Water absorption reaches saturation after 2 days of immersion with a weight variation of around 10.49% and a resulting diffusion coefficient one order of magnitude greater than the value of the base material, due to the porosity of the samples."
+  },
+  {
+   "claim": "TPU diffusivity (FDM filament TPUs 60A-98A, 2 mm plates, 0.9 % NaCl, 22 C): D from 1.40e-13 to 3.40e-12 m2/s from the 1-6 h initial slope; 96 h uptake 1.18-1.80 %; volume change after 96 h from about 0.6 % (92A) to about 8 % (89A) with no correlation to uptake. This is FDM material in saline, not SLS TPU in humid air.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13258891/ (doi 10.3390/polym18111392)",
+   "confidence": "medium",
+   "value": "D 1.4e-13 to 3.4e-12 m2/s; uptake 1.18-1.80 %; dV 0.6-8 %",
+   "evidence_quote": "Diffusion coefficients ranged from 1.40 × 10−13 to 3.40 × 10−12 m2 s−1, with no monotonic dependence on hardness."
+  },
+  {
+   "claim": "Sorption isotherm of a polyether TPU (Lubrizol Estane 58887, Shore 87A, 1 mm hot-pressed strips), equilibrium water mass fraction versus RH: 0.25 wt% at 20 % RH, 0.53 at 40 %, 0.91 at 60 %, 1.35 at 80 %. Values are quoted from the DVS study of Pichler et al. (Polymer Testing 2023) as tabulated in the follow-up open paper; I could not read the original (publisher 403). Slope through origin 0.0157 wt% per %RH, slightly convex.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10534667/ (Table 1; doi 10.3390/polym15183770); original doi 10.1016/j.polymertesting.2023.107962 (Crossref-verified, content not read)",
+   "confidence": "medium",
+   "value": "0.25/0.53/0.91/1.35 wt% at 20/40/60/80 % RH",
+   "evidence_quote": "Sample Enclosing Humidity h (%) Water Content (–) 0 0 20 0.0025 40 0.0053 60 0.0091 80 0.0135"
+  },
+  {
+   "claim": "Formlabs TPU 90A Powder publishes no tensile modulus; stress at 50 % elongation is 6.1 MPa (X/Y) and at 100 % 7.2 MPa, so the secant modulus is 12.2 MPa at 50 % strain (own calculation 6.1/0.5), about 150 times softer than Nylon 12 (1850 MPa). No wet/dry modulus for any TPU was found.",
+   "source": "https://epfl.ch/schools/sti/ateliers/wp-content/uploads/2024/09/TPU_90A-SLS-EN.pdf",
+   "confidence": "high (data) / low (small-strain modulus)",
+   "value": "secant 12.2 MPa at 50 % strain",
+   "evidence_quote": "Stress @ 50% Elongation (X/Y) 6.1 MPa 889 PSI ASTM D412-16, Method A"
+  },
+  {
+   "claim": "EOS gives the density of sintered PA2200 parts as 0.90-0.95 g/cm3; dense PA12 is 1.01 g/cm3 (Arkema). The void volume fraction is therefore 6-11 %, and if every void filled with water the part would gain 6.3-12.1 % mass on top of about 1.6 % held in the polymer (total 7.9-13.7 %). Villani's 10.49 % equals complete void filling at density 0.93 (own calc: 8.5 % + 1.6 % = 10.1 %); Zheng's 5.47 % corresponds to about 3.6 % of the volume filled (own calc). So the measured immersion uptakes of sintered PA12 are mostly pore-filling water.",
+   "source": "own calculation D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py ; inputs https://www.amf.uzh.ch/dam/jcr:59a8b14a-c212-4693-8443-d5e543aeabe2/Material-Data-PA2200-ENGLISH.pdf (density) and the Arkema Rilsamid sheet",
+   "confidence": "medium",
+   "value": "void 5.9-10.9 %; capacity 7.9-13.7 % mass",
+   "evidence_quote": "Density g/cm3 0,90 – 0,95 (EOS PA 2200 sintered parts)"
+  },
+  {
+   "claim": "Zheng 2022: SLS PA12 cylinders 8 x 8 mm in distilled water at room temperature saturate at 5.47 % (CF/PA12 4.6 %), reached after roughly 36 h of fast uptake. Filling the same powder family with carbon fibre cut saturation uptake only by about 16 % (4.6/5.47).",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9320715/ (doi 10.3390/mi13071041)",
+   "confidence": "high",
+   "value": "5.47 % PA12; 4.6 % CF/PA12",
+   "evidence_quote": "Δm of PA12 sample increases sharply in the first 36 h as the samples were immersed into water. With further prolonged immersed time, the Δm increases slowly and reaches a saturation state with Δm of 5.47%."
+  },
+  {
+   "claim": "Closed porosity of laser-sintered PA12 sheets measured by micro-CT is only 0.31-1.04 %, and all sheets except the thinnest quenched 2-layer one (4 to 8 layers of 100 um, and the standard 2-layer sheet) show solution-diffusion transport of O2 and He as in a dense coherent polymer, with no flow through continuous pores. Earlier work by the same group found water-vapour permeation coefficients of 700-2000 um LS sheets in the range of extruded PA12 film. So in sintered strips of the thickness of interest the vapour path is through polymer, not through open channels.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7921953/ (doi 10.3390/polym13040603); doi 10.1108/rpj-05-2020-0101",
+   "confidence": "high (O2/He, porosity) / medium (water vapour, abstract-level)",
+   "value": "porosity 0.31-1.04 %",
+   "evidence_quote": "Despite the porous material structure, even the thinnest LS sheets investigated showed a solution–diffusion behavior as typically observed for a dense, coherent polymeric material."
+  },
+  {
+   "claim": "Capillary condensation argument (own calculation, Kelvin equation, 25 C, perfect wetting): the largest pore that can fill from vapour is 1.5 nm at 50 % RH, 4.7 nm at 80 %, 26 nm at 96 % and 104 nm at 99 %. Sintered voids are micrometres to tens of micrometres (the CT detection limit alone is a 1.9e-7 mm3 pore, an equivalent-sphere radius of 3.6 um, own arithmetic), so they cannot fill from humid air; they fill only on liquid contact. This agrees with the EOS 96 % RH value (1.33 %) being close to dense polymer values and far below the 5-10 % seen on immersion.",
+   "source": "own calculation D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py",
+   "confidence": "medium (theory; no direct vapour-vs-liquid test on one sintered part found)",
+   "value": "r_K = 1.046 nm / ln(1/RH)"
+  },
+  {
+   "claim": "Injection-moulded PA12 (Grilamid L25, ISO 527-2 type 1A bars) at 23 C: Young's modulus 1553 MPa when stored at ambient 23 C / 50 % RH ('dry') and 882 MPa after 40 days in water (uptake 0.91 % over the ambient mass), i.e. -43 % at 50 mm/min and -52 % at 1 mm/min (1506 -> 728 MPa). The loss shrinks with temperature (-3 % at 100 C). This is a far bigger water softening than Arkema's -4 % dry-to-conditioned or Zheng's 'negligible'.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8549196/ (doi 10.1186/s12938-021-00947-8, Table 2 and Table 5)",
+   "confidence": "high (as reported); cause of the difference from other sources not resolved",
+   "value": "E 1553.5 -> 882.0 MPa (50 mm/min); 1506.5 -> 728.0 (1 mm/min)",
+   "evidence_quote": "23 Dry 1506.5 (51.4) 1553.5 (233.1) 45.5 (0.4) ... Cond 728.0 (161.3) 882.0 (341.5) 36.2 (0.4)"
+  },
+  {
+   "claim": "Three disagreeing sources on PA12 wet/dry modulus, reported side by side: Arkema dense PA12 1500 -> 1440 MPa (-4 %); Zheng sintered PA12 'negligible' modulus change but -15 % compressive yield strength; Villani sintered PA12 about 1 -> 0.8 GPa after only 2 h in water, yield 20 -> 14 MPa; Amstutz moulded PA12 -43 to -52 %. Differences in grade, conditioning, test mode and what 'dry' means are not resolved by these papers.",
+   "source": "Arkema TDS; https://pmc.ncbi.nlm.nih.gov/articles/PMC9320715/ ; https://link.springer.com/article/10.1007/s40964-024-00826-3 ; https://pmc.ncbi.nlm.nih.gov/articles/PMC8549196/",
+   "confidence": "medium",
+   "value": "-4 %, ~0 %, -20 %, -43 to -52 %",
+   "evidence_quote": "It is found that in the elastic deformation stage, the influence of water immersion on the elasticity modulus is negligible. (Zheng 2022)"
+  },
+  {
+   "claim": "Sintered PA 2200 (EOS) exposed to weathering and 100 % humid atmosphere for 28 days had its lowest flexural strength and modulus after the 28-day water-absorption step; tensile modulus fell from 1.7 to 1.1 GPa under the different weathering conditions (UV, humidity, ageing mixed together).",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9227374/ (doi 10.3390/polym14122355)",
+   "confidence": "medium",
+   "value": "1.7 -> 1.1 GPa (mixed weathering)",
+   "evidence_quote": "The tensile modulus under the influence of different weathering conditions was reduced from the initial 1.7 GPa to 1.1 GPa"
+  },
+  {
+   "claim": "No peer-reviewed measured coefficient of hygroscopic (moisture) expansion was found for PA11, PA12, sintered PA12 or TPU. What exists: SLS nylon-12 parts change size with ambient RH, mostly in the directions parallel to the sintered layers, with high correlation to RH (Park 2016); humidity changes can violate dimensional specs (Kwon 2017); neither abstract gives a number.",
+   "source": "https://pure.skku.edu/en/publications/hygroscopic-swelling-behavior-of-3d-printed-parts-due-to-changes-/ ; https://link.springer.com/article/10.1007/s12541-017-0150-0",
+   "confidence": "high",
+   "value": "no coefficient published in abstracts",
+   "evidence_quote": "The results showed that the deformation was mostly occurred to the dimensions parallel to the sintering layers. Also, changes in these dimensions were found to have a high correlation with the relative humidity regardless of temperature conditions."
+  },
+  {
+   "claim": "One vendor page for cast PA12 states that a maximum absorption of 1.4 % corresponds to a dimensional change of 0.2 %, i.e. about 0.14 % linear strain per wt% water (own division); the same page gives PA6 9 % -> 2 % and PA6.6 7 % -> 3.5 %. This is a vendor statement without method, the only PA12 number I found.",
+   "source": "https://www.intechpower.com/material-information/effects-of-moisture-absorption",
+   "confidence": "low",
+   "value": "0.2 % / 1.4 % = 0.143 %/wt%",
+   "evidence_quote": "PowerCore, with a maximum absorption of 1.4%, has a corresponding dimensional change of 0.2%."
+  },
+  {
+   "claim": "Water saturation can shrink rather than swell polyamide pipes: PA11/PA12/PA6.12 pipe segments saturated in water at 80 C lost 1.1-4.3 % volume with 8-19 % higher melting enthalpy (recrystallisation), at maximum water contents of 1.5-2.4 wt%. Warm water exposure therefore confounds a swelling measurement with crystallinity change.",
+   "source": "https://www.kiwa.com/495f61/globalassets/netherlands/kiwa-technology/downloads/scholten_kiwa_paper_polyamide_pipes_vancouver_2010.pdf (conference paper, no DOI)",
+   "confidence": "medium",
+   "value": "dV -1.1 to -4.3 %",
+   "evidence_quote": "Table 3 confirms that volume reduction and density increase of the PA pipe segments noted before [1] is explained by an increase in crystallinity of the PA pipes that were water-saturated at 80 °C."
+  },
+  {
+   "claim": "RESPONSE TIME of 0.4 / 0.8 / 1.6 mm strips from Fick's law for a plane sheet, t90 = 0.2120 h^2/D (both faces open; exact series gives Dt/h^2 = 0.0492 for 50 %, 0.2120 for 90 %, 0.4453 for 99 %). With D = 4.95e-13 m2/s (measured PA11): 0.4 mm 19 h, 0.8 mm 76 h (3.2 days), 1.6 mm 305 h (12.7 days). With D = 3e-13: 31 / 126 / 503 h. With D = 1.4e-12: 6.7 / 27 / 108 h. If sintered D were 10x larger (5e-12): 1.9 / 7.6 / 30 h. A strip with one face sealed (a bilayer's bonded face) behaves like a sheet of twice the thickness: four times slower. Time scales with h squared: doubling thickness quadruples the time. Arithmetic example: 0.212 x (0.8e-3 m)^2 / 4.95e-13 m2/s = 0.212 x 6.4e-7 / 4.95e-13 = 2.74e5 s = 76 h.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py (full table in calc_out.json)",
+   "confidence": "medium (D uncertain by a factor ~3 either way; formula exact)",
+   "value": "D=3e-13, h=0.4 mm: t50=7.3 h, t90=31.4 h (two faces), 126 h (one face); D=3e-13, h=0.8 mm: t50=29.1 h, t90=125.6 h (two faces), 503 h (one face); D=3e-13, h=1.6 mm: t50=116.6 h, t90=502.6 h (two faces), 2010 h (one face); D=4.95e-13, h=0.4 mm: t50=4.4 h, t90=19.0 h (two faces), 76 h (one face); D=4.95e-13, h=0.8 mm: t50=17.7 h, t90=76.1 h (two faces), 305 h (one face); D=4.95e-13, h=1.6 mm: t50=70.7 h, t90=304.6 h (two faces), 1218 h (one face); D=1.4e-12, h=0.4 mm: t50=1.6 h, t90=6.7 h (two faces), 27 h (one face); D=1.4e-12, h=0.8 mm: t50=6.2 h, t90=26.9 h (two faces), 108 h (one face); D=1.4e-12, h=1.6 mm: t50=25.0 h, t90=107.7 h (two faces), 431 h (one face); D=4.95e-12, h=0.4 mm: t50=0.4 h, t90=1.9 h (two faces), 8 h (one face); D=4.95e-12, h=0.8 mm: t50=1.8 h, t90=7.6 h (two faces), 30 h (one face); D=4.95e-12, h=1.6 mm: t50=7.1 h, t90=30.5 h (two faces), 122 h (one face)"
+  },
+  {
+   "claim": "Pore-assisted versus polymer-limited kinetics: because sintered strips behave as dense solution-diffusion media (Liebrich) and vapour cannot condense in micrometre voids, the polymer-limited times above are the realistic ones for humidity (vapour) cycling; the 10x-faster sintered D (Villani) was measured on liquid immersion where pores flood within hours, so it is not evidence of faster vapour response. The Fuse minimum wall for Nylon 12 is 0.6 mm per the project record (agents/spec-formlabs-materials.json), so a 0.4 mm strip is below the vendor's minimum feature size.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7921953/ ; D:/Users/ashenoy00000/delphi-work/agents/spec-formlabs-materials.json",
+   "confidence": "medium-low"
+  },
+  {
+   "claim": "Free hygroscopic strain estimate for PA12 (own calculation): water swing between 30 % and 80 % RH is 0.74 wt% (EOS isotherm points, 0 at 0 %RH assumed, piecewise linear); times 0.143 %/wt% (vendor) to 0.278 %/wt% (polyamide 6.6 coefficient transferred by the earlier agent, an upper bound) gives a free strain of 0.105 % to 0.205 %. Against a perfectly inert partner at the optimum thickness ratio, curvature is kappa = 1.5 d_eps / h (project record, Lean-checked): bending radius 254-130 mm for a 0.4 mm bilayer, 507-261 mm for 0.8 mm, 1014-521 mm for 1.6 mm, i.e. a 40 mm cantilever strip rises 3.2-6.1 mm, 1.6-3.1 mm and 0.8-1.5 mm respectively. A real partner has its own swelling, so these are ceilings.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py",
+   "confidence": "low-medium",
+   "value": "d_eps 1.05e-3 to 2.05e-3; R 130-1014 mm; tip 0.8-6.1 mm on 40 mm"
+  },
+  {
+   "claim": "Moisture softening barely touches the curvature ceiling: when the modulus ratio n changes by a factor 0.568 or 0.483 (the Amstutz wet/dry modulus ratios) with the thickness ratio tuned for the dry state, f(m,n) stays at 1.47-1.49 (n = 1-150: 1.470/1.450 at n=1, 1.478/1.463 at n=10, 1.490/1.483 at n=100), i.e. a loss of at most 3.3 % of the 3/2 ceiling. This uses the project record formula; the modulus drop matters for force and stiffness, not for curvature.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py ; project record D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/lean/HygromorphCeilingCheck.lean (read as cited, not re-run)",
+   "confidence": "high (arithmetic)",
+   "value": "f >= 1.450 for n=1, >= 1.463 for n=10"
+  },
+  {
+   "claim": "Same-family partners do not give a usable differential: Formlabs Nylon 12 GF, Nylon 12 Tough and Nylon 12 White all gain 0.1 % in the 24 h cube test, indistinguishable from unfilled Nylon 12 (earlier agent's reading of Formlabs' solvent table, not re-fetched here), and carbon-fibre filling cut Zheng's saturation uptake by only about 16 % (5.47 -> 4.6 %). A PA12 + filled-PA12 pair would therefore have a differential strain of order 15 % of PA12's already small 0.1-0.2 %. A usable pair needs a dissimilar passive layer (for example a rigid SLA resin with under 0.1 % 24 h uptake per the project record, or a non-polymer sheet) bonded to PA12; this has not been demonstrated in the sources found.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9320715/ ; D:/Users/ashenoy00000/delphi-work/agents/spec-resin-chemistry.json",
+   "confidence": "medium-low"
+  },
+  {
+   "claim": "A TPU + PA12 pair is mechanically plausible: with the project law m^2 n = 1, PA12 (1850 MPa) against TPU 90A (secant 12.2 MPa, ratio 152) puts the optimum thickness of the soft layer at sqrt(152) = 12.3 times the stiff layer (e.g. 0.1 mm PA12 with 1.2 mm TPU, total 1.3 mm), which makes the soft layer slow (t90 ~ 0.2 x (1.2e-3 m)^2/D). Water uptake by mass is similar at 80 % RH (TPU 1.35 wt% versus PA12 ~1.05 wt% interpolated), so no mass-based differential is available; FDM TPU volume swelling up to 8 % in saline (about 2.7 % linear if isotropic, own conversion) suggests TPU could swell more per unit mass, but there is no measured expansion coefficient for SLS TPU. Adhesive bonding of FDM TPU to PBF PA12 has been benchmarked (Loctite 401 + 770 primer: peel 2.6 N/mm, lap shear 3.0 MPa, tensile 2.7 MPa).",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12824215/ (doi 10.1038/s41598-025-32559-w) ; D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py",
+   "confidence": "low-medium",
+   "value": "optimum soft/stiff thickness 12.3; peel 2.6 N/mm",
+   "evidence_quote": "Loctite 401 + 770 achieved the highest mean strengths with low scatter (COV ≤ 15%) in peel (2.6 N/mm), shear (3.0 MPa), and tensile (2.7 MPa) testing."
+  },
+  {
+   "claim": "VERDICT on a PA12 + partner humidity bilayer: usable only as a slow, small actuator. Response at 0.8-1.6 mm total thickness is days to weeks (t90 76-305 h at the central D, one-face exposure 4x longer); the stroke from 30 -> 80 % RH is a 0.8-6 mm tip rise on a 40 mm strip (R 130-1000 mm). That suits seasonal or multi-day humidity swings in a facade or screen, not diurnal reaction (0.4 mm, below the Fuse minimum wall, gives t50 4-7 h). It beats nothing the earlier agents found for speed; the earlier ~0.2-0.45 % dry-to-saturated estimate for PA12 is refined here to ~0.16-0.23 % (vendor ratio) up to 0.45 % (PA6.6 transfer).",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py",
+   "confidence": "low-medium"
+  },
+  {
+   "claim": "CONFIRMED from earlier agents: Arkema PA12 1.6 % and PA11 0.8 % (50 % RH) / 1.9 % (immersion); Formlabs Nylon 12 0.66 %, TPU 0.89 %, Nylon 11 0.07 % in the 2021 TDS; sintered PA12 immersion uptake 5.47 % (Zheng) and 10.49 % (Villani); no measured CME for PA11/PA12 exists; no SLS humidity actuator in the literature (Park/Kwon treat humidity swelling as a defect).",
+   "source": "see individual findings",
+   "confidence": "high"
+  },
+  {
+   "claim": "CONTRADICTION / REFINEMENT 1 (agents/spec-resin-chemistry.json, summary 'PA12 on the Fuse gives about 0.2-0.45% from dry to saturated'): that range rests on transferring a PA6.6 coefficient. The only PA12-specific number found (a vendor statement, 0.2 % at 1.4 % uptake) gives 0.14 %/wt%, which lowers the estimate to about 0.16-0.23 % for 1.1-1.6 wt%. Still an estimate, not a measurement.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py",
+   "confidence": "low"
+  },
+  {
+   "claim": "CONTRADICTION / REFINEMENT 2 (spec-resin-chemistry.json says Zheng found 'negligible' modulus change and Villani ~1 -> 0.8 GPa, noting they disagree): a third and fourth source now exist, Arkema -4 % (dry to conditioned) and Amstutz -43 to -52 % (injection-moulded PA12, 23 C), so the disagreement is wider than two papers: it spans -4 % to -52 %.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8549196/",
+   "confidence": "medium"
+  },
+  {
+   "claim": "CONTRADICTION / REFINEMENT 3 (spec-resin-chemistry.json: 'uptake dominated by pore filling, not polymer swelling' as Villani's interpretation, not tested): this run supports it quantitatively with the density argument (sintered density 0.90-0.95 gives 6-12 % void capacity matching the 5.5-10.5 % immersion uptakes) but also shows sintered parts at 50 % RH (0.52 %) and 96 % RH (1.33 %) hold only about the dense-polymer amount, so pore filling matters for rain, splash and immersion, not for humid air.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py",
+   "confidence": "medium"
+  },
+  {
+   "claim": "CONTRADICTION / REFINEMENT 4 (spec-bilayer-physics.json: response time from nylon PA6/66 filament, D = 0.001 mm2/h = 2.78e-13 m2/s, giving 160 h at 0.4 mm using tau = h^2/D): PA11 measured D = 1.78e-3 mm2/h (1.8x larger) and PA12 inferred 1e-3 to 5e-3 mm2/h are the same order, so the earlier 'tens to thousands of hours' range stands. But tau = h^2/D is 4.7 times longer than the time to 90 % (0.212 h^2/D for two open faces), so it overstates the practical response. For example 0.4 mm at D=2.78e-13 gives tau 160 h but t90 only 34 h.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py",
+   "confidence": "medium"
+  },
+  {
+   "claim": "NOT CONTRADICTED: the project record ceiling f = 3/2 at m^2 n = 1 was applied as given; I did not re-run the Lean file (read-only) and did not re-derive it.",
+   "source": "project record",
+   "confidence": "n/a"
+  }
+ ],
+ "key_claims": [
+  {
+   "claim": "Laser-sintered PA12 holds only about the dense-polymer amount of water in humid air: 0.52 wt% at 23 C / 50 % RH and 1.33 wt% at 96 % RH, 1.93 wt% in 100 C water.",
+   "source": "https://www.sculpteo.com/media/imagecontent/PA2200_Product_information_03-10_en.pdf",
+   "evidence_quote": "Water absorption 100°C, saturation in water 1,93 | 23°C, 96% RF 1,33 | 23°C, 50% RF 0,52 (pdftotext, labels and values in separate columns)"
+  },
+  {
+   "claim": "The 5.5-10.5 wt% uptakes of sintered PA12 on immersion are mostly water filling voids (density 0.90-0.95 vs 1.01 dense allows 6-12 % void water), not polymer swelling; dense PA12 saturates at 1.6 %.",
+   "source": "https://link.springer.com/article/10.1007/s40964-024-00826-3 ; https://www.amf.uzh.ch/dam/jcr:59a8b14a-c212-4693-8443-d5e543aeabe2/Material-Data-PA2200-ENGLISH.pdf ; own calc D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py",
+   "evidence_quote": "Water absorption reaches saturation after 2 days of immersion with a weight variation of around 10.49% and a resulting diffusion coefficient one order of magnitude greater than the value of the base material, due to the porosity of the samples."
+  },
+  {
+   "claim": "Bulk water diffusivity of PA11 at 23 C is 4.95e-13 m2/s (measured) and PA12 is the same order (3e-13 to 1.4e-12 by own bounds), so the 0.8 mm sintered strip needs about 76-126 h to reach 90 % of equilibrium with both faces open, and 4 times that with one face sealed.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6404017/ ; own calc D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py",
+   "evidence_quote": "23 0 1.43 ± 0.02 0.305 ± 0.045 0.088 ± 0.023 4.95 ± 0.02 (columns: temperature, fibre content, M∞ %, n, K, D in 10−13 m2·s−1)"
+  },
+  {
+   "claim": "No measured hygroscopic expansion coefficient exists for PA11/PA12/TPU; the only PA12 number is a vendor 0.2 % dimensional change at 1.4 % uptake, giving a PA12 free strain of about 0.1-0.2 % over 30-80 % RH and a weak bilayer (R of 130-1000 mm).",
+   "source": "https://www.intechpower.com/material-information/effects-of-moisture-absorption",
+   "evidence_quote": "PowerCore, with a maximum absorption of 1.4%, has a corresponding dimensional change of 0.2%."
+  }
+ ],
+ "table": [
+  {
+   "name": "PA12 sintered (EOS PA 2200) sorption isotherm",
+   "fields": "water_uptake=0.52 wt% at 23C/50%RH; 1.33 wt% at 23C/96%RH; 1.93 wt% water 100C saturation; density=0.90-0.95 g/cm3; tensile_modulus=1700 +/-150 MPa (EOS method)",
+   "source": "https://www.sculpteo.com/media/imagecontent/PA2200_Product_information_03-10_en.pdf"
+  },
+  {
+   "name": "PA12 sintered, Protolabs (EOS PA 2200 Balance)",
+   "fields": "water_uptake=0.5 +/-0.2 wt% at 20C/50%RH (ISO 62); 2.0 +/-0.3 wt% boiling water 24 h",
+   "source": "https://protolabs.com/media/ytzjjomn/pa12-vapour-smooth-white-en-24_10.pdf"
+  },
+  {
+   "name": "PA12 sintered, Formlabs Nylon 12 Powder",
+   "fields": "water_absorption=0.66 % (ASTM D570, duration not stated); tensile_modulus=1850 MPa; powder_moisture=0.25 %; conditioning=50%RH/23C/7 d",
+   "source": "https://media.formlabs.com/m/2a02034348060e54/original/-ENUS-Nylon-12-TDS.pdf"
+  },
+  {
+   "name": "PA11 sintered, Formlabs Nylon 11 Powder (2021 TDS)",
+   "fields": "water_absorption=0.07 % (ASTM D570); tensile_modulus=1.6 GPa; powder_moisture=0.37 %",
+   "source": "https://media.formlabs.com/m/151bd67a83b2334f/original/-ENUS-Nylon-11-TDS.pdf"
+  },
+  {
+   "name": "TPU sintered, Formlabs TPU 90A Powder",
+   "fields": "water_absorption=0.89 % (ASTM D570); stress_50pct_strain=6.1 MPa (secant 12.2 MPa, own calc); Shore=90A; tensile modulus not published",
+   "source": "https://epfl.ch/schools/sti/ateliers/wp-content/uploads/2024/09/TPU_90A-SLS-EN.pdf"
+  },
+  {
+   "name": "PA12 dense moulded, Arkema Rilsamid AESNO MED",
+   "fields": "water_uptake_immersion_23C=1.6 wt% (ISO 62); density=1.01 g/cm3; E_dry=1500 MPa; E_cond=1440 MPa",
+   "source": "https://hpp.arkema.com/assets/arkema/TDS_RILSAMID%C2%AE%20AESNO%20MED_en_WW.pdf"
+  },
+  {
+   "name": "PA11 dense moulded, Arkema Rilsan BMNO TLD",
+   "fields": "water_uptake_50%RH_23C=0.8 wt%; immersion_23C=1.9 wt% (ISO 62); density=1.03 g/cm3; E_cond=1250 MPa",
+   "source": "https://hpp.arkema.com/assets/arkema/TDS_RILSAN%C2%AE%20BMNO%20TLD_en_WW.pdf"
+  },
+  {
+   "name": "PA11 and PA12 hot-pressed (Bahrami 2021)",
+   "fields": "saturation_water=1.5 wt%; saturation_50%RH=0.8 wt%; time_to_saturation=~2 months; sheet=20x20x4 mm",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8537549/"
+  },
+  {
+   "name": "PA12 sintered immersion (Villani 2024)",
+   "fields": "mass_gain_saturation=10.49 wt%; t_sat=2 days; D=~10x base (value not in abstract); E=1 -> 0.8 GPa after 2 h; yield=20 -> 14 MPa",
+   "source": "https://link.springer.com/article/10.1007/s40964-024-00826-3"
+  },
+  {
+   "name": "PA12 sintered immersion (Zheng 2022)",
+   "fields": "mass_gain_saturation=5.47 wt% (PA12), 4.6 wt% (CF/PA12); cylinders 8x8 mm; fast uptake ~36 h; compressive_strength=-15 %; modulus 'negligible'",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9320715/"
+  },
+  {
+   "name": "PA12 injection-moulded (Amstutz 2021, Grilamid L25)",
+   "fields": "uptake_40d_water_23C=0.91 wt% (IQR 0.15); E_ambient=1553.5 MPa; E_wet=882.0 MPa (-43 %); E_1mm/min 1506.5 -> 728.0 MPa (-52 %); yield 45.5 -> 36.2 MPa",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8549196/"
+  },
+  {
+   "name": "PA11 injection-moulded diffusion (Oliver-Ortega 2018)",
+   "fields": "D_23C=4.95e-13 m2/s; Minf_23C=1.43 wt%; D_40C=22.0e-13 m2/s; Minf_40C=1.58 wt%",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6404017/"
+  },
+  {
+   "name": "PA12 D inferred (own calculation)",
+   "fields": "D=3.0e-13 to 1.4e-12 m2/s (Amstutz 40 d bars; Bahrami 2-month sheets); central 5e-13",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py"
+  },
+  {
+   "name": "TPU Estane 58887 (polyether, 87A) isotherm",
+   "fields": "water=0.25 wt% at 20%RH; 0.53 at 40%; 0.91 at 60%; 1.35 at 80% (23-25C)",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10534667/"
+  },
+  {
+   "name": "TPU FDM filaments 60A-98A in 0.9 % NaCl (Simunic 2026)",
+   "fields": "uptake_96h=1.18-1.80 wt%; D=1.4e-13 to 3.4e-12 m2/s; volume_change_96h=0.6-8 %",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13258891/"
+  },
+  {
+   "name": "Hygroscopic expansion, PA12 (vendor, cast)",
+   "fields": "dimensional_change=0.2 % at 1.4 % uptake (0.143 %/wt%); PA6 2 % at 9 %; PA6.6 3.5 % at 7 %",
+   "source": "https://www.intechpower.com/material-information/effects-of-moisture-absorption"
+  },
+  {
+   "name": "Sintered PA12 pore structure (Liebrich 2021)",
+   "fields": "closed_porosity=0.31-1.04 % (CT); layer=100 um; transport=solution-diffusion for >=4 layers",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7921953/"
+  },
+  {
+   "name": "Response time, PA12 strip h=0.4 mm, D=3e-13 m2/s",
+   "fields": "tau=h2/D=148.1 h; t50_two_faces=7.3 h; t90_two_faces=31.4 h; t90_one_face=126 h",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py"
+  },
+  {
+   "name": "Response time, PA12 strip h=0.8 mm, D=3e-13 m2/s",
+   "fields": "tau=h2/D=592.6 h; t50_two_faces=29.1 h; t90_two_faces=125.6 h; t90_one_face=503 h",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py"
+  },
+  {
+   "name": "Response time, PA12 strip h=1.6 mm, D=3e-13 m2/s",
+   "fields": "tau=h2/D=2370.4 h; t50_two_faces=116.6 h; t90_two_faces=502.6 h; t90_one_face=2010 h",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py"
+  },
+  {
+   "name": "Response time, PA12 strip h=0.4 mm, D=4.95e-13 m2/s",
+   "fields": "tau=h2/D=89.8 h; t50_two_faces=4.4 h; t90_two_faces=19.0 h; t90_one_face=76 h",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py"
+  },
+  {
+   "name": "Response time, PA12 strip h=0.8 mm, D=4.95e-13 m2/s",
+   "fields": "tau=h2/D=359.1 h; t50_two_faces=17.7 h; t90_two_faces=76.1 h; t90_one_face=305 h",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py"
+  },
+  {
+   "name": "Response time, PA12 strip h=1.6 mm, D=4.95e-13 m2/s",
+   "fields": "tau=h2/D=1436.6 h; t50_two_faces=70.7 h; t90_two_faces=304.6 h; t90_one_face=1218 h",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py"
+  },
+  {
+   "name": "Response time, PA12 strip h=0.4 mm, D=1.4e-12 m2/s",
+   "fields": "tau=h2/D=31.7 h; t50_two_faces=1.6 h; t90_two_faces=6.7 h; t90_one_face=27 h",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py"
+  },
+  {
+   "name": "Response time, PA12 strip h=0.8 mm, D=1.4e-12 m2/s",
+   "fields": "tau=h2/D=127.0 h; t50_two_faces=6.2 h; t90_two_faces=26.9 h; t90_one_face=108 h",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py"
+  },
+  {
+   "name": "Response time, PA12 strip h=1.6 mm, D=1.4e-12 m2/s",
+   "fields": "tau=h2/D=507.9 h; t50_two_faces=25.0 h; t90_two_faces=107.7 h; t90_one_face=431 h",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py"
+  },
+  {
+   "name": "Response time, PA12 strip h=0.4 mm, D=4.95e-12 m2/s",
+   "fields": "tau=h2/D=9.0 h; t50_two_faces=0.4 h; t90_two_faces=1.9 h; t90_one_face=8 h",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py"
+  },
+  {
+   "name": "Response time, PA12 strip h=0.8 mm, D=4.95e-12 m2/s",
+   "fields": "tau=h2/D=35.9 h; t50_two_faces=1.8 h; t90_two_faces=7.6 h; t90_one_face=30 h",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py"
+  },
+  {
+   "name": "Response time, PA12 strip h=1.6 mm, D=4.95e-12 m2/s",
+   "fields": "tau=h2/D=143.7 h; t50_two_faces=7.1 h; t90_two_faces=30.5 h; t90_one_face=122 h",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py"
+  },
+  {
+   "name": "PA12 + inert partner, optimum ratio, RH 30->80 %, h_total=0.4 mm, beta=0.143 %/wt%",
+   "fields": "free_strain=1.05e-03; radius=254 mm; tip_rise_40mm_strip=3.16 mm",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py"
+  },
+  {
+   "name": "PA12 + inert partner, optimum ratio, RH 30->80 %, h_total=0.8 mm, beta=0.143 %/wt%",
+   "fields": "free_strain=1.05e-03; radius=507 mm; tip_rise_40mm_strip=1.58 mm",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py"
+  },
+  {
+   "name": "PA12 + inert partner, optimum ratio, RH 30->80 %, h_total=1.6 mm, beta=0.143 %/wt%",
+   "fields": "free_strain=1.05e-03; radius=1014 mm; tip_rise_40mm_strip=0.79 mm",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py"
+  },
+  {
+   "name": "PA12 + inert partner, optimum ratio, RH 30->80 %, h_total=0.4 mm, beta=0.278 %/wt%",
+   "fields": "free_strain=2.05e-03; radius=130 mm; tip_rise_40mm_strip=6.14 mm",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py"
+  },
+  {
+   "name": "PA12 + inert partner, optimum ratio, RH 30->80 %, h_total=0.8 mm, beta=0.278 %/wt%",
+   "fields": "free_strain=2.05e-03; radius=261 mm; tip_rise_40mm_strip=3.07 mm",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py"
+  },
+  {
+   "name": "PA12 + inert partner, optimum ratio, RH 30->80 %, h_total=1.6 mm, beta=0.278 %/wt%",
+   "fields": "free_strain=2.05e-03; radius=521 mm; tip_rise_40mm_strip=1.54 mm",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py"
+  }
+ ],
+ "recommendations": [
+  "Treat PA12/PA11 SLS strips as slow, small hygromorph layers: design for multi-day to seasonal humidity change; expect 0.1-0.2 % free strain over 30-80 % RH. Do not promise diurnal response below about 0.8 mm total thickness.",
+  "Run the cheap decisive experiment on the Fuse: print 40 x 5 mm Nylon 12 and Nylon 11 strips at 0.6, 0.8, 1.6 mm, dry at 50 C under vacuum or dry air to constant mass, then expose to 30, 50, 80 % RH in salt-solution jars; record mass and length (calipers or image) at 1, 3, 7, 14, 28 days. This yields the missing D, isotherm and expansion coefficient for the actual powder and resolves the -4 % versus -52 % modulus disagreement.",
+  "Avoid conditioning above about 60-80 C when measuring swelling: Kiwa shows recrystallisation can shrink PA volume by 1-4 % and mask swelling.",
+  "Keep liquid water off sintered parts unless you want the 5-10 % pore-fill mass change; coat or infiltrate if a vapour-only response is required.",
+  "For a usable bilayer prefer a dissimilar passive layer (rigid, nearly non-hygroscopic) bonded with a tested adhesive; same-powder fillers (glass, carbon) reduce PA12 uptake only about 16 %. TPU as the active partner is a hypothesis: measure its expansion before designing.",
+  "Because the project ceiling f = 3/2 is insensitive to the 40-50 % modulus loss on wetting (at most 3 % loss of curvature coefficient), size the layer thickness ratio from the mid-state modulus ratio and accept the drift."
+ ],
+ "reproduce": [
+  {
+   "what": "Download and checksum all kept source files (log of URL, date, bytes, sha256 is in the manifest)",
+   "command_or_url": "cat D:/Users/ashenoy00000/delphi-work/data/bm-polyamide/MANIFEST.tsv",
+   "expected": "tab-separated url, UTC date, bytes, sha256, filename; about 20 files, a few MB in total; fetched via D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/fetch.sh (curl 8.x) and epmc_fulltext.sh"
+  },
+  {
+   "what": "Extract EOS, Arkema and Formlabs sheet values",
+   "command_or_url": "pdftotext -layout D:/Users/ashenoy00000/delphi-work/data/bm-polyamide/eos-pa2200-productinfo-2010.pdf - | head -15 ; pdftotext -raw .../arkema-rilsan-bmno-tld.pdf - | grep -A2 'Water absorption' ; pdftotext -raw .../formlabs-nylon12-tds.pdf - | grep 'Water Absorption' (poppler pdftotext)",
+   "expected": "EOS column 1.93 / 1.33 / 0.52 %; Arkema PA11 0.8 % (50 %RH) and 1.9 % (immersion); Formlabs N12 0.66 %, N11 0.07 %, TPU 0.89 %"
+  },
+  {
+   "what": "Read the open papers' key numbers from the saved Europe PMC text",
+   "command_or_url": "grep -n '4.95' D:/Users/ashenoy00000/delphi-work/data/bm-polyamide/PMC6404017.txt ; grep -n '882.0' .../PMC8549196.txt (strip LaTeX) ; grep -n '5.47%' .../PMC9320715.txt ; grep -n '1.5% and 0.8%' .../PMC8537549.txt ; grep -n '0.0135' .../PMC10534667.txt ; grep -n '3.40 ×' .../PMC13258891.txt",
+   "expected": "D 4.95e-13 m2/s; E 1553.5 and 882.0 MPa; 5.47 %; 1.5 % and 0.8 %; TPU 80 %RH 0.0135; D up to 3.40e-12"
+  },
+  {
+   "what": "Re-fetch the full text of an open paper",
+   "command_or_url": "curl -s https://www.ebi.ac.uk/europepmc/webservices/rest/PMC6404017/fullTextXML (or sh D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/epmc_fulltext.sh PMC6404017)",
+   "expected": "JWATS XML with Table 3 (D column)"
+  },
+  {
+   "what": "Re-run all calculations (Fick times, pore capacity, Kelvin radius, bilayer curvature, f sensitivity)",
+   "command_or_url": "python -I -X utf8 D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py (Python 3.14, standard library only)",
+   "expected": "Dt/l^2 = 0.0492 / 0.2120 / 0.4453; t90 0.8 mm at D=4.95e-13 = 76.2 h; pore capacity total 10.12 % at density 0.93; Kelvin 1.51 nm at 50 % RH; f >= 1.450"
+  },
+  {
+   "what": "Re-verify DOIs",
+   "command_or_url": "sh D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/crossref_verify.sh <doi...> (Crossref REST, generic User-Agent)",
+   "expected": "one line per DOI with authors/year/title/journal; 10.3390/polym15183770 is not in Crossref at fetch time and was verified via Europe PMC instead (sh epmc_search.sh 'DOI:\"10.3390/polym15183770\"')"
+  },
+  {
+   "what": "Rebuild this JSON",
+   "command_or_url": "python -I -X utf8 D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/build_result.py",
+   "expected": "writes D:/Users/ashenoy00000/delphi-work/agents2/bm-polyamide-sls.json"
+  },
+  {
+   "what": "Not reproducible by script",
+   "command_or_url": "Villani 2024, Paolucci 2020 (Wiley), Pichler 2023 DVS (ScienceDirect 403): only abstracts / second-hand tables were read",
+   "expected": "a reader with institutional access can check the D value in Villani and the RH conditioning in Paolucci"
+  }
+ ],
+ "citations": [
+  {
+   "authors": "Villani V, Ponticelli GS, Venettacci S, Guarino S",
+   "year": 2024,
+   "title": "Effect of water absorption on the properties of selective laser-sintered PA12 specimens",
+   "venue": "Progress in Additive Manufacturing",
+   "doi_or_arxiv": "10.1007/s40964-024-00826-3",
+   "verified": true,
+   "how_verified": "Crossref API returned the record in this run; abstract read on the Springer page (paywalled body)",
+   "used_for": "10.49 % saturation, 2 days, D one order above base, modulus 1 -> 0.8 GPa"
+  },
+  {
+   "authors": "Zheng X, Meng J, Liu Y",
+   "year": 2022,
+   "title": "Strain Rate Dependence of Compressive Mechanical Properties of Polyamide and Its Composite Fabricated Using Selective Laser Sintering under Saturated-Water Conditions",
+   "venue": "Micromachines 13, 1041",
+   "doi_or_arxiv": "10.3390/mi13071041",
+   "verified": true,
+   "how_verified": "Crossref API + full text via Europe PMC PMC9320715",
+   "used_for": "5.47 % saturation of SLS PA12, negligible modulus change"
+  },
+  {
+   "authors": "Bahrami M, Abenojar J, Martinez MA",
+   "year": 2021,
+   "title": "Comparative Characterization of Hot-Pressed Polyamide 11 and 12: Mechanical, Thermal and Durability Properties",
+   "venue": "Polymers 13, 3553",
+   "doi_or_arxiv": "10.3390/polym13203553",
+   "verified": true,
+   "how_verified": "Crossref API + full text via Europe PMC PMC8537549",
+   "used_for": "PA11/PA12 1.5 % water, 0.8 % at 50 % RH, 4 mm sheets, 2 months"
+  },
+  {
+   "authors": "Oliver-Ortega H, Mendez JA, Espinach FX, Tarres Q, Ardanuy M, Mutje P",
+   "year": 2018,
+   "title": "Impact Strength and Water Uptake Behaviors of Fully Bio-Based PA11-SGW Composites",
+   "venue": "Polymers 10, 717",
+   "doi_or_arxiv": "10.3390/polym10070717",
+   "verified": true,
+   "how_verified": "Crossref API + full text via Europe PMC PMC6404017, Table 3",
+   "used_for": "PA11 D = 4.95e-13 m2/s at 23 C"
+  },
+  {
+   "authors": "Amstutz C, Weisse B, Valet S, Haeberlin A, Burger J, Zurbuchen A",
+   "year": 2021,
+   "title": "Temperature-dependent tensile properties of polyamide 12 for the use in percutaneous transluminal coronary angioplasty balloon catheters",
+   "venue": "BioMedical Engineering OnLine 20, 111",
+   "doi_or_arxiv": "10.1186/s12938-021-00947-8",
+   "verified": true,
+   "how_verified": "Crossref API + full text via Europe PMC PMC8549196, Tables 2 and 5",
+   "used_for": "PA12 wet/dry modulus -43 to -52 %, 0.91 % uptake in 40 d"
+  },
+  {
+   "authors": "Liebrich A, Langowski HC, Pinzer BR",
+   "year": 2021,
+   "title": "Thickness-Dependent Permeation Properties of Quenched and Standard Laser-Sintered Polyamide 12 Sheets",
+   "venue": "Polymers 13, 603",
+   "doi_or_arxiv": "10.3390/polym13040603",
+   "verified": true,
+   "how_verified": "Crossref API + full text via Europe PMC PMC7921953",
+   "used_for": "closed porosity 0.31-1.04 %, solution-diffusion in sintered sheets"
+  },
+  {
+   "authors": "Liebrich A, Langowski HC, Schreiber R, Pinzer BR",
+   "year": 2021,
+   "title": "Effect of thickness and build orientation on the water vapor and oxygen permeation properties of laser-sintered polyamide 12 sheets",
+   "venue": "Rapid Prototyping Journal",
+   "doi_or_arxiv": "10.1108/rpj-05-2020-0101",
+   "verified": true,
+   "how_verified": "Crossref API returned the record; abstract text came from a publisher-page fetch summary, quote not independently copied",
+   "used_for": "water-vapour permeation of LS sheets in the range of extruded PA12 (via the open Polymers paper's own statement)"
+  },
+  {
+   "authors": "Paolucci F, Peters GWM, Govaert LE",
+   "year": 2020,
+   "title": "Plasticity-controlled failure of sintered and molded polyamide 12: Influence of temperature and water absorption",
+   "venue": "Journal of Applied Polymer Science 137, 48525",
+   "doi_or_arxiv": "10.1002/app.48525",
+   "verified": true,
+   "how_verified": "Crossref API returned the record (issued 2019 online); abstract seen on the TU/e portal; full text blocked, no water numbers read",
+   "used_for": "existence of a sintered-vs-moulded PA12 humidity study; numbers not obtained"
+  },
+  {
+   "authors": "Park JY, Ha S, Park E, Kwon D, Kim N",
+   "year": 2016,
+   "title": "Hygroscopic Swelling Behavior of 3D Printed Parts due to Changes in Environmental Conditions",
+   "venue": "ASME IDETC/CIE 2016",
+   "doi_or_arxiv": "10.1115/DETC2016-59945",
+   "verified": true,
+   "how_verified": "Crossref API + abstract read on pure.skku.edu page (saved)",
+   "used_for": "SLS nylon-12 dimensions track RH, mostly in-plane; no coefficient"
+  },
+  {
+   "authors": "Kwon D, Park E, Ha S, Kim N",
+   "year": 2017,
+   "title": "Effect of humidity changes on dimensional stability of 3D printed parts by selective laser sintering",
+   "venue": "International Journal of Precision Engineering and Manufacturing",
+   "doi_or_arxiv": "10.1007/s12541-017-0150-0",
+   "verified": true,
+   "how_verified": "Crossref API + abstract read on Springer page (saved)",
+   "used_for": "humidity changes can violate dimensional specs of SLS parts; no number"
+  },
+  {
+   "authors": "Pichler C, Oberparleiter S, Lackner R",
+   "year": 2023,
+   "title": "Surrounding water vapor induced diffusion and physisorption of water within thermoplastic polyurethane TPU samples: A critical analysis of DVS data",
+   "venue": "Polymer Testing",
+   "doi_or_arxiv": "10.1016/j.polymertesting.2023.107962",
+   "verified": true,
+   "how_verified": "Crossref API returned the record; content NOT read (403); isotherm values taken from the follow-up paper's Table 1",
+   "used_for": "origin of the Estane 58887 isotherm"
+  },
+  {
+   "authors": "Pichler C, Oberparleiter S, Lackner R",
+   "year": 2023,
+   "title": "Scott Blair Fractional-Type Viscoelastic Behavior of Thermoplastic Polyurethane",
+   "venue": "Polymers 15, 3770",
+   "doi_or_arxiv": "10.3390/polym15183770",
+   "verified": true,
+   "how_verified": "Europe PMC search by DOI returned the record and full text PMC10534667 (Crossref had no record at fetch time); Table 1 read",
+   "used_for": "TPU water content vs RH (0.25-1.35 wt% at 20-80 % RH)"
+  },
+  {
+   "authors": "Simunic N, Kostadin T, Hoster J, Obranovic D",
+   "year": 2026,
+   "title": "Hygroscopic Behaviour and Diffusion Characteristics of Flexible TPU Materials Fabricated by FDM for Potential Biomedical Applications",
+   "venue": "Polymers 18, 1392",
+   "doi_or_arxiv": "10.3390/polym18111392",
+   "verified": true,
+   "how_verified": "Crossref API returned the record in this run; full text via Europe PMC PMC13258891",
+   "used_for": "TPU D 1.4e-13 to 3.4e-12 m2/s, uptake 1.18-1.80 %, volume change"
+  },
+  {
+   "authors": "Pilipovic A, Ilincic P, Bakic A, Kodvanj J",
+   "year": 2022,
+   "title": "Influence of Atmospheric Conditions on Mechanical Properties of Polyamide with Different Content of Recycled Material in Selective Laser Sintering",
+   "venue": "Polymers 14, 2355",
+   "doi_or_arxiv": "10.3390/polym14122355",
+   "verified": true,
+   "how_verified": "Crossref API (second attempt) + full text via Europe PMC PMC9227374",
+   "used_for": "PA 2200 modulus 1.7 -> 1.1 GPa under weathering; lowest flexural after 28 d at 100 % RH"
+  },
+  {
+   "authors": "Aniskevich A, Bulderberga O, Stankevics L",
+   "year": 2023,
+   "title": "Moisture Sorption and Degradation of Polymer Filaments Used in 3D Printing",
+   "venue": "Polymers 15, 2600",
+   "doi_or_arxiv": "10.3390/polym15122600",
+   "verified": true,
+   "how_verified": "Crossref API returned the record; D value for nylon taken from earlier agent's file, not re-read",
+   "used_for": "comparison with the earlier PA6/66 filament D"
+  },
+  {
+   "authors": "Alwis Weerasinghe S, Klodowski A, Semken R, Orzechowski G, Mikkola A",
+   "year": 2025,
+   "title": "Benchmarking adhesive performance in bonding FDM TPU to PBF PA12 3D-printed parts",
+   "venue": "Scientific Reports",
+   "doi_or_arxiv": "10.1038/s41598-025-32559-w",
+   "verified": true,
+   "how_verified": "Crossref API + abstract read from Europe PMC PMC12824215",
+   "used_for": "adhesive bonding of TPU to PA12 (peel 2.6 N/mm)"
+  }
+ ],
+ "could_not_find": [
+  "A peer-reviewed measured coefficient of hygroscopic expansion for PA11, PA12, sintered PA12 or TPU. Only a vendor statement (0.2 % at 1.4 % uptake, cast PA12) and qualitative reports (Park 2016, Kwon 2017) exist; my strain numbers are estimates.",
+  "A primary-source water diffusivity for PA12 at 23 C. The 3e-13 to 1.4e-12 m2/s range is my own inference from two kinetics datasets (Amstutz, Bahrami) with stated assumptions; Villani's D value is paywalled and its abstract gives only 'one order of magnitude greater than the base material'.",
+  "Full-text numbers of Paolucci 2020 (sintered vs moulded PA12 at different RH): Wiley blocked automated download; only the abstract was read.",
+  "The Pichler 2023 DVS paper itself (ScienceDirect returned 403); the TPU isotherm and D were taken from a follow-up open paper's Table 1 and are second-hand.",
+  "Isotherms with 4 or more RH points for PA11 or PA12 (only EOS 0/50/96 % RH, Arkema 50 % RH and immersion); Arkema's water-versus-RH curves are figures I could not read as numbers.",
+  "Wet versus dry modulus for any TPU, and any SLS-TPU diffusivity or swelling coefficient; Formlabs TPU 90A lists no modulus.",
+  "Direct test separating pore-filling water from polymer-bound water in one sintered part (vapour versus liquid); my separation uses density, Kelvin radius and published porosity, not a measurement.",
+  "The current Formlabs Nylon 11 product-page value (0.4 %) the earlier agent reported: not re-fetched; only the 2021 TDS value 0.07 % was confirmed. The Resinex page the earlier agent cited returned nothing in this run (580-byte stub), so its PA11 1.9 / PA12 1.6 reseller claim was replaced by the Arkema sheets themselves.",
+  "A current (2026) EOS PA 2200 material data sheet: the moisture values come from 2007-2010 copies hosted by Sculpteo and the University of Zurich.",
+  "Ghimouz/Kenne 2024 (J Appl Polym Sci, humidity-aged PA12 tensile data) was downloaded and read for RH effects but only qualitative statements (80 % RH lowers Young's modulus at 70 C) could be extracted cleanly; no number used.",
+  "Headroom: RAM free was 32 % at start, C: 6.5 GB, D: 11 GB; no heavy command was run, no Lean run, total downloads a few MB."
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/calc.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/build_result.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/build_result_part1.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/fetch.sh",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/epmc_search.sh",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/epmc_fulltext.sh",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/crossref_verify.sh",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/bm-polyamide-sls/crossref_search.sh"
+ ]
+}

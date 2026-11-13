@@ -1,0 +1,924 @@
+{
+ "label": "t6-flyingfish-deep",
+ "topic": "Track 6 deep literature: the flying fish glide and its elimination-certificate evaluation framework",
+ "summary": "STATE OF THE ART: FLYING FISH GLIDE, AND WHAT AN ELIMINATION-CERTIFICATE FRAMEWORK CAN AND CANNOT SAY ABOUT IT\n(Tags: [M] measured in a source I read, [D] derived by arithmetic I did and saved in analysis.py, [A] assumed. Where I could only read an abstract or a second-hand quotation I say so.)\n\n1. THE QUESTION. Can a 20-30 cm fish, which has no wings in the usual sense, cover tens of metres through air, and what do the laws of motion allow or forbid? The framework in the application repo answers the second half by writing each law as a Lean theorem and each candidate claim as a certificate that concludes False if the claim and the law cannot both hold.\n\n2. THE SCIENCE FROM THE GROUND UP.\nStep 1 [M]. Flying fishes are the family Exocoetidae. Adults are 150-500 mm long (Davenport 1994). Two-winged forms (Exocoetus) enlarge only the chest (pectoral) fins; four-winged forms (Cypselurus, Hirundichthys) enlarge the belly (pelvic) fins too.\nStep 2 [M]. A glide is a trade of energy: height and speed are spent to pay for drag. For a steady glide with lift equal to weight, distance forward per metre of descent equals the lift-to-drag ratio L/D. [D] This is textbook mechanics; in the repo it is Delphi.glide_range_le.\nStep 3 [M]. The only direct force measurement on flying-fish bodies is Park and Choi 2010: stuffed Cypselurus hiraii models in a 12 m/s wind tunnel, Reynolds number about 2e4. Best model: L/D 4.37 at about 0 degrees, CLmax 0.78 at 35 degrees, CDmin 0.055. Pelvic fins add more than 20 percent lift and make pitch more stable. Flying within 0.33 half-spans of water cuts drag by 14 percent (9 percent over a solid surface).\nStep 4 [M, simulation]. Deng 2019 CFD gives L/D 4.7 and CLmax 1.03 for a differently built model. Its glide-distance numbers depend on an ASSUMED 20 m/s launch speed; see the contested list.\nStep 5 [D]. Stall speed: the wings can hold weight only above v_min = sqrt(2W/(rho S CLmax)). For model L3 (0.06 kg, 0.012688 m2) this is 9.85 m/s. A fish leaving the water at 3.9-5.2 m/s (Makiguchi 2013, aquarium) is at 0.39-0.52 of that, so it cannot be gliding on lift alone; it is on a ballistic hop (apex 0.8-1.4 m, reach 1.5-2.7 m at 45 degrees by my arithmetic).\nStep 6 [D]. Energy-height bound for a level lifting glide: x <= (L/D)(v0^2 - v_min^2)/(2g)/(1-delta). A 50 m glide at L/D 4.37 needs launch airspeed >= 17.9 m/s, or 17.0 with 14 percent ground effect. [A] The bound is a theorem only if lift equals weight; ballistic arcs, wind, updrafts and repeated taxiing are outside it.\nStep 7 [M, second-hand]. Reported field behaviour: leap at about 10 m/s, glide up to 50 m at 15-20 m/s air speed, up to 400 m in 30 s with repeated taxiing, maximum recorded height 8 m. All from older film work I could not read (Hertel 1966, Edgerton and Breder 1941, Davenport 1990).\nStep 8 [M]. Davenport's flight sequence: approach below the surface at under 30 body lengths per second, leap at a shallow angle, accelerate by taxiing with the tail beating up to 50 times a second, then glide. Red (aerobic) axial muscle is no more than a fast-cruising mackerel-type fish carries, so acceleration to take-off speed probably uses anaerobic white muscle (Davenport 1992, stated as probable, not measured).\nStep 9 [D from E3]. Sustained powered level flight at L/D 4.37 needs 1.33 W at v_min for the 0.06 kg reference fish against an aerobic ceiling of 0.0833 W (registry law E3 2.1.0): a factor 16. So flight must be unpowered glide plus burst power. [A] The ceiling is built from zebrafish oxygen data (Palstra 2010: 82.18 umol O2 per g per hour = 2629.6 mg per kg per hour by my unit conversion) taken from 0.43 g fish; this is extrapolated across a 140-fold mass difference.\nStep 10 [M]. Why they fly is unresolved: predator escape (Davenport 1994: dolphinfish and squid) versus energy saving (rejected by Davenport; listed as open by Park and Choi).\nStep 11 [M]. Evolution: extant Exocoetidae have no fossils older than the Eocene (Xu 2013); the Triassic thoracopterids (Ladinian, 235-242 Ma) glided convergently, with a gradual four-stage sequence (Xu 2015). Molecular phylogeny supports a progressive two-wing to four-wing transition and a non-monophyletic Cheilopogon (Lewallen 2010). Genomics (Daane 2021, 35 species) finds convergent changes in fin, balance and muscle genes, and zebrafish alleles of lat4a and kcnh2a that together reproduce flying-fish fin proportions.\n\n3. WHAT IS ESTABLISHED WITH NUMBERS. L/D 4.37 and CLmax 0.78 (tunnel, dead models); ground-effect drag cuts 9-14 percent; pectoral fin length exponent 1.058 [1.017, 1.099] across 49 museum fish (my recomputation); pectoral/SL 0.406-0.823 in flying fishes against at most 0.388 in other beloniforms in one 3-species dataset; wing loading 37-46 N/m2 on four models; fin and geometry limits 24 percent and 76 percent of standard length; 50 tail beats per second.\n\n4. WHAT IS CONTESTED. (a) Real L/D: 4.37 measured, 4.7 CFD, 15.7 in Kawachi 1993 (3.6 times higher; I could not read it). (b) Deng's headline pairs 45.4 m from the 0-degree run with 13.2 m from the 10-degree run (whose best is 41.5 m), uses coefficients from 10 m/s but launches at 20 m/s. (c) Why they fly. (d) Pelvic fins: extra lift (Park and Choi) versus tailplane (Davenport). (e) Origin of flight: extension of ballistic leaps versus lift-supported taxiing first (Davenport 2003) versus progressive two-to-four-wing sequence (Lewallen). (f) Species count 50 versus 80. (g) Davenport 1992 wing-loading exponent 1.236 versus the 1.147 implied by its own mass and area exponents.\n\n5. THE FRAMEWORK, AND WHAT THIS REVIEW CHANGES. The application repo is at law set 1.8.1 and has the four *_rules_out lemmas (vmin, aerobic flight, glide range, climb) that the 1.6.0 upstream copy lacks. The 50 m, 8 m field certificate treats 8 m as the only energy and so eliminates a claim the physics allows once launch kinetic energy is counted (20 m/s launch gives a 67.5 m bound). The stall-floor plus kinetic-energy wrapper is the missing piece. The fin-ratio gap law rests on three flying-fish species. The aerobic ceiling rests on zebrafish. I did not compile any Lean.\n\n6. OPEN PROBLEMS. A modern tracked data set of wild glides (launch speed, height, distance, wind). Live-fish force measurements. Deng's free-flight CFD with the polar tied to the actual speed. Taxiing power measured not simulated. Whether the pelvic fins are lift or stability. Functional test of lat4a and kcnh2a in a flying fish. A flying-fish aerobic ceiling measured on flying fish.\n",
+ "lay_summary": "Flying fish do not fly like insects. They launch themselves out of the sea and glide, rather like a paper plane that can swim. The best force measurements we have come from dead, stuffed fish held in a wind tunnel, and they say a fish can travel about four metres forward for every metre it drops. That is far better than a plain body but nowhere near a sailplane. Reported glides of 50 metres therefore need a very fast start, which the fish gets by skimming the water and beating its tail up to 50 times a second. Nobody has yet filmed and measured a wild glide end to end with modern tools, so the speeds and distances people quote are second-hand. Our contribution is to turn those few measurements into simple limits that a computer can check, and to show where those limits are loose, wrong, or silent.",
+ "findings": [
+  {
+   "claim": "[measured] Wind-tunnel force measurements on stuffed Cypselurus hiraii (a four-winged flying fish) give a best lift-to-drag ratio of 4.37, reached at an angle of attack near 0 degrees, for the best model (L3).",
+   "source": "https://doi.org/10.1242/jeb.046052",
+   "confidence": "high",
+   "value": "L/Dmax = 4.37 at 0 deg",
+   "evidence_quote": "10.7 4.37 (0) 0.78 (35)"
+  },
+  {
+   "claim": "[measured] Same table: maximum lift coefficient 0.78 at 35 degrees; minimum drag coefficient 0.055 (the sign of the angle is lost in text extraction; the project reads -10 deg). Coefficients use the sum of pectoral, pelvic and body planform area as reference area.",
+   "source": "https://doi.org/10.1242/jeb.046052",
+   "confidence": "high",
+   "value": "CLmax = 0.78; CDmin = 0.055",
+   "evidence_quote": "10.7 4.37 (0) 0.78 (35)"
+  },
+  {
+   "claim": "[measured] Lift is largest near 30-35 degrees, which matches the angle at which flying fish are seen to leave the sea; the lift curve stays high after stall (thin-airfoil stall).",
+   "source": "https://doi.org/10.1242/jeb.046052",
+   "confidence": "high",
+   "value": "peak CL at 30-35 deg",
+   "evidence_quote": "the lift coefficient is largest at attack angles around"
+  },
+  {
+   "claim": "[measured] Enlarged pelvic fins raise lift (by more than 20 percent at 0 degrees compared with the pectoral-only model M) and improve pitch stability; the paper explains this by a jet-like accelerated flow between pectoral and pelvic fins (smoke-wire flow visualisation).",
+   "source": "https://doi.org/10.1242/jeb.046052",
+   "confidence": "high",
+   "value": ">20% lift gain at 0 deg",
+   "evidence_quote": "The role of the pelvic fins was found to increase the lift force and lift-to-drag ratio"
+  },
+  {
+   "claim": "[measured] Tunnel speed 12 m/s, chord Reynolds number about 2e4 (Table 2 gives 2.0e4 for the flying-fish row), measured on models with SL about 200 mm; 150-500 mm is the quoted adult size range.",
+   "source": "https://doi.org/10.1242/jeb.046052",
+   "confidence": "high",
+   "value": "u = 12 m/s; Re ~ 2e4; SL ~ 200 mm",
+   "evidence_quote": "the standard lengths (SL) of the present models are about 200mm"
+  },
+  {
+   "claim": "[measured] Caveat on the polar: the models were dead fish, stuffed within a day, with fins spread and fixed, a thin nylon cloth glued on the upper fin surface, and the dihedral angle of three models deliberately set to 22, 12 and 7 degrees; model mass and wind-tunnel lift agreed well for two of three models (about 30 percent off for model L2), so the shapes did not shrink much.",
+   "source": "https://doi.org/10.1242/jeb.046052",
+   "confidence": "high",
+   "value": "dihedral 22/12/7 deg",
+   "evidence_quote": "Five fish of similar sizes were selected and stuffed in the appropriate gliding positions"
+  },
+  {
+   "claim": "[derived] Induced drag from strong wing-tip vortices is judged one of the dominant drag components at this Reynolds number (an inference from flow visualisation and from aircraft practice, not a measured drag split).",
+   "source": "https://doi.org/10.1242/jeb.046052",
+   "confidence": "medium",
+   "value": "",
+   "evidence_quote": "induced drag is one of the dominant drag"
+  },
+  {
+   "claim": "[measured] Ground effect: flying close to water cut drag by up to 14 percent (at height/half-span 0.33) and by 9 percent over a solid surface (at 0.21) for the full model; the body alone gave 7 and 4 percent. The authors note the tunnel water surface did not move with the airflow, so the true gain should be larger.",
+   "source": "https://doi.org/10.1242/jeb.046052",
+   "confidence": "high",
+   "value": "14% (water, r=0.33); 9% (solid, r=0.21)",
+   "evidence_quote": "maximum reduction of the drag by 14% was obtained at"
+  },
+  {
+   "claim": "[contested] The paper itself says the reason flying fish fly is still unclear: escape from underwater predators or saving transport cost are the two suggestions it lists.",
+   "source": "https://doi.org/10.1242/jeb.046052",
+   "confidence": "high",
+   "value": "",
+   "evidence_quote": "the exact reason is still not clear"
+  },
+  {
+   "claim": "[derived] CFD on a flying-fish model built to mimic the Park and Choi pectoral fins gives maximum lift coefficient 1.03 and maximum lift-to-drag 4.7 (against 0.78 and 4.37 measured). My arithmetic: 4.7/4.37 = 1.075 and 1.03/0.78 = 1.32, so CFD is 7 percent higher on L/D and 32 percent higher on CLmax. The Deng fins are flat 1 mm plates and model A has no pelvic fins, so it is not the same body as the stuffed fish.",
+   "source": "https://doi.org/10.1088/1748-3190/ab23e6",
+   "confidence": "high",
+   "value": "CLmax 1.03; L/D 4.7",
+   "evidence_quote": "The maximum lift force coefficient of 1.03 is reached at the angle of attack"
+  },
+  {
+   "claim": "[assumed] The 3-degree-of-freedom trajectory model fixes the take-off speed at 20 m/s for all runs. This is an input assumption, not a result.",
+   "source": "https://doi.org/10.1088/1748-3190/ab23e6",
+   "confidence": "high",
+   "value": "v0 = 20 m/s (assumed)",
+   "evidence_quote": "The take-off speed is fixed at 20 m"
+  },
+  {
+   "claim": "[measured+derived] The two headline numbers in the Deng abstract come from different runs: 45.4 m (endurance 3.5 s) is the best distance with initial angle of attack 0 degrees; the 13.2 m apex is reached in the run with initial angle of attack 10 degrees, whose best distance is 41.5 m. The abstract states them together as \"a distance up to 45.4 m, and reach a height of 13.2 m\".",
+   "source": "https://doi.org/10.1088/1748-3190/ab23e6",
+   "confidence": "high",
+   "value": "45.4 m (alpha0=0); 41.5 m and 13.2 m (alpha0=10)",
+   "evidence_quote": "distance and its endurance are 41.5 m and 3.47 s"
+  },
+  {
+   "claim": "[contested] Deng computes the aerodynamic coefficients at 10 m/s (Re = 2.6e4) but launches the trajectory at 20 m/s; the authors call their model a preliminary approximation and say a free-flight model would be more suitable.",
+   "source": "https://doi.org/10.1088/1748-3190/ab23e6",
+   "confidence": "high",
+   "value": "coeffs at 10 m/s; launch 20 m/s",
+   "evidence_quote": "Clearly, a fixed velocity of 10 m s"
+  },
+  {
+   "claim": "[derived] With launch at 20 m/s the energy height v0^2/2g is 20.4 m; the loose bound 4.7 x 20.4 = 95.8 m is about twice the 45.4 m simulated (ratio 0.47), and the 13.2 m apex is 0.65 of the energy height. So Deng's trajectories do not violate an energy-height range bound; they sit inside it by a factor of about two.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py",
+   "confidence": "medium",
+   "value": "bound 95.8 m; ratios 0.47 and 0.65",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "[reported-second-hand] Deng cites Hertel for a four-winged fish of 0.38 kg that could reach 48 m given 20 m/s free flight and 10 m/s head wind, and a maximum recorded flight height of 8 m; and Kawachi, Inada and Azuma for a model of a 0.226 kg fish with maximum lift-to-drag around 15.7 giving a maximum distance of 80 m. I could read neither original.",
+   "source": "https://doi.org/10.1088/1748-3190/ab23e6",
+   "confidence": "medium",
+   "value": "48 m; 8 m; 80 m at L/D 15.7",
+   "evidence_quote": "They reported a maximum distance of 80 m"
+  },
+  {
+   "claim": "[contested] Kawachi's assumed maximum L/D of 15.7 is 3.6 times the measured 4.37 and 3.3 times Deng's CFD 4.7 (my arithmetic). Whether the real fish's lift-to-drag is nearer 4.4 or far higher is therefore a live disagreement between a 1993 analytical model and the 2010 and 2019 data; the wind-tunnel models were dead and fixed, so neither side is a live-fish measurement.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py",
+   "confidence": "medium",
+   "value": "15.7/4.37 = 3.59; 15.7/4.7 = 3.34",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "[measured] Makiguchi and colleagues put miniature 3-axis accelerometers on Cypselurus heterurus doederleini in a controlled aquarium and estimated leap speeds of 3.9 to 5.2 m/s, which they say is 38.7 to 51.5 percent of earlier reported maximum swimming speeds.",
+   "source": "https://doi.org/10.3354/ab00494",
+   "confidence": "high",
+   "value": "3.9-5.2 m/s; 38.7-51.5%",
+   "evidence_quote": "leap from the water surface at speeds of 3.9 to 5.2 m s"
+  },
+  {
+   "claim": "[derived] The leap speed is not measured directly: it is predicted from stroke-cycle frequency by a swimming-speed relationship (3.87 to 5.15 m/s), and the authors speculate that the fish were not performing maximally because the aquarium was small.",
+   "source": "https://doi.org/10.3354/ab00494",
+   "confidence": "high",
+   "value": "3.87-5.15 m/s (predicted)",
+   "evidence_quote": "maximum swimming speed would have been predicted to reach 3.87 to 5.15 m s"
+  },
+  {
+   "claim": "[reported-second-hand] Typical field numbers are quoted second-hand in Makiguchi: leap speed about 10 m/s, glides up to 50 m, air speed 15-20 m/s, from older stroboscopic film work; the primary film papers (Edgerton and Breder 1941; Davenport 1990) were not read by me.",
+   "source": "https://doi.org/10.3354/ab00494",
+   "confidence": "medium",
+   "value": "10 m/s; 50 m; 15-20 m/s",
+   "evidence_quote": "flying fish leap from the water surface at a speed of about 10 m s"
+  },
+  {
+   "claim": "[reported-second-hand] Park and Choi quote glides totalling as much as 400 m in 30 s through repeated taxiing, with maximum flight speed 10-20 m/s (Hertel; Fish; Davenport).",
+   "source": "https://doi.org/10.1242/jeb.046052",
+   "confidence": "medium",
+   "value": "400 m in 30 s; 10-20 m/s",
+   "evidence_quote": "The flying fish glides over a total distance of as much as 400m in 30s"
+  },
+  {
+   "claim": "[reported-second-hand] Davenport's review describes the flight sequence: swim to the surface at very high speed (under 30 body lengths per second) with fins furled, leap at a shallow angle, accelerate by taxiing with the tail beating at up to 50 beats per second, then free flight that may be prolonged by more taxiing.",
+   "source": "https://doi.org/10.1007/bf00044128",
+   "confidence": "high",
+   "value": "up to 50 tail beats/s; <30 BL/s",
+   "evidence_quote": "accelerate to take-off speed by taxiing with the lateral fins expanded and the tail beating in the water at up to 50 beats"
+  },
+  {
+   "claim": "[contested] Davenport judges flying fish \"probably fly mainly to escape from predators, particularly dolphin-fishes (Coryphaena hippurus) and ommastrephid squid\" and explicitly rejects the energy-conservation alternative; Park and Choi list both as unresolved.",
+   "source": "https://doi.org/10.1007/bf00044128",
+   "confidence": "high",
+   "value": "",
+   "evidence_quote": "Flying fish probably fly mainly to escape from predators, particularly dolphin-fishes"
+  },
+  {
+   "claim": "[reported-second-hand] Davenport: for a 0.3 m standard-length fish, significant drag reduction by ground effect occurs below about 0.5 m height; fish start to show flight at about 50 mm length; and flight is unlikely below 20-23 C water because of muscle limits.",
+   "source": "https://doi.org/10.1007/bf00044128",
+   "confidence": "high",
+   "value": "0.5 m; 50 mm; 20-23 C",
+   "evidence_quote": "For a flying fish of 0.3 m standard length, significant reduction of drag by ground effect will take place at heights below about 0.5 m"
+  },
+  {
+   "claim": "[contested] Davenport on pelvic fins in four-winged species: they act as stabilising tailplane, with area 20-35 percent of total lateral fin area, not as extra lifting area. Park and Choi (wind tunnel) found the pelvic fins do add lift; both can hold at once (the Saro-Cortes robot paper finds a lift-stability trade-off).",
+   "source": "https://doi.org/10.1007/bf00044128",
+   "confidence": "high",
+   "value": "20-35% of lateral fin area",
+   "evidence_quote": "The expanded, flat pelvic fins of four-wingers have evolved, not to increase wing area, but to function as"
+  },
+  {
+   "claim": "[reported-second-hand] Davenport 1992 (Exocoetus obtusirostris): body mass exponent 2.981 and lateral fin area exponent 1.834 against standard length; wing loading rises with exponent 1.236; pectoral fin length cannot exceed 78-79 percent of standard length.",
+   "source": "https://doi.org/10.1017/s0025315400048761",
+   "confidence": "high",
+   "value": "b_mass 2.981; b_area 1.834; b_loading 1.236; fin <= 78-79% SL",
+   "evidence_quote": "wing-loading rises in positive allometric fashion with standard length"
+  },
+  {
+   "claim": "[contested] Internal check: mass exponent minus area exponent is 2.981 - 1.834 = 1.147, not the reported 1.236. The abstract does not say how the 1.236 was fitted (probably a direct regression on specimen loadings); I could not read the tables to resolve the 0.089 gap.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py",
+   "confidence": "medium",
+   "value": "1.147 vs 1.236",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "[reported-second-hand] Davenport 2003: pectoral leading edge fixed at 24 percent of standard length from the snout, wing length cannot exceed 76 percent of SL, heavier fish need faster flight and better L/D, so larger fish have their centre of mass further behind the centre of wing pressure; this limits the size of two-winged species and the pelvic fins of four-winged species act as stabilising tailplane.",
+   "source": "https://doi.org/10.1046/j.1095-8649.2003.00041.x",
+   "confidence": "high",
+   "value": "24% SL; 76% SL",
+   "evidence_quote": "the leading edge of the pectoral fin"
+  },
+  {
+   "claim": "[contested] Davenport 2003 also argues the traditional model of flight evolution (by extension of ballistic leaps) is flawed and proposes lift-supported surface taxiing in halfbeaks with enlarged pectoral fins as an essential preliminary.",
+   "source": "https://doi.org/10.1046/j.1095-8649.2003.00041.x",
+   "confidence": "high",
+   "value": "",
+   "evidence_quote": "the accepted model of evolution of flight in flying fishes (by extension of ballistic leaps) is flawed"
+  },
+  {
+   "claim": "[reported-second-hand] Davenport 1992: the flightless flying halfbeak Oxyporhamphus micropterus cannot fly mainly because its centre of gravity is so far behind the pectoral fins that stalling on take-off would be inevitable; and acceleration to take-off speed \"probably\" needs anaerobic white muscle.",
+   "source": "https://doi.org/10.1017/s0025315400048761",
+   "confidence": "high",
+   "value": "",
+   "evidence_quote": "acceleration to take-off speed in flying fish requires use of anaerobic white muscles"
+  },
+  {
+   "claim": "[reported-second-hand] Fish 1990 (six genera): fin area and span rise with body mass, the pectoral share of wing area and the hypocaudal-lobe share of caudal area stay constant, and the flight is a high-speed glide with a relatively flat trajectory. The abstract gives no numbers.",
+   "source": "https://doi.org/10.1111/j.1469-7998.1990.tb04009.x",
+   "confidence": "medium",
+   "value": "",
+   "evidence_quote": "The flight performance of flying fish is a high"
+  },
+  {
+   "claim": "[derived] CFD preprint (not peer reviewed in the record I have): a 0.25 m, 0.191 kg fish needs 350 W to swim underwater at 10 m/s but only 36 W to taxi at 10 m/s; with 350 W of flapping power it reaches 16.5 m/s. The ratio is 350/36 = 9.7 (my arithmetic).",
+   "source": "https://doi.org/10.1101/765560",
+   "confidence": "medium",
+   "value": "36 W vs 350 W; 16.5 m/s at 350 W",
+   "evidence_quote": "the minimum power required for a stead-state locomotion at 10 m s"
+  },
+  {
+   "claim": "[derived] A 2026 CFD study of a four-winged fish finds that during free-surface taxiing the caudal fin yields thrust (mean coefficient about 1.22) where deep-water swimming gives -3.79, that the caudal fin supplies over 60 percent of lift while taxiing, and that the pectoral fins supply 85 percent of lift in aerial glide; whole-body lift coefficient is about 2.15 taxiing against 0.57 gliding.",
+   "source": "https://doi.org/10.1063/5.0347662",
+   "confidence": "medium",
+   "value": "CT 1.22 vs -3.79; CL 2.15 vs 0.57",
+   "evidence_quote": "the caudal fin yields substantial thrust"
+  },
+  {
+   "claim": "[derived] Taxiing power per kilogram from the CFD preprint is 36/0.191 = 188 W/kg; the registry aerobic ceiling E3 v2 is 0.0833/0.06 = 1.39 W/kg; the ratio is 136 (my arithmetic). If the CFD is right, taxiing cannot be aerobic, which agrees with Davenport's anaerobic white-muscle suggestion and with the registry 1.7.0 rescoping of E3 (burst effort on white-muscle stores is out of scope).",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py",
+   "confidence": "low",
+   "value": "188 vs 1.39 W/kg",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "[assumed] Mass-scaling caveat on the ratio above: the CFD fish (0.191 kg) and the registry reference fish (0.06 kg) differ by a factor of 3.2; I compared per kilogram, which assumes power scales linearly with mass.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py",
+   "confidence": "low",
+   "value": "",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "[measured] Daane 2021 sequenced targeted regions (over 300,000 loci) pooled from 35 beloniform species and measured fin length against standard length across the clade; the pectoral fin allometry was identical across two- and four-winged flying fishes, and the two gliding halfbeak genera are intermediate.",
+   "source": "https://doi.org/10.1016/j.cub.2021.08.054",
+   "confidence": "high",
+   "value": "35 species; >300,000 loci",
+   "evidence_quote": "The allometric relationship between body size and pectoral fin length was identical across the two- and four-wing flying fishes"
+  },
+  {
+   "claim": "[measured] Convergent evolution: 44 amino-acid substitutions present only within all three gliding lineages, against 14-28 in control comparisons; accelerated sequence evolution in gliding branches for fin development, semicircular canal, vestibular, muscle-hypertrophy and fear-circuit gene groups.",
+   "source": "https://doi.org/10.1016/j.cub.2021.08.054",
+   "confidence": "high",
+   "value": "44 vs 14-28",
+   "evidence_quote": "Compared with 14"
+  },
+  {
+   "claim": "[measured] Zebrafish genetics: the dominant mutation nr21 is a T200K change in the amino-acid transporter lat4a (small fins; gain of function), and the classic longfin mutant is an inversion that raises kcnh2a expression in the fin; combining alleles in zebrafish closely phenocopies flying-fish fin proportions.",
+   "source": "https://doi.org/10.1016/j.cub.2021.08.054",
+   "confidence": "high",
+   "value": "lat4a T200K; kcnh2a up-regulation",
+   "evidence_quote": "interaction between these genetic loci in zebrafish closely phenocopies the observed fin proportions of flying fishes"
+  },
+  {
+   "claim": "[contested] Caveat: lat4a and kcnh2a are candidate regulators supported by convergence signals plus zebrafish phenocopy; no flying-fish gene was edited and the paper reports no flying-fish functional test. This is an inference, and the grounded part is the zebrafish result.",
+   "source": "https://doi.org/10.1016/j.cub.2021.08.054",
+   "confidence": "medium",
+   "value": "",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "[measured] Independent confirmation that kcnh2a controls fin size: in the longfin zebrafish, ectopic kcnh2a expression acts autonomously in the fin intra-ray mesenchyme and tunes the outgrowth period rather than positional information.",
+   "source": "https://doi.org/10.1242/dev.199384",
+   "confidence": "high",
+   "value": "",
+   "evidence_quote": "ion signaling within the growth-determining mesenchyme lineage controls fin size by tuning outgrowth periods"
+  },
+  {
+   "claim": "[measured] Phylogeny: a cytochrome b and RAG2 tree supports the progressive transition from two-wing to four-wing gliding, and shows the largest genus Cheilopogon is not monophyletic.",
+   "source": "https://doi.org/10.1111/j.1095-8312.2010.01550.x",
+   "confidence": "high",
+   "value": "cytb 1137 bp; RAG2 882 bp",
+   "evidence_quote": "The results support the progressive transition from two"
+  },
+  {
+   "claim": "[contested] Species count disagrees across sources: Xu 2013 says \"some 50 species of extant flying fishes\" and a 2026 cytogenetics paper says four subfamilies, seven genera and 80 species (citing Fricke et al.). Counting depends on the taxonomy used; I did not resolve it.",
+   "source": "https://doi.org/10.1098/rspb.2012.2261 | https://doi.org/10.3897/compcytogen.20.190559",
+   "confidence": "medium",
+   "value": "~50 vs 80",
+   "evidence_quote": "Some 50 species of extant flying fishes are classified in the Exocoetidae"
+  },
+  {
+   "claim": "[measured] Fossils: the Triassic thoracopterids convergently evolved over-water gliding; the earliest evidence reported in 2013 was Middle Triassic of China, and Wushaichthys and Peripeltopleurus (Ladinian, 235-242 Ma) are described as the oldest and most primitive thoracopterids, with a gradual four-stage sequence cranial specialisation, asymmetrical caudal fin, enlarged paired fins, scale reduction.",
+   "source": "https://doi.org/10.1098/rsbl.2014.0960",
+   "confidence": "high",
+   "value": "Ladinian 235-242 Ma",
+   "evidence_quote": "the evolution of overwater gliding of thoracopterids was gradual in nature"
+  },
+  {
+   "claim": "[measured] Extant Exocoetidae have a fossil record no older than the Eocene (Xu 2013), so Triassic and modern flying fish are convergent, not ancestral.",
+   "source": "https://doi.org/10.1098/rspb.2012.2261",
+   "confidence": "high",
+   "value": "Eocene",
+   "evidence_quote": "which have a fossil record no older than the Eocene"
+  },
+  {
+   "claim": "[measured] A 2026 cytogenetic study of three Atlantic species reports all share 2n = 48 chromosomes, with structural karyotype divergence between populations, genera and congeners.",
+   "source": "https://doi.org/10.3897/compcytogen.20.190559",
+   "confidence": "medium",
+   "value": "2n = 48",
+   "evidence_quote": "All the flying fish species and populations analyzed share 2n = 48 chromosomes"
+  },
+  {
+   "claim": "[measured] Robot flying fish studies: Saro-Cortes 2022 ran a modular robot model in a wind tunnel at Reynolds number 30,000 and found a trade-off between lift and pitch stability for the pelvic fins; Chen 2023 built a robot that exits water at 1.55 m/s (5.9 body lengths/s) in 0.233 s and a reinforcement-learning fin-morphing controller that lengthened simulated glide by 7.2 percent.",
+   "source": "https://doi.org/10.1093/icb/icac101 | https://doi.org/10.1088/1748-3190/acce86",
+   "confidence": "high",
+   "value": "Re 30,000; 1.55 m/s; +7.2%",
+   "evidence_quote": "there is a clear a trade-off between stability and lift generation"
+  },
+  {
+   "claim": "[derived] Stall floor: with the Park and Choi L3 numbers (mass 0.06 kg, reference area 0.012688 m2 from the project's reading of Table 1, CLmax 0.78, air density 1.225) v_min = sqrt(2W/(rho S CLmax)) = 9.85 m/s. A lift-equals-weight glide cannot go slower; with Deng's CLmax 1.03 it is 8.58 m/s.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py",
+   "confidence": "medium",
+   "value": "9.85 m/s (8.58 with CLmax 1.03)",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "[derived] Energy-height range bound, level lifting glide: x <= (L/D) (v0^2 - v_min^2)/(2g) / (1 - delta). For 50 m with L/D 4.37 the launch airspeed must be at least 17.9 m/s (no ground effect) or 17.0 m/s (14 percent drag cut). At 15 m/s the bound is 28.5 m, at 20 m/s it is 67.5 m (no ground effect).",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py",
+   "confidence": "medium",
+   "value": "17.9 / 17.0 m/s; 28.5 m; 67.5 m",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "[assumed] Scope of that bound: it is a theorem only while lift equals weight. A lofted ballistic arc has unloaded wings, and at 10 m/s the parasitic drag (about 0.043 N with CDmin 0.055) is 14 times smaller than the weight (0.589 N), a ratio above 4.37; so field flights with a ballistic phase can legitimately beat it, and the bound is a modelling claim for them.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py",
+   "confidence": "medium",
+   "value": "weight/drag = 13.8 at 10 m/s",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "[derived] The earlier (prior-agent) pure-glide certificate eliminate 50 m from 8 m at L/D 4.37 treats the 8 m height as the only energy; it is a compiled certificate (elim_pure_glide_field_distance_C15 in lean/Delphi/Certificates/Eliminations.lean, read not built by me). Once launch kinetic energy is counted (20 m/s launch gives 67.5 m of bound) the 50 m field glide is not eliminated, so that certificate removes a candidate that the physics does not forbid.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/Delphi/Certificates/Eliminations.lean",
+   "confidence": "medium",
+   "value": "8 x 4.37 = 35.0 m < 50 m",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "[derived] Powered aerobic level flight at L/D 4.37 needs W v / (L/D) = 1.33 W at 9.85 m/s (2.02 W at 15 m/s) for the 0.06 kg reference fish, 16 times (24 times) the registry E3 v2 aerobic ceiling of 0.0833 W; so a sustained powered flight is ruled out and flight must be unpowered or burst-powered, as the project's earlier 16x figure also says.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py",
+   "confidence": "medium",
+   "value": "1.33 W; 16x; 24x at 15 m/s",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "[derived] Provenance check on the E3 v2 input: Palstra 2010 reports maximal oxygen consumption at Ucrit of 82.18 +/- 6.50 micromol O2 per g per hour for zebrafish; times 31.998 g/mol this is 2629.6 mg O2 per kg per hour, matching the 2630 quoted in the registry changelog. The fish measured were about 3 cm and 0.43 g, so using them to bound a 60 g flying fish is an extrapolation across body size and clade.",
+   "source": "https://doi.org/10.1371/journal.pone.0014483",
+   "confidence": "high",
+   "value": "82.18 umol/g/h = 2629.6 mg/kg/h",
+   "evidence_quote": "a maximal oxygen consumption at Ucrit of 82.18"
+  },
+  {
+   "claim": "[measured] Registry state read from the application repo changelog: law set 1.7.0 rescoped E3 and fick-principle so they no longer fire on unpowered glide, 1.8.0 narrowed five scopes for a third wild-type false positive and moved C14 to aerobic-power-bound, and 1.8.1 retired a loop-test law; current set is 1.8.1.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/CHANGELOG.md",
+   "confidence": "high",
+   "value": "law set 1.8.1",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "[measured] The application repo Constraints.lean defines vmin_rules_out, aerobic_flight_rules_out, glide_range_rules_out and climb_rules_out (grep). The earlier law-mapper reported them missing because it read the 1.6.0 upstream copy; they are present at 1.8.1. I did not compile.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/Delphi/Constraints.lean",
+   "confidence": "medium",
+   "value": "lines 243, 316, 324, 331",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "[derived] Fin-ratio gap check, from the project's cached CSV of Daane Data S1A: pectoral/SL for 49 flying fish ranges 0.406-0.823 (median 0.687); 19 flying halfbeaks 0.175-0.388; 22 halfbeaks 0.115-0.177; 19 needlefish 0.071-0.106. The \">= 0.406 vs <= 0.389\" gap holds in this file, but the flying-fish group has only three species (Cheilopogon furcatus, Exocoetus volitans, Hirundichthys rondeleti) and the CSV carries a spreadsheet float artifact (a pelvic ratio of 2.4e-16), so the gap is a three-species museum observation, not a clade law.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py",
+   "confidence": "medium",
+   "value": "n=49/19/22/19; gap 0.406 vs 0.388",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "[derived] Pectoral length versus standard length, log-log fit over the 49 flying-fish rows: exponent 1.058, 95 percent interval 1.017-1.099, r2 0.983 (my recomputation, matches the registry). An exponent above 1 means pectoral fins grow slightly faster than the body, i.e. positive allometry.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py",
+   "confidence": "medium",
+   "value": "b = 1.058 [1.017, 1.099]; r2 = 0.983",
+   "evidence_quote": ""
+  },
+  {
+   "claim": "[contested] The 2023 Biology Open review of gliding locomotion (covering 2022 work) concludes gliding is a sophisticated behaviour resulting from interdependent morphology, sensing, environment and selective pressure; it says new techniques should make it possible to study flying fish gliding in open water, which it calls understudied (the paucity of studies).",
+   "source": "https://doi.org/10.1242/bio.059973",
+   "confidence": "high",
+   "value": "",
+   "evidence_quote": "addressing the paucity of studies in each system"
+  }
+ ],
+ "key_claims": [
+  {
+   "claim": "Measured: stuffed Cypselurus hiraii models in a 12 m/s wind tunnel (Re about 2e4) reach a lift-to-drag ratio of at most 4.37 and a lift coefficient of at most 0.78; this polar is the only direct force measurement on flying-fish bodies and underlies every range bound below.",
+   "source": "https://doi.org/10.1242/jeb.046052",
+   "evidence_quote": "10.7 4.37 (0) 0.78 (35)"
+  },
+  {
+   "claim": "Assumed, not found: the Deng 2019 CFD headline (45.4 m glide, 13.2 m apex) rests on a take-off speed fixed at 20 m/s, uses coefficients computed at 10 m/s, and pairs a distance from the 0-degree run with an apex from the 10-degree run (whose best distance is 41.5 m).",
+   "source": "https://doi.org/10.1088/1748-3190/ab23e6",
+   "evidence_quote": "The take-off speed is fixed at 20 m"
+  },
+  {
+   "claim": "Measured then derived: in an aquarium, Cypselurus heterurus doederleini leaped at an estimated 3.9-5.2 m/s, well below the 9.85 m/s stall speed I derive for the L3 body; the quoted field values (leap 10 m/s, glide 50 m, air speed 15-20 m/s) are second-hand from older film work.",
+   "source": "https://doi.org/10.3354/ab00494",
+   "evidence_quote": "leap from the water surface at speeds of 3.9 to 5.2 m s"
+  },
+  {
+   "claim": "Derived (lift equals weight assumed): a single level lifting glide of 50 m at L/D 4.37 needs launch airspeed of at least 17.9 m/s (17.0 with a 14 percent ground-effect drag cut) once the stall floor is respected; the bound is a theorem for lift = weight only, so lofted ballistic phases and repeated taxiing fall outside it.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py",
+   "evidence_quote": "10.7 4.37 (0) 0.78 (35)"
+  }
+ ],
+ "table": [
+  {
+   "name": "Park and Choi 2010, model L3 aerodynamic polar",
+   "fields": "L/Dmax=4.37 (at ~0 deg); CLmax=0.78 (at 35 deg); CDmin=0.055; AR=10.7; Re=2.0e4; tunnel speed=12 m/s; SL~203 mm; mass~0.06 kg",
+   "source": "https://doi.org/10.1242/jeb.046052"
+  },
+  {
+   "name": "Park and Choi 2010, ground effect (model L3)",
+   "fields": "drag cut=14% over water at h/half-span 0.33; drag cut=9% over solid at 0.21; body-only cut=7% (water), 4% (solid)",
+   "source": "https://doi.org/10.1242/jeb.046052"
+  },
+  {
+   "name": "Park and Choi 2010, pelvic fins",
+   "fields": "lift gain at 0 deg vs pectoral-only model M=>20%; drag change=about -10% for model M",
+   "source": "https://doi.org/10.1242/jeb.046052"
+  },
+  {
+   "name": "Deng 2019 CFD polar",
+   "fields": "CLmax=1.03; L/Dmax=4.7; coefficient speed=10 m/s; Re=2.6e4",
+   "source": "https://doi.org/10.1088/1748-3190/ab23e6"
+  },
+  {
+   "name": "Deng 2019 3-DOF trajectories (launch fixed 20 m/s)",
+   "fields": "best distance alpha0=0:45.4 m (3.5 s); best distance alpha0=10:41.5 m (3.47 s); max height alpha0=0:12.5 m; max height alpha0=10:13.2 m",
+   "source": "https://doi.org/10.1088/1748-3190/ab23e6"
+  },
+  {
+   "name": "Makiguchi 2013 aquarium leaps",
+   "fields": "estimated leap speed=3.9-5.2 m/s; predicted from stroke frequency=3.87-5.15 m/s; share of earlier max swim speed=38.7-51.5%",
+   "source": "https://doi.org/10.3354/ab00494"
+  },
+  {
+   "name": "Field values quoted second-hand (Makiguchi, Park and Choi, Deng)",
+   "fields": "leap speed=~10 m/s; glide=up to 50 m; air speed=15-20 m/s; total with taxiing=up to 400 m in 30 s; max recorded height=8 m; Hertel 48 m at 20 m/s with 10 m/s head wind",
+   "source": "https://doi.org/10.3354/ab00494"
+  },
+  {
+   "name": "Kawachi, Inada and Azuma 1993 (via Deng)",
+   "fields": "assumed L/Dmax=15.7; fish mass=0.226 kg; wing area=0.0225 m2; max distance=80 m",
+   "source": "https://doi.org/10.1088/1748-3190/ab23e6"
+  },
+  {
+   "name": "Davenport 1992, Exocoetus obtusirostris exponents",
+   "fields": "mass exponent=2.981; lateral fin area exponent=1.834; wing-loading exponent=1.236 (implied 1.147); fin length limit=78-79% SL",
+   "source": "https://doi.org/10.1017/s0025315400048761"
+  },
+  {
+   "name": "Davenport 2003 geometric limits",
+   "fields": "leading edge=24% SL from snout; max wing length=76% SL",
+   "source": "https://doi.org/10.1046/j.1095-8649.2003.00041.x"
+  },
+  {
+   "name": "Davenport 1994 review values",
+   "fields": "adult length=150-500 mm; tail beat<=50 /s; approach<30 BL/s; pelvic area=20-35% of lateral fin area; ground effect below 0.5 m for 0.3 m SL; min water temp for flight=20-23 C; first flight at ~50 mm",
+   "source": "https://doi.org/10.1007/bf00044128"
+  },
+  {
+   "name": "Daane 2021 pectoral/SL, flying fish (n=49, 3 species)",
+   "fields": "min=0.406; median=0.687; max=0.823; log-log slope=1.058 [1.017,1.099]; r2=0.983",
+   "source": "https://doi.org/10.1016/j.cub.2021.08.054 | recomputed by D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py"
+  },
+  {
+   "name": "Daane 2021 pectoral/SL, flying halfbeak (n=19)",
+   "fields": "min=0.175; median=0.274; max=0.388",
+   "source": "https://doi.org/10.1016/j.cub.2021.08.054 | recomputed by D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py"
+  },
+  {
+   "name": "Daane 2021 pectoral/SL, halfbeak (n=22)",
+   "fields": "min=0.115; median=0.140; max=0.177",
+   "source": "https://doi.org/10.1016/j.cub.2021.08.054 | recomputed by D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py"
+  },
+  {
+   "name": "Daane 2021 pectoral/SL, needlefish (n=19)",
+   "fields": "min=0.071; median=0.088; max=0.106",
+   "source": "https://doi.org/10.1016/j.cub.2021.08.054 | recomputed by D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py"
+  },
+  {
+   "name": "Daane 2021 genomics",
+   "fields": "species=35; loci>300,000; gliding-only convergent substitutions=44 vs controls 14-28; genes lat4a (T200K), kcnh2a",
+   "source": "https://doi.org/10.1016/j.cub.2021.08.054"
+  },
+  {
+   "name": "Taxi CFD preprint (Deng, Wang, Zhang, Mao)",
+   "fields": "fish=0.25 m, 0.191 kg; swim power at 10 m/s=350 W; taxi power at 10 m/s=36 W; speed at 350 W taxiing=16.5 m/s",
+   "source": "https://doi.org/10.1101/765560"
+  },
+  {
+   "name": "Chen and Hu 2026 taxiing CFD",
+   "fields": "tail thrust coeff taxi=1.22; deep swim=-3.79; lift coeff taxi=2.15; glide=0.57; caudal lift share in taxi>60%; pectoral lift share in glide=85%",
+   "source": "https://doi.org/10.1063/5.0347662"
+  },
+  {
+   "name": "Robot models",
+   "fields": "Saro-Cortes Re=30,000; Chen 2023 exit speed=1.55 m/s (5.9 BL/s); crossing time=0.233 s; morphing gain in glide=+7.2%",
+   "source": "https://doi.org/10.1093/icb/icac101 | https://doi.org/10.1088/1748-3190/acce86"
+  },
+  {
+   "name": "Fossil thoracopterids",
+   "fields": "Wushaichthys/Peripeltopleurus age=Ladinian 235-242 Ma; extant Exocoetidae fossils no older than Eocene; extant species=~50 (Xu 2013) or 80 (2026 cytogenetics)",
+   "source": "https://doi.org/10.1098/rsbl.2014.0960 | https://doi.org/10.1098/rspb.2012.2261 | https://doi.org/10.3897/compcytogen.20.190559"
+  },
+  {
+   "name": "My derivation, L3 stall speed",
+   "fields": "W=0.5886 N; S=0.012688 m2; wing loading=46.4 N/m2; vmin=9.85 m/s (8.58 with CLmax 1.03)",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py"
+  },
+  {
+   "name": "My derivation, energy-height range bound (L/D 4.37, no stall floor)",
+   "fields": "v=10:22.3 m; v=15:50.1 m; v=20:89.1 m; speed for 50 m=14.98 m/s; speed to reach 13.2 m apex=16.1 m/s",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py"
+  },
+  {
+   "name": "My derivation, range bound with stall floor",
+   "fields": "v=15:28.5 m; v=20:67.5 m; launch needed for 50 m=17.9 m/s (17.0 with 14% ground effect)",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py"
+  },
+  {
+   "name": "My derivation, Deng trajectories vs bound",
+   "fields": "energy height=20.4 m; bound at L/D 4.7=95.8 m; 45.4 m ratio=0.47; 41.5 m ratio=0.43; apex 13.2 m ratio=0.65",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py"
+  },
+  {
+   "name": "My derivation, aquarium leaps vs ballistic",
+   "fields": "ballistic apex at 3.87-5.15 m/s=0.76-1.35 m; max range at 45 deg=1.5-2.7 m; speed/vmin=0.39-0.52",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py"
+  },
+  {
+   "name": "My derivation, powered flight vs registry E3 v2",
+   "fields": "level power at vmin=1.33 W; at 15 m/s=2.02 W; ceiling=0.0833 W; ratios=16x and 24x",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py"
+  },
+  {
+   "name": "My derivation, taxi power per kg",
+   "fields": "CFD=188 W/kg; E3 ceiling=1.39 W/kg; ratio=136",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py"
+  },
+  {
+   "name": "Palstra 2010 zebrafish unit check",
+   "fields": "MO2max at Ucrit=82.18 umol/g/h = 2629.6 mg O2/kg/h; fish 3.05 cm, 0.43 g; Ucrit=0.548 m/s",
+   "source": "https://doi.org/10.1371/journal.pone.0014483"
+  },
+  {
+   "name": "Registry law set 1.8.1 (application repo)",
+   "fields": "E3 2.1.0 aerobic ceiling=0.0833 W at 0.06 kg; flight-climb-glide-law 1.0.0 (glide_range_le); perturb-wind-glide 1.0.0; Constraints.lean has vmin/aerobic/glide/climb rules_out lemmas",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/CHANGELOG.md"
+  }
+ ],
+ "reproduce": [
+  {
+   "what": "Environment",
+   "command_or_url": "Python 3.14 (C:\\Python314), pdftotext from MSYS2 poppler, curl; all Python run with python -I -X utf8; no packages beyond the standard library",
+   "expected": "scripts run unmodified"
+  },
+  {
+   "what": "Fetch open texts (PMC XML via NCBI efetch, Makiguchi PDF, Europe PMC records)",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/fetch.py ; curl -A delphi-research/0.1 \"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=9172250&rettype=xml\" (also ids 3013094, 3574442, 4321159, 8217709, 4685536); curl -L https://link.springer.com/article/10.1007/BF00044128",
+   "expected": "files and sha256 listed in D:/Users/ashenoy00000/delphi-work/data/t6-flyingfish/MANIFEST.txt (about 1.1 MB total)"
+  },
+  {
+   "what": "Verify every cited DOI and dump abstracts",
+   "command_or_url": "python -I -X utf8 D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/dump_abstracts.py",
+   "expected": "22 lines ending ok; Crossref abstract length 0 for Deng 2019, Makiguchi, Davenport 1994, Daane, Kawachi, Palstra, Lewallen, Ran (publisher withholds abstract)"
+  },
+  {
+   "what": "Extract text of the cached Park and Choi, Deng and Makiguchi PDFs (reading order)",
+   "command_or_url": "pdftotext <repo>/physics/prior-art/raw/wb-park-choi-2010.pdf scratch/t6-flyingfish-deep/pc_raw.txt ; same for pdf2-deng-2019.pdf -> deng_raw.txt ; pdftotext data/t6-flyingfish/makiguchi2013.pdf -> mak_raw.txt ; python totext.py <xml> <txt> for the PMC files",
+   "expected": "search pc_raw.txt for \"4.37 (0) 0.78 (35)\" and \"maximum reduction of the drag by 14%\"; deng_raw.txt for \"take-off speed is fixed at 20 m\""
+  },
+  {
+   "what": "All calculations (stall speed, range bounds, power ratios, Daane fin ratios and log-log fit, Palstra unit conversion)",
+   "command_or_url": "python -I -X utf8 D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py",
+   "expected": "vmin_L3 9.854; v0_needed_50m_noGE 17.93, GE14 17.03; Deng bound 95.82 and ratio 0.4738; Palstra 2629.6; Daane flying fish n=49 b=1.0579 CI [1.0176, 1.0982] r2 0.9834; groups 49/19/22/19"
+  },
+  {
+   "what": "Rebuild this report and re-check every evidence_quote against its source text",
+   "command_or_url": "python -I -X utf8 D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/build_report.py",
+   "expected": "prints QUOTE FAILURES: 0 and writes D:/Users/ashenoy00000/delphi-work/agents2/t6-flyingfish-deep.json"
+  },
+  {
+   "what": "Registry facts (read only)",
+   "command_or_url": "grep -n \"rules_out\" D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/Delphi/Constraints.lean ; read lean/registry/CHANGELOG.md sections 1.6.0 to 1.8.1 ; lean/registry/lawsets/current.json",
+   "expected": "vmin_rules_out line 243, aerobic_flight_rules_out 316, glide_range_rules_out 324, climb_rules_out 331; current version 1.8.1"
+  },
+  {
+   "what": "Not reproducible",
+   "command_or_url": "Kawachi 1993, Hertel 1966, Davenport 1990/1992 tables, Fish 1990 full text, Park and Choi Table 1 areas (column order scrambled by text extraction; areas taken from project reading)",
+   "expected": "paywalled or unreadable in this run"
+  }
+ ],
+ "citations": [
+  {
+   "authors": "Park Hyungmin; Choi Haecheon",
+   "year": 2010,
+   "title": "Aerodynamic characteristics of flying fish in gliding flight",
+   "doi_or_arxiv": "10.1242/jeb.046052",
+   "verified": true,
+   "how_verified": "Crossref works API https://api.crossref.org/works/<doi> fetched 2026-11-12 (title, year, authors, volume matched); Europe PMC core record fetched; full text read from the project cached PDF (physics/prior-art/raw/wb-park-choi-2010.pdf, re-extracted with pdftotext)",
+   "used_for": "wind-tunnel polar, ground effect, pelvic fins",
+   "venue": "J Exp Biol 213:3269-3279"
+  },
+  {
+   "authors": "Deng Jian; Zhang Lingxin; Liu Zhiyou; Mao Xuerui",
+   "year": 2019,
+   "title": "Numerical prediction of aerodynamic performance for a flying fish during gliding flight",
+   "doi_or_arxiv": "10.1088/1748-3190/ab23e6",
+   "verified": true,
+   "how_verified": "Crossref works API https://api.crossref.org/works/<doi> fetched 2026-11-12 (title, year, authors, volume matched); Europe PMC abstract fetched; full text read from project cached PDF (pdf2-deng-2019.pdf)",
+   "used_for": "CFD polar, 20 m/s launch assumption, trajectories",
+   "venue": "Bioinspir Biomim 14:046009"
+  },
+  {
+   "authors": "Deng Jian; Wang Shuhong; Zhang Lingxin; Mao Xuerui",
+   "year": 2019,
+   "title": "Why does a flying fish taxi on sea surface before take-off? A hydrodynamic interpretation",
+   "doi_or_arxiv": "10.1101/765560",
+   "verified": true,
+   "how_verified": "Crossref works API https://api.crossref.org/works/<doi> fetched 2026-11-12 (title, year, authors, volume matched); Europe PMC preprint record fetched (abstract only; the bioRxiv PDF in the project cache is a Cloudflare error page)",
+   "used_for": "taxi versus swim power (preprint, abstract only)",
+   "venue": "bioRxiv preprint"
+  },
+  {
+   "authors": "Makiguchi Y; Kuramochi K; Iwane S; Kojima T; Naito Y",
+   "year": 2013,
+   "title": "Take-off performance of flying fish Cypselurus heterurus doederleini measured with miniature acceleration data loggers",
+   "doi_or_arxiv": "10.3354/ab00494",
+   "verified": true,
+   "how_verified": "Crossref works API https://api.crossref.org/works/<doi> fetched 2026-11-12 (title, year, authors, volume matched); open PDF downloaded from int-res.com and read (sha256 f0bc4054...)",
+   "used_for": "aquarium leap speeds; quoted field values",
+   "venue": "Aquat Biol 18:105-111"
+  },
+  {
+   "authors": "Davenport John",
+   "year": 1994,
+   "title": "How and why do flying fish fly?",
+   "doi_or_arxiv": "10.1007/bf00044128",
+   "verified": true,
+   "how_verified": "Crossref works API https://api.crossref.org/works/<doi> fetched 2026-11-12 (title, year, authors, volume matched); Springer landing page downloaded and the 13-point abstract read in full (sha256 77b5a089...)",
+   "used_for": "main review: flight sequence, hypotheses, ground effect, temperature",
+   "venue": "Rev Fish Biol Fisheries 4:184-214"
+  },
+  {
+   "authors": "Davenport John",
+   "year": 1992,
+   "title": "Wing-loading, stability and morphometric relationships in flying fish (Exocoetidae) from the North-eastern Atlantic",
+   "doi_or_arxiv": "10.1017/s0025315400048761",
+   "verified": true,
+   "how_verified": "Crossref works API https://api.crossref.org/works/<doi> fetched 2026-11-12 (title, year, authors, volume matched) (abstract in the Crossref record read; tables not read)",
+   "used_for": "growth exponents, 78-79% fin limit, anaerobic take-off",
+   "venue": "J Mar Biol Assoc UK 72:25-39"
+  },
+  {
+   "authors": "Davenport J.",
+   "year": 2003,
+   "title": "Allometric constraints on stability and maximum size in flying fishes: implications for their evolution",
+   "doi_or_arxiv": "10.1046/j.1095-8649.2003.00041.x",
+   "verified": true,
+   "how_verified": "Crossref works API https://api.crossref.org/works/<doi> fetched 2026-11-12 (title, year, authors, volume matched) (abstract read; full text paywalled)",
+   "used_for": "24% and 76% SL geometric limits; challenge to ballistic-leap origin",
+   "venue": "J Fish Biol 62:455-463"
+  },
+  {
+   "authors": "Fish F. E.",
+   "year": 1990,
+   "title": "Wing design and scaling of flying fish with regard to flight performance",
+   "doi_or_arxiv": "10.1111/j.1469-7998.1990.tb04009.x",
+   "verified": true,
+   "how_verified": "Crossref works API https://api.crossref.org/works/<doi> fetched 2026-11-12 (title, year, authors, volume matched) (abstract read; no numbers in it)",
+   "used_for": "six-genus fin scaling (qualitative)",
+   "venue": "J Zool 221:391-403"
+  },
+  {
+   "authors": "Daane Jacob M.; Blum Nicola; Lanni Jennifer; Boldt Helena; Iovine M. Kathryn; Higdon Charles W.; Johnson Stephen L.; Lovejoy Nathan R.; Harris Matthew P.",
+   "year": 2021,
+   "title": "Modulation of bioelectric cues in the evolution of flying fishes",
+   "doi_or_arxiv": "10.1016/j.cub.2021.08.054",
+   "verified": true,
+   "how_verified": "Crossref works API https://api.crossref.org/works/<doi> fetched 2026-11-12 (title, year, authors, volume matched); Europe PMC record fetched; full text (PMC9172250) downloaded via NCBI efetch and read (sha256 a478d83a...)",
+   "used_for": "fin allometry, convergent genomics, lat4a and kcnh2a",
+   "venue": "Curr Biol 31:5052-5061.e8"
+  },
+  {
+   "authors": "Stewart Scott; Le Bleu Heather K.; Yette Gabriel A.; Henner Astra L.; Robbins Amy E.; Braunstein Joshua A.; Stankunas Kryn",
+   "year": 2021,
+   "title": "longfin causes cis-ectopic expression of the kcnh2a ether-a-go-go K+ channel to autonomously prolong fin outgrowth",
+   "doi_or_arxiv": "10.1242/dev.199384",
+   "verified": true,
+   "how_verified": "Crossref works API https://api.crossref.org/works/<doi> fetched 2026-11-12 (title, year, authors, volume matched); PMC8217709 abstract read (author list from Crossref: first author Stewart S, 7 authors; other names not transcribed here)",
+   "used_for": "independent test of kcnh2a and fin size",
+   "venue": "Development 148:dev199384"
+  },
+  {
+   "authors": "Xu Guang-Hui; Zhao Li-Jun; Gao Ke-Qin; Wu Fei-Xiang",
+   "year": 2013,
+   "title": "A new stem-neopterygian fish from the Middle Triassic of China shows the earliest over-water gliding strategy of the vertebrates",
+   "doi_or_arxiv": "10.1098/rspb.2012.2261",
+   "verified": true,
+   "how_verified": "Crossref works API https://api.crossref.org/works/<doi> fetched 2026-11-12 (title, year, authors, volume matched); PMC3574442 abstract read (full text not in the PMC record fetched)",
+   "used_for": "Triassic gliding; species count; Eocene record",
+   "venue": "Proc R Soc B 280:20122261"
+  },
+  {
+   "authors": "Xu Guang-Hui; Zhao Li-Jun; Shen Chen-Chen",
+   "year": 2015,
+   "title": "A Middle Triassic thoracopterid from China highlights the evolutionary origin of overwater gliding in early ray-finned fishes",
+   "doi_or_arxiv": "10.1098/rsbl.2014.0960",
+   "verified": true,
+   "how_verified": "Crossref works API https://api.crossref.org/works/<doi> fetched 2026-11-12 (title, year, authors, volume matched); PMC4321159 abstract read",
+   "used_for": "Ladinian ages; four-stage sequence",
+   "venue": "Biol Lett 11:20140960"
+  },
+  {
+   "authors": "LEWALLEN ERIC A.; PITMAN ROBERT L.; KJARTANSON SHAWNA L.; LOVEJOY NATHAN R.",
+   "year": 2010,
+   "title": "Molecular systematics of flyingfishes (Teleostei: Exocoetidae): evolution in the epipelagic zone",
+   "doi_or_arxiv": "10.1111/j.1095-8312.2010.01550.x",
+   "verified": true,
+   "how_verified": "Crossref works API https://api.crossref.org/works/<doi> fetched 2026-11-12 (title, year, authors, volume matched); Europe PMC abstract read (Europe PMC lists year 2011, Crossref 2010)",
+   "used_for": "two-wing to four-wing progression; Cheilopogon polyphyly",
+   "venue": "Biol J Linn Soc 102:161-174"
+  },
+  {
+   "authors": "Saro-Cortes Valeria; Cui Yuhe; Dufficy Tierney; Boctor Arsanious; Flammang Brooke E; Wissa Aimy W",
+   "year": 2022,
+   "title": "An Adaptable Flying Fish Robotic Model for Aero- and Hydrodynamic Experimentation",
+   "doi_or_arxiv": "10.1093/icb/icac101",
+   "verified": true,
+   "how_verified": "Crossref works API https://api.crossref.org/works/<doi> fetched 2026-11-12 (title, year, authors, volume matched) (abstract read)",
+   "used_for": "pelvic fin lift-stability trade-off",
+   "venue": "Integr Comp Biol"
+  },
+  {
+   "authors": "Chen Di; Wu Zhengxing; Dong Huijie; Meng Yan; Yu Junzhi",
+   "year": 2023,
+   "title": "Platform development and gliding optimization of a robotic flying fish with morphing pectoral fins",
+   "doi_or_arxiv": "10.1088/1748-3190/acce86",
+   "verified": true,
+   "how_verified": "Crossref works API https://api.crossref.org/works/<doi> fetched 2026-11-12 (title, year, authors, volume matched) (abstract read)",
+   "used_for": "robot exit speed and morphing gain",
+   "venue": "Bioinspir Biomim 18:036010"
+  },
+  {
+   "authors": "Chen Xinyang; Hu Wenrong",
+   "year": 2026,
+   "title": "Flow mechanisms of flying fish during free-surface taxiing",
+   "doi_or_arxiv": "10.1063/5.0347662",
+   "verified": true,
+   "how_verified": "Crossref works API https://api.crossref.org/works/<doi> fetched 2026-11-12 (title, year, authors, volume matched) (abstract read; Crossref lists 2 authors, first Chen Xinyang)",
+   "used_for": "taxiing lift and thrust coefficients",
+   "venue": "Phys Fluids 38:111902"
+  },
+  {
+   "authors": "Palstra Arjan P.; Tudorache Christian; Rovira Mireia; Brittijn Sebastiaan A.; Burgerhout Erik; van den Thillart Guido E. E. J. M.; Spaink Herman P.; Planas Josep V.",
+   "year": 2010,
+   "title": "Establishing Zebrafish as a Novel Exercise Model: Swimming Economy, Swimming-Enhanced Growth and Muscle Growth Marker Gene Expression",
+   "doi_or_arxiv": "10.1371/journal.pone.0014483",
+   "verified": true,
+   "how_verified": "Crossref works API https://api.crossref.org/works/<doi> fetched 2026-11-12 (title, year, authors, volume matched); PMC3013094 full text downloaded and the oxygen-uptake sentence read (sha256 7993efc1...)",
+   "used_for": "provenance of the aerobic input behind registry law E3 v2",
+   "venue": "PLoS ONE 5:e14483"
+  },
+  {
+   "authors": "Costa Gideão Wagner Werneck Felix da; Shibatta Oscar Akio; Cioffi Marcelo de Bello; Vidal Jhon Alex Dziechciarz; Bertollo Luiz Antonio Carlos; Molina Wagner Franco",
+   "year": 2026,
+   "title": "Flying fish as useful model for evolutionary investigations in epipelagic zones. A cytogenomic and chromosomal analysis",
+   "doi_or_arxiv": "10.3897/compcytogen.20.190559",
+   "verified": true,
+   "how_verified": "Crossref works API https://api.crossref.org/works/<doi> fetched 2026-11-12 (title, year, authors, volume matched); PMC13282621 full text downloaded and read (title shortened to what Crossref returned)",
+   "used_for": "species-count disagreement; karyotype 2n=48",
+   "venue": "Comp Cytogenet 20:141-155"
+  },
+  {
+   "authors": "Khandelwal Pranav C.; Zakaria Mohamed A.; Socha John J.",
+   "year": 2023,
+   "title": "A Year at the Forefront of Gliding Locomotion",
+   "doi_or_arxiv": "10.1242/bio.059973",
+   "verified": true,
+   "how_verified": "Crossref works API https://api.crossref.org/works/<doi> fetched 2026-11-12 (title, year, authors, volume matched); PMC10445725 full text downloaded and read",
+   "used_for": "review context: flying fish gliding in the wild is understudied",
+   "venue": "Biol Open 12:bio059973"
+  },
+  {
+   "authors": "Socha John J.; Jafari Farid; Munk Yonatan; Byrnes Greg",
+   "year": 2015,
+   "title": "How animals glide: from trajectory to morphology",
+   "doi_or_arxiv": "10.1139/cjz-2014-0013",
+   "verified": true,
+   "how_verified": "Crossref works API https://api.crossref.org/works/<doi> fetched 2026-11-12 (title, year, authors, volume matched) (record only; full text not read)",
+   "used_for": "best general review of gliding mechanics (pointer, not used for numbers)",
+   "venue": "Can J Zool 93:901-924"
+  },
+  {
+   "authors": "Kawachi Keiji; Inada Yoshinobu; Azuma Akira",
+   "year": 1993,
+   "title": "Optimal Flight Path of Flying Fish",
+   "doi_or_arxiv": "10.1006/jtbi.1993.1113",
+   "verified": true,
+   "how_verified": "Crossref works API https://api.crossref.org/works/<doi> fetched 2026-11-12 (title, year, authors, volume matched) (title record only; ScienceDirect page returned no abstract; contents known only through Deng 2019)",
+   "used_for": "second-hand source of L/D 15.7 and 80 m",
+   "venue": "J Theor Biol 163:145-159"
+  }
+ ],
+ "could_not_find": [
+  "Full text of Kawachi, Inada and Azuma 1993 (ScienceDirect returned no abstract); its 80 m and L/D 15.7 are known only through Deng 2019.",
+  "Hertel 1966 (book), Breder 1930, Hubbs 1933, Edgerton and Breder 1941, Davenport 1990: the primary field and film sources of 10 m/s leap, 50 m glide, 400 m total, 8 m maximum height. I cite none of them; the numbers are labelled second-hand.",
+  "Any public raw data set of wild flying-fish glide trajectories; none found in my searches (Europe PMC, Crossref); I did not search Zenodo, Dryad or Figshare in this run, the scout reported none.",
+  "Full texts of Davenport 1992, 2003, Fish 1990 (paywalled): the 1.147 versus 1.236 wing-loading exponent gap cannot be resolved without the tables.",
+  "The bioRxiv taxi preprint full text (the project cache holds a Cloudflare error page, error code 1015); only the abstract is read, so assumptions behind 36 W versus 350 W (rigid kinematics, 10 m/s imposed) are unchecked.",
+  "Park and Choi Table 1: pdftotext scrambles the column order, so areas and mass were not re-read by me; mass 0.06 kg and SL 203 mm for L3 are visible, the areas 0.006377 + 0.001837 + 0.004474 m2 come from the project reading (physics/glide-data.csv) and agree with the printed numbers 6377, 1837, 4474 appearing in the extract.",
+  "Daane 2021 Data S1A was not fetched by me; the fin-ratio analysis uses the project cache genotype/cache/daane2021_data_s1A_fin_measurements.csv (109 rows), which carries a spreadsheet float artifact.",
+  "No Lean build was run (not needed, and the headroom rule limits it); statements about certificates being compiled rest on reading files, not on compiling.",
+  "Ran 2026 (Biomimetic Intelligence and Robotics) and Chen and Hu 2026 full text: only record and abstract; Ran has no abstract in Crossref and is not cited.",
+  "Rules 8 compliance: three sources (Park and Choi, Fish 1990, Davenport 1994) contain comparisons to other flying animals in their text; I omitted all of those and used only the fish results.",
+  "A flying-fish-specific measured aerobic capacity (MO2max, cardiac output): not found; the registry E3 ceiling uses zebrafish."
+ ],
+ "glossary": [
+  {
+   "term": "glide",
+   "plain": "moving through air with no engine or wing-flapping, trading height and speed for distance"
+  },
+  {
+   "term": "lift-to-drag ratio (L/D)",
+   "plain": "how many metres forward a glider travels for each metre it sinks; higher is better"
+  },
+  {
+   "term": "wing loading",
+   "plain": "body weight divided by wing area; a high number means the animal must fly faster to stay up"
+  },
+  {
+   "term": "stall speed",
+   "plain": "the slowest speed at which the wings can still hold the body up"
+  },
+  {
+   "term": "taxiing",
+   "plain": "skimming along the water surface with the tail flicking in the water to gain speed before and between glides"
+  },
+  {
+   "term": "ground effect",
+   "plain": "extra efficiency a wing gets when it flies very close to a surface such as the sea"
+  },
+  {
+   "term": "wind tunnel",
+   "plain": "a tube with moving air used to measure the forces on a model held still"
+  },
+  {
+   "term": "CFD (computational fluid dynamics)",
+   "plain": "a computer simulation of how air or water flows around an object"
+  },
+  {
+   "term": "Reynolds number",
+   "plain": "a number comparing speed, size and air stickiness that tells you whether two flows behave alike"
+  },
+  {
+   "term": "aerobic",
+   "plain": "powered by muscle that burns oxygen continuously, as in steady cruising"
+  },
+  {
+   "term": "anaerobic / white muscle",
+   "plain": "muscle that gives short bursts of power from stored fuel without needing oxygen at that moment"
+  },
+  {
+   "term": "allometry",
+   "plain": "how a body part grows relative to the whole body as the animal gets bigger"
+  },
+  {
+   "term": "elimination certificate",
+   "plain": "a computer-checked proof that a stated design or claim breaks a stated law and so cannot be true"
+  },
+  {
+   "term": "energy height",
+   "plain": "the height you would need to start from, with no speed, to have the same total energy as a given height and speed"
+  },
+  {
+   "term": "convergent evolution",
+   "plain": "unrelated groups independently evolving the same trait"
+  },
+  {
+   "term": "two-winger / four-winger",
+   "plain": "flying fish with only enlarged chest fins versus those with enlarged chest and belly fins"
+  }
+ ],
+ "recommendations": [
+  "Replace the pure-glide field certificate (8 m, 50 m, L/D 4.37) with the stall-floor energy-height wrapper: x <= (L/D)(v0^2 - vmin^2)/(2g)/(1-delta); a 50 m single-glide claim is then consistent only if launch airspeed is at least 17.0-17.9 m/s, and the certificate must carry the scope hypothesis lift = weight.",
+  "Stamp every verdict with law set 1.8.1 and note that the upstream 1.6.0 pin lacks vmin_rules_out, aerobic_flight_rules_out and the glide/climb lemmas (present in the application repo Constraints.lean at lines 243, 316, 324, 331).",
+  "Use the Makiguchi leaps as a falsification test of the stall-floor logic: any logged leap that is both airborne beyond about 0.5 s and below 9.85 m/s would contradict a lift-equals-weight reading.",
+  "Treat Deng 2019 launch conditions as inputs: re-run with the coefficients at the launch Reynolds number before using 45.4 m or 13.2 m as targets, and never cite the two numbers as one trajectory.",
+  "Mark the Palstra-derived aerobic ceiling as extrapolated from a 0.43 g fish; seek flying-fish or similar-size pelagic MO2max before relying on the 16x shortfall as more than order-of-magnitude.",
+  "Label the fin-ratio gap law with its three-species base and the spreadsheet float artifact in the cached CSV; do not promote past candidate until more Exocoetidae species are measured."
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/search.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/fetch.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/totext.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/crossref.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/crsearch.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/epmc_abs.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/epmc_search.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/dump_abstracts.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/analysis.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/report_part1.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/report_part2.py",
+  "D:/Users/ashenoy00000/delphi-work/agents2/scripts/t6-flyingfish-deep/build_report.py"
+ ]
+}

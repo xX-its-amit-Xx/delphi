@@ -1,0 +1,24 @@
+{
+ "label": "verify-q2-critic",
+ "claims": [
+  {
+   "claim": "Published noise estimates (Kramer R2max 0.81; Landrum tau 0.51-0.71) imply a ceiling of r about 0.85-0.95, above leakage-free models on CASF2016 (r 0.75-0.80); noise is not the binding constraint there.",
+   "verdict": "partly",
+   "source_says": "\"maximum possible squared Pearson correlation coefficient (R(2)) on large data sets is estimated to be 0.81.\" Landrum: Kendall tau 0.51 minimal, 0.71 maximal curation. CleanSplit: GEMS 0.803, GenScore 0.780, Pafnucy 0.746.",
+   "note": "The cited numbers are real, but the 0.85-0.95 ceiling is the agent's own tau-to-r conversion under normality and equal-reliability assumptions (script reproduces 0.847/0.948), and GEMS at 0.803 is just above the stated 0.75-0.80."
+  },
+  {
+   "claim": "Leakage between PDBbind and CASF inflates scores: 49% of CASF complexes have near-duplicates, and a similarity-lookup gets r 0.716 with no learning.",
+   "verdict": "supported",
+   "source_says": "\"nearly 600 such similarities were detected between PDBbind training and CASF complexes, involving 49% of all CASF complexes.\" Top-5 similar complexes search: Pearson R = 0.716 (0.653 on CleanSplit).",
+   "note": "Figures match the Graber full text; the 0.716 is for the original PDBbind split."
+  },
+  {
+   "claim": "In a controlled simulation, split type changes reported r from 0.90 to 0.20 while 0.8 log-unit label noise changes it by under 0.05.",
+   "verdict": "supported",
+   "source_says": "sim_table.md: random_pairs noise 0.4 r=0.904; both_heldout 0.4 r=0.200; random_pairs noise 0.0 r=0.916 vs noise 0.8 r=0.871 (difference 0.045).",
+   "note": "Table reproduces the claim; it is the agent's own synthetic simulation with a large label SD (2.64), which the agent itself flags, so it shows mechanism only."
+  }
+ ],
+ "overall": "Three key claims checked: two supported (the leakage numbers match the Graber 2025 text, and the simulation table reproduces), one partly supported (the 0.85-0.95 ceiling is the agent's own derived arithmetic, not a published figure). Sources I could fetch all opened. I did not re-run the 15-minute simulation."
+}
