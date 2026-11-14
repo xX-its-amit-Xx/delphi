@@ -1,0 +1,218 @@
+{
+ "label": "cs-xenobots",
+ "topic": "Xenobot / anthrobot physical bounds: full-suite case run (low-Reynolds speed, energy-store lifetime, oxygen diffusion size, replication generations) with whole-paper holdout",
+ "summary": "Full five-stage run done on real text fetched now from Europe PMC. Holdout by sha256 of DOI: two papers held out (Sci Robot 2021, Adv Sci 2023), two development (PNAS 2020, PNAS 2021). Only ONE held-out paper could be opened (Sci Robot 2021 is closed access; abstract has no numbers), so the final evaluation is n = 8 range-endpoint measurements from a single paper. Result: 4 of 8 held-out measurements satisfy their bound (coverage 0.50). The two physics bounds with no free constant passed (Reynolds number 0.0025-0.025, far below 1; diameter 30-500 um below the 1.10 mm oxygen limit). The calibrated energy-store lifetime bound (24 days, from frog-cell papers) FAILED on all 4 held-out lifespan values (28-60 days): the held-out bots are human cells kept in changed culture medium, so the closed-energy-store assumption does not hold. The replication-generation bound could not be tested on holdout (no held-out paper reports generations). Trivial baseline (bound = development maximum) scored 2/6 = 0.33 and could not score speed at all. The broken-input control did NOT lower coverage (0.50 -> 0.50); only the slack spread became absurd (max |log10 slack| 2.6 -> 11.6), so coverage alone is a weak metric here and I say so. A core-Lean file (no Mathlib) stating all four bounds with named hypotheses passes the Lean 4.35.0 kernel with no sorry; a deliberately false negative control is rejected. Files: D:/Users/ashenoy00000/delphi-work/agents5/cs-xenobots/ (prereg.md, doi_hashes.txt, frozen_constants.json, records_dev.csv, records_heldout.csv, score.py, verify_quotes.py, xml2txt.py, run.sh, results.json, XenobotBounds.lean, XenobotNegativeControl.lean, check_lean.sh, lean_check_output.txt).",
+ "findings": [
+  {
+   "claim": "Held-out human-cell biobots are 30 to 500 microns in diameter (2 records: min, max).",
+   "source": "https://doi.org/10.1002/advs.202303575 (full text XML via Europe PMC PMC10811512)",
+   "evidence_quote": "diameters ranging from 30 to 500 microns",
+   "value": "30e-6 m to 500e-6 m; both below the oxygen diameter limit 1.095 mm (S3 pass 2/2)",
+   "confidence": "high (verbatim, re-verified by verify_quotes.py)"
+  },
+  {
+   "claim": "Held-out biobot speeds are 5 to 50 microns per second, giving Reynolds number 0.0025 to 0.025 at 500 um body size.",
+   "source": "https://doi.org/10.1002/advs.202303575 (PMC10811512)",
+   "evidence_quote": "speeds ranging from 5–50 microns s −1",
+   "value": "Re = 0.0025 and 0.025; bound Re <= 1 holds with 1.6 to 2.6 orders of magnitude slack (S1 pass 2/2)",
+   "confidence": "high for the quote; Re is my computation with water at mu=1e-3 Pa s"
+  },
+  {
+   "claim": "The held-out paper states two different lifespans for the same bots: 45-60 days in the introduction and 4-6 weeks in the conclusion.",
+   "source": "https://doi.org/10.1002/advs.202303575 (PMC10811512)",
+   "evidence_quote": "living for 45–60 days",
+   "value": "45-60 d vs 28-42 d ('At the end of their 4–6 weeks life span'); all four endpoints exceed the calibrated 24 d bound (S2 fail 4/4)",
+   "confidence": "high (both strings verbatim in the text); which is correct is unresolved"
+  },
+  {
+   "claim": "Frog-cell replicating bots were used at 5-6 days, described as the middle of their lifespan, implying roughly 10-12 days total (derived, not stated).",
+   "source": "https://doi.org/10.1073/pnas.2112672118 (PMC8670470)",
+   "evidence_quote": "aged 5 to 6 d at 14 °C",
+   "value": "lifespan about 12 d (2 x 6 d, derived); calibrated T_max = 24 d",
+   "confidence": "medium: derived from 'middle of their lifespan', not a direct measurement"
+  },
+  {
+   "claim": "Kinematic self-replication ran 1,1,1,1,2 generations for wild-type spheroids (5 trials) and 2,3,4 for semitoroids (3 trials).",
+   "source": "https://doi.org/10.1073/pnas.2112672118 (PMC8670470)",
+   "evidence_quote": "semitoroids (2, 3, and 4 g)",
+   "value": "max 4 generations in 8 trials; calibrated ceiling G_max = 8",
+   "confidence": "high (verbatim)"
+  },
+  {
+   "claim": "Frog-cell progenitor organisms contain about 3,000 cells; a pile needs at least 50 cells to mature into offspring.",
+   "source": "https://doi.org/10.1073/pnas.2112672118 (PMC8670470)",
+   "evidence_quote": "composed of ∼3,000 cells",
+   "value": "3000 cells; offspring threshold 'at least 50 cells'",
+   "confidence": "high (verbatim); no bound in this run uses cell number"
+  },
+  {
+   "claim": "The 2020 frog-cell paper gives no numeric speed or lifespan in its main text; body length can only be derived as about 833 um from a concavity statement.",
+   "source": "https://doi.org/10.1073/pnas.1910837117 (PMC6994979)",
+   "evidence_quote": "width of 100 µm or greater (12% of total body length)",
+   "value": "body length 100 um / 0.12 = 833 um (derived); lifespan only 'days or weeks without additional nutrients'",
+   "confidence": "medium: derived number; SI appendix not opened"
+  },
+  {
+   "claim": "The Science Robotics 2021 paper is closed access with no repository copy, so it contributed zero measurements.",
+   "source": "https://api.unpaywall.org/v2/10.1126/scirobotics.abf1571 and Europe PMC record 34043553",
+   "evidence_quote": "\"oa_status\":\"closed\"",
+   "value": "0 records; abstract has no diameter, speed or lifespan numbers",
+   "confidence": "high"
+  },
+  {
+   "claim": "Final held-out evaluation: 4 of 8 measurements satisfy their bound; baseline (development maximum) 2 of 6; broken-input control 4 of 8.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/cs-xenobots/results.json (python -I score.py)",
+   "evidence_quote": "FINAL held-out paper, physics bounds: 4/8 satisfied (coverage 0.500)",
+   "value": "coverage 0.50 vs baseline 0.33 vs broken 0.50; median log10 slack 0.14 / -0.46 / 0.16",
+   "confidence": "high that the arithmetic is right; low statistical weight (n=8 endpoints, 1 paper)"
+  },
+  {
+   "claim": "A core Lean 4 file stating the four bounds as conditional theorems plus integer certificates passes the kernel with no sorry; a false negative control is rejected.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/cs-xenobots/lean_check_output.txt (bash check_lean.sh, Lean 4.35.0)",
+   "evidence_quote": "'XenobotBounds.lowRe_of_le' does not depend on any axioms",
+   "value": "6 theorems printed; lifetime_bound and generation_bound depend only on propext, Quot.sound; PASS + negative control rejected",
+   "confidence": "high that it type-checks; the theorems are simple monotonicity/induction facts, not deep biology"
+  }
+ ],
+ "suite": {
+  "case_name": "xenobots (frog-cell and human-cell cilia-driven biobots)",
+  "statement": "Four upper bounds. S1: speed v <= mu/(rho*D), i.e. Reynolds number <= 1 in water (no free constant). S2: unfed lifespan <= T_max, with T_max = 2 x the longest lifespan in development papers = 24 days. S3: radius R <= sqrt(6*Dox*C0/Q) = 0.548 mm (diameter 1.10 mm) for a sphere with uniform oxygen uptake (Dox 2e-9 m2/s, C0 0.25 mol/m3, Q 1e-2 mol/m3/s; no free constant). S4: replication generations G <= G_max = 2 x development maximum = 8. No checked Lean file under tracks/research/lean states any of these (CHECKED.txt has none on Reynolds, oxygen or replication). I wrote a new core-Lean file, XenobotBounds.lean in my folder, that states all four as conditional theorems with named hypotheses and integer-unit certificates; it passes Lean 4.35.0 without Mathlib.",
+  "holdout_set": "Rule written to prereg.md at 2026-11-14T04:17:22Z (shell clock) before any paper was fetched: sha256 of each DOI string, the two smallest hashes are held out. Held out: 10.1126/scirobotics.abf1571 and 10.1002/advs.202303575. Development: 10.1073/pnas.1910837117 and 10.1073/pnas.2112672118. Constants were frozen in frozen_constants.json at 04:18:34Z before the held-out full text was searched. Size: 2 papers by rule, but only 1 could be opened; it yielded 8 measurements (2 diameter, 2 speed, 4 lifespan endpoints). Development: 11 records (1 diameter, 1 lifespan, 1 cell count, 8 generation counts).",
+  "validation": "On development papers only: 10 of 10 scorable records satisfy their bounds (1 cell-count record has no bound). This is partly circular for S2 and S4 because their constants were set as 2 x the development maximum; the only non-circular development check is S3 (derived body length 833 um under the 1.10 mm limit, slack 0.12 log10 units). The speed-per-body-length companion bound could not be calibrated at all: neither development paper's main text gives a speed.",
+  "performance": "Single final evaluation on the held-out paper, metric = coverage (fraction of measurements under their bound), n = 8: coverage 0.50 (4/8), median log10 slack 0.14. By statement: S1 2/2 pass (Re 0.0025-0.025), S3 2/2 pass, S2 0/4 pass (28-60 days against a 24-day bound), S4 0 records. Baseline (bound = development maximum, no physics): 2/6 = 0.33, and it cannot score the 2 speed records at all. Broken-input control (quantity labels rotated by two places): coverage stayed 0.50 (4/8), it did NOT get worse; only the slack spread exploded (largest |log10 slack| 2.6 -> 11.6). So by coverage alone the test is not sensitive to scrambled labels at this n; the slack spread is the only signal that caught it.",
+  "lean_status": "CHECKED, core Lean only: bash check_lean.sh prints PASS XenobotBounds.lean and PASS negative control rejected (toolchain leanprover/lean4:v4.35.0 at C:/Temp/elan). No sorry; axioms used: none, or propext and Quot.sound. Not run through the repo's tracks/lean/check.sh (that needs the repo's Mathlib build and I am read-only there). The file also records the held-out refutation of the 24-day instance as a checked fact (calibrated_lifetime_refuted).",
+  "data_used": "Europe PMC full-text XML for PMC6994979, PMC8670470, PMC10811512 (downloaded to C:/Temp/delphi-sprint/cs-xenobots/raw, about 400 KB); Europe PMC abstract and Unpaywall record for the closed Science Robotics paper. Every number is a verbatim string re-checked by verify_quotes.py (11 of 11 found).",
+  "what_was_wrong": "1) The energy-store lifetime law failed out of sample: 0 of 4 held-out lifespans are under the 24-day bound. Cause: the bound assumes a closed store (frog cells living on yolk); the held-out bots are human airway cells kept in culture medium with regular media changes, so the law's hypothesis is false for them. The law must carry 'never refilled' as an explicit condition, as the Lean theorem now does. 2) The held-out paper contradicts itself on lifespan: '45-60 days' in the introduction, '4-6 weeks' in the conclusion. 3) One of the two held-out papers (Science Robotics 2021) is closed access, so the holdout shrank to one paper and no frog-cell speed was obtained anywhere. 4) Development papers give almost no direct numbers in the main text: no speed, no absolute diameter, lifespan only as 'days or weeks'; the 833 um body length and the 12-day lifespan are my derivations, not measurements, and the SI appendices were not opened. 5) S4 (generations) has zero held-out records, so it is untested out of sample; its Lean hypothesis (each generation shrinks by a fixed amount) is not supported by the paper, which says offspring can enlarge or miniaturize. 6) My scorer's headline metric is weak: the scrambled-label control left coverage unchanged at 0.50. Loose one-sided bounds with n = 8 cannot tell right labels from wrong ones by coverage; a tightness-aware metric is needed. 7) The 8 held-out 'measurements' are range endpoints from one abstract-level sentence each, not independent samples; effective n is closer to 3 quantities. 8) The oxygen uptake Q and the factor-2 safety margins are my textbook-scale choices fixed in the prereg, not values taken from an opened source. 9) Earlier agent work (gs-zebot-locomotion) had the right anthrobot numbers but stated 'no speeds given' for frog-cell bots and recorded '2 weeks culture' as if it were a lifespan; it never tested any bound. It also flagged the Adv Sci paper year as 2024 in Europe PMC versus 2023 in the task. 10) In my own run: the lifetime_bound theorem carries an unused hypothesis (used 0 = 0); score.py was executed more than once (identical code path and output, after an encoding fix only); I have training-time prior knowledge of these papers, which the split cannot remove."
+ },
+ "key_claims": [
+  "Held-out coverage is 4/8 = 0.50 versus 2/6 = 0.33 for the trivial baseline; n is 8 range endpoints from one paper.",
+  "The two constant-free physics bounds (Reynolds <= 1, oxygen diffusion size) held on the held-out paper with 0.34 to 2.6 orders of magnitude slack.",
+  "The calibrated 24-day lifetime bound failed on all 4 held-out lifespan values because the held-out bots are fed, not living on a closed store.",
+  "The replication-generation bound is untested out of sample (0 held-out records).",
+  "The scrambled-label control did not reduce coverage; the test is insensitive by that metric.",
+  "XenobotBounds.lean passes core Lean 4.35.0 with no sorry and its negative control is rejected."
+ ],
+ "lay_summary": [
+  "Scientists have built tiny living 'robots' out of frog cells and human lung cells that swim using little hairs called cilia.",
+  "We wrote four simple physics rules for them: how fast they can swim, how big they can get before the middle runs out of oxygen, how long they can live on stored food, and how many times they can make copies.",
+  "We set the rules using two papers and then tested them on a paper we had kept hidden; the speed rule and the size rule passed, but the lifetime rule failed because the human-cell bots are fed fresh food, so they live longer than bots that only have a packed lunch.",
+  "We could only test 8 numbers from one hidden paper, which is very few, and one of our checks (mixing up the labels on purpose) did not catch the mix-up the way it should have.",
+  "A computer proof checker confirmed that the maths of the four rules is written correctly, and it correctly refused a deliberately wrong example."
+ ],
+ "glossary": {
+  "xenobot": "A tiny living machine, under a millimetre, made from frog embryo cells.",
+  "anthrobot": "A similar tiny living machine made from adult human airway cells.",
+  "cilia": "Tiny hairs on a cell's surface that beat like oars to push water.",
+  "Reynolds number": "A number comparing how much a swimmer coasts versus how much the water's stickiness stops it; below 1 means the water feels like honey.",
+  "oxygen diffusion limit": "The largest size a ball of cells can be before oxygen soaking in from outside is used up before reaching the centre.",
+  "energy store": "Food packed inside the cells (yolk in frog cells) that runs the bot until it is gone.",
+  "kinematic self-replication": "Making copies by pushing loose cells into piles that grow into new bots, instead of by growing and dividing.",
+  "holdout": "Data kept hidden until the very end so the rule cannot be adjusted to fit it.",
+  "calibrate": "Set a rule's adjustable number using known data.",
+  "coverage": "The share of measurements that obey the rule.",
+  "slack": "How far below the limit a measurement sits; written here as powers of ten.",
+  "baseline": "A deliberately simple rule used for comparison.",
+  "Lean": "A computer program that checks mathematical proofs line by line.",
+  "named hypothesis": "An assumption written out explicitly that a proof depends on.",
+  "negative control": "A deliberately wrong input used to confirm the checker can say no."
+ },
+ "reproduce": [
+  {
+   "what": "Everything: re-download the three open full texts, verify all 11 quotes, rescore, re-check Lean",
+   "command_or_url": "bash D:/Users/ashenoy00000/delphi-work/agents5/cs-xenobots/run.sh",
+   "expected": "11 FOUND lines; validation 10/10; FINAL held-out 4/8 (0.500); BASELINE 2/6 (0.333); BROKEN-INPUT 4/8 (0.500); PASS XenobotBounds.lean; PASS negative control rejected"
+  },
+  {
+   "what": "Scorer only (no network)",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents5/cs-xenobots/score.py",
+   "expected": "Same four score lines; writes results.json; Re = 0.0025 and 0.025"
+  },
+  {
+   "what": "Lean check only",
+   "command_or_url": "bash D:/Users/ashenoy00000/delphi-work/agents5/cs-xenobots/check_lean.sh",
+   "expected": "Six '#print axioms' lines with no sorryAx, then two PASS lines"
+  },
+  {
+   "what": "Holdout split",
+   "command_or_url": "for d in 10.1073/pnas.1910837117 10.1126/scirobotics.abf1571 10.1073/pnas.2112672118 10.1002/advs.202303575; do printf '%s  %s\\n' \"$(printf %s \"$d\" | sha256sum | cut -c1-64)\" \"$d\"; done | sort",
+   "expected": "First two lines are 10.1126/scirobotics.abf1571 (2e03e8b0...) and 10.1002/advs.202303575 (3d6aa2fe...)"
+  },
+  {
+   "what": "Held-out source text",
+   "command_or_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC10811512/fullTextXML",
+   "expected": "Contains 'diameters ranging from 30 to 500 microns' and 'living for 45–60 days'"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-xenobots/run.sh",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-xenobots/score.py",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-xenobots/verify_quotes.py",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-xenobots/xml2txt.py",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-xenobots/check_lean.sh",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-xenobots/XenobotBounds.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-xenobots/XenobotNegativeControl.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-xenobots/prereg.md",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-xenobots/frozen_constants.json",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-xenobots/records_dev.csv",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-xenobots/records_heldout.csv",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-xenobots/results.json"
+ ],
+ "citations": [
+  {
+   "authors": "Kriegman S, Blackiston D, Levin M, Bongard J",
+   "title": "A scalable pipeline for designing reconfigurable organisms",
+   "venue": "PNAS",
+   "year": 2020,
+   "doi_or_arxiv": "10.1073/pnas.1910837117",
+   "verified": true,
+   "how_verified": "Europe PMC DOI search returned PMID 31932426 / PMC6994979; full text XML opened",
+   "used_for": "development paper: derived body length, qualitative lifespan"
+  },
+  {
+   "authors": "Kriegman S, Blackiston D, Levin M, Bongard J",
+   "title": "Kinematic self-replication in reconfigurable organisms",
+   "venue": "PNAS",
+   "year": 2021,
+   "doi_or_arxiv": "10.1073/pnas.2112672118",
+   "verified": true,
+   "how_verified": "Europe PMC DOI search returned PMID 34845026 / PMC8670470; full text XML opened",
+   "used_for": "development paper: generations, cell number, mid-lifespan age"
+  },
+  {
+   "authors": "Blackiston D, Lederer E, Kriegman S, Garnier S, et al.",
+   "title": "A cellular platform for the development of synthetic living machines",
+   "venue": "Science Robotics",
+   "year": 2021,
+   "doi_or_arxiv": "10.1126/scirobotics.abf1571",
+   "verified": true,
+   "how_verified": "Europe PMC PMID 34043553 and Unpaywall record opened (closed access); abstract only, full author list not checked",
+   "used_for": "held-out paper by hash rule; contributed 0 measurements"
+  },
+  {
+   "authors": "Gumuskaya G, et al. (Levin M senior author; full list not checked in this run)",
+   "title": "Motile Living Biobots Self-Construct from Adult Human Somatic Progenitor Seed Cells",
+   "venue": "Advanced Science",
+   "year": 2023,
+   "doi_or_arxiv": "10.1002/advs.202303575",
+   "verified": true,
+   "how_verified": "Europe PMC DOI search returned PMID 38032125 / PMC10811512; full text XML opened; title truncated in my lookup output after 'Progenit'",
+   "used_for": "held-out paper: diameter, speed, lifespan (8 records)"
+  }
+ ],
+ "could_not_find": [
+  "Any full text of Blackiston 2021 Science Robotics (closed access, no repository copy per Unpaywall); so no frog-cell bot speed or measured lifespan was obtained",
+  "A numeric swimming speed for frog-cell bots in either development paper's main text (SI appendices not opened)",
+  "A directly stated frog-cell bot diameter or lifespan in days (only derived values)",
+  "Any held-out record for replication generations, so S4 is untested out of sample",
+  "An opened source for the oxygen uptake rate Q of these tissues; the value 1e-2 mol/m3/s is my assumed high-end figure",
+  "Cell number per human-cell bot (text match was cut off at 'Anthrobots are ≈20 to 300+'; unit not confirmed)"
+ ],
+ "recommendations": [
+  "Treat the lifetime law as conditional on an unrefilled energy store and test it only on unfed frog-cell bots; get the Science Robotics 2021 full text and the PNAS SI appendices through a library route to do this.",
+  "Replace coverage with a tightness-aware score (for example a penalty on |log10 slack| beyond a stated band) so that a scrambled-label control actually fails; rerun the control.",
+  "Replace the S4 hypothesis 'each generation shrinks' with the paper's own termination rule (largest pile below the maturation threshold) before claiming a generation bound.",
+  "Hand XenobotBounds.lean to the Lean thread to run under the repo's check.sh and, if wanted, restate over the reals with Mathlib; it currently uses integer units only.",
+  "Ask the anthrobot authors' text to be read for which lifespan (45-60 days or 4-6 weeks) is the measured one before any record quotes it."
+ ],
+ "check_output": "run.sh: 11/11 quotes FOUND; VALIDATION 10/10 (1.000); FINAL held-out 4/8 (0.500), median log10 slack 0.14; BASELINE 2/6 (0.333), slack -0.46; BROKEN-INPUT 4/8 (0.500), slack 0.16; Re 0.0025 and 0.025; PASS XenobotBounds.lean; PASS negative control rejected."
+}

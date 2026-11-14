@@ -1,0 +1,216 @@
+{
+ "label": "cs-somite-morphogen",
+ "topic": "Full-suite case run: clock-and-wavefront (S = v*T) and morphogen decay length (lambda = sqrt(D/k)) against real zebrafish data",
+ "summary": "Both laws were run through all five stages on real open zebrafish data, but neither test is the one originally planned and both results are weak or negative.\n\n**Statement A (somite length = speed x period).** The Schroter 2008 per-temperature table could not be obtained, so no temperature was held out. The replacement test used raw tail-growth data at 27 C from Zhang 2022 (8 embryos, 5 held out by hash, 65 points). The law with published speed and period fits, nothing fitted, predicts 25.5 um per somite. Held-out embryos measured 27.5 to 32.7 um per somite, so the law runs about 24% low (mean absolute log10 error 0.126). It beats a constant-mean baseline (0.201) but loses to a slope fitted on the development embryos (0.058). The shuffled-label control got worse (0.333), so the scorer works.\n\n**Statement B (lambda = sqrt(D/k)).** With independently measured D and k (Muller 2012) the law over-predicts the measured Nodal gradients (Wang 2016) by 6.1x for Squint (179 vs 29.5 um) and 3.8x for Cyclops (76 vs 19.7 um). The rank order is correct. For Fgf8, where k was never measured, the calibrated law predicted 150 um for the one held-out condition against 179 um measured, and lost to the baseline (190 um). The hash put both Nodal records in the held-out part, and the three-record evaluation is too small to trust: model 0.48 vs baseline 0.61, shuffled 0.54.\n\nA draft Lean file with four small theorems was written but not compiled. Files are in D:/Users/ashenoy00000/delphi-work/agents5/cs-somite-morphogen/:\n- prereg.md\n- run.py\n- results.json\n- SomiteMorphogenCase.lean",
+ "findings": [
+  {
+   "claim": "Zebrafish somite size is constant while segmentation period changes about threefold between 20 and 32 C, so wavefront speed must scale with clock rate; a temperature-independent speed is ruled out.",
+   "source": "Zhang et al. 2022 Commun Biol, PMC8821593, doi:10.1038/s42003-022-03053-0 (full text opened via Europe PMC)",
+   "evidence_quote": "the segmentation period can vary by a factor three between 20 °C and 32 °C, the somite size is constant",
+   "value": "A fixed speed taken from 27 C would give 57 um at 20 C and 18 um at 32 C (illustration from the published fits, not a held-out result)",
+   "confidence": "high for the qualitative statement; no per-temperature raw table was obtained"
+  },
+  {
+   "claim": "The published fits for period and tail growth rate have the same (T - Tc) factor, so S = v*tau = 4.79 x 5.32 = 25.48 um per somite at every temperature.",
+   "source": "Zhang et al. 2022, PMC8821593, text and Fig. 6 legend",
+   "evidence_quote": "τ s ≅ 5.32/( T − T c ) hours",
+   "value": "v = 4.79*(T-14.4), tau = 5.32/(T-14.4) h, Tc = 14.4 C; units of the growth-rate fit assumed to be um/h",
+   "confidence": "medium: the unit of beta is not stated in the sentence I read; um/h is consistent with the paper's 58 um/h at 27 C"
+  },
+  {
+   "claim": "Held-out test of S = v*tau on raw tail growth at 27 C: the law with nothing fitted under-predicts by about 24%.",
+   "source": "Zhang et al. 2022 source data MOESM4 xlsx, sheet WT-growth (downloaded and parsed by run.py); results.json",
+   "value": "Held-out 5 embryos, 65 points: law MALE 0.126 (MAPE 24.2%); slope fitted on 3 development embryos (32.2 um/somite) MALE 0.058 (12.4%); constant-mean baseline MALE 0.201 (77.1%); shuffled labels 0.333. Measured per-somite growth in held-out embryos 27.5 to 32.7 um.",
+   "confidence": "medium: one temperature, one lab, 8 embryos; v and tau come from fits to other data"
+  },
+  {
+   "claim": "Independently measured clearance rates and FRAP diffusion coefficients for zebrafish Nodals give sqrt(D/k) of 179 um (Squint) and 76 um (Cyclops).",
+   "source": "Muller et al. 2012 Science, PMC3525670, doi:10.1126/science.1221920 (author manuscript opened via NCBI BioC)",
+   "evidence_quote": "0.7 ± 0.2 μm2/s for Cyclops-GFP, 3.2 ± 0.5 μm2/s for Squint-GFP",
+   "value": "k = 1.22e-4 /s (Cyclops), 1.00e-4 /s (Squint)",
+   "confidence": "high for the inputs"
+  },
+  {
+   "claim": "Measured Nodal gradient lengths in zebrafish are 29.5 um (Squint) and 19.7 um (Cyclops), so the pure law over-predicts by 6.1x and 3.8x; rank order is correct.",
+   "source": "Wang et al. 2016 eLife, PMC4887204, doi:10.7554/eLife.13879 (full text opened)",
+   "evidence_quote": "our measurements of 29.5 ± 5 μm for Sqt and 19.7 ± 2 μm for Cyc",
+   "value": "Held-out n=2: pure-law MALE 0.684 vs baseline (development geometric-mean lambda 189.6 um, all Fgf8) 0.896. The shuffled control is uninformative here: swapping two labels leaves the score unchanged.",
+   "confidence": "medium: D, k and lambda come from two labs with different constructs and assays"
+  },
+  {
+   "claim": "The same paper reports free Nodal diffusion by FCS of about 60 um2/s, which would make the pure-law mismatch far larger (about 775 um for Squint by my arithmetic); the authors explain the short gradient by receptor binding.",
+   "source": "Wang et al. 2016 eLife, PMC4887204",
+   "evidence_quote": "diffusion coefficients of free Nodal and Lefty proteins measured by FCS are very similar (~60 µm 2 /s)",
+   "confidence": "high for the quote; the 775 um figure is my calculation, not in results.json"
+  },
+  {
+   "claim": "Fgf8 in zebrafish: lowering D from 45 to 24 um2/s shortened the gradient only from 202 to 179 um; sqrt(D) scaling with constant k predicts 150 um for the held-out condition.",
+   "source": "Gupta et al. 2024/2025 Biophys J, PMC11947464, doi:10.1016/j.bpj.2024.12.009 (full text opened)",
+   "evidence_quote": "for wild-type embryos, we obtained λ = 202 ± 7.1 μ m",
+   "value": "Held-out Sdc2ex condition (n=1): model 149.6 um vs measured 179 um (MALE 0.078, 16.4%); baseline 189.6 um (MALE 0.025, 5.9%). The baseline wins.",
+   "confidence": "low: n=1 held-out, k never measured, D is the fast FCS component"
+  },
+  {
+   "claim": "All three held-out morphogen records together: the law is nominally better than the baseline, but the shuffled-label control sits between the two, so this evaluation cannot discriminate.",
+   "source": "results.json (run.py), block held_all",
+   "value": "n=3: model MALE 0.482, baseline 0.606, shuffled labels 0.538 (806 non-identity shuffles). This combined block was added after the first results were seen.",
+   "confidence": "low"
+  }
+ ],
+ "suite": {
+  "case_name": "Somite clock-and-wavefront and morphogen decay length, zebrafish",
+  "statement": "A: somite (segment) length S = wavefront/growth speed v x clock period T. It is stated as model arithmetic in tracks/research/lean/hv-morph-segmentation__ClockWavefront.lean (PASS in CHECKED.txt: seg_length_scales, seg_longer, axis_length); that file proves nothing about temperature. B: steady-state morphogen decay length lambda = sqrt(D/k). tracks/research/lean/hv-mol-morphogen__MorphogenGradient.lean (PASS) only has lifetime_from_length, which assumes lam^2 = D*tau as a hypothesis, plus the exponential profile; it does not derive the law. A new draft, SomiteMorphogenCase.lean in my folder, adds temperature cancellation (v = beta(T-Tc), tau = a/(T-Tc) gives S = beta*a) and the steady-state balance D*c/lam^2 = k*c. It was NOT compiled.",
+  "holdout_set": "prereg.md was written at 2026-11-14T04:17:29Z (shell UTC) before any paper was opened. Rule: a record is held out iff int(sha256(id)[:8],16) % 3 == 0, with the smallest-hash record as fallback. An amendment, timestamped before any fit, replaced the planned temperature hold-out because the Schroter table could not be obtained. A: whole embryos from the Zhang 2022 WT-growth sheet; 5 of 8 embryos held out (65 of 104 points), 3 for development (39 points). B: whole morphogen records; 3 of 5 held out (Squint, Cyclops, Fgf8 with Sdc2ex), 2 for development (Fgf8 wild type and Fgf8 with Gpc4ex). The hash put both Nodal records in the held-out part, so nothing could be calibrated for that family.",
+  "validation": "A: on the 3 development embryos the unfitted law L(n) = (n-7) x 25.48 um had MALE 0.143 (MAPE 27.1%); the development-fitted slope was 32.2 um per somite against the law's 25.5. B: on the 2 Fgf8 development conditions the only calibration was the family constant c = 30.5 (equivalent to k of about 1.1e-3 /s), with no residual to check because there are two points and one free constant. The Nodal family had no development record, so only the pure law (c = 1) could be applied to it.",
+  "performance": "A (single final run): metric is mean absolute log10 error (MALE) on 65 held-out points from 5 embryos at 27 C. Law, nothing fitted: 0.126 (MAPE 24.2%). Development-fitted slope: 0.058 (12.4%). Constant-mean baseline: 0.201 (77.1%). Shuffled labels: 0.333, worse, so the scorer discriminates. The law beats the trivial baseline but under-predicts by about a quarter. B: held-out Nodal pure law, n=2: MALE 0.684 (6.1x and 3.8x over-prediction) vs baseline 0.896. Held-out Fgf8 Sdc2ex, n=1: model 0.078 vs baseline 0.025, so the baseline wins. All three together: model 0.482, baseline 0.606, shuffled 0.538. The shuffled score is worse than the model but better than the baseline, and for the two Nodal records alone swapping labels changes nothing. The B test is therefore too small to be a real test, and I say so. No simulated data was used for any number.",
+  "what_was_wrong": "1. Data: the Schroter 2008 per-temperature period and length table was not obtainable (Wiley returned 403, the paper is not in PMC), and Kicheva 2007 and Yu 2009 are not open. The task's planned temperature hold-out for A and the Dpp/Wg/Fgf8-2009 records for B were therefore not done. Soroldoni 2014 and mouse, snake and frog data were not reached in the time.\n2. Law A: S = v*T is only non-trivial if v and T are measured independently. At 27 C the published fits give 25.5 um per somite, while raw tail growth is 27.5 to 32.7 um per somite in held-out embryos. The same paper quotes PSM shrinkage of 24 um per somite, so 'v' is ambiguous (tail growth vs PSM shrinkage vs wavefront), and the checked Lean file does not say which.\n3. Law A across temperature: the temperature cancellation is true by construction of the two published fits (both proportional to T - 14.4). I did not test it on raw per-temperature data, so it is not a held-out result.\n4. Law B: with FRAP D and measured k, the law over-predicts the Nodal gradient length 4 to 6 times; with FCS D of about 60 um2/s it would be over 20 times. The single-D, single-k formula ignores binding to receptors and uses whichever D the assay gives. For Fgf8, sqrt(D) scaling predicted a 27% shortening where 11% was measured.\n5. Earlier agent work: I did NOT read hv-morph-segmentation.json or hv-mol-morphogen.json in tracks/research/agents (only their sizes were checked), so I cannot report errors in them. That stage of the task is not done.\n6. Earlier Lean: MorphogenGradient.lean takes lam^2 = D*tau as a hypothesis and never derives it; ClockWavefront.lean has no temperature statement.\n7. My run: (a) I fetched the wrong PMC id once (an unrelated mussel paper) and discarded it. (b) The pooled mean of the WT-growth sheet (about 29.5 um per somite) and the Nodal values were visible before the amendment; this is disclosed in prereg.md. (c) The combined held_all block for B was added after seeing the first results. (d) The B hold-out has n=3 and its shuffle control is inconclusive. (e) Nodal D and k come from Muller 2012 and lambda from Wang 2016, different labs and constructs. (f) The unit of the growth-rate fit (um/h) is assumed. (g) SomiteMorphogenCase.lean was not compiled. (h) The run took longer than the 20-minute budget. (i) Only prereg.md was run through the holdout leak checker (clean); the other files were not scanned, though none uses data from the frozen clade.",
+  "data_used": "Zhang et al. 2022 Commun Biol source data xlsx (sheet WT-growth: cumulative tail growth for 8 embryos at somite stages 8 to 20, 27 C) plus the fits quoted in its text. Muller et al. 2012 Science (D by FRAP, clearance k for Squint and Cyclops). Wang et al. 2016 eLife (measured Nodal gradient lengths). Gupta et al. Biophys J (Fgf8-eGFP D by FCS and decay length in 3 conditions). All zebrafish; nothing from the frozen clade.",
+  "holdout_set_size": "A: 5 embryos, 65 points. B: 3 records.",
+  "lean_status": "Existing ClockWavefront.lean and MorphogenGradient.lean are PASS in CHECKED.txt but do not state temperature compensation or derive lambda = sqrt(D/k). The new SomiteMorphogenCase.lean (4 theorems) is an uncompiled draft."
+ },
+ "key_claims": [
+  "Clock-and-wavefront with independently published speed and period predicts 25.5 um per somite at 27 C; held-out embryos measure 27.5 to 32.7 um (law about 24% low, MALE 0.126 vs baseline 0.201).",
+  "A temperature-independent wavefront speed is ruled out for zebrafish: somite size is constant while the period changes threefold.",
+  "lambda = sqrt(D/k) with measured FRAP D and clearance k over-predicts zebrafish Nodal gradient lengths by 6.1x (Squint) and 3.8x (Cyclops); rank order is right.",
+  "For Fgf8, sqrt(D) scaling lost to the mean baseline on the single held-out condition (150 um predicted, 179 um measured).",
+  "The morphogen hold-out (n=3) is too small: the shuffled-label control does not cleanly separate from the model."
+ ],
+ "lay_summary": [
+  "A fish embryo builds its backbone segments one at a time, like a ticking clock that stamps out a block each tick; the rule says block size equals how fast the body grows times how long one tick takes.",
+  "We checked that rule against real measurements of growing zebrafish tails that we had set aside beforehand, and the rule came out about a quarter too small, though still better than a plain guess.",
+  "A second rule says how far a chemical signal spreads before it fades: it depends on how fast the signal moves and how fast it is cleaned up.",
+  "For two real signals in fish embryos that rule predicted a spread four to six times too far, probably because the signals stick to cells along the way.",
+  "We could not get some of the older papers we wanted, so these tests are small and should be treated as a first look."
+ ],
+ "glossary": {
+  "somite": "One of the repeated blocks of tissue along an embryo's back that later become backbone and muscle.",
+  "segmentation clock": "Genes that switch on and off in a regular rhythm; each cycle makes one somite.",
+  "wavefront": "A moving boundary in the tail tissue; where it meets the clock, a new somite boundary forms.",
+  "PSM (presomitic mesoderm)": "The unsegmented tail tissue that somites are cut from.",
+  "morphogen": "A signalling molecule that spreads from a source and tells cells where they are by how much of it they see.",
+  "decay length (lambda)": "The distance over which a morphogen's amount drops to about 37% of its starting value.",
+  "D (diffusion coefficient)": "How fast molecules spread out, in square micrometres per second.",
+  "k (clearance rate)": "The fraction of molecules removed per second.",
+  "FRAP": "Bleaching a patch of glowing molecules with a laser and timing how fast the glow returns; measures slow, effective spreading over many cells.",
+  "FCS": "Watching the flicker of a few glowing molecules in a tiny spot; measures fast, local movement.",
+  "held-out set": "Data put aside before any fitting and used only once, at the end, to test the prediction.",
+  "MALE": "Mean absolute log10 error: 0 is perfect, 0.3 means off by about a factor of two on average.",
+  "baseline": "A deliberately simple guess (such as the average) that a real model should beat.",
+  "shuffled-label control": "Scrambling the true answers on purpose to confirm the score gets worse; if it does not, the test cannot tell good from bad.",
+  "Lean": "A proof-checking program that verifies mathematical statements step by step."
+ },
+ "reproduce": [
+  {
+   "what": "Whole case: download the Zhang 2022 source data, apply the hash split, fit on development, evaluate once on held-out, run the shuffled control, write results.json",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents5/cs-somite-morphogen/run.py",
+   "expected": "A held-out law MALE 0.126, fitted slope 0.058, baseline 0.201, shuffled 0.333; B held_all model 0.482, baseline 0.606, shuffled 0.538; Nodal pure-law fold errors 6.06 and 3.85"
+  },
+  {
+   "what": "Open data file used for Statement A",
+   "command_or_url": "https://static-content.springer.com/esm/art%3A10.1038%2Fs42003-022-03053-0/MediaObjects/42003_2022_3053_MOESM4_ESM.xlsx",
+   "expected": "xlsx of about 1.9 MB with sheet WT-growth"
+  },
+  {
+   "what": "Full texts the morphogen numbers were read from",
+   "command_or_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC4887204/fullTextXML ; https://www.ebi.ac.uk/europepmc/webservices/rest/PMC11947464/fullTextXML ; https://www.ncbi.nlm.nih.gov/research/bionlp/RESTful/pmcoa.cgi/BioC_json/PMC3525670/unicode",
+   "expected": "Sentences quoted in the findings (hard-coded as the record table in run.py)"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-somite-morphogen/run.py",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-somite-morphogen/prereg.md",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-somite-morphogen/results.json",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-somite-morphogen/SomiteMorphogenCase.lean"
+ ],
+ "citations": [
+  {
+   "title": "Fgf8 dynamics and critical slowing down may account for the temperature independence of somitogenesis",
+   "authors": "Zhang et al. (author list not captured in this run)",
+   "year": 2022,
+   "venue": "Communications Biology",
+   "doi_or_arxiv": "10.1038/s42003-022-03053-0",
+   "verified": true,
+   "how_verified": "Full text PMC8821593 fetched from Europe PMC; source data xlsx downloaded and parsed",
+   "used_for": "Statement A: published fits for period and growth rate, raw tail growth at 27 C"
+  },
+  {
+   "title": "Differential diffusivity of Nodal and Lefty underlies a reaction-diffusion patterning system",
+   "authors": "Muller et al.",
+   "year": 2012,
+   "venue": "Science",
+   "doi_or_arxiv": "10.1126/science.1221920",
+   "verified": true,
+   "how_verified": "Author manuscript PMC3525670 fetched via NCBI BioC; abstract via Europe PMC",
+   "used_for": "D (FRAP) and clearance k for Squint and Cyclops"
+  },
+  {
+   "title": "Extracellular interactions and ligand degradation shape the nodal morphogen gradient",
+   "authors": "Wang et al.",
+   "year": 2016,
+   "venue": "eLife",
+   "doi_or_arxiv": "10.7554/eLife.13879",
+   "verified": true,
+   "how_verified": "Full text PMC4887204 fetched from Europe PMC",
+   "used_for": "Measured Nodal gradient lengths; FCS diffusion coefficient"
+  },
+  {
+   "title": "Fine-tuning of Fgf8 morphogen gradient by heparan sulfate proteoglycans in the extracellular matrix",
+   "authors": "Gupta, Kurth, et al.",
+   "year": 2024,
+   "venue": "Biophysical Journal",
+   "doi_or_arxiv": "10.1016/j.bpj.2024.12.009",
+   "verified": true,
+   "how_verified": "Full text PMC11947464 fetched from Europe PMC; year as given in the XML (the record id in run.py says gupta2025)",
+   "used_for": "Fgf8-eGFP D and decay length in three conditions"
+  },
+  {
+   "title": "Dynamics of zebrafish somitogenesis",
+   "authors": "Schroter et al.",
+   "year": 2008,
+   "venue": "Developmental Dynamics",
+   "doi_or_arxiv": "10.1002/dvdy.21458",
+   "verified": false,
+   "how_verified": "Abstract only (Europe PMC, PMID 18265021); full text returned 403 at Wiley",
+   "used_for": "Qualitative statement of temperature compensation; no per-temperature numbers obtained"
+  },
+  {
+   "title": "Kinetics of morphogen gradient formation",
+   "authors": "Kicheva et al.",
+   "year": 2007,
+   "venue": "Science",
+   "doi_or_arxiv": "10.1126/science.1135774",
+   "verified": false,
+   "how_verified": "Abstract only (Europe PMC, PMID 17255514); not open",
+   "used_for": "Not used in any number"
+  },
+  {
+   "title": "Fgf8 morphogen gradient forms by a source-sink mechanism with freely diffusing molecules",
+   "authors": "Yu et al.",
+   "year": 2009,
+   "venue": "Nature",
+   "doi_or_arxiv": "10.1038/nature08391",
+   "verified": false,
+   "how_verified": "Abstract only (Europe PMC, PMID 19741606); not open",
+   "used_for": "Not used in any number"
+  }
+ ],
+ "could_not_find": [
+  "Schroter 2008 per-temperature somitogenesis period and somite length table (Wiley 403, not in PMC)",
+  "Kicheva 2007 Dpp/Wg D, k and decay length from an open source I could open",
+  "Yu 2009 Fgf8 half-life or clearance rate (no independently measured k for Fgf8 found)",
+  "Soroldoni 2014 Doppler data (not attempted in the time)",
+  "Measured Lefty1/Lefty2 gradient decay lengths (Muller 2012 main text gives profiles only as figures)",
+  "Mouse, snake or frog somite period and length records (not attempted in the time)",
+  "Per-temperature raw growth-rate data in the Zhang 2022 source-data file (no sheet for it was seen)",
+  "Contents of tracks/research/agents/hv-morph-segmentation.json and hv-mol-morphogen.json (not read)"
+ ],
+ "recommendations": [
+  "Get the Schroter 2008 PDF through an institutional route and rerun A with whole temperatures held out; run.py's split and scorer can be reused as they are.",
+  "Read hv-morph-segmentation.json and hv-mol-morphogen.json against these findings; that review was not done here.",
+  "Split Statement A in the Lean library into named variants (tail growth, PSM shrinkage, wavefront speed), since they differ by 20 to 30% in the same paper.",
+  "For Statement B, record which D (FRAP effective vs FCS free) each record uses, and add a binding-corrected form; the plain law fails by 4 to 6 times on Nodal.",
+  "Compile SomiteMorphogenCase.lean through check.sh before counting it.",
+  "Enlarge the morphogen set (Dpp, Wg, Bicoid, Lefty) to at least about 10 records so the shuffled-label control means something."
+ ],
+ "check_output": "holdout/check-leaks.mjs on prereg.md: \"no held-out organism named; 0 warning(s)\". run.py executed twice end to end with the same numbers. The Lean draft was not compiled."
+}

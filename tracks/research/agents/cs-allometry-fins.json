@@ -1,0 +1,197 @@
+{
+ "label": "cs-allometry-fins",
+ "topic": "Full-suite case run: Strouhal band 0.2-0.4 (A) and Bainbridge frequency-speed line (B) on open fish and swimmer kinematics, whole species held out",
+ "summary": "Both statements were tested on real open data with whole species held out by a hash rule written down before any data was downloaded. Statement A (St in 0.2-0.4): 36 of 45 held-out records (80%, Wilson 95% interval 66-89%) from 9 held-out species fall inside the band, and all 9 held-out species means are inside (0.207 to 0.392). Statement B (frequency linear in speed per body length): the line fitted on 64 development species (f = 0.53 + 1.37*U/L, R2 0.92) predicts 230 held-out records from 13 species with RMSE 1.51 Hz, against 5.64 Hz for the mean baseline and 1.58 Hz for the unfitted Bainbridge line. Both scorers got clearly worse on shuffled input (A coverage 80% to 26%; B RMSE 1.51 to 7.23 Hz).\n\nLarval zebrafish are outside the band. The only larval numbers obtained are from the van Leeuwen 2015 abstract (St 2.5 falling to 0.72 as Re goes 60 to 1400), which I opened and which matches the gs-zebot-locomotion claim word for word. No raw larval records were obtained, so this is abstract-level only. The one adult zebrafish clip in the Di Santo data (2.6 cm, Re about 1860, development side) has St 0.71, so in this dataset even the adult sits above the band.\n\nA new Lean file, StrouhalBainbridge.lean, links B to A: if f = a + b*U/L and A = alpha*L then St = alpha*(b + a/u), which decreases with speed and has floor alpha*b. It passed the repo's Lean/Mathlib check, and a deliberately false variant was rejected. With development numbers (alpha 0.185, a 0.53, b 1.37) the floor is 0.25 and St exceeds 0.4 below about 0.67 body lengths per second. As a post hoc predictor of held-out St this identity did not beat a constant (RMSE 0.097 against 0.083); only its direction held (Spearman of St against speed -0.33).\n\nFiles are in D:/Users/ashenoy00000/delphi-work/agents5/cs-allometry-fins/: prereg.md, run.py, explore.py, check_lean.sh, StrouhalBainbridge.lean, results_dev.json, results_final.json, results_explore.json.",
+ "findings": [
+  {
+   "claim": "Statement A on held-out species: 36 of 45 records (80%) have St inside 0.2-0.4; 7% below, 13% above; median 0.279, range 0.169-0.461; all 9 held-out species means are inside.",
+   "value": "0.80 (Wilson 95% 0.66-0.89), n=45 records, 9 species",
+   "source": "Di Santo et al. 2021 data deposit, Megakine.csv, https://zenodo.org/records/5646507 (file opened; St column recomputed from TBF, tailAmp.m, U to within 2e-15)",
+   "evidence_quote": "megakine$St <- (megakine$TBF*megakine$tailAmp.m)/megakine$U",
+   "confidence": "medium: real data, but only 9 species and clips within a species are not independent"
+  },
+  {
+   "claim": "Statement A on development species: 79 of 103 records (76.7%) inside; median 0.306; range 0.15-0.82. Coverage differs by swimming mode: sub-carangiform 85%, anguilliform 64%, carangiform 47% (median 0.408).",
+   "value": "0.767, n=103 records, 34 species",
+   "source": "Megakine.csv, https://zenodo.org/records/5646507; results_dev.json",
+   "confidence": "medium"
+  },
+  {
+   "claim": "Statement B on held-out species: the development-fitted line f = 0.532 + 1.367*(U/L) gives RMSE 1.51 Hz on 230 held-out records (13 species); the development-mean baseline gives 5.64 Hz; the unfitted Bainbridge line f = 4/3 + (4/3)*U/L gives 1.58 Hz. Fishes only (190 records, 10 species): 1.58, 6.04 and 1.62 Hz.",
+   "value": "RMSE 1.51 Hz vs 5.64 (mean) vs 1.58 (Bainbridge); held-out Spearman 0.967",
+   "source": "Sanchez-Rodriguez et al. 2023 Nat Commun Supplementary Data sheet 'L f U' (via Europe PMC PMC10492801 supplementary files) pooled with Megakine.csv; results_final.json",
+   "evidence_quote": "'Clade', 'Species', 'Length (m)', 'Frequency (Hz)', 'Speed (m/s)'",
+   "confidence": "high for the ranking against the mean baseline; the fitted line and Bainbridge are practically tied"
+  },
+  {
+   "claim": "The development slope is 1.367 Hz per body length per second, within 3% of the Bainbridge slope 4/3, but the intercept is 0.53 Hz for all swimmers (1.06 Hz for fishes only) rather than 4/3 Hz.",
+   "value": "slope 1.367 (all), 1.282 (fishes); intercept 0.53 (all), 1.06 (fishes); R2 0.92 and 0.91",
+   "source": "results_dev.json (978 development records, 64 species)",
+   "confidence": "medium: the Bainbridge 1958 paper itself was not opened; its formula is taken from the earlier agent's memory"
+  },
+  {
+   "claim": "Broken-input controls behave correctly: shuffling tail-beat frequency across held-out records drops band coverage from 0.80 to a mean of 0.26 (0 of 2000 shuffles reach 0.80) and raises the statement-B RMSE from 1.51 to a mean of 7.23 Hz (0 of 2000 shuffles as low as the real value).",
+   "value": "A: 0.80 -> 0.258; B: 1.514 -> 7.231 Hz",
+   "source": "results_final.json",
+   "confidence": "high"
+  },
+  {
+   "claim": "Larval zebrafish fall above the band: reported St runs from 2.5 down to 0.72 as Re rises from 60 to 1400. The gs-zebot-locomotion claim matches the abstract exactly. Arithmetic check: 95 Hz * 2.4 mm / 0.72 = 317 mm/s.",
+   "value": "St 0.72-2.5, none inside 0.2-0.4 (abstract-level, no raw records)",
+   "source": "https://doi.org/10.1098/rsif.2015.0479 (abstract opened via Europe PMC, PMID 26269230)",
+   "evidence_quote": "As Re increases (60 → 1400), St (2.5 → 0.72) decreases nonlinearly",
+   "confidence": "medium: abstract only"
+  },
+  {
+   "claim": "The single adult zebrafish clip in the Di Santo data (total length 2.6 cm, Re about 1863) has St 0.71, outside the band although its Reynolds number is above the 1000 'inertial' threshold quoted by the earlier agent.",
+   "value": "St 0.71, n=1 clip (development side)",
+   "source": "Megakine.csv row for Danio_rerio, https://zenodo.org/records/5646507",
+   "confidence": "low: one clip"
+  },
+  {
+   "claim": "Lean: StrouhalBainbridge.lean (four theorems: St = alpha*(b + a/u); St decreasing in speed when a > 0; floor alpha*b; St <= 0.4 iff u >= alpha*a/(0.4 - alpha*b)) passes against the repo Mathlib, and a false reversed-floor variant is rejected.",
+   "value": "PASS, plus PASS negative control",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/cs-allometry-fins/check_lean.sh output",
+   "evidence_quote": "PASS negative control (false variant rejected)",
+   "confidence": "high"
+  },
+  {
+   "claim": "Exploratory, post hoc (not pre-registered): using the Lean identity with development numbers (alpha 0.185, a 0.532, b 1.367) to predict held-out St gives RMSE 0.097, worse than a constant development-mean St (0.083). Only the direction holds: St falls with speed (Spearman -0.40 development, -0.33 held-out).",
+   "value": "RMSE 0.097 vs 0.083 (constant); floor 0.253; St > 0.4 predicted below 0.67 BL/s",
+   "source": "results_explore.json",
+   "confidence": "medium: negative result, post hoc"
+  },
+  {
+   "claim": "The earlier hv-morph-fin-locomotion summary says its Lean file was 'NOT PROVED', but tracks/research/lean/CHECKED.txt lists that file as PASS. The agent summary is stale.",
+   "value": "summary and CHECKED.txt disagree",
+   "source": "tracks/research/agents/hv-morph-fin-locomotion.json and tracks/research/lean/CHECKED.txt (both opened)",
+   "evidence_quote": "PASS hv-morph-fin-locomotion__FinLocomotion.lean",
+   "confidence": "high"
+  }
+ ],
+ "suite": {
+  "case_name": "Fin locomotion: Strouhal band and Bainbridge line, whole species held out",
+  "statement": "A: cruising swimmers have St = f*A/U in [0.2, 0.4], with A the peak-to-peak tail amplitude. B: tail-beat frequency is linear in length-specific speed, f = a + b*(U/L), with the Bainbridge form f = 4/3 + (4/3)*U/L. The checked repo file tracks/research/lean/hv-morph-fin-locomotion__FinLocomotion.lean (PASS in CHECKED.txt) states St = a*k and only bounds St to [0.15, 0.5] from the kinematic windows; it does not state the 0.2-0.4 band or statement B. My new file StrouhalBainbridge.lean (checked, PASS, with a rejected false variant) proves that B plus a fixed amplitude fraction alpha gives St = alpha*(b + a/u), decreasing in speed, with floor alpha*b.",
+  "holdout_set": "Rule written to prereg.md at 2026-11-14T04:17:22Z (shell clock), before any kinematics file was downloaded: a species is held out iff sha256(lower-cased binomial) mod 5 == 0. Result: 13 of 77 species held out, 230 of 1208 records. For statement A, which needs amplitude, 45 held-out records from 9 species. The frozen clade and anything not on the class allow-list were dropped unread. The held-out part was evaluated once.",
+  "data_used": "Di Santo et al. 2021 Megakine.csv (151 clips, 46 species, with TBF, tail amplitude, speed and St; Zenodo record 5646507). Sanchez-Rodriguez et al. 2023 Nat Commun supplementary sheet 'L f U' (1217 rows; 1060 kept after the allow-list and completeness filter; fetched from Europe PMC PMC10492801). Larval zebrafish: van Leeuwen et al. 2015 abstract only.",
+  "validation": "Development species only (64 species, 978 records). A: the St column recomputes exactly from f*A/U (max difference 2e-15) and amplitude is peak-to-peak in the authors' code; 79 of 103 records (76.7%) are inside 0.2-0.4, median 0.306; a band of the same log-width centred on the development median is 0.216-0.432. B: least-squares fit f = 0.532 + 1.367*(U/L), R2 0.923, development RMSE 1.12 Hz against 4.01 Hz for the mean and 1.33 Hz for the Bainbridge line; fishes only f = 1.06 + 1.28*(U/L), R2 0.91.",
+  "performance": "Single final run. A: fraction of held-out records with St in 0.2-0.4 = 0.80 (36 of 45; Wilson 95% 0.66-0.89; 9 species, all 9 species means inside). Baseline, the development-tuned band 0.216-0.432: 0.71. Shuffled-frequency control: 0.26. B: held-out RMSE 1.51 Hz (n = 230, 13 species) against 5.64 Hz for the development mean and 1.58 Hz for the unfitted Bainbridge line. Shuffled-frequency control: 7.23 Hz. Both scorers got worse on broken input, as they should. Larval zebrafish (pre-declared separate stratum): reported St 0.72-2.5, none inside the band, from the abstract only.",
+  "lean_status": "StrouhalBainbridge.lean: PASS under the repo's lake env lean with Mathlib (toolchain v4.35.0). Negative control PASS: a reversed-inequality variant fails to compile. The first attempt failed on two proof steps and was fixed. This is locomotion algebra, not a biomaterial or xenobot result.",
+  "what_was_wrong": "The law: the 0.2-0.4 band is not universal. About 1 in 5 adult cruising records fall outside; carangiform swimmers in the development set are inside only 47% of the time; larval zebrafish sit at 0.72-2.5; the one adult zebrafish clip is at 0.71. St also falls with speed (Spearman -0.40 development, -0.33 held-out), so a fixed band ignores a real trend. For B, the 4/3 slope holds within 3%, but the intercept is 0.53 Hz across all swimmers, not 4/3, and fitting gives almost no gain over the 1958 line (1.51 against 1.58 Hz).\n\nEarlier agents: the hv-morph-fin-locomotion summary says its Lean file is 'NOT PROVED' while CHECKED.txt lists it PASS. Its Bainbridge formula (S9) was from memory with the source unopened; the data here are consistent with the slope, but the paper is still unopened. Its claim that the broad band 'passes only at species-mean level' is confirmed for fishes (9 of 9 species means, 80% of records). The gs-zebot-locomotion larval numbers are correct against the abstract. Its 'inertial above Re 1000' threshold does not imply St is in the band: the adult zebrafish clip at Re about 1860 has St 0.71. Neither agent ran any data test on fishes.\n\nThe data: only one open table links amplitude to speed and frequency, so statement A rests on 45 held-out clips from 9 species. Clips within a species are not independent, so the Wilson interval is too narrow. The Sanchez-Rodriguez table has amplitude only in an unlinked figure sheet. About 148 of its rows lack speed or length and were dropped. I did not check how unevenly the 230 held-out B records are spread over the 13 species.\n\nMy own run: no raw larval zebrafish records were obtained (the van Leeuwen supplement is not served by Europe PMC), so the larval stratum is abstract-level. The dataset has one adult zebrafish clip and it landed on the development side. The development-tuned baseline band did worse than the textbook band (0.71 against 0.80), so the baseline shows only that tuning did not help. Three format choices were made after the pre-registration but before any held-out outcome was seen, and are logged in prereg.md: underscores read as spaces, hagfish and lungfish rows dropped, B pooled as primary. All Di Santo rows are tagged 'fish' although they include a lancelet and lampreys. RMSE in Hz is dominated by high-frequency small fish. The identity-based St predictor is post hoc and lost to a constant."
+ },
+ "key_claims": [
+  "80% of 45 held-out records (9 held-out species) have Strouhal number inside 0.2-0.4; all 9 held-out species means are inside.",
+  "A frequency-speed line fitted on 64 development species predicts 230 held-out records with RMSE 1.51 Hz, against 5.64 Hz for the mean and 1.58 Hz for the unfitted Bainbridge line.",
+  "The fitted slope (1.37 Hz per body length per second) is within 3% of the Bainbridge 4/3; the intercept (0.53 Hz) is not 4/3.",
+  "Larval zebrafish are outside the band (St 0.72-2.5, abstract-level), and the one adult zebrafish clip in the open data is at 0.71.",
+  "A new Lean file proving St = alpha*(b + a/u) passes the repo check with a rejected false variant; as a numeric predictor of held-out St it did not beat a constant."
+ ],
+ "lay_summary": [
+  "Fish swim by wagging their tails, and scientists have a rule of thumb: tail speed divided by swimming speed (the Strouhal number) should be between 0.2 and 0.4.",
+  "We set aside 13 species without looking at them, studied the others, and then checked the rule once on the ones we had set aside.",
+  "The rule held for 8 out of 10 measurements, and for every set-aside species on average.",
+  "A second rule, that fish beat their tails faster in step with how fast they swim, predicted the set-aside animals about four times better than just guessing the average.",
+  "Baby zebrafish break the first rule: the water feels thick to them, like syrup, so they have to wag much harder for the speed they get."
+ ],
+ "glossary": {
+  "Strouhal number (St)": "Tail-beat frequency times tail sweep width, divided by swimming speed. It says how much the tail wags for each bit of forward travel.",
+  "Tail-beat frequency": "How many full tail wags per second, in hertz (Hz).",
+  "Peak-to-peak amplitude": "The full side-to-side distance the tail tip sweeps.",
+  "Body lengths per second (U/L)": "Speed measured in the animal's own length, so small and large animals can be compared.",
+  "Bainbridge line": "A 1958 finding that a fish's speed in body lengths per second rises in a straight line with its tail-beat frequency.",
+  "Reynolds number (Re)": "A number comparing how much water's inertia matters against its stickiness; small slow animals have low values and feel water as thick.",
+  "Held-out set": "Data put aside before the analysis and used only once at the end, to test honestly.",
+  "RMSE": "Root-mean-square error: the typical size of a prediction's miss, in the units of the thing predicted.",
+  "Baseline": "A simple guess, such as always predicting the average, that a real model has to beat.",
+  "Shuffled control": "Scrambling the data on purpose to confirm the test notices; the score should get worse.",
+  "Wilson interval": "A range that likely contains the true fraction given a limited number of observations.",
+  "Lean": "A proof-checking program that accepts a mathematical statement only if every step is verified.",
+  "Carangiform / anguilliform": "Swimming styles: mostly the back half of the body bends (like a jack), or the whole body bends (like an eel)."
+ },
+ "citations": [
+  {
+   "title": "Convergence of undulatory swimming kinematics across a diversity of fishes",
+   "authors": "Di Santo V, Goerig E, Wainwright DK, et al.",
+   "year": 2021,
+   "venue": "PNAS (data deposit on Dryad/Zenodo)",
+   "doi_or_arxiv": "10.1073/pnas.2113206118; data 10.5061/dryad.bg79cnp9x (Zenodo record 5646507)",
+   "verified": true,
+   "how_verified": "Zenodo API listing and files Megakine.csv, README.txt, column descriptions and Kinematics.rmd downloaded and opened",
+   "used_for": "Statement A (St per clip) and part of statement B"
+  },
+  {
+   "title": "Scaling the tail beat frequency and swimming speed in underwater undulatory swimming",
+   "authors": "Sanchez-Rodriguez J, Raufaste C, Argentina M",
+   "year": 2023,
+   "venue": "Nature Communications",
+   "doi_or_arxiv": "10.1038/s41467-023-41368-6",
+   "verified": true,
+   "how_verified": "Europe PMC record PMC10492801 (open access) and its supplementary zip downloaded; sheet 'L f U' opened",
+   "used_for": "Statement B (length, frequency, speed per individual)"
+  },
+  {
+   "title": "How body torque and Strouhal number change with swimming speed and developmental stage in larval zebrafish",
+   "authors": "van Leeuwen JL, Voesenek CJ, Muller UK",
+   "year": 2015,
+   "venue": "Journal of the Royal Society Interface",
+   "doi_or_arxiv": "10.1098/rsif.2015.0479",
+   "verified": true,
+   "how_verified": "Abstract opened via Europe PMC (PMID 26269230); author list from the earlier agent, not re-checked",
+   "used_for": "Larval zebrafish stratum; check of the gs-zebot-locomotion claim"
+  },
+  {
+   "title": "The speed of swimming of fish as related to size and to the frequency and amplitude of the tail beat",
+   "authors": "Bainbridge R",
+   "year": 1958,
+   "venue": "Journal of Experimental Biology",
+   "doi_or_arxiv": "10.1242/jeb.35.1.109",
+   "verified": false,
+   "how_verified": "Not opened; formula U/L = 0.75*(f - 4/3) taken from the earlier agent file, which had it from memory",
+   "used_for": "Published-model baseline for statement B"
+  }
+ ],
+ "could_not_find": [
+  "Raw larval zebrafish kinematics (f, A, U per sequence): the van Leeuwen 2015 supplement is not served by the Europe PMC supplementary-files endpoint; only the abstract was used.",
+  "Bainbridge 1958 full text: not opened, so the 3/4 and 4/3 constants remain unverified against the primary source.",
+  "A second open table linking amplitude to speed and frequency per record: the Sanchez-Rodriguez amplitude sheet (Figure 4c) is not row-linked to the L-f-U sheet, so statement A rests on one dataset.",
+  "Per-species record counts in the held-out B set were not inspected for imbalance."
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-allometry-fins/run.py",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-allometry-fins/explore.py",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-allometry-fins/check_lean.sh",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-allometry-fins/StrouhalBainbridge.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-allometry-fins/prereg.md"
+ ],
+ "check_output": "run.py final: A_final n_records 45, inside 36, frac_inside 0.8, wilson95 [0.662, 0.891], baseline_frac_inside 0.711, shuffled_f_frac_inside_mean 0.258, species_means_inside 9 of 9. B_final n_records 230, n_species 13, rmse_dev_fitted_line_Hz 1.514, rmse_baseline_dev_mean_Hz 5.641, rmse_baseline_bainbridge_Hz 1.579, rmse_shuffled_f_mean_Hz 7.231. check_lean.sh: 'PASS StrouhalBainbridge.lean' and 'PASS negative control (false variant rejected)'. holdout/check-leaks.mjs on each .md/.py/.lean/.json file in the folder: 'no held-out organism named; 0 warning(s)' (the checker skips .sh).",
+ "reproduce": [
+  {
+   "what": "Download data, development fit and the single held-out evaluation (needs Python 3 with openpyxl and internet)",
+   "command_or_url": "cd D:/Users/ashenoy00000/delphi-work/agents5/cs-allometry-fins && python -P -E run.py --stage all",
+   "expected": "results_dev.json and results_final.json; A frac_inside 0.8 (n=45); B RMSE 1.514 Hz against 5.641 (mean) and 1.579 (Bainbridge); shuffled controls 0.258 and 7.231"
+  },
+  {
+   "what": "Lean check plus negative control",
+   "command_or_url": "bash D:/Users/ashenoy00000/delphi-work/agents5/cs-allometry-fins/check_lean.sh",
+   "expected": "PASS StrouhalBainbridge.lean; PASS negative control (false variant rejected)"
+  },
+  {
+   "what": "Exploratory post hoc identity check (run after run.py)",
+   "command_or_url": "cd D:/Users/ashenoy00000/delphi-work/agents5/cs-allometry-fins && python -P -E explore.py",
+   "expected": "results_explore.json; held-out rmse_identity 0.097 against rmse_constant 0.083"
+  },
+  {
+   "what": "Data sources",
+   "command_or_url": "https://zenodo.org/records/5646507 and https://www.ebi.ac.uk/europepmc/webservices/rest/PMC10492801/supplementaryFiles",
+   "expected": "Megakine.csv (66,507 bytes) and a zip containing 41467_2023_41368_MOESM3_ESM.xlsx"
+  }
+ ],
+ "recommendations": [
+  "Report the Strouhal band as 'about 80% of adult cruising fish records, all species means' rather than as a law, and carry the swimming-mode split (carangiform 47% inside on development data) into the dashboard text.",
+  "Fix the stale hv-morph-fin-locomotion summary: its Lean file is PASS in CHECKED.txt, not 'NOT PROVED'.",
+  "If the hub wants it, StrouhalBainbridge.lean can go into tracks/research/lean; it links statement B to statement A and already has a negative control.",
+  "Get raw larval zebrafish sequences (the van Leeuwen 2015 supplement or the authors' deposit) before making any quantitative larval claim; the current evidence is one abstract.",
+  "Open Bainbridge 1958 to confirm the 3/4 and 4/3 constants; the data support the slope but not the intercept.",
+  "For a stronger test of A, find a second open table with amplitude linked to speed and frequency; 9 held-out species is thin."
+ ]
+}

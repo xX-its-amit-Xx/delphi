@@ -1,0 +1,178 @@
+{
+ "label": "cs-crosslink-swelling",
+ "topic": "Full-suite case: crosslinker (\"linker\") dose vs modulus vs equilibrium swelling in bio-based networks, with whole material systems held out",
+ "summary": "PARTIAL RESULT. The sign of the law held on the held-out system, but the exponent test (Q ~ G^-3/5) was NOT obtained: no open paper I reached gave swelling and modulus as numbers at the same three or more crosslinker doses.\n\n- Lean: no checked file in tracks/research/lean stated or bounded this law, so I wrote CrosslinkSwellingWindow.lean. It passes the project check.sh (errors=0, sorryAx=0, 5/5 axiom lines). It proves consequences of two named hypotheses (G = nu kT; Q^(5/3) G = K); it does not derive them.\n- Holdout: preregistered before any data fetch. The sha256 ordering of six fixed system ids held out citric-acid-cellulose and transglutaminase-gelatin.\n- Development (calcium-alginate, one paper, 6 series of 3 CaCl2 doses): storage modulus rose with dose in 6/6 series, 5 strictly.\n- Held-out (citric-acid-cellulose, two papers, 11 single-arm series): predicted sign in 9/11 (0.818) against a coin baseline of 0.5, one-sided sign test p = 0.033. Shuffled labels gave 0.499.\n- The held-out test is weaker than preregistered: single-arm (dose vs modulus, or dose vs swelling) rather than paired, and 10 of the 11 series come from one paper's films, so they are not independent.\n- Transglutaminase-gelatin (held out) and genipin-chitosan, genipin-gelatin and tannic-acid (development) yielded no series meeting the inclusion rule; their numbers were in figures only.\n\nFiles are in D:/Users/ashenoy00000/delphi-work/agents5/cs-crosslink-swelling/: prereg.md, series.csv, evaluate.py, results.json, CrosslinkSwellingWindow.lean, lean_check.log, epmc.py.",
+ "findings": [
+  {
+   "claim": "Development system (calcium-alginate): storage modulus E' rises with CaCl2 dose (2.5, 5, 10 % w/v) in 6 of 6 formulation series; 5 strictly monotone, one flat at the top (M 2%: 34.31, 60.44, 60.24 kPa).",
+   "source": "Europe PMC full text PMC13610700 (doi 10.3390/ph19091441), DMA table and formulation table",
+   "value": "6/6 predicted sign; sign test p=0.016; shuffled control 0.501",
+   "confidence": "medium (one paper, 3 doses per series)",
+   "evidence_quote": "Storage modulus (E′) | Increase | Increase | Increase"
+  },
+  {
+   "claim": "The same alginate paper reports the swelling arm of the law only qualitatively and in figures, so no paired Q-G series could be built from it.",
+   "source": "Europe PMC full text PMC13610700, trends table",
+   "value": "no numeric swelling per dose",
+   "confidence": "high",
+   "evidence_quote": "Reduced at higher crosslinking (evaluated at fixed CaCl 2 )"
+  },
+  {
+   "claim": "Held-out system (citric-acid cellulose), modulus arm: tensile modulus of bacterial-cellulose films rises monotonically across the five citric-acid-modified samples (17.97, 473.59, 778.42, 945.73, 1024 MPa). I took the dose order from the sample names MBC0.03 to MBC0.60 and did not verify the dose unit.",
+   "source": "Europe PMC full text PMC8433797 (doi 10.3390/polym13172966), mechanical properties table",
+   "value": "Spearman rho = +1.0, n = 5 doses",
+   "confidence": "medium (dry-film tensile modulus, film thickness varies 0.08-2.16 mm)",
+   "evidence_quote": "MBC0.60 | 0.18 ± 0.09 | 1024 ± 44.66"
+  },
+  {
+   "claim": "Held-out system (citric-acid cellulose), swelling arm: in CMC/MCC hydrogel films at 5, 7.5 and 10 % citric acid, water uptake or rehydration fell with dose in 8 of 10 series with three valid doses. Two series went the wrong way (100:0 and 70:30 water uptake at pH 7).",
+   "source": "Europe PMC full text PMC12911528 (doi 10.1155/ijbm/2806425), gel fraction/water uptake table and rehydration table",
+   "value": "8/10 predicted sign, 6 strictly monotone",
+   "confidence": "low-medium (one paper; the 10 series share films, so they are not independent)",
+   "evidence_quote": "80:20 | 1605.06 ± 41.21 | 424.72 ± 69.24 | 325.63 ± 47.71"
+  },
+  {
+   "claim": "Single final held-out evaluation, both arms combined: 9 of 11 series show the predicted sign, against a coin baseline of 0.5. With shuffled labels the scorer falls to 0.499, and only 3.5 % of 1000 shuffles reach 9/11.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/cs-crosslink-swelling/results.json (python evaluate.py)",
+   "value": "0.818 vs 0.5; one-sided sign test p = 0.033",
+   "confidence": "low-medium"
+  },
+  {
+   "claim": "The exponent test (slope of log Q on log G = -0.6) was not obtained on development or held-out data. None of about 30 open-access full texts screened gave swelling and modulus numerically at the same three or more crosslinker doses.",
+   "source": "Screening log: Europe PMC searches and table/text scans via epmc.py; XML cached in C:/Temp/delphi-sprint/cs-crosslink-swelling/xml",
+   "value": "n = 0 paired series",
+   "confidence": "high that it was not obtained in this run; not evidence that such data do not exist"
+  },
+  {
+   "claim": "A new Lean file passes the project checker. From G = nu kT and Q^(5/3) G = K it proves: modulus strictly increases with crosslink density; swelling strictly decreases with modulus; log Q = (3/5)(log K - log G); and no formulation meets both floors when K < Gmin * Qmin^(5/3).",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/cs-crosslink-swelling/lean_check.log (bash tracks/lean/check.sh)",
+   "value": "errors=0 sorryAx=0 axiom-lines=5/5",
+   "confidence": "high for the algebra; the two physical formulas are named hypotheses, not derived",
+   "evidence_quote": "ALL CHECKED: no errors, no sorryAx"
+  },
+  {
+   "claim": "In a genipin-gelatin paper (development system, text only, two doses, so excluded by the inclusion rule) the direction agrees with the law: 0.3 % genipin swells less than 0.1 %.",
+   "source": "Europe PMC full text PMC12940202 (doi 10.3390/ijms27041659)",
+   "value": "about 600 % vs about 800-1100 %",
+   "confidence": "low (2 doses, approximate values in text)",
+   "evidence_quote": "0.3% GNP groups exhibited a moderate swelling ratio (≈600) compared to the 0.1% GNP groups"
+  }
+ ],
+ "suite": {
+  "case_name": "Crosslinker dose, modulus and swelling trade-off in bio-based networks (linker biology for a printable biomaterial)",
+  "statement": "Within one network chemistry, more crosslinker raises modulus (affine rubber elasticity, G = nu k T) and lowers equilibrium swelling (Flory-Rehner). In the high-swelling limit Q^(5/3) * G = K, so log Q against log G has slope -3/5. No checked Lean file under tracks/research/lean stated or bounded this; none mentions swelling. I wrote CrosslinkSwellingWindow.lean in my folder. It passes tracks/lean/check.sh and proves the monotonicity, the -3/5 log slope and an empty-window condition (K < Gmin * Qmin^(5/3)) from those two formulas, which are named hypotheses.",
+  "holdout_set": "Preregistered in prereg.md, shell timestamp 2026-11-14T04:17:07Z UTC, before any data fetch. Unit is the material system. The six fixed ids were sorted by sha256 and the first two held out: citric-acid-cellulose and transglutaminase-gelatin. Development: tannic-acid, genipin-gelatin, calcium-alginate, genipin-chitosan. Held-out size obtained: 11 series (35 dose points) from 2 papers, all citric-acid-cellulose; 0 usable series for transglutaminase-gelatin.",
+  "validation": "Development only. Calcium-alginate (PMC13610700) gave 6 series of 3 CaCl2 doses with numeric storage modulus: predicted sign (modulus up with dose) in 6/6, strictly monotone in 5/6, one-sided sign test p = 0.016. The swelling arm was only qualitative there (the paper's trend table says reduced at higher crosslinking). Genipin-gelatin, genipin-chitosan and tannic-acid papers had values in figures or at fewer than 3 doses, so no development slope of log Q on log G could be fitted.",
+  "performance": "Single final held-out evaluation, metric M1 = fraction of series whose Spearman sign matches the law. 9 of 11 series = 0.818 against a coin baseline of 0.5; one-sided sign test p = 0.033. That is 1/1 on the modulus arm (5 doses, rho = +1) and 8/10 on the swelling arm. Broken-input control: shuffling values within series (1000 seeds) drops the score to a mean of 0.499, and only 3.5 % of shuffles reach 0.818, so the scorer does get worse. Metric M2 (RMSE of log Q under the fixed -0.6 slope against a mean baseline) was NOT OBTAINED: n = 0 paired series. No simulated data was substituted.",
+  "what_was_wrong": "1. The exponent test could not be run. Papers report swelling and modulus in separate bar charts, and my rule (fixed in advance) forbade digitising figures.\n2. Deviation from prereg: the held-out monotonicity test is single-arm (dose vs modulus in one paper, dose vs swelling in another), not paired within a series.\n3. Ten of the 11 held-out series come from one paper's films (same films under rehydration, pH 7 and pH 4), so the sign-test p-value overstates the evidence. Effective n is nearer 3-4.\n4. Two held-out series contradict the law (CMC 100:0 and 70:30 water uptake at pH 7 rise with citric acid). In that paper several low-dose films lost mass (negative uptake) or did not gel. Below the gel point, more crosslinker lets more material survive to swell, which the Flory-Rehner statement does not cover.\n5. The held-out modulus series is a dry-film tensile modulus with thickness varying 0.08-2.16 mm, not a swollen-gel shear modulus. I inferred dose order from the sample names (MBC0.03 to MBC0.60) and did not verify the unit.\n6. The law itself: G = nu kT and Q ~ G^(-3/5) assume a covalent, affine, homogeneous network in good solvent at high swelling. Ionic alginate (egg-box junctions, ion exchange), cryogels and semi-crystalline cellulose films violate these, and water uptake in percent is not the volumetric Q.\n7. In the alginate development paper, modulus saturates at high Ca2+ (60.44 to 60.24 kPa), so monotonic is not strictly monotonic.\n8. Earlier agent work: none of the agent files in tracks/research/agents that I scanned (bm-hydrogels, bm-biopolymer-films, bm-poc-designs, hv-mat-biomaterials) had a finding on crosslinker dose against swelling for bio-based linkers. bm-hydrogels covers synthetic PEGDA, GelMA and PNIPAm only. So the linker-biology claim had no data or Lean backing before this run.\n9. My own run: the first batch scan piped through a buffering command and hit the 120 s timeout. My scan of earlier agent files crashed on a non-string field, so it covered only part of them. I necessarily saw held-out numbers while transcribing them, though no statistic was computed before the single evaluation. Only about 30 papers were screened in the time, and transglutaminase-gelatin yielded nothing.",
+  "lean_status": "CrosslinkSwellingWindow.lean: ALL CHECKED by tracks/lean/check.sh (toolchain v4.35.0; errors=0, sorryAx=0, axiom-lines=5/5; axioms propext, Classical.choice, Quot.sound). It is conditional on two named physical hypotheses and lives in my agent folder, not the repo.",
+  "data_used": "Europe PMC open-access full-text XML. PMC13610700 (alginate, development), PMC8433797 and PMC12911528 (citric-acid cellulose, held out). Values were transcribed from tables into series.csv (53 rows). Raw XML is cached under C:/Temp/delphi-sprint/cs-crosslink-swelling/xml."
+ },
+ "lay_summary": [
+  "Gels are like nets that soak up water: adding more 'linker' ties more knots in the net.",
+  "The rule says more knots make the gel stiffer but let it drink less water, so you cannot have a gel that is both very stiff and very thirsty.",
+  "We set aside two kinds of gel before looking at anything, then checked the rule on one of them, made from plant fibre and citric acid (the acid in lemons): it went the right way in 9 out of 11 small experiments, where guessing would give about half.",
+  "We could not check the exact number in the rule (how fast thirst drops as stiffness rises), because the papers show those values only as pictures, not as numbers we could read.",
+  "A computer proof checker confirmed the maths of the rule is consistent, but that is not the same as showing nature follows it."
+ ],
+ "glossary": {
+  "crosslinker (linker)": "A small molecule or ion that ties polymer chains together, like knots in a net.",
+  "modulus": "How stiff a material is: how hard you must push to deform it.",
+  "equilibrium swelling ratio (Q)": "How many times its dry size or weight a gel reaches after soaking until it stops growing.",
+  "rubber elasticity (G = nu k T)": "Theory saying stiffness is proportional to the number of tied chain segments per volume.",
+  "Flory-Rehner": "Theory that balances a gel's wish to absorb water against the elastic pull of its network.",
+  "held-out set": "Data set aside before any analysis and used only once, at the end, to test the rule fairly.",
+  "Spearman rho": "A number from -1 to +1 saying whether one quantity goes steadily up or down with another.",
+  "sign test": "A check of whether results point the predicted way more often than a coin flip would.",
+  "genipin": "A natural crosslinker from gardenia fruit that ties proteins and chitosan.",
+  "transglutaminase": "An enzyme that glues protein chains together.",
+  "Lean": "A proof-checking program that verifies each step of a mathematical argument.",
+  "named hypothesis": "An assumption written out explicitly that a proof depends on but does not itself prove."
+ },
+ "key_claims": [
+  "Held-out citric-acid-cellulose: 9 of 11 series show the predicted sign (0.818 vs 0.5 baseline, p = 0.033); the shuffled control falls to 0.499.",
+  "Development calcium-alginate: modulus rises with CaCl2 dose in 6 of 6 series.",
+  "The Q ~ G^(-3/5) exponent was not tested: zero paired numeric series were found in open full texts without digitising figures.",
+  "A new Lean file, CrosslinkSwellingWindow.lean, passes check.sh and gives a formal empty-window condition, K < Gmin * Qmin^(5/3).",
+  "Below the gel point the swelling law can reverse (2 of 11 held-out series)."
+ ],
+ "recommendations": [
+  "Run the exponent test with a preregistered figure-digitisation protocol (two independent digitisations per figure), or with author-deposited data from Zenodo or Dryad; tables alone are not enough.",
+  "For the Mamou-Mani proposal, state the trade-off as the Lean window condition and measure K for the chosen linker chemistry with a 5-dose series, with modulus and mass swelling taken on the same swollen samples.",
+  "Add a gel-point guard to the law: the monotone swelling claim should apply only above the dose where gel fraction is non-zero.",
+  "Before merging CrosslinkSwellingWindow.lean into tracks/research/lean, have the Lean thread review it; it is conditional on two named hypotheses.",
+  "Treat ionic alginate separately from covalent linkers (genipin, citric acid, transglutaminase); the theory's assumptions differ."
+ ],
+ "citations": [
+  {
+   "title": "Comparative Evaluation of Commercial Alginate Hydrogels: Effects of Viscosity, Polymer Concentration, and Crosslinking (title as truncated in Europe PMC search output)",
+   "doi_or_arxiv": "10.3390/ph19091441",
+   "year": 2026,
+   "venue": "Pharmaceuticals (PMC13610700)",
+   "verified": true,
+   "how_verified": "Full-text XML fetched from Europe PMC; tables read",
+   "used_for": "Development: modulus vs CaCl2 dose"
+  },
+  {
+   "title": "Catalyst-Free Crosslinking Modification of Nata-de-Coco-Based Bacterial Cellulose Nanofibres Using Citric Acid (title truncated)",
+   "doi_or_arxiv": "10.3390/polym13172966",
+   "year": 2021,
+   "venue": "Polymers (PMC8433797)",
+   "verified": true,
+   "how_verified": "Full-text XML fetched from Europe PMC; mechanical table read",
+   "used_for": "Held-out: modulus vs citric acid dose"
+  },
+  {
+   "title": "Selecting Hydrogel Films Composed of Carboxymethyl Cellulose and Microcrystalline Cellulose From OPEFB With Citric Acid (title truncated)",
+   "doi_or_arxiv": "10.1155/ijbm/2806425",
+   "year": 2026,
+   "venue": "PMC12911528",
+   "verified": true,
+   "how_verified": "Full-text XML fetched from Europe PMC; water uptake and rehydration tables read",
+   "used_for": "Held-out: swelling vs citric acid dose"
+  },
+  {
+   "title": "Tocotrienol-Incorporated Gelatin Hydrogel Crosslinked with Genipin for Future Bone Tissue Engineering Applications (title truncated)",
+   "doi_or_arxiv": "10.3390/ijms27041659",
+   "year": 2026,
+   "venue": "Int J Mol Sci (PMC12940202)",
+   "verified": true,
+   "how_verified": "Full-text XML fetched from Europe PMC; text read",
+   "used_for": "Qualitative direction only; excluded from scoring (2 doses)"
+  }
+ ],
+ "reproduce": [
+  {
+   "what": "Final evaluation (development and held-out sign test plus shuffled control)",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents5/cs-crosslink-swelling/evaluate.py",
+   "expected": "dev 6/6 (p=0.0156); held 9/11 = 0.818 (p=0.0327); shuffled about 0.50; exponent test NOT OBTAINED; writes results.json"
+  },
+  {
+   "what": "Lean check",
+   "command_or_url": "cd D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci && bash tracks/lean/check.sh D:/Users/ashenoy00000/delphi-work/agents5/cs-crosslink-swelling/CrosslinkSwellingWindow.lean",
+   "expected": "errors=0 sorryAx=0 axiom-lines=5/5; ALL CHECKED"
+  },
+  {
+   "what": "Re-open a source table",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents5/cs-crosslink-swelling/epmc.py show PMC12911528",
+   "expected": "Prints the water uptake and rehydration tables transcribed in series.csv"
+  }
+ ],
+ "could_not_find": [
+  "Any open paper giving swelling ratio AND modulus as numbers at the same three or more crosslinker doses, for any of the six systems.",
+  "Any usable transglutaminase-gelatin series (held out): the five full texts screened had no table with dose, modulus and swelling.",
+  "Numeric genipin-chitosan, genipin-gelatin or tannic-acid dose series (development); values were in figures or at fewer than 3 doses.",
+  "Numeric swelling per CaCl2 dose in the alginate paper (figures only).",
+  "The dose unit behind the sample names MBC0.03 to MBC0.60 in PMC8433797 (not verified in the text)."
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-crosslink-swelling/evaluate.py",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-crosslink-swelling/epmc.py",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-crosslink-swelling/CrosslinkSwellingWindow.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-crosslink-swelling/series.csv",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-crosslink-swelling/prereg.md",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-crosslink-swelling/results.json",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-crosslink-swelling/lean_check.log"
+ ],
+ "check_output": "CrosslinkSwellingWindow.lean  errors=0 sorryAx=0 axiom-lines=5/5 ... ALL CHECKED: no errors, no sorryAx\ndev {'n_series': 6, 'n_sign_ok': 6, 'fraction': 1.0, 'n_strictly_monotone': 5, 'one_sided_sign_test_p': 0.0156, 'shuffled_mean_fraction': 0.501}\nheld {'n_series': 11, 'n_sign_ok': 9, 'fraction': 0.818, 'n_strictly_monotone': 7, 'one_sided_sign_test_p': 0.0327, 'shuffled_mean_fraction': 0.499, 'shuffled_frac_runs_ge_observed': 0.035}\nNOT OBTAINED: no held-out (or dev) source gave swelling and modulus numerically at the same >=3 doses."
+}

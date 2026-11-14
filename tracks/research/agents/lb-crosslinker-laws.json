@@ -1,0 +1,202 @@
+{
+ "label": "lb-crosslinker-laws",
+ "topic": "Lean laws for crosslinked bio-based networks: stiffness and swelling against crosslink density, and an elimination certificate for a bilayer's crosslink window",
+ "summary": "The main file CrosslinkerWindow.lean reaches ALL CHECKED (14 theorems, standard axioms only, no sorry); the companion CrosslinkerScalingBridge.lean also reaches ALL CHECKED (3 theorems) and the negative control is rejected (sorryAx=1, FAILED).\n\nWhat is proved, with every physical model either a definition or a named hypothesis:\n- **Stiffness:** G = nu*kT is strictly increasing in nu, and E = 3*nu*kT >= E_min holds exactly when nu >= E_min/(3kT).\n- **Swelling:** under the high-swelling Flory-Rehner balance nu*V1*s^5 = A (s is the linear stretch, so s^5 = Q^(5/3)), the stretch and the strain s-1 are strictly decreasing in nu. The bridge file proves the Q = C*nu^(-3/5) form and the identity (s^3)^(5/3) = s^5.\n- **Ceiling:** the Timoshenko bound of 3/(2h) is re-proved, plus positivity of the coefficient.\n- **Design theorem, model-free:** for any strictly increasing E and strictly decreasing eps, every density above nu_c misses the target curvature, every density below nu_s misses E_min, and the window is empty when nu_c < nu_s.\n- **Design theorem, computable:** the same with nu_c = A/(V1*(1+(2/3)*kappa*h)^5) and nu_s = E_min/(3kT).\n- **Worked instance:** a kernel-checked genipin-chitosan case.\n\nWhat was wrong:\n- **The computable form does not apply to the cited material.** Kildeeva et al. 2020 report chi = 0.85 and 0.99, above 1/2, so the neutral high-swelling balance has no positive solution. Only the model-free form was used for the example.\n- **The curvature side barely binds in liquid water.** Derived strains are 0.65-1.25, so the ceiling at h = 1 mm is 969-1879 per metre. The instance had to use an extreme target (1000 per metre, a 1 mm bend radius on a 1 mm part, outside thin-beam validity) with 8 MPa to get an empty window. A 100 per metre target is not eliminated.\n- **\"E increases with nu\" is unverified for this material.** The source gives no modulus for these films, and its breaking load did not rise with genipin (73 MPa uncrosslinked against 65 and 55 MPa crosslinked).\n- **The exponent comparison is not an independent test.** The apparent exponent is -0.49 against -0.60 predicted, but the paper fitted Mc from the same swelling data.\n- **Validation is thin.** Two films from one paper; there is no holdout set for this law.\n\nLean runs used: 4 of 6 (one was a transient .olean collision on the bridge file, re-run clean).\n\nFiles are in D:/Users/ashenoy00000/delphi-work/agents5/lb-crosslinker-laws:\n- CrosslinkerWindow.lean\n- CrosslinkerScalingBridge.lean\n- CrosslinkerWindowNegativeControl.lean\n- worked_example.py\n- worked_example.csv\n- worked_example.md\n- fetch_evidence.py\n- run1_main.log, run1_bridge_neg.log, run2_bridge.log, run3_main.log",
+ "findings": [
+  {
+   "claim": "CrosslinkerWindow.lean (14 theorems) passes tracks/lean/check.sh: errors=0, sorryAx=0, axiom-lines=14/14, ending ALL CHECKED; every theorem depends only on propext, Classical.choice, Quot.sound.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-crosslinker-laws/run3_main.log",
+   "evidence_quote": "ALL CHECKED: no errors, no sorryAx",
+   "confidence": "high",
+   "value": "14 theorems"
+  },
+  {
+   "claim": "CrosslinkerScalingBridge.lean (Q = C*nu^(-3/5) strictly decreasing; linear strain Q^(1/3)-1 strictly decreasing; (s^3)^(5/3) = s^5) passes check.sh on the second attempt; the first attempt hit a transient Mathlib .olean read collision.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-crosslinker-laws/run2_bridge.log",
+   "evidence_quote": "errors=0 sorryAx=0 axiom-lines=3/3",
+   "confidence": "high",
+   "value": "3 theorems"
+  },
+  {
+   "claim": "The negative control (a deliberately false 'modulus strictly decreasing in nu' theorem closed with sorry) is rejected by check.sh.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-crosslinker-laws/run1_bridge_neg.log",
+   "evidence_quote": "CrosslinkerWindowNegativeControl.lean errors=0 sorryAx=1 axiom-lines=1/1",
+   "confidence": "high",
+   "value": "FAILED as intended"
+  },
+  {
+   "claim": "Design theorem (model-free, crosslink_window_empty): if E is strictly increasing and eps strictly decreasing on nu>0, (3/2)*eps(nu_c)/h <= kappa*, E(nu_s) <= E_min and nu_c < nu_s, then no positive density and no bilayer geometry (m,n) meets both kappa >= kappa* and E >= E_min. It says nothing when nu_c >= nu_s; a non-empty window is never certified.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-crosslinker-laws/CrosslinkerWindow.lean",
+   "confidence": "high (kernel-checked; physical hypotheses are assumptions)"
+  },
+  {
+   "claim": "Design theorem (computable, explicit_window_empty): for the family E = 3*nu*kT with nu*V1*s^5 = A, the window is empty whenever A/(V1*(1+(2/3)*kappa*h)^5) < E_min/(3kT). Both thresholds are closed-form.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-crosslinker-laws/CrosslinkerWindow.lean",
+   "confidence": "high (kernel-checked); applicability to real gels not shown"
+  },
+  {
+   "claim": "Genipin-chitosan films: equilibrium swelling falls as genipin rises, 1025 wt% at Gp/NH2 = 0.003 against 340 wt% at 0.02; Mc is 6934 and 1015 g/mol.",
+   "source": "Kildeeva et al., Polymers 12 (2020) 1086, doi 10.3390/polym12051086, PMC7285115 (full text fetched from Europe PMC), Table 2",
+   "evidence_quote": "The equilibrium swelling decreases with an increasing concentration of cross-linking reagent",
+   "confidence": "high for the reported values; two films only",
+   "value": "1025 % and 340 %"
+  },
+  {
+   "claim": "The paper's Flory-Huggins chi values are 0.85 and 0.99, both above 1/2, so the neutral high-swelling balance nu*V1*s^5 = 1/2 - chi has no positive solution and the computable-threshold theorem does not apply to this material.",
+   "source": "Kildeeva et al. 2020, PMC7285115, Table 2 and conclusions",
+   "evidence_quote": "0.85 at Gp/NH 2 ratio of 0.003 mol/mol, and 0.99 for 0.02 mol/mol",
+   "confidence": "high",
+   "value": "1/2 - chi = -0.35 and -0.49"
+  },
+  {
+   "claim": "Derived by this agent from the paper's Table 2 and its density (~1.018 g/cm3): nu = 146.8 and 1003.0 mol/m3; Q = 11.43 and 4.46; linear strain 1.253 and 0.646; affine E = 3*nu*RT = 1.09 and 7.46 MPa; Timoshenko ceiling at h = 1 mm = 1879 and 969 per metre.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-crosslinker-laws/worked_example.py and worked_example.csv; density from PMC7285115",
+   "evidence_quote": "crosslinked with genipin (~1.018 g/cm 3 ) were determined by hydrostatic weighing",
+   "confidence": "medium: assumes additive volumes, isotropic swelling, affine network; no uncertainty carried"
+  },
+  {
+   "claim": "Kernel-checked instance (genipin_chitosan_instance): for any strictly decreasing eps with eps(1003 mol/m3) = 0.646 and E = 3*nu*RT (RT = 2479 J/mol), a 1 mm bilayer cannot have both curvature >= 1000 per metre and modulus >= 8 MPa. The target is extreme (1 mm bend radius on a 1 mm part, outside thin-beam validity); at 100 per metre the certificate does not fire.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-crosslinker-laws/CrosslinkerWindow.lean; run3_main.log",
+   "confidence": "high for the arithmetic; low as a design verdict",
+   "value": "nu_c = 1003 < nu_s = 1050 mol/m3"
+  },
+  {
+   "claim": "Between the two films, Q falls by a factor 0.390 for a 6.83-fold rise in nu, against 0.316 predicted by nu^(-3/5); the apparent exponent is -0.49. This is not an independent test because the paper computed Mc from the same swelling data with the Flory-Rehner equation.",
+   "source": "worked_example.py output; PMC7285115",
+   "evidence_quote": "using the values of the equilibrium degree of swelling",
+   "confidence": "low as validation (circular)",
+   "value": "-0.49 vs -0.60"
+  },
+  {
+   "claim": "The source does not support 'more genipin gives a stronger film': breaking load is 73 MPa uncrosslinked against 65 MPa (Gp/NH2 0.02) and 55 MPa (0.003), with 90 MPa only at 0.0025. No elastic modulus for these films was found in the source, so the E-increasing hypothesis is unverified for this material.",
+   "source": "Kildeeva et al. 2020, PMC7285115, Table 3 and section 3.3",
+   "evidence_quote": "leads to a deterioration in the physical and mechanical properties of the resulting films",
+   "confidence": "medium (breaking load is not modulus)"
+  },
+  {
+   "claim": "The paper's computed mesh counts exceed the maximum possible chemical crosslinking, which it attributes to hydrogen bonds adding to the network; crosslinker dose is therefore not a clean proxy for strand density nu.",
+   "source": "Kildeeva et al. 2020, PMC7285115, section 3.2",
+   "evidence_quote": "hydrogen bonds, make an additional contribution to the formation of the grid of meshes",
+   "confidence": "high that the paper says this"
+  }
+ ],
+ "key_claims": [
+  "CrosslinkerWindow.lean: ALL CHECKED, 14 theorems, standard axioms only; CrosslinkerScalingBridge.lean: ALL CHECKED, 3 theorems; negative control rejected.",
+  "A target curvature eliminates every crosslink density above a threshold, a stiffness requirement eliminates every density below another, and the window is provably empty when the thresholds cross. This is conditional on E increasing and swelling strain decreasing in crosslink density.",
+  "With closed-form thresholds: empty when A/(V1*(1+(2/3)*kappa*h)^5) < E_min/(3kT), for the affine plus neutral high-swelling Flory-Rehner family only.",
+  "The computable form does not apply to the cited genipin-chitosan films because their reported chi is above 1/2.",
+  "In liquid water the swelling strain of genipin-chitosan (0.65-1.25, derived) is so large that the curvature ceiling only binds for extreme targets; the certificate is more likely to be useful for humidity-driven actuation, for which no number was opened.",
+  "The source's breaking load did not rise with genipin, so 'E increases with crosslinker dose' is a hypothesis here, not a measured fact."
+ ],
+ "lay_summary": [
+  "A gel is like a fishing net made of long molecules, and a 'linker' ties extra knots in the net.",
+  "More knots make the net stiffer, but a tighter net also soaks up less water and so swells less.",
+  "A strip that curls when wet needs a lot of swelling, while a strip that pushes hard needs a lot of stiffness, so the two wishes pull the number of knots in opposite directions.",
+  "We wrote this as maths that a computer checked line by line: if you ask for too much curl and too much stiffness at once, no number of knots can give you both.",
+  "When we tried it with real measurements of a shrimp-shell gel (chitosan) tied with a plant linker (genipin), the rule only ruled things out for a very extreme request, and one of our two textbook formulas turned out not to fit that gel."
+ ],
+ "glossary": {
+  "crosslink density (nu)": "How many load-carrying strands (pieces of chain between two knots) there are in each bit of the material.",
+  "linker / crosslinker": "A small molecule (here genipin, from gardenia fruit) that ties two polymer chains together.",
+  "chitosan": "A polymer made from chitin, the stuff in crab and shrimp shells.",
+  "affine rubber elasticity": "A textbook model in which a network's stiffness equals strand density times thermal energy.",
+  "shear modulus G / Young's modulus E": "Numbers for how hard a material resists being sheared or stretched; for a rubbery solid E is about 3 times G.",
+  "swelling ratio Q": "Swollen volume divided by dry volume.",
+  "linear stretch s / swelling strain": "How much longer each side gets when the gel swells (s = cube root of Q); the strain is s minus 1.",
+  "Flory-Rehner": "The textbook equation that balances a gel's wish to soak up solvent against the elastic pull of its network.",
+  "chi": "A number for how well polymer and solvent like each other; below 1/2 means a good solvent.",
+  "Mc": "Average molecular weight of the chain between two knots; smaller means more knots.",
+  "bilayer": "Two layers glued together; if one swells more than the other, the strip bends.",
+  "Timoshenko curvature": "The classic formula for how much such a two-layer strip bends.",
+  "curvature (kappa)": "One divided by the bend radius; a bigger number means a tighter curl.",
+  "ceiling": "The most bending any choice of layer thicknesses and stiffnesses can give: 1.5 times the strain divided by the total thickness.",
+  "elimination certificate": "A proof that no member of a family of materials can meet a stated target.",
+  "named hypothesis": "An assumption written openly into a theorem's statement, so the proof only holds when it is true.",
+  "sorry / sorryAx": "Lean's placeholder for a missing proof; the checker treats it as a failure.",
+  "negative control": "A deliberately wrong file used to confirm the checker really rejects bad proofs."
+ },
+ "check_output": "RUN 3 (final, main file) - bash tracks/lean/check.sh .../CrosslinkerWindow.lean\ntoolchain: leanprover/lean4:v4.35.0   mathlib: \nCrosslinkerWindow.lean                               errors=0 sorryAx=0 axiom-lines=14/14\n\n  ThompsonLaws.Crosslinker.affineShearModulus_strictMono <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.Crosslinker.stiffness_requirement_iff <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.Crosslinker.stretch_strictAnti_of_balance <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.Crosslinker.swellingStrain_strictAnti_of_balance <- [propext,  Classical.choice,  Quot.sound] \n  ThompsonLaws.Crosslinker.amgm_step <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.Crosslinker.timoshenkoCoefficient_le <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.Crosslinker.timoshenkoCoefficient_pos <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.Crosslinker.curvature_lt_of_strain_lt <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.Crosslinker.curvature_eliminates_above <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.Crosslinker.stiffness_eliminates_below <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.Crosslinker.crosslink_window_empty <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.Crosslinker.explicit_curvature_threshold <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.Crosslinker.explicit_window_empty <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.Crosslinker.genipin_chitosan_instance <- [propext, Classical.choice, Quot.sound] \n\nALL CHECKED: no errors, no sorryAx\n\nRUN 2 (bridge file, re-run after collision)\ntoolchain: leanprover/lean4:v4.35.0   mathlib: \nCrosslinkerScalingBridge.lean                        errors=0 sorryAx=0 axiom-lines=3/3\n\n  ThompsonLaws.CrosslinkerBridge.swellRatio_strictAntiOn <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.CrosslinkerBridge.linearStrain_strictAntiOn <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.CrosslinkerBridge.volume_five_thirds_eq_stretch_five <- [propext,  Classical.choice,  Quot.sound] \n\nALL CHECKED: no errors, no sorryAx\n\nRUN 1b (bridge + negative control in one call; bridge hit a transient .olean collision, negative control REJECTED as intended)\nCrosslinkerScalingBridge.lean                        errors=1 sorryAx=0 axiom-lines=0/3\n...CrosslinkerScalingBridge.lean:5:0: error: failed to read file 'C:\\Temp\\delphi-lean-lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\CategoryTheory\\ObjectProperty\\HasFiniteResolution\\Basic.olean'\nCrosslinkerWindowNegativeControl.lean                errors=0 sorryAx=1 axiom-lines=1/1\n sorryAx,\nFAILED\n\nRUN 1a (main file before the numeric instance was added): errors=0 sorryAx=0 axiom-lines=13/13, ALL CHECKED.",
+ "citations": [
+  {
+   "title": "Influence of Genipin Crosslinking on the Properties of Chitosan-Based Films",
+   "authors": "Kildeeva, Chalykh, Belokon, Petrova, Matveev, Svidchenko, Surin, Sazhnev",
+   "year": 2020,
+   "venue": "Polymers 12, 1086",
+   "doi_or_arxiv": "10.3390/polym12051086",
+   "verified": true,
+   "how_verified": "Full-text XML fetched from Europe PMC (PMC7285115); Table 2, Table 3, density and chi sentences read",
+   "used_for": "Swelling, chi, Mc, density and breaking-load numbers for the worked example"
+  },
+  {
+   "title": "Genipin-Crosslinked Chitosan Gels and Scaffolds for Tissue Engineering and Regeneration of Cartilage and Bone",
+   "authors": "Muzzarelli et al. (author list not read in full)",
+   "year": 2015,
+   "venue": "Marine Drugs 13",
+   "doi_or_arxiv": "10.3390/md13127068",
+   "verified": true,
+   "how_verified": "Full-text XML fetched from Europe PMC (PMC4699241) and keyword-scanned; DOI and title from the Europe PMC search result",
+   "used_for": "Background only; it gave no clean modulus-against-crosslink-density series, so no number from it is used"
+  }
+ ],
+ "could_not_find": [
+  "An elastic (Young's or shear) modulus measured against genipin dose for the same films whose swelling was measured; the opened source gives breaking load only.",
+  "An independent measurement of strand density (not fitted from swelling) to test the -3/5 exponent.",
+  "Humidity-driven (water vapour) linear hygroexpansion strains for genipin-chitosan, the regime in which the curvature ceiling would actually bind.",
+  "Numbers for citric-acid, tannin or enzymatic crosslinks in cellulose, alginate or protein gels; only genipin-chitosan was opened in the time available.",
+  "A PubMed keyword search returned 0 hits; the Europe PMC full-text search was used instead."
+ ],
+ "recommendations": [
+  "Do not quote explicit_window_empty for chitosan: with the reported chi above 1/2 it is the wrong model. A polyelectrolyte (Donnan) swelling term or the full Flory-Rehner equation as a named hypothesis is the next Lean step.",
+  "Use the model-free crosslink_window_empty with measured (nu, eps, E) points; it needs only monotonicity and two measured thresholds.",
+  "For the Formlabs concept, get humidity-driven strain (a few percent) and wet modulus against linker dose for the actual resin or gel; that is where the curvature ceiling becomes a real constraint.",
+  "Treat 'E increases with linker dose' as a hypothesis to test: the opened paper shows strength falling with genipin for solution-cast films.",
+  "If integrating, copy CrosslinkerWindow.lean, CrosslinkerScalingBridge.lean and the negative control into tracks/research/lean via integrate-fleet.sh; the negative control must keep failing.",
+  "The three check.sh calls behind these results were run concurrently with other agents; a single clean re-run of all three files is cheap confirmation."
+ ],
+ "reproduce": [
+  {
+   "what": "Kernel-check the main laws file",
+   "command_or_url": "bash D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/lean/check.sh D:/Users/ashenoy00000/delphi-work/agents5/lb-crosslinker-laws/CrosslinkerWindow.lean",
+   "expected": "errors=0 sorryAx=0 axiom-lines=14/14, ending 'ALL CHECKED: no errors, no sorryAx'"
+  },
+  {
+   "what": "Kernel-check the Q ~ nu^(-3/5) bridge file",
+   "command_or_url": "bash D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/lean/check.sh D:/Users/ashenoy00000/delphi-work/agents5/lb-crosslinker-laws/CrosslinkerScalingBridge.lean",
+   "expected": "axiom-lines=3/3, ending ALL CHECKED (re-run after 30 s if line 1 reports an .olean read failure)"
+  },
+  {
+   "what": "Negative control must be rejected",
+   "command_or_url": "bash D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/lean/check.sh D:/Users/ashenoy00000/delphi-work/agents5/lb-crosslinker-laws/CrosslinkerWindowNegativeControl.lean",
+   "expected": "sorryAx=1 and final line FAILED"
+  },
+  {
+   "what": "Worked numeric example (no network needed)",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents5/lb-crosslinker-laws/worked_example.py",
+   "expected": "Two rows (nu 146.8 and 1003.0 mol/m3; strain 1.2529 and 0.6462; ceiling 1879.3 and 969.3 per metre); apparent exponent -0.490; writes worked_example.csv"
+  },
+  {
+   "what": "Re-fetch the open full texts and extract the number-bearing snippets",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents5/lb-crosslinker-laws/fetch_evidence.py",
+   "expected": "Downloads PMC7285115 and PMC4699241 XML to C:/Temp/delphi-sprint/lb-crosslinker-laws/epmc and writes evidence_snippets.txt there"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-crosslinker-laws/CrosslinkerWindow.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-crosslinker-laws/CrosslinkerScalingBridge.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-crosslinker-laws/CrosslinkerWindowNegativeControl.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-crosslinker-laws/worked_example.py",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-crosslinker-laws/fetch_evidence.py",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-crosslinker-laws/worked_example.md",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-crosslinker-laws/worked_example.csv"
+ ],
+ "suite": {
+  "case_name": "Crosslinker window for a swelling bilayer (linker design variable of a printable biomaterial)",
+  "statement": "If modulus rises and swelling strain falls with crosslink density, a target curvature removes all densities above nu_c, a stiffness requirement removes all below nu_s, and nu_c < nu_s proves the family cannot meet the target.",
+  "lean_status": "ALL CHECKED, 14 theorems (plus 3 in the separately checked CrosslinkerScalingBridge.lean; negative control rejected)",
+  "data_used": "Two genipin-chitosan films from Kildeeva et al. 2020 (Polymers 12, 1086; PMC7285115), Table 2: swelling 1025 and 340 wt%, chi 0.85 and 0.99, Mc 6934 and 1015 g/mol, density ~1.018 g/cm3.",
+  "validation": "Direction only: the 6.8-fold denser network swells less (Q 11.4 to 4.5, derived). The -3/5 exponent comparison (-0.49 observed) is circular because Mc was fitted from swelling. No modulus data, so the stiffness law is unvalidated for this material.",
+  "holdout_set": "None. Two data points from one paper; no independent material or lab was held back. The frozen holdout clade was not touched and is irrelevant to this materials case.",
+  "performance": "The certificate fires only for an extreme target (1 mm thick, curvature >= 1000 per metre, E >= 8 MPa: nu_c 1003 < nu_s 1050 mol/m3). For a 100 per metre target it eliminates nothing, because the ceiling is 969-1879 per metre.",
+  "what_was_wrong": "(1) Reported chi is above 1/2, so the neutral high-swelling Flory-Rehner balance, and with it the computable-threshold theorem, does not apply to genipin-chitosan. (2) In liquid water the swelling strain is too large for the curvature ceiling to bind at realistic targets. (3) The source shows breaking load not rising with genipin and hydrogen bonds adding to the network, so 'E increases with linker dose' and 'dose equals strand density' are unverified. (4) The worked target lies outside Timoshenko's thin-beam range. (5) Affine 3*nu*RT is a rubbery estimate, not the modulus of a glassy dry film."
+ }
+}

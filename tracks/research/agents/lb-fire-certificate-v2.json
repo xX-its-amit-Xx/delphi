@@ -1,0 +1,149 @@
+{
+ "label": "lb-fire-certificate-v2",
+ "topic": "Repair of the fire-coating Lean certificate: survival bounds, a sound ignition elimination, and the finite-time statement with its missing hypothesis made explicit",
+ "summary": "FireCoatingCertificateV2.lean reaches ALL CHECKED under check.sh (11 theorems, 11/11 axiom lines, no errors, no sorryAx), and the negative control is rejected as required.\n\nThe file took three check runs: the first had two proof errors, which I fixed; the second hit a transient Mathlib .olean collision; the third passed. check.sh truncates its success output, so I did not see the individual axiom lists, only that none contains sorryAx.\n\nWhat each theorem can do:\n\n| Theorem | Verdict | What it shows |\n|---|---|---|\n| `thin_rise_le_noloss` | CANNOT-ELIMINATE | If heating rate C·T' never exceeds incident flux q on [0,t], the real rise is at most q·t/C. |\n| `thin_no_ignition_before_noloss_time` | CANNOT-ELIMINATE | Under the same hypotheses, the layer is below ignition temperature at every time before C·ΔTig/q. |\n| `thick_no_ignition_before_noloss_time` | CANNOT-ELIMINATE, conditional | Before (π/4)·I·ΔTig²/q² the surface rise is below ΔTig, given a named hypothesis that the rise is at most 2q·sqrt(t/(πI)). |\n| `lossy_thin_rise_lt_noloss` | CANNOT-ELIMINATE (model curves only) | The lossy thin-model rise is strictly below the no-loss rise for every t > 0. |\n| `noloss_time_is_before_lossy_ignition` | CANNOT-ELIMINATE (refutes version 1) | In the lossy thin model, the temperature at the no-loss ignition time is still strictly below ignition. |\n| `thin_critical_flux_ignites` | ELIMINATE | If absorbed flux ≥ qmin, losses ≤ hmax·(T−T0) below Tig, and qmin > hmax·(Tig−T0), the layer reaches Tig by tup = C·(Tig−T0)/(qmin − hmax·(Tig−T0)). |\n| `thin_ignition_eliminates_sound` | ELIMINATE | Same, plus tup ≤ treq: the layer reaches Tig within the required non-ignition time. |\n| `steady_flux_lower_eliminates` | ELIMINATE, steady state only | With Tb = qf·Ra and a lower bound on flux, the real back-face rise exceeds the limit. |\n| `steady_backface_eliminates` | ELIMINATE, steady state only | With Tb = qf·Ra, ΔT − Tb = qf·R and R ≤ Rmax, the real back-face rise exceeds a non-negative limit. |\n| `transient_eliminates_explicit` | ELIMINATE at finite time, conditional | The real back-face rise Tb(t) exceeds the limit, given the named hypothesis `hmodel` that Tb(t) is at least the one-node curve. |\n| `mvt_slope` | helper, no physics | Mean value step on [0,t]. |\n\nThree things remain unproved:\n- **Thick-solid comparison:** the hypothesis `hcomp` (real rise ≤ no-loss half-space value) is assumed, not derived; the heat-equation comparison principle is not in the file, and the half-space formula is still not confirmed from an opened textbook.\n- **One-node link:** `hmodel` is assumed and is physically false at early times for a thick wall, because the back face lags; the docstring says so.\n- **Satisfiability:** I did not prove a worked instance showing the hypotheses of `thin_critical_flux_ignites` can all hold at once. They do in the lossless linear-heating case, but that is not checked in Lean.\n\nThe sound elimination is thin-layer only; there is no thick-solid elimination. All inputs (qmin, hmax, C, Tig) must come from measurement. I opened no external sources and used no data.\n\nFiles are in D:/Users/ashenoy00000/delphi-work/agents5/lb-fire-certificate-v2:\n- FireCoatingCertificateV2.lean\n- FireCoatingCertificateV2NegativeControl.lean\n- run.sh",
+ "findings": [
+  {
+   "claim": "FireCoatingCertificateV2.lean passes the kernel check: 11 theorems, no errors, no sorryAx, 11 of 11 axiom lines printed.",
+   "value": "ALL CHECKED, 11 theorems",
+   "source": "bash D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/lean/check.sh D:/Users/ashenoy00000/delphi-work/agents5/lb-fire-certificate-v2/FireCoatingCertificateV2.lean (run 3, 2026-11-13)",
+   "evidence_quote": "errors=0 sorryAx=0 axiom-lines=11/11",
+   "confidence": "high. check.sh truncates its success output, so the per-theorem axiom lists were not seen; the script counts sorryAx as zero."
+  },
+  {
+   "claim": "The negative control (version 1's wrong-direction ignition claim, left as sorry) is rejected by check.sh.",
+   "value": "FAILED, as intended",
+   "source": "check.sh on D:/Users/ashenoy00000/delphi-work/agents5/lb-fire-certificate-v2/FireCoatingCertificateV2NegativeControl.lean",
+   "evidence_quote": "errors=0 sorryAx=1 axiom-lines=1/1",
+   "confidence": "high"
+  },
+  {
+   "claim": "SURVIVAL (CANNOT-ELIMINATE): thin_rise_le_noloss and thin_no_ignition_before_noloss_time. If the layer's heating rate C*T' never exceeds the incident flux q on [0,t], the real rise is at most q*t/C, so the ignition temperature is not reached before the no-loss time C*dT/q. Proved from the mean value theorem; the net-flux bound is the named hypothesis hnet.",
+   "value": "T t - T 0 <= q*t/C; t < C*dTig/q implies T t < T 0 + dTig",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-fire-certificate-v2/FireCoatingCertificateV2.lean section 1",
+   "confidence": "high for the mathematics (kernel-checked). The one-temperature (thin, small Biot number) assumption is built into the statement and not checked."
+  },
+  {
+   "claim": "SURVIVAL, thick solid (CANNOT-ELIMINATE, conditional): thick_no_ignition_before_noloss_time takes the comparison bound rise <= 2q*sqrt(t/(pi*I)) as a named hypothesis and inverts it to the no-loss time (pi/4)*I*dTig^2/q^2. The comparison principle is not proved and the half-space formula is still not confirmed from an opened text.",
+   "value": "t < tigThick implies rise < dTig, given hcomp",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-fire-certificate-v2/FireCoatingCertificateV2.lean section 1; formula status from D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/research/agents/lf-verify-lean.json",
+   "evidence_quote": "I opened no text containing the formula",
+   "confidence": "high for the algebra; medium for the physics because hcomp is assumed"
+  },
+  {
+   "claim": "The version 1 ignition eliminations pointed the wrong way, now proved in Lean rather than argued by hand: in the lossy thin model the temperature at the no-loss ignition time is strictly below the ignition temperature (noloss_time_is_before_lossy_ignition).",
+   "value": "thinTemp T0 q h C (C*dTig/q) < T0 + dTig for q, h, C, dTig > 0",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-fire-certificate-v2/FireCoatingCertificateV2.lean section 2; critique in lf-verify-lean.json",
+   "evidence_quote": "real ignition is later than the formula",
+   "confidence": "high (kernel-checked); numeric cross-check in run.sh gives no-loss 30.0 s against lossy 32.5 s"
+  },
+  {
+   "claim": "SOUND ELIMINATION (ELIMINATE): thin_critical_flux_ignites and thin_ignition_eliminates_sound. With energy balance C*T' = qabs - loss, absorbed flux >= qmin, losses <= hmax*(T - T0) while below Tig, start at or above ambient, and qmin above the critical flux hmax*(Tig - T0), the layer reaches Tig no later than tup = C*(Tig - T0)/(qmin - hmax*(Tig - T0)). If tup <= treq the candidate fails a no-ignition-before-treq requirement.",
+   "value": "exists s in [0, tup] with Tig <= T s",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-fire-certificate-v2/FireCoatingCertificateV2.lean section 3",
+   "confidence": "high for the mathematics. Thin layer only; reaching Tig is taken as the ignition criterion; qmin and hmax must be measured. No Lean instance shows the hypotheses are jointly satisfiable; they are in the lossless case by inspection. Numeric check: 35.3 s is above the exact lossy time 32.5 s, as an upper bound should be."
+  },
+  {
+   "claim": "SOUND STEADY ELIMINATION (ELIMINATE, steady state only): steady_flux_lower_eliminates and steady_backface_eliminates are about a real back-face rise Tb, linked to flux by the named hypotheses Tb = qf*Ra and dT - Tb = qf*R. dT is the coating-surface temperature minus ambient, not gas temperature.",
+   "value": "limit < dT*Ra/(Rmax+Ra) implies limit < Tb",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-fire-certificate-v2/FireCoatingCertificateV2.lean section 4",
+   "confidence": "high for the mathematics; says nothing at a finite test time"
+  },
+  {
+   "claim": "FINITE-TIME statement repaired (ELIMINATE, conditional): transient_eliminates_explicit concludes limit < Tb t for a real back-face function Tb, with the missing link as the named hypothesis hmodel: relax Tss tau t <= Tb t. The docstring states hmodel is false at early times for a thick wall because the back face lags.",
+   "value": "limit < (1 - exp(-t/taumax))*Tsslow and hmodel imply limit < Tb t",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-fire-certificate-v2/FireCoatingCertificateV2.lean section 5; defect described in lf-verify-lean.json",
+   "evidence_quote": "no hypothesis ties any physical temperature to relax",
+   "confidence": "high that the statement now matches its docstring; hmodel itself is not derived from any heat equation"
+  },
+  {
+   "claim": "What was wrong on the way: the first check run failed with two unsolved goals (a rewrite that also rewrote inside the square root, and a field_simp that did not close); both were fixed. The second run failed with a transient Mathlib .olean read collision at line 1.",
+   "value": "3 runs of the main file, 2 of the control",
+   "source": "check.sh outputs, this session",
+   "evidence_quote": "error: unsolved goals",
+   "confidence": "high"
+  }
+ ],
+ "key_claims": [
+  "FireCoatingCertificateV2.lean: ALL CHECKED, 11 theorems, no sorry, no new axioms; the negative control is rejected.",
+  "No-loss ignition times are now used only as survival bounds (CANNOT-ELIMINATE), under the named hypothesis that net absorbed flux is at most the incident flux.",
+  "Lean now proves that the version 1 direction was wrong: in the lossy thin model the temperature at the no-loss ignition time is strictly below ignition.",
+  "A sound ignition elimination exists for a thin layer: with losses bounded above and absorbed flux bounded below, above the critical flux the layer reaches ignition temperature by C*(Tig-T0)/(qmin - hmax*(Tig-T0)).",
+  "The finite-time back-face theorem now has the one-node link as an explicit named hypothesis, which is physically false at early times for thick walls.",
+  "Not done: no thick-solid elimination, no proof of the heat-equation comparison principle, no Lean satisfiability instance, no external source opened for the half-space formula."
+ ],
+ "recommendations": [
+  "Replace the three unsafe theorems in tracks/research/lean/FireCoatingCertificate.lean with the V2 versions, or ship V2 beside it and mark thin_ignition_eliminates, thick_ignition_eliminates and transient_eliminates as withdrawn.",
+  "Add a Lean instance (lossless linear heating, T s = T0 + (qmin/C) s) showing the hypotheses of thin_critical_flux_ignites are jointly satisfiable.",
+  "Derive hmodel from a differential inequality tau*Tb' >= Tss - Tb instead of assuming it, and state the Biot-number condition as a hypothesis.",
+  "Open a textbook (Quintiere 2006 ch. 7 or Carslaw and Jaeger) for the half-space constant-flux surface solution before relying on the thick survival bound.",
+  "For real coatings, measure qmin (absorptivity times test flux) and hmax (convective plus linearised radiative loss up to Tig); without these the elimination has no inputs."
+ ],
+ "lay_summary": [
+  "A computer-checked rulebook about when a coated board catches fire had three rules that pointed the wrong way.",
+  "The old rules ignored heat escaping, so they said fire starts sooner than it really would; that can only tell you a coating is safe for at least that long, not that it fails.",
+  "I rewrote them so the 'safe for at least this long' rules and the 'will definitely catch fire by this time' rules are separate, and each one says what must be measured for it to apply.",
+  "The computer checked all eleven new rules, and it correctly refused a deliberately wrong one.",
+  "Two of the new rules still lean on assumptions that I wrote down by name but did not prove."
+ ],
+ "glossary": {
+  "no-loss ignition time": "how long heating would take to reach ignition temperature if no heat escaped; the real time is longer",
+  "lower bound": "a value the true answer cannot be below",
+  "survival bound": "a guarantee that something has not failed before a certain time",
+  "elimination": "a proof that a candidate must fail a stated requirement, given stated assumptions",
+  "CANNOT-ELIMINATE": "a theorem whose conclusion is a guarantee of not failing, so it can never rule a candidate out",
+  "named hypothesis": "an assumption written into a theorem; the theorem says nothing if it does not hold",
+  "incident flux": "heating power per square metre arriving at the surface",
+  "net absorbed flux": "the heating power the surface keeps after reflection and losses",
+  "critical flux": "the heating level below which the surface never gets hot enough to ignite",
+  "thermally thin": "a layer thin enough to have nearly one temperature throughout",
+  "thermally thick": "a solid in which the heat pulse has not yet reached the back",
+  "thermal inertia": "the product of conductivity, density and heat capacity; high values mean the surface heats slowly",
+  "lumped (one-node) model": "treating a whole object as one temperature with one time constant",
+  "Biot number": "a ratio that says whether an object is uniform enough inside for the one-node model to hold",
+  "back-face rise": "how much hotter the unheated side gets than the room",
+  "steady state": "the final condition after temperatures stop changing",
+  "mean value theorem": "a calculus fact: somewhere in an interval the instantaneous slope equals the average slope",
+  "comparison principle": "a heat-equation fact that less heating at the surface gives a lower temperature everywhere; assumed here, not proved",
+  "sorry": "a Lean placeholder for a missing proof; check.sh rejects any file that uses it",
+  "negative control": "a deliberately wrong file used to confirm the checker really rejects bad proofs"
+ },
+ "could_not_find": [
+  "A Lean proof of the heat-equation comparison principle behind the thick-solid survival bound; it is assumed as hypothesis hcomp.",
+  "An opened textbook source for the half-space surface solution 2q*sqrt(t/(pi*I)); no external source was opened in this task.",
+  "A thick-solid ignition elimination; only the thin-layer elimination is sound and proved.",
+  "A Lean instance proving the hypotheses of thin_critical_flux_ignites are jointly satisfiable.",
+  "A derivation of hmodel (real back face at least the one-node curve) from any heat equation.",
+  "The per-theorem axiom lists: check.sh truncates its success output, so only the zero sorryAx count was seen.",
+  "Measured values of qmin, hmax, C or Tig for any real coating; no data was used."
+ ],
+ "citations": [],
+ "reproduce": [
+  {
+   "what": "Check the V2 certificate, confirm the negative control is rejected, and print the numeric direction check",
+   "command_or_url": "bash D:/Users/ashenoy00000/delphi-work/agents5/lb-fire-certificate-v2/run.sh",
+   "expected": "main ends 'ALL CHECKED: no errors, no sorryAx'; control ends 'FAILED' with sorryAx=1; numbers 30.0, 32.50, 35.29; last line 'RESULT: OK (main checked, control rejected)'. If line 1 reports a failed .olean read, wait 30 s and re-run."
+  },
+  {
+   "what": "Main file alone",
+   "command_or_url": "bash D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/lean/check.sh D:/Users/ashenoy00000/delphi-work/agents5/lb-fire-certificate-v2/FireCoatingCertificateV2.lean",
+   "expected": "errors=0 sorryAx=0 axiom-lines=11/11, then ALL CHECKED"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-fire-certificate-v2/FireCoatingCertificateV2.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-fire-certificate-v2/FireCoatingCertificateV2NegativeControl.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-fire-certificate-v2/run.sh"
+ ],
+ "check_output": "MAIN (run 3, final):\ntoolchain: leanprover/lean4:v4.35.0   mathlib: \nFireCoatingCertificateV2.lean                        errors=0 sorryAx=0 axiom-lines=11/11\nD:/Users/ashenoy00000/delphi-work/agents5/lb-fire-certificate-v2/FireCoatingCertificateV2.lean:103:2: warning: `push_neg` has been deprecated. Prefer \n\nALL CHECKED: no errors, no sorryAx\n\nNEGATIVE CONTROL:\ntoolchain: leanprover/lean4:v4.35.0   mathlib: \nFireCoatingCertificateV2NegativeControl.lean         errors=0 sorryAx=1 axiom-lines=1/1\n sorryAx,\nFAILED\n\nEarlier runs of the main file: run 1 FAILED (errors=2, unsolved goals at lines 110 and 203; fixed). Run 2 FAILED on a transient collision (line 1: failed to read Mathlib/Geometry/Manifold/Notation.olean.private).\n\nNumeric cross-check from run.sh: no-loss 30.0 lossy 32.50378589955499 sound upper bound 35.294117647058826",
+ "suite": {
+  "case_name": "Fire-retardant coating certificate (green fire coatings lead)",
+  "statement": "Survival: net absorbed flux <= incident flux implies no ignition before the no-loss time. Elimination: absorbed flux above worst-case critical flux implies ignition by C*(Tig-T0)/(qmin - hmax*(Tig-T0)). Finite-time back-face elimination only under an explicit one-node lower-bound hypothesis.",
+  "lean_status": "ALL CHECKED, 11 theorems",
+  "validation": "Kernel check through check.sh (errors=0, sorryAx=0, 11/11 axiom lines); negative control rejected; numeric check 30.0 s (no-loss) < 32.5 s (lossy exact) < 35.3 s (sound upper bound). No experimental validation.",
+  "holdout_set": "Not applicable: no organism data used; the frozen holdout was not touched.",
+  "data_used": "None. Pure mathematics with physical assumptions as named hypotheses.",
+  "performance": "3 check runs for the main file (1 real failure, 1 transient collision, 1 pass); 2 for the control.",
+  "what_was_wrong": "Version 1 used no-loss ignition times, which are lower bounds on real ignition time, to claim early ignition; and its finite-time theorem was about the model curve, not a real back face. In V2 the first run had two proof errors (a rewrite that hit the inside of a square root, a field_simp that did not close). Still open: the thick comparison bound and the one-node link are assumed, not proved."
+ }
+}

@@ -1,0 +1,1 @@
+-- Probe 3: no theorem at all.

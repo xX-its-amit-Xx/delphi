@@ -49,6 +49,14 @@ console.log(`reproduce: ${ROOT}\n`);
 // 1. the formal claim, checked by the kernel
 run('lean', 'Timoshenko ceiling, Lean kernel + axiom audit', 'bash', ['tracks/lean/check.sh'],
   { skipIf: !bash ? 'bash not found' : !lean ? 'no Lean toolchain at C:/Temp/elan' : null, expect: /ALL CHECKED/ });
+// the checker itself: four deliberately bad files (sorry with no audit line, hand-written axiom, empty file, honest sorry) must be rejected
+run('lean', 'the Lean checker rejects its four bad probes', 'bash', ['tracks/lean/check.sh', '--probes'],
+  { skipIf: !bash || !lean ? 'no Lean toolchain' : null, expect: /PROBES OK/ });
+// the Formlabs print files: regenerate, then check the bytes on disk; in fail-once mode every assertion must fail
+run('print', 'print files: closed surfaces, volumes, build volume, minimum wall', 'bash', ['-c', 'python -I tracks/print/make_poc.py >/dev/null && python -I tracks/print/test_poc.py && python -I tracks/print/test_poc.py --fail-once'],
+  { skipIf: !bash || !py ? 'bash or python not found' : null, expect: /0 survived/ });
+// the suite gate (a case may not claim performance without a dated pre-registration, a baseline and a broken-input control)
+run('suite', 'suite gate self-test: 29 injected faults must all be caught', 'node', ['tracks/suite/suite-gate.mjs', '--fail-once'], { expect: /0 survivor/ });
 // every checkable file the research agents produced and the build kept
 const allLean = fs.existsSync(path.join(ROOT, 'tracks/research/lean'))
   ? fs.readdirSync(path.join(ROOT, 'tracks/research/lean')).filter((f) => f.endsWith('.lean')).map((f) => `tracks/research/lean/${f}`) : [];

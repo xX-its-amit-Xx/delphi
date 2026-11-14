@@ -158,7 +158,7 @@ export function loadSpecialists(agentsDir = AGENTS, verified = {}) {
 // The 77-agent fleet (workflow wf_af15c8ea-cdf). Read from the committed copy so the build is
 // reproducible from the repo alone. Groups come from the file-name prefix.
 const FLEET_DIR = path.join(HERE, 'research', 'agents');
-const GROUPS = { hv: 'statement-harvest', is: 'issue-fixes', gs: 'group-split', bm: 'biomaterials', pp: 'people-funding-clients', q1: 'leanbio-enhancers', q2: 'leanbio-binding',
+const GROUPS = { lb: 'lean-for-biology', cs: 'suite-cases', pr: 'proposal-research', hv: 'statement-harvest', is: 'issue-fixes', gs: 'group-split', bm: 'biomaterials', pp: 'people-funding-clients', q1: 'leanbio-enhancers', q2: 'leanbio-binding',
   lf: 'fire-coatings', t1: 'track-1', t2: 'track-2', t3: 'track-3', t4: 'track-4', t6: 'track-6' };
 export function loadFleet(verified = {}) {
   if (!fs.existsSync(FLEET_DIR)) return [];
@@ -226,6 +226,16 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const fleet = loadFleet(verified);
   const extraExplain = attachExplainers(tracks);
   const verdicts = loadVerdicts();
+  // The three deliverables of 2026-11-13: print files, the client proposal, and the full-suite case table.
+  const txt = (f) => (fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : null);
+  const leanChecked = (txt(path.join(HERE, 'research', 'lean', 'CHECKED.txt')) ?? '').split(/\r?\n/).filter(Boolean);
+  const deliverables = {
+    print: readJson(path.join(OUT_DASH, 'print', 'manifest.json')),
+    proposal_md: txt(path.join(HERE, 'proposals', 'mamou-mani-biomaterial.md')),
+    cases: fleet.filter((a) => a.slug.startsWith('cs-') && a.suite && a.suite.performance).map((a) => ({ slug: a.slug, topic: a.topic, ...a.suite })),
+    // a Lean file counts only if tracks/lean/check.sh said ALL CHECKED when the lead session ran it
+    lean_checked: leanChecked,
+  };
 
   const allCites = [...tracks.flatMap((t) => t.scout?.citations ?? []), ...specialists.flatMap((s) => s.citations ?? []), ...fleet.flatMap((s) => s.citations ?? [])];
   const citeStats = {
@@ -242,7 +252,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     built: new Date().toISOString().slice(0, 10),
     brief: 'tracks/BRIEF-2026-11-12.md',
     lawset: tracks.find((t) => t.laws?.lawset_version)?.laws.lawset_version ?? null,
-    tracks, specialists, fleet, extraExplain, verdicts, synthesis,
+    tracks, specialists, fleet, extraExplain, verdicts, synthesis, deliverables,
     corpus: corpus.error ? corpus : { ...corpus, works: corpus.works.slice(0, 400) },
     corpus_full_in_repo: 'tracks/research/buehler-corpus.json',
     citations: citeStats,

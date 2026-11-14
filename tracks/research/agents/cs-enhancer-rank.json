@@ -1,0 +1,141 @@
+{
+ "label": "cs-enhancer-rank",
+ "topic": "How promoter-specific are enhancer effects (rank-order changes)? Full-suite run on real Bergman et al. 2022 ExP STARR-seq barcode counts (GEO GSE184426)",
+ "summary": "Real data fetched now: GSE184426_ExP_1Kx1K_counts.txt.gz (6,214,483 barcode rows, 1000 promoters x 1014 enhancer ids, 826,005 promoter-enhancer cells, K562). Held-out split was preregistered by sha256 before any activity value was computed; the final evaluation ran once.\n\nRESULT 1 (multiplicative model): fit on 453,797 development cells, it scores R^2 = 0.835 on 113,011 held-out cells (Pearson 0.914, RMSE 1.20 log2). Baselines: grand mean 0, promoter-only 0.567, enhancer-only 0.259. Shuffling enhancer labels before fitting drops R^2 to 0.565, i.e. to the promoter-only level, so the scorer does respond to broken input. The published figure, taken from the earlier literature agent's file and not from the paper itself, is 0.82.\n\nRESULT 2 (rank flips, 203 whole held-out enhancers x the 50 best-covered promoters, 23.4 million enhancer-pair x promoter-pair comparisons):\n- Raw discordant order: 17.9%. A pure multiplicative model plus the measured noise predicts 19.5%, so the raw discordance is fully explained by noise.\n- Doubly significant comparisons (|z|>3 on both promoters): 1,051 of 2,678,362 are in opposite order (0.039%). The noise-only expectation is 24.9, a 42-fold excess. The Lean theorem allows 0 true reversals for any monotone single-strength model.\n- Broken-input control (enhancer labels permuted within each promoter): 49.6% flips, as it should be.\n- Median Spearman between promoters: 0.87 (minimum 0.23).\n\nReading: in this human dataset, real rank reversals exist, so the monotone-saturation class is not exactly true, but they are rare (about 4 in 10,000 well-measured comparisons). Multiplicative scaling is the dominant behaviour.\n\nBiggest thing that was wrong: my first development rehearsal used replicate-only noise and gave a spurious 7.7% flip rate. The four RNA replicates share the same barcodes, so barcode-to-barcode noise (about 0.9-1.0 log2 standard error, against 0.08-0.4 from replicates) was invisible. I amended the noise model on development data, with a timestamp, before the held-out files were read. The earlier q1-data agent's 26.5% reversal figure on the mouse dataset used replicate-only noise and may be inflated for the same reason; I did not re-test that dataset.\n\nThe Lean files were read but not re-compiled in this run.\n\nFiles are in D:/Users/ashenoy00000/delphi-work/agents5/cs-enhancer-rank/:\n- prereg.md\n- run.py\n- frozen.json\n- dev_results.json\n- final_results.json\n- split_sizes.json",
+ "findings": [
+  {
+   "claim": "Multiplicative (log-additive) enhancer x promoter model fit on development cells predicts held-out cells with R^2 = 0.835",
+   "value": "R^2 0.835, Pearson 0.914, RMSE 1.20 log2, n = 113,011 held-out cells; promoter-only baseline 0.567, enhancer-only 0.259, grand mean 0",
+   "source": "GEO GSE184426, GSE184426_ExP_1Kx1K_counts.txt.gz; D:/Users/ashenoy00000/delphi-work/agents5/cs-enhancer-rank/final_results.json",
+   "evidence_quote": "BC promoter enhancer DNA_input reads_rep1 reads_rep2 reads_rep3 reads_rep4",
+   "confidence": "high for the number; depends on my simple pipeline (sum barcodes, pseudocount 1, DNA_input >= 50, >= 2 barcodes)"
+  },
+  {
+   "claim": "Scorer responds to broken input: shuffling enhancer labels before fitting drops held-out R^2 to the promoter-only level",
+   "value": "0.835 -> 0.565",
+   "source": "final_results.json (broken_shuffled_enhancer_labels_r2)",
+   "confidence": "high"
+  },
+  {
+   "claim": "Raw discordant enhancer order between promoters on held-out enhancers is no larger than what noise alone produces",
+   "value": "observed 17.9% of 23,437,464 comparisons vs 19.5% simulated under multiplicative model + frozen noise",
+   "source": "final_results.json (flips.raw_discordant_frac, null_raw_discordant_frac)",
+   "confidence": "medium: the null slightly over-predicts, so the barcode noise estimate is somewhat too large (conservative)"
+  },
+  {
+   "claim": "Rank flips beyond noise exist but are rare: among comparisons significant at |z|>3 on both promoters, 0.039% are reversed, a 42-fold excess over the noise-only expectation; the Lean no-reversal theorem allows zero",
+   "value": "1,051 flips of 2,678,362 doubly-significant comparisons vs 24.9 expected (10 simulations); 203 held-out enhancers x 50 promoters",
+   "source": "final_results.json; Lean statement in tracks/research/lean/q1-theory-lean__EnhancerPromoterRank.lean (no_reversal_of_monotone) and q1-mechanisms__RankSaturation.lean (Q1.no_reversal)",
+   "evidence_quote": "saturation can create ties, never reversals",
+   "confidence": "medium: excess is real under my Gaussian noise model, but heavy-tailed barcode noise could account for part of it"
+  },
+  {
+   "claim": "Permuting enhancer labels within each promoter sends the flip fraction to chance",
+   "value": "49.6% (910,204 significant comparisons)",
+   "source": "final_results.json (broken_perm_flip_frac_sig)",
+   "confidence": "high"
+  },
+  {
+   "claim": "Replicate-only noise badly underestimates measurement error in this assay because the RNA replicates share barcodes",
+   "value": "replicate SE 0.075-0.42 log2 by decile vs barcode-half SE 0.64-1.04 log2; development flip rate fell from 7.7% to 0.055% when barcode noise was included",
+   "source": "frozen.json, dev_results.json, prereg.md Amendment 1",
+   "confidence": "high"
+  },
+  {
+   "claim": "Rank agreement of enhancers between promoters is high in this human dataset",
+   "value": "median Spearman 0.87 over pairs of the 50 best-covered promoters (min 0.23), held-out enhancers",
+   "source": "final_results.json",
+   "confidence": "high"
+  }
+ ],
+ "suite": {
+  "case_name": "Enhancer x promoter multiplicativity and rank-order flips (Bergman 2022 ExP STARR-seq, K562)",
+  "statement": "Law: log2 activity(p,e) = mu + a_e + b_p, i.e. activity = enhancer strength x promoter strength. Bound: tracks/research/lean/q1-theory-lean__EnhancerPromoterRank.lean (EPSpec.no_reversal_of_monotone) and q1-mechanisms__RankSaturation.lean (Q1.no_reversal) state that any model f(p,e) = h_p(a_e) with monotone h_p (multiplicative, log-additive, promoter-specific saturation) permits zero true strict rank reversals, so reversals beyond measurement noise falsify the whole class. I read both files but did not re-compile them in this run.",
+  "holdout_set": "Rule written to prereg.md at 2026-11-14T04:18:00Z (shell date -u), before any activity value was aggregated. (1) Whole enhancers with int(sha256(enhancer_id)[:8],16) % 5 == 0 are held out: 207 of 1014 enhancer ids, 169,655 cells. (2) Among the other enhancers, cells with sha256(promoter|enhancer) % 5 == 0 are held out: 130,641 cells (113,011 after the frozen quality filter). Development: 525,709 cells. Held-out cells were written to a separate file that only the final stage reads; the final stage ran once (timestamp in final_run_timestamp.txt).",
+  "validation": "Development only. A quality-filter grid on DNA_input minimum (50 to 800) gave replicate split-half r = 0.986-0.989 and inner cross-validated R^2 = 0.834-0.894; the preregistered rule chose 50 (453,797 cells). The noise model was first replicate SD by decile of read count. A flip rehearsal on 188 development enhancers x 50 promoters then gave 7.7% reversals against about 0 expected, which exposed the noise model as too optimistic. Amendment 1 (timestamped, before the held-out files were read) added a barcode-half standard error (0.64-1.04 log2). The rehearsal then gave 471 flips of 863,994 significant comparisons (0.055%) vs 9 expected, raw discordance 18.1% vs 19.5% null, and a permutation control at 50.2%.",
+  "performance": "Single final evaluation. Metric 1: held-out R^2 of the multiplicative model = 0.835 (n = 113,011 cells; Pearson 0.914; RMSE 1.20 log2). Baselines: grand mean 0.000, promoter-only 0.567, enhancer-only 0.259; published 0.82 as relayed by the earlier literature agent. Broken input (enhancer labels shuffled before fitting): R^2 falls to 0.565, so the scorer gets worse as it should. Metric 2: on 203 held-out enhancers x 50 promoters (9,929 cells; 23,437,464 enhancer-pair x promoter-pair comparisons), raw discordant fraction is 17.9% vs 19.5% under multiplicative + noise simulation. Among 2,678,362 comparisons significant at |z|>3 on both promoters, 1,051 are reversed (0.039%) vs 24.9 expected from noise (42-fold excess) and 0 allowed by the Lean theorem. Broken input (labels permuted within promoter): 49.6% reversed.",
+  "what_was_wrong": "1. In the law: exact multiplicativity, and the whole monotone single-strength class, is falsified, since 1,051 significant reversals were seen where 0 are allowed and about 25 are expected from noise. The violation is small: 0.039% of well-measured comparisons, with 83.5% of held-out variance explained. 2. In my own run: the first noise model (SD across the 4 RNA replicates) was wrong because the replicates share the same barcodes; it gave a spurious 7.7% flip rate in the development rehearsal. It was fixed by a timestamped amendment before the held-out data were read. 3. The amended barcode noise is slightly too large: the null predicts 19.5% raw discordance vs 17.9% observed, and the additive residual SD of 0.85 is below the median SE of 0.97. The z>3 test is therefore conservative and the true flip rate may be somewhat higher. 4. The null assumes Gaussian noise, and heavy-tailed barcode outliers could produce part of the 42-fold excess; I did not test this. 5. Earlier agent work: q1-data reported 26.5% reversals among doubly-significant pairs on the mouse GSE186265 data using 'pooled replicate SD' as noise. That is the same class of noise model that failed here, so that figure may be inflated; I did not re-test it. 6. Earlier agent work: q1-critic's arccos(rho)/pi null was only simulated, and q1-literature relayed R^2 = 0.82 without a held-out re-computation; this run is the first held-out check and it agrees (0.835). 7. In the Lean files: the theorem is about noise-free values, and Q1.no_reversal is over natural numbers, so it gives no quantitative noise allowance; the comparison to data needs the simulated null, which is outside Lean. 8. In the data and pipeline: about 6 barcodes per cell on average and many low-count cells; I used raw reads with pseudocount 1, not the authors' weighted reads or Poisson model; scrambled control sequences were kept as ordinary enhancers and promoters; 1014 enhancer ids, not 1000; flips were tested only on the 50 promoters with most DNA input, so promoter-class effects among weak promoters are not covered. 9. The null used only 10 simulations. No simulated data were used for any performance number."
+ },
+ "key_claims": [
+  "On real human ExP STARR-seq data the multiplicative model explains 83.5% of held-out variance (promoter-only baseline 56.7%).",
+  "Raw rank discordance between promoters (17.9%) is fully accounted for by measurement noise (19.5% expected).",
+  "Significant rank reversals occur 42 times more often than noise predicts but make up only 0.039% of well-measured comparisons; the Lean theorem allows zero.",
+  "Replicate-only noise models overstate reversals by orders of magnitude when replicates share barcodes (7.7% vs 0.055% on development data)."
+ ],
+ "lay_summary": [
+  "Enhancers are DNA switches that turn genes up, and promoters are the start buttons of genes; we asked whether a strong switch is strong for every start button.",
+  "We used a real experiment that tested about a thousand switches with about a thousand start buttons, and hid one fifth of it before looking.",
+  "A simple rule, 'switch strength times button strength', predicted the hidden part well, getting about 84 percent of the variation right.",
+  "Switches almost always keep the same order from one button to the next; true order swaps happen, but only about 4 times in 10,000 clear comparisons.",
+  "We also learned that if you underestimate how noisy the measurement is, you see many fake swaps, which we caught and fixed before opening the hidden data."
+ ],
+ "glossary": {
+  "enhancer": "A stretch of DNA that boosts how much a gene is used.",
+  "promoter": "The stretch of DNA at the start of a gene where reading begins.",
+  "multiplicative model": "The idea that output equals one number for the enhancer times one number for the promoter.",
+  "rank flip (reversal)": "Enhancer A beats B on one promoter, but B beats A on another.",
+  "R^2": "Share of the variation in the data that a model predicts; 1 is perfect, 0 is no better than guessing the average.",
+  "held-out set": "Data hidden before the analysis and used only once at the end to score the model.",
+  "barcode": "A short DNA tag that identifies each copy of a test construct; different tags give somewhat different readings.",
+  "z-score": "A difference divided by its measurement error; above 3 means very unlikely to be chance.",
+  "monotone saturation": "Output that rises with input and levels off, but never goes back down.",
+  "STARR-seq": "A lab method that measures how strongly thousands of DNA pieces boost gene activity at once.",
+  "Spearman correlation": "A measure of how similar two rankings are; 1 means the same order."
+ },
+ "reproduce": [
+  {
+   "what": "Full pipeline from a clean folder: download, aggregate, development stage, final evaluation (Python 3.12 with numpy and pandas; data goes to CS_DATA)",
+   "command_or_url": "cd D:/Users/ashenoy00000/delphi-work/agents5/cs-enhancer-rank && uv venv C:/Temp/delphi-sprint/cs-enhancer-rank/venv --python 3.12 && uv pip install --python C:/Temp/delphi-sprint/cs-enhancer-rank/venv -r requirements.txt && C:/Temp/delphi-sprint/cs-enhancer-rank/venv/Scripts/python.exe run.py all",
+   "expected": "final_results.json with multiplicative_r2 about 0.835, broken_shuffled_enhancer_labels_r2 about 0.565, flips.sig_flips 1051 of 2678362, null_sig_flips_mean about 25, broken_perm_flip_frac_sig about 0.50"
+  },
+  {
+   "what": "Raw data (180 MB)",
+   "command_or_url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE184nnn/GSE184426/suppl/GSE184426_ExP_1Kx1K_counts.txt.gz",
+   "expected": "6,214,483 barcode rows plus header"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-enhancer-rank/run.py",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-enhancer-rank/prereg.md",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-enhancer-rank/frozen.json",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-enhancer-rank/dev_results.json",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-enhancer-rank/final_results.json",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-enhancer-rank/split_sizes.json",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-enhancer-rank/requirements.txt"
+ ],
+ "citations": [
+  {
+   "title": "GEO series GSE184426 (ExP STARR-seq 1Kx1K barcode counts, K562); associated paper Bergman et al., Compatibility rules of human enhancer and promoter sequences",
+   "authors": "Bergman DT et al.",
+   "venue": "Nature (paper); NCBI GEO (data)",
+   "year": 2022,
+   "doi_or_arxiv": "GEO accession GSE184426 (paper DOI not opened in this run)",
+   "verified": true,
+   "how_verified": "Downloaded the supplementary counts file from the GEO FTP directory and parsed all rows; the paper itself was not opened, and its R^2 = 0.82 is relayed from tracks/research/agents/q1-literature.json",
+   "used_for": "All performance numbers"
+  },
+  {
+   "title": "GEO series GSE186265 (Martinez-Ara et al. 2022, Mol Cell)",
+   "authors": "Martinez-Ara M et al.",
+   "venue": "Molecular Cell",
+   "year": 2022,
+   "doi_or_arxiv": "GEO accession GSE186265",
+   "verified": false,
+   "how_verified": "Not fetched in this run; only the earlier agent file q1-data.json was read",
+   "used_for": "Comparison with earlier agent work in what_was_wrong"
+  }
+ ],
+ "could_not_find": [
+  "Did not open the Bergman 2022 paper text or its supplementary tables; used GEO barcode counts only, so the authors' exact normalisation (weighted reads, Poisson model) is not reproduced.",
+  "Did not re-run the Martinez-Ara mouse dataset with a barcode-level noise model, so whether the earlier 26.5% reversal figure is inflated is untested.",
+  "Did not re-compile the Lean files (lean check.sh not run in this session).",
+  "No heavy-tailed noise null and no promoter-class (housekeeping vs variable) breakdown of the 1,051 reversals, for lack of time."
+ ],
+ "recommendations": [
+  "Re-run the earlier q1-data analysis of GSE186265 with a barcode- or element-level noise estimate before quoting its 26.5% reversal figure anywhere.",
+  "Add a noise-aware statement to the Lean file (e.g. a bound on reversal probability under bounded noise) so the data comparison does not rest on simulation alone.",
+  "Break the 1,051 held-out reversals down by promoter class to test the published housekeeping vs variable-promoter compatibility claim; this needs a new preregistered split.",
+  "Extend the suite scorer convention: every rank-flip case must report the broken-input control and a noise null built from the lowest shared unit of measurement (here barcodes), not from replicates alone."
+ ],
+ "check_output": "Lean not compiled in this run. Python pipeline ran end to end; the final stage was executed once (D:/Users/ashenoy00000/delphi-work/agents5/cs-enhancer-rank/final_log.txt). Broken-input controls behaved as required: R^2 0.835 -> 0.565; flip fraction 0.039% -> 49.6%."
+}

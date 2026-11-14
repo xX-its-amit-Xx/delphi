@@ -1,0 +1,206 @@
+{
+ "label": "lb-print-structure-laws",
+ "topic": "Lean certificates for what a printed hygromorphic strip or louvre blade cannot do (self-weight sag, diffusion speed, rotation), evaluated on the five Formlabs proof-of-concept objects",
+ "summary": "PrintStructureLaws.lean reaches ALL CHECKED: 21 theorems, standard axioms only, no sorry; the negative control is rejected (sorryAx, exit 1). Three check.sh runs were used: the first main run hit the transient Mathlib .olean collision, the second passed, the third was the negative control.\n\n**What is proved.** Physical formulas are definitions or named hypotheses; nothing derives beam theory or the diffusion equation.\n- **Sag:** the formula 3 rho g L^4 / (2 E h^2) follows from the Euler-Bernoulli tip deflection q L^4 / (8 E I), taken as a hypothesis, and the width cancels. Sag <= delta holds exactly when h^2 >= 3 rho g L^4 / (2 E delta). Any length above the threshold length violates the limit.\n- **Speed:** tau = h^2 / (pi^2 D) <= t holds exactly when h^2 <= pi^2 D t. Before tau, more than exp(-1) of the slowest mode is still to come. A swelling layer that is a fraction phi of the thickness behaves like the full thickness with diffusivity D / phi^2.\n- **Rotation:** for a Timoshenko bilayer with any thickness and modulus ratio, tip rotation is below theta whenever h > 3 eps L / (2 theta). Equivalently the strain must be at least (2/3) theta h / L.\n- **Interval:** h passes all three tests exactly when sqrt(3 rho g L^4 / (2 E delta)) <= h <= min(sqrt(pi^2 D t), 3 eps L / (2 theta)).\n- **Emptiness:** some positive h passes if and only if the sag floor on h^2 is at most pi^2 D t and at most (3 eps L / (2 theta))^2.\n- **Length cap (new):** sag and rotation together force 2 rho g theta^2 L^2 <= 3 E delta eps^2 for every thickness, so thickness cannot rescue a blade that is too long.\n\n**Which objects are eliminated.** The brief is my placeholder, not a client requirement: horizontal cantilever in air, sag <= 10 % of length, rotation >= 30 degrees, slowest-mode time <= 1 h. \"Favourable\" inputs take the helpful end of every stated prior (E 11 MPa, density 1010 kg/m3, strain 3.17 %, D 1.1e-11 m2/s), so an elimination there holds across the whole prior range.\n\n| Object | Favourable inputs, in air | Central inputs, in air |\n|---|---|---|\n| 1 strip (30 x 1.0 mm) | not eliminated | sag, speed |\n| 2 comb, 0.5 mm rung | sag (15 % of length) | sag |\n| 2 comb, 1.0 mm rung | not eliminated | sag, speed |\n| 2 comb, 2.0 mm rung | speed (tau 1.64 h) | speed, rotation |\n| 3 tile as a 60 mm strip | sag (29 %), empty window | sag, speed |\n| 4 tree trunk | speed (tau 1.64 h) | sag, speed |\n| 4 tree branch | not eliminated | sag (marginal, 10.04 %), speed |\n| 4 tree twig | not eliminated | not eliminated |\n| 5 louvre blade (120 x 3 mm) | sag (26 %), speed (tau 3.7 h), empty window | sag, speed, length cap (66 mm) |\n\n- **Rotation:** this certificate eliminates nothing at favourable inputs; every object has enough best-case rotation.\n- **Submerged** (net density 90 kg/m3): sag eliminates nothing; only the speed certificate bites, on the 2 mm rung, the trunk and the blade.\n- **Brief sensitivity:** across an 18-brief grid the blade and the 60 mm tile are eliminated by sag in every case.\n\n**What was wrong or weak.**\n- The speed bound uses 0.101 h^2/D, about seven times shorter than the earlier agent's 0.719 h^2/D settling time, so it is a true but loose floor.\n- The sag formula is small-deflection, yet several objects sag more than 10 % of their length; there it shows size, not an exact value.\n- The window theorem treats the strip as one homogeneous section with an effective modulus.\n- All material inputs are the earlier agents' derived priors, not measurements.\n- The stiff-resin length caps (52 m for Tough 1000, 555 m for Rigid 10K) assume a 3.17 % strain that no stiff resin has shown; they are not predictions.\n- No data was downloaded, and nothing concerning the frozen holdout clade was read or used.",
+ "findings": [
+  {
+   "claim": "PrintStructureLaws.lean passes the project's check.sh: 21 theorems, 0 errors, 0 sorryAx, 21 of 21 axiom lines printed, each listing only propext, Classical.choice and Quot.sound.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/check_main_run2.txt (check.sh output, Lean v4.35.0)",
+   "confidence": "high",
+   "value": "ALL CHECKED, 21 theorems",
+   "evidence_quote": "ALL CHECKED: no errors, no sorryAx"
+  },
+  {
+   "claim": "The negative control (a false sag statement closed with sorry) is rejected by check.sh with exit code 1.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/check_negative_run1.txt",
+   "confidence": "high",
+   "value": "errors=0 sorryAx=1, FAILED, exit=1",
+   "evidence_quote": "depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]"
+  },
+  {
+   "claim": "The first main check run failed only with the transient Mathlib .olean read collision at line 1; the unchanged file passed on the second run.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/check_main_run1.txt",
+   "confidence": "high",
+   "value": "run 1 FAILED (collision), run 2 ALL CHECKED",
+   "evidence_quote": "error: failed to read file"
+  },
+  {
+   "claim": "Proved (feasible_iff_interval): with all quantities positive, a thickness h passes the sag, speed and rotation formula tests exactly when sqrt(3 rho g L^4/(2 E delta)) <= h <= sqrt(pi^2 D t) and h <= 3 eps L/(2 theta). These are necessary conditions built from best-case formulas, not a guarantee that a thickness inside the interval works.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/PrintStructureLaws.lean, theorem feasible_iff_interval",
+   "confidence": "high (kernel-checked; physics enters as definitions)"
+  },
+  {
+   "claim": "Proved (feasible_nonempty_iff): some positive thickness passes all three tests if and only if the sag floor 3 rho g L^4/(2 E delta) is at most pi^2 D t and at most (3 eps L/(2 theta))^2. Two corollaries (eliminated_sag_vs_speed, eliminated_sag_vs_rotation) state the eliminations.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/PrintStructureLaws.lean, theorem feasible_nonempty_iff",
+   "confidence": "high (kernel-checked)"
+  },
+  {
+   "claim": "Proved (length_cap_from_sag_and_rotation), a result not in the task statement: if any positive thickness both keeps formula sag within delta and reaches best-case rotation theta, then 2 rho g theta^2 L^2 <= 3 E delta eps^2. Thickness cancels, so a horizontal blade longer than sqrt(3 E delta eps^2/(2 rho g theta^2)) is eliminated at every thickness.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/PrintStructureLaws.lean, theorem length_cap_from_sag_and_rotation",
+   "confidence": "high (kernel-checked); applies to a horizontal cantilever only"
+  },
+  {
+   "claim": "Proved (rotation_eliminates): for a Timoshenko bilayer with any thickness ratio and any modulus ratio, tip rotation (curvature times length) is strictly below the required theta whenever total thickness exceeds 3 eps L/(2 theta). The Timoshenko formula is a definition copied from the project's Hygromorphs file, and the 3/(2h) ceiling proof is copied from the already-checked HygromorphCeilingCheck.lean.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/PrintStructureLaws.lean; D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/lean/HygromorphCeilingCheck.lean",
+   "confidence": "high (kernel-checked)"
+  },
+  {
+   "claim": "Proved (slowest_mode_unfinished, speed_eliminates): if h^2 > pi^2 D t_req then t_req is below tau = h^2/(pi^2 D), and at any time before tau the slowest mode's remaining fraction exp(-t/tau) is above exp(-1). The file does not derive tau from the diffusion equation; tau is a definition (two-face wetting, the fastest case).",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/PrintStructureLaws.lean",
+   "confidence": "high (kernel-checked); the physical lower-bound reading is an assumption"
+  },
+  {
+   "claim": "Object 5 (louvre blade, 120 x 3.0 mm, 1.2 mm active layer) is eliminated as a horizontal cantilever in air even at the most favourable end of every prior: formula sag 31 mm (26 % of length), slowest-mode time 3.7 h, and the thickness window is empty (sag floor 4.83 mm above speed ceiling 1.56 mm). Sag eliminates it in all 18 placeholder briefs tried (sag limit 5/10/20 %, rotation 15/30/45 degrees, time 1/24 h).",
+   "source": "python -I D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/evaluate_certificates.py (certificates_table.md); inputs from D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/research/agents/bm-poc-designs.json",
+   "confidence": "medium (inputs are the earlier agent's priors; sag formula is small-deflection)",
+   "value": "sag 31.13 mm, tau 3.68 h, window [4.83, 1.56] mm",
+   "evidence_quote": "3 blades 120 x 9 x 3.0 mm (1.2 mm Flexible 80A V2 + 1.8 mm passive)"
+  },
+  {
+   "claim": "At central inputs (E 2.4 MPa, 1050 kg/m3) the blade's formula sag is 148 mm, which agrees with the earlier agent's independently computed 142 mm (97-206); the object 1 strip gives 5.2 mm against their 4.6 mm (3-7.2). The sag formula used in the Lean file therefore reproduces the earlier numbers.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/certificates_table.md; D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/research/agents/bm-poc-designs.json",
+   "confidence": "medium",
+   "value": "148.33 mm vs 142 mm; 5.21 mm vs 4.6 mm",
+   "evidence_quote": "self_weight_sag_if_horizontal=142 (97.4-206) mm in air"
+  },
+  {
+   "claim": "Object 3 (tile, treated as a 60 mm long, 1.0 mm thick strip) is eliminated by sag at favourable inputs in air (17.5 mm, 29 % of length) and its thickness window is empty under the 1 h brief. The certificate does not cover the wide-plate regime of the real tile.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/certificates_table.md",
+   "confidence": "medium",
+   "value": "sag 17.51 mm; window [1.71, 1.56] mm",
+   "evidence_quote": "60 mm long x width {3, 6, 12, 24, 60} mm x 1.0 mm"
+  },
+  {
+   "claim": "Object 2 (comb): at favourable inputs in air the 0.5 mm rung is eliminated by sag (4.4 mm, 15 % of length) and the 2.0 mm rung by speed (slowest-mode time 1.64 h against the 1 h placeholder); the 1.0 mm rung is not eliminated. At central inputs the 2.0 mm rung also fails rotation (29 degrees best case against 30).",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/certificates_table.md",
+   "confidence": "medium (depends on the placeholder brief)",
+   "value": "0.5 mm: sag/L 0.15; 2.0 mm: tau 1.64 h",
+   "evidence_quote": "total 0.5/1.0/1.5/2.0 mm (active 0.2/0.4/0.6/0.8)"
+  },
+  {
+   "claim": "Object 1 (30 x 1.0 mm strip) and object 4's branch and twig are NOT eliminated by any certificate at favourable inputs; object 4's trunk (0.8 mm active layer) is eliminated only by the 1 h speed requirement (1.64 h) and passes a 24 h requirement. At central inputs object 1 fails sag (5.2 mm, 17 %) and speed (1.36 h); the twig is the only part that passes everything at central inputs.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/certificates_table.md",
+   "confidence": "medium",
+   "value": "object 1 favourable: sag/L 0.04, tau 0.41 h, theta_max 82 deg",
+   "evidence_quote": "trunk 50 x 3 x 2.0 mm (0.8+1.2)"
+  },
+  {
+   "claim": "The rotation certificate alone eliminates none of the five objects at favourable inputs (best-case rotation 41 to 163 degrees against a 30 degree placeholder). The objects are limited by sag and diffusion speed, not by the curvature ceiling.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/certificates_table.md",
+   "confidence": "medium",
+   "value": "theta_max 41-163 deg"
+  },
+  {
+   "claim": "Submerged (net density 90 kg/m3 from the earlier agent), sag eliminates nothing at favourable inputs (largest sag 2.8 mm on the blade, 2 % of length); only the speed certificate bites, on the 2.0 mm rung, the tree trunk and the blade. This is consistent with the earlier recommendation to test submerged or hang blades vertically.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/certificates_table.md",
+   "confidence": "medium",
+   "value": "blade sag 2.77 mm submerged",
+   "evidence_quote": "net density about 90 kg/m3 against water"
+  },
+  {
+   "claim": "Length cap for a horizontal cantilever in air under the placeholder brief (sag <= 10 % of length, rotation >= 30 degrees): 610 mm at the favourable prior end and 66 mm at central inputs for the soft resin stack, so the 120 mm blade is over the central cap. Caps computed for Tough 1000 (932 MPa) and Rigid 10K (10 GPa) are 52 m and 555 m but assume the same 3.17 % strain, which no stiff resin has shown; they are not predictions.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/certificates_results.json; moduli strings from D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/research/agents/bm-formlabs-all-resins.json",
+   "confidence": "low to medium (brief and strain are assumptions)",
+   "value": "L_cap 610 mm (favourable), 66 mm (central)",
+   "evidence_quote": "Rigid 10K 10000 MPa vs Tough 1000 932 MPa = 10.7x"
+  },
+  {
+   "claim": "Weakness of the speed certificate: the proved floor is 0.101 h^2/D (1/pi^2), about seven times shorter than the earlier agent's computed time to settle within 10 % (0.719 h^2/D). It is a valid but loose lower bound, so it eliminates fewer designs than the real kinetics would.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/research/agents/bm-poc-designs.json; own arithmetic 1/pi^2 = 0.1013",
+   "confidence": "high",
+   "value": "0.101 vs 0.719 (units h^2/D)",
+   "evidence_quote": "t90 = 0.719, t99 = 1.653 (units h_a^2/D)"
+  }
+ ],
+ "key_claims": [
+  "PrintStructureLaws.lean: ALL CHECKED, 21 theorems, standard axioms only; the negative control is rejected.",
+  "Sag gives a floor on thickness, diffusion speed and rotation give ceilings; the three pin h into one interval, and the interval is non-empty iff the sag floor on h^2 is at most pi^2 D t and at most (3 eps L/(2 theta))^2.",
+  "Sag plus rotation give a maximum length that no thickness escapes: 2 rho g theta^2 L^2 <= 3 E delta eps^2.",
+  "With the most favourable priors, the 120 mm louvre blade and the 60 mm tile strip are eliminated by self-weight sag as horizontal cantilevers in air under every placeholder brief tried; the rotation ceiling eliminates nothing.",
+  "The 1 h speed requirement eliminates every part with a 0.8 mm or thicker active layer (2 mm comb rung, tree trunk, blade), even with the fastest diffusivity in the prior.",
+  "The brief (sag 10 % of length, 30 degrees, 1 h) is a placeholder chosen by the agent; all material inputs are earlier agents' priors, not measurements."
+ ],
+ "lay_summary": [
+  "A printed strip that curls when it gets wet has three problems at once: if it is thin it droops under its own weight, if it is thick water takes a long time to soak in, and if it is thick it also cannot curl very far.",
+  "We wrote these three rules as maths and had a computer proof-checker confirm that together they squeeze the thickness into a range, and that sometimes the range is empty, meaning no thickness can work.",
+  "We also proved that a strip sticking out sideways has a longest possible length, no matter how thick or thin you make it.",
+  "Using the numbers for the Formlabs rubbery resins, the small strip and the small branches of the tree survive, but the 12 cm window-shade blade and the 6 cm tile droop too much when held out flat in air, and the thick pieces are too slow to respond within an hour.",
+  "The targets we tested against (how much droop, how much turn, how fast) are our own guesses, and the resin numbers are estimates from data sheets, so someone still has to measure real printed strips."
+ ],
+ "glossary": {
+  "hygromorphic": "Changes shape when it takes up or loses water, like a pine cone opening as it dries.",
+  "bilayer": "A strip made of two layers glued together; one swells when wet and the other does not, so the strip bends.",
+  "cantilever": "A beam held at one end and free at the other, like a diving board.",
+  "self-weight sag": "How far the free end of a beam droops just from its own weight.",
+  "modulus (E)": "A number for how stiff a material is; rubber is low, glass is high.",
+  "diffusivity (D)": "A number for how quickly water spreads through a material.",
+  "tau (slowest-mode time)": "The shortest characteristic time for water to soak through a layer; it grows with the square of the thickness.",
+  "curvature ceiling": "The most a two-layer strip can bend: 1.5 times the swelling strain divided by the thickness.",
+  "strain (eps)": "The fraction by which a material gets longer, for example 0.02 means 2 percent.",
+  "tip rotation (theta)": "The angle the free end of the strip turns through when it curls.",
+  "Lean": "A computer program that checks every step of a mathematical proof.",
+  "sorry / sorryAx": "A Lean placeholder meaning 'proof missing'; a file that contains it does not count.",
+  "named hypothesis": "An assumption written openly in a theorem's statement instead of being hidden.",
+  "negative control": "A deliberately wrong file used to confirm that the checker really rejects bad proofs.",
+  "favourable inputs": "The end of each uncertain number that helps the design most; if a design fails even then, it fails across the whole range.",
+  "placeholder brief": "Stand-in requirements chosen by the agent because no real client requirement was available."
+ },
+ "check_output": "MAIN (run 2; run 1 was the transient .olean collision: \"PrintStructureLaws.lean:1:0: error: failed to read file 'C:\\Temp\\delphi-lean-lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Geometry\\Manifold\\Algebra\\Monoid.olean'\" / FAILED)\n\ntoolchain: leanprover/lean4:v4.35.0   mathlib: \nPrintStructureLaws.lean                              errors=0 sorryAx=0 axiom-lines=21/21\nD:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/PrintStructureLaws.lean:351:64: warning: Variable name `hρ` is not explicitly refer\n  ThompsonLaws.PrintStructure.sag_from_beam <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.PrintStructure.sag_le_iff <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.PrintStructure.sag_eliminates_length <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.PrintStructure.tau_le_iff <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.PrintStructure.speed_eliminates <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.PrintStructure.slowest_mode_unfinished <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.PrintStructure.tau_double <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.PrintStructure.tau_active_fraction <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.PrintStructure.amgm_step <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.PrintStructure.timoshenkoCoefficient_le <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.PrintStructure.rotation_ok_iff <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.PrintStructure.strain_needed_iff <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.PrintStructure.rotation_eliminates <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.PrintStructure.sqrt_le_iff_le_sq <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.PrintStructure.le_sqrt_iff_sq_le <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.PrintStructure.feasible_iff_window_sq <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.PrintStructure.feasible_iff_interval <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.PrintStructure.feasible_nonempty_iff <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.PrintStructure.eliminated_sag_vs_speed <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.PrintStructure.eliminated_sag_vs_rotation <- [propext, Classical.choice, Quot.sound] \n  ThompsonLaws.PrintStructure.length_cap_from_sag_and_rotation <- [propext,  Classical.choice,  Quot.sound] \n\nALL CHECKED: no errors, no sorryAx\n\nNEGATIVE CONTROL (must fail, and does):\n\ntoolchain: leanprover/lean4:v4.35.0   mathlib: \nPrintStructureLawsNegativeControl.lean               errors=0 sorryAx=1 axiom-lines=1/1\n'ThompsonLaws.PrintStructureNegative.sag_never_ok' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]\nFAILED\nexit=1",
+ "suite": {
+  "case_name": "Printed hygromorphic panel: sag, speed and rotation certificates (Formlabs proof-of-concept objects)",
+  "statement": "For a horizontal printed bilayer strip, sag 3 rho g L^4/(2 E h^2) <= delta, slowest-mode time h^2/(pi^2 D) <= t and best-case rotation (3/2) eps L/h >= theta hold together exactly when sqrt(3 rho g L^4/(2 E delta)) <= h <= min(sqrt(pi^2 D t), 3 eps L/(2 theta)). The window is non-empty iff the sag floor on h^2 is at most pi^2 D t and at most (3 eps L/(2 theta))^2. Any feasible design obeys 2 rho g theta^2 L^2 <= 3 E delta eps^2.",
+  "lean_status": "ALL CHECKED, 21 theorems",
+  "validation": "Kernel check via tracks/lean/check.sh (21 of 21 axiom lines, standard axioms only). Negative control with sorry rejected (exit 1). The sag formula reproduces the earlier agent's independent numbers (148 vs 142 mm for the blade, 5.2 vs 4.6 mm for the strip). The evaluation script refuses to run if any input string is missing from the two repo JSON files, and its --fail-once self-test exits non-zero.",
+  "data_used": "Dimensions, strain prior (0.99/2.28/3.17 %), diffusivity prior (1e-12 to 1.1e-11 m2/s), moduli (2.4 MPa equivalent, 11 MPa upper prior), densities (1.09, 1.01 g/cm3; 90 kg/m3 net submerged) from bm-poc-designs.json; Tough 1000 and Rigid 10K moduli from bm-formlabs-all-resins.json. No downloads. All are derived priors from Formlabs data sheets, not measurements.",
+  "holdout_set": "Not applicable: no organism data used; nothing concerning the frozen holdout clade was read or written. No held-out printed measurement exists; the first real holdout would be the coupon and strip measurements proposed by bm-poc-designs.",
+  "performance": "At favourable priors in air under the placeholder brief: object 5 blade eliminated (sag, speed, empty window); object 3 tile strip eliminated (sag, empty window); object 2's 0.5 mm rung (sag) and 2.0 mm rung (speed) eliminated; object 4 trunk eliminated by speed only; object 1 and object 4 branch and twig not eliminated. Rotation certificate eliminates nothing. Submerged: only speed eliminates (2 mm rung, trunk, blade).",
+  "what_was_wrong": "The brief thresholds are the agent's placeholders, not a client requirement. The speed floor (0.101 h^2/D) is about seven times looser than the computed settling time (0.719 h^2/D). The sag formula is small-deflection but is applied where sag exceeds 10 % of length. The window theorem treats the bilayer as one homogeneous section with an effective modulus. Diffusion and beam formulas are definitions or hypotheses, not derived in Lean. Stiff-resin length caps assume a strain no stiff resin has shown."
+ },
+ "recommendations": [
+  "Replace the placeholder brief with the architecture client's real limits (allowed droop, required opening angle, required response time, mounting orientation) and re-run evaluate_certificates.py; the verdicts for the 2 mm rung and the trunk flip between a 1 h and a 24 h requirement.",
+  "Offer the length cap 2 rho g theta^2 L^2 <= 3 E delta eps^2 to the client as the headline 'what the law forbids' statement for horizontally cantilevered louvres; it shows a stiffer active material (higher E at the same strain) is the only route to longer blades.",
+  "Hang blades vertically or support both ends in any demonstrator; sag eliminates the 120 mm blade as a horizontal cantilever in air at every prior value.",
+  "Tighten the speed certificate next: prove a one-face-wetting version (4 h^2/(pi^2 D)) and, if possible, a bound on the time for curvature to reach 90 %, so the floor approaches the computed 0.719 h^2/D.",
+  "Hand PrintStructureLaws.lean to the Lean thread (session 31) for inclusion alongside the Hygromorphs file; it copies two definitions and two proofs from there and should import them instead once merged.",
+  "Measure coupon strain, diffusivity and wet modulus before quoting any of these eliminations to a client; every material input here is a derived prior."
+ ],
+ "reproduce": [
+  {
+   "what": "Kernel-check the main Lean file (Git Bash; re-run after 30 s if line 1 reports a failed .olean read)",
+   "command_or_url": "bash D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/lean/check.sh D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/PrintStructureLaws.lean",
+   "expected": "errors=0 sorryAx=0 axiom-lines=21/21, last line: ALL CHECKED: no errors, no sorryAx"
+  },
+  {
+   "what": "Confirm the negative control is rejected",
+   "command_or_url": "bash D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/lean/check.sh D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/PrintStructureLawsNegativeControl.lean",
+   "expected": "errors=0 sorryAx=1 axiom-lines=1/1, last line FAILED, exit code 1"
+  },
+  {
+   "what": "Evaluate the certificates on the five proof-of-concept objects (standard library only, no network)",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/evaluate_certificates.py",
+   "expected": "Prints three tables and writes certificates_results.json and certificates_table.md; favourable / in air row '5 louvre blade': sag 31.13 mm (0.26), tau 3.68 h, eliminated by sag, speed, empty window; L_cap 610.4 mm"
+  },
+  {
+   "what": "Self-test of the evaluation script's input guard",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/evaluate_certificates.py --fail-once",
+   "expected": "exits non-zero with 'fail-once: guard works (exit 1)'"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/PrintStructureLaws.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/PrintStructureLawsNegativeControl.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/evaluate_certificates.py",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/certificates_results.json",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/certificates_table.md",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/check_main_run1.txt",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/check_main_run2.txt",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-print-structure-laws/check_negative_run1.txt"
+ ],
+ "could_not_find": [
+  "A real client requirement for allowed sag, rotation or response time: the brief used is a placeholder.",
+  "Any measured strain, diffusivity or wet modulus for the Formlabs resins: all inputs are earlier agents' data-sheet-derived priors, which I did not re-fetch.",
+  "A Lean derivation of the cantilever deflection or of the slowest diffusion mode from first principles: both enter as a hypothesis or a definition.",
+  "The Formlabs data sheets themselves were not re-opened in this run; density and modulus strings were read from the two repo JSON files only."
+ ],
+ "citations": []
+}

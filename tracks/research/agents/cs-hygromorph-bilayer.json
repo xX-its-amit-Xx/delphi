@@ -1,0 +1,239 @@
+{
+ "label": "cs-hygromorph-bilayer",
+ "topic": "Full-suite case run: Timoshenko bilayer curvature law and its 3/2 ceiling against measured curvatures of real hygromorphic bilayers, whole papers held out",
+ "summary": "The held-out test is small (2 records from 1 paper), so the result is indicative, not conclusive. On those records the zero-parameter Timoshenko law is within 7% and 24% of measured curvature (RMSE 0.085 in log10, against 0.215 for the trivial C/h baseline and 0.181 for the ceiling-only baseline; swapping the labels worsens it to 0.407).\n\nCeiling result, reported separately: with differential strain taken as printed swelling coefficient times bulk moisture change, measured kappa*h/delta_eps exceeds 3/2.\n- Development paper (Rueggeberg & Burgert 2015, cyclic humidity, Table 1): 9 of 12 records exceed 3/2 as point estimates, 4 of 12 even at the lower error bound (maximum 2.06).\n- Held-out paper (Groenquist 2018): 1 of 2 as a point estimate (1.53), 0 of 2 at a 10% strain uncertainty.\n\nThis does not refute the algebra, which is kernel-proved. It refutes the hypothesis set \"narrow strip + delta_eps = alpha * bulk moisture change\" for 4-6 mm wood under 6-24 h cycles. The strain there is inferred, not measured on the bilayer, and the samples are 20 mm wide.\n\nNew Lean file HygromorphFalsifier.lean (checked, exit 0, no sorry, standard axioms only) states the falsifier: kappa*h/delta_eps > 3/2 means no positive m, n reproduces the measurement. It also gives a wide-plate ceiling of 9/4 for nu <= 1/2, conditional on a (1+nu) amplification that is assumed, not derived. A deliberately broken copy fails as it should.\n\nData coverage is thin: of 21 papers screened, only 2 print thickness, modulus ratio, strain and curvature in machine-readable text. Reyssat & Mahadevan, Holstov, Correa 2015/2020, Gladman and classical bimetal data were not obtained as numbers.\n\nFiles are in D:/Users/ashenoy00000/delphi-work/agents5/cs-hygromorph-bilayer/: prereg.md, split.py, records.csv, evaluate.py, results.json, results_table.csv, HygromorphFalsifier.lean, check_lean.sh, xml2txt.py.",
+ "findings": [
+  {
+   "claim": "HELD-OUT PERFORMANCE (single run). Groenquist et al. 2018 beech bilayers, 2 records: predicted 4.21 and 1.96 per m vs measured about 4.5 and 1.5 per m (measured/predicted 1.07 and 0.76). RMSE of log10 ratio 0.085; median absolute log10 error 0.073. Baselines: C/h with C from development data 0.215; ceiling-only 1.5*delta_eps/h 0.181. Shuffled labels (the one possible swap) 0.407.",
+   "value": "n=2 records, 1 paper; RMSE log10 0.085 vs 0.215 / 0.181 baselines; shuffled 0.407",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/cs-hygromorph-bilayer/results.json ; https://www.ebi.ac.uk/europepmc/webservices/rest/PMC6191116/fullTextXML (doi 10.1371/journal.pone.0205607)",
+   "evidence_quote": "A maximum of κd ≈ 4.5 m−1 was reached for r = 0.17",
+   "confidence": "low (n=2; modulus ratio inferred, not printed)"
+  },
+  {
+   "claim": "CEILING, development paper. Rueggeberg & Burgert 2015 Table 1 (cyclic 85-35% RH, 24/12/6 h cycles, beech 4 mm + spruce 0.2/0.8/1/2 mm): kappa*h/delta_eps = 1.45 to 2.06 with delta_eps = (3.2e-3 - 0.07e-3 per %) * delta_u. 9 of 12 point estimates exceed 1.5; 4 of 12 still exceed it after subtracting the printed curvature s.d. and inflating delta_eps by the printed relative errors. The shortest (6 h) cycle gives the largest excess.",
+   "value": "9/12 above 1.5 (point); 4/12 above at lower bound; max 2.06",
+   "source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC4383548/fullTextXML (doi 10.1371/journal.pone.0120718), Table 1; results_table.csv",
+   "evidence_quote": "a differential coefficient of 3.2±0.1*10-3/% was obtained",
+   "confidence": "medium for the arithmetic; the reading as a falsification is weak because delta_eps is inferred"
+  },
+  {
+   "claim": "CEILING, held-out paper. Groenquist 2018: kappa*h/delta_eps = 1.53 (r=0.17) and 0.83 (r=0.49) with delta_eps = (0.0019-0.0001 per %) * 8.0 %. One point estimate is 2% over 3/2; with a 10% uncertainty on the swelling coefficient (the paper's own assumed COV) the lower bound is 1.39, so no violation outside error.",
+   "value": "1/2 above 1.5 (point, 1.531); 0/2 at lower bound",
+   "source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC6191116/fullTextXML ; results_table.csv",
+   "evidence_quote": "typical values used are αL = 0.0001, αR = 0.0019, and αT = 0.0040",
+   "confidence": "medium"
+  },
+  {
+   "claim": "VALIDATION on development data (12 records, 1 paper). Zero-parameter Timoshenko with n=20 (midpoint of the paper's 10-30): measured/predicted median 1.17, range 1.07-1.66; RMSE log10 0.105. The median is inside the pre-registered [0.8, 1.25] band, so no correction factor was frozen (c=1). Shuffled labels (2000 permutations) give mean RMSE 0.265, and every permutation is worse than the true pairing. The ceiling-only baseline beats Timoshenko here (0.068 vs 0.105) because measured values sit systematically above the prediction.",
+   "value": "median ratio 1.17; RMSE log10 0.105; shuffled 0.265; ceiling-only baseline 0.068",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/cs-hygromorph-bilayer/results.json",
+   "evidence_quote": "Stiffness ratios in the range of 10 to 30 were used in the calculations",
+   "confidence": "medium"
+  },
+  {
+   "claim": "The paper's own stated cyclic error (+11% and +13% for the two thinnest spruce layers) is smaller than what its printed Table 1 and printed coefficients give when recomputed here: +34/+49/+66% for the 0.2 mm bilayer and +18/+7/+18% for the 0.8 mm bilayer (24/12/6 h cycles). The paper gives the likely reason: swelling coefficients were not measured during cycling.",
+   "value": "recomputed 1.34-1.66 (0.2 mm) vs paper +11%",
+   "source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC4383548/fullTextXML ; results_table.csv",
+   "evidence_quote": "were 11% and 13% higher than the calculated values",
+   "confidence": "medium (my n=20 and delta_u reading may differ from the authors' unreported choices)"
+  },
+  {
+   "claim": "LEAN. New file HygromorphFalsifier.lean type-checks against the repo's Mathlib (lake env lean, exit 0, about 16 s). It contains bilayerCurvature_le; exceeds_ceiling_refutes (kappa*h/delta_eps > 3/2 implies kappa differs from bilayerCurvature h m n delta_eps for all positive m, n); plateCurvature_le ((1+nu)*kappa <= 9/4 * delta_eps/h for 0 <= nu <= 1/2); and a concrete example on the largest development record (kappa=0.0020 per mm, h=4.2 mm, delta_eps=0.004069). Axioms are propext, Classical.choice, Quot.sound only. A broken copy (kappa=0.0010, which is below the ceiling) fails with 'unsolved goals', exit 1.",
+   "value": "exit 0; 0 sorry; broken copy exit 1",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/cs-hygromorph-bilayer/HygromorphFalsifier.lean ; check_lean.sh",
+   "confidence": "high"
+  },
+  {
+   "claim": "Held-out paper Krueger et al. 2021 (Laywood/PLA printed bilayers) could not be scored: curvatures are only in Figure 4 and supplements. Its text reports that the original Timoshenko model fits the measured curvatures only with a swelling strain of 0.045 (dry, experiment A) against a measured 3.5%, and a modulus ratio of 233.9 against a measured 25-60. So measured curvature exceeds what the measured inputs predict.",
+   "value": "fitted eps 0.045 vs measured 0.035; fitted n 233.9 vs measured 25-60",
+   "source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC8544213/fullTextXML (doi 10.3390/biomimetics6040058), Table 2 and section 3.1",
+   "evidence_quote": "the observed experimental values could not be reproduced computationally",
+   "confidence": "medium (qualitative; not in the performance number)"
+  },
+  {
+   "claim": "Development paper on pine normal/compression-wood veneers (Polymers 2022): the authors' own Timoshenko prediction against experiment has slope 0.919 for the PRF glue and 0.69 for casein glue; a three-layer glue-line model recovered only about 4% of the deviation. Paper-level ratio only; no per-record inputs in the text.",
+   "value": "slope 0.919 (PRF), 0.69 (casein)",
+   "source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC9031849/fullTextXML (doi 10.3390/polym14081624)",
+   "evidence_quote": "having a slightly lower slope of kPRF = 0.919 than the experimental one",
+   "confidence": "medium"
+  },
+  {
+   "claim": "Held-out paper 10.1089/3dp.2022.0061 (cellulose-filled TPU/PK printed bilayers) prints curvatures (0.026 and 0.023 per mm wet) but no layer thicknesses, swelling strains or passive-layer modulus in the text. Held-out paper 10.3390/molecules28196752 (PNIPAM/PDMS) reports bending angles only. Neither could be scored.",
+   "value": "0 usable records from 2 held-out papers",
+   "source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC9963502/fullTextXML ; https://www.ebi.ac.uk/europepmc/webservices/rest/PMC10574087/fullTextXML",
+   "evidence_quote": "reached an average curvature of 0.026 and 0.023 mm−1",
+   "confidence": "high"
+  },
+  {
+   "claim": "Data yield. Of 21 DOIs screened (11 pre-registered, 10 added by the same hash rule), 12 open full texts were fetched and 2 gave usable numeric records. Reyssat & Mahadevan 2009 and Correa 2020 have no open XML in Europe PMC. Holstov 2015, Correa 2015 and the Le Duigou flax DOI returned no Europe PMC record. Gladman 2016 is not open. Le Duigou & Castro 2016 reports blocking force, not curvature. Krapez Tomec 2021 gives curvature only in figures. The ETH data DOI returned HTTP 500.",
+   "value": "2 of 21 papers usable; 14 records",
+   "source": "Europe PMC REST search and fullTextXML calls made in this run; https://doi.org/10.3929/ethz-b-000275694 (HTTP 500)",
+   "confidence": "high"
+  }
+ ],
+ "suite": {
+  "case_name": "Biomaterial track: Timoshenko hygromorph bilayer curvature and the 3/2 ceiling",
+  "statement": "Law: kappa = f(m,n) * delta_eps / h with f(m,n) = 6(1+m)^2 / [3(1+m)^2 + (1+mn)(m^2 + 1/(mn))], where m is the thickness ratio, n the modulus ratio, h the total thickness and delta_eps the differential free strain. Ceiling: kappa*h/delta_eps <= 3/2 for all positive m, n. The ceiling is proved in tracks/lean/HygromorphCeilingCheck.lean (timoshenkoCoefficient_le); tracks/research/lean/bm-lean-materials-laws__TimoshenkoCeilingUnique.lean adds that it is reached only at m^2 n = 1. This run adds HygromorphFalsifier.lean (checked, exit 0): a measured kappa*h/delta_eps above 3/2 is incompatible with the law for every m, n; and if a wide sheet amplifies the strip value by (1+nu), the ceiling is 9/4 for nu <= 1/2.",
+  "holdout_set": "Whole papers. Rule written to prereg.md at 2026-11-14T04:17Z, before any paper was fetched: a paper is held out iff int(sha256(lowercase DOI)) mod 3 == 0. Of the 11 pre-registered DOIs, 1 was held out (10.1371/journal.pone.0205607). Ten more DOIs were added later by the same rule, 3 of them held out (10.1089/3dp.2022.0061, 10.3390/biomimetics6040058, 10.3390/molecules28196752). Held-out total is 4 papers, but only one prints usable curvature numbers in its text, so the scored held-out set is 2 records from 1 paper. The other three print no complete input set.",
+  "validation": "Development part: 12 records from Rueggeberg & Burgert 2015 Table 1 (beech 4 mm + spruce 0.2-2 mm, three humidity cycle lengths). With zero fitted parameters (n = 20, the midpoint of the paper's 10-30), measured/predicted has median 1.17 and range 1.07-1.66; RMSE of log10 ratio is 0.105. The median is inside the pre-registered 0.8-1.25 band, so no correction factor was frozen. Scorer check on development data: shuffled labels give mean RMSE 0.265 over 2000 permutations, all worse than the true pairing. The ceiling-only baseline scores 0.068, better than the full law, because measured curvature sits above prediction throughout. Ceiling check on development data: 9 of 12 records exceed 3/2 as point estimates and 4 of 12 at the lower error bound (maximum 2.06).",
+  "performance": "Single final run of evaluate.py on held-out records. Metric: RMSE of log10(measured/predicted), n = 2 records from 1 paper (Groenquist 2018). Timoshenko 0.085 (median absolute 0.073; ratios 1.07 and 0.76). Baseline 1, kappa = C/h with C fitted on development data: 0.215. Baseline 2, ceiling only (1.5*delta_eps/h): 0.181. Broken-input control: swapping the two labels gives 0.407, which is worse, so the scorer responds to labels. With n = 2 that control has one permutation; the 12-record development control is the stronger one. Held-out ceiling check: 1 of 2 point estimates above 3/2 (1.531), 0 of 2 at a 10% strain uncertainty. This is real data only; no simulated values. Two records cannot support a general claim.",
+  "what_was_wrong": "1. The law as used: the 3/2 ceiling holds only if delta_eps is the true uniform differential strain and the sample is a narrow strip. In Rueggeberg's cyclic data delta_eps is inferred from bulk moisture change times a coefficient measured in a separate step test, and the strips are 20 mm wide at 4-6 mm thick. Under those inputs 9 of 12 records sit above 3/2, up to 2.06. Either the inferred strain is too small, or the strip assumption fails, or both; this run cannot separate them.\n2. Earlier agent work (bm-wood-cellulose-hygromorphs.json) repeated the paper's '+11%, +13%, under 5%' cyclic error without recomputing from Table 1. Recomputed here, the excess is 7-66% and the dimensionless curvature breaks the ceiling. That file did note 1.53 in the ETH beech data and called it within uncertainty, which matches my held-out result.\n3. Earlier work treated the ceiling as a design rule (delta_eps >= (2/3) kappa h) for sizing new materials. For thick wood under cycling, the bulk-moisture strain estimate under-predicts curvature by up to 66%, so that rule gives a strain floor that such data would appear to violate.\n4. Data: most target papers could not be used. Reyssat & Mahadevan 2009, Holstov 2015, Correa 2015 and 2020, Gladman 2016 and the Le Duigou flax paper gave no open machine-readable text. Le Duigou & Castro 2016 reports force, not curvature. No classical bimetal measurements and no hydrogel bilayer with full inputs were found. The ETH dataset DOI returned HTTP 500.\n5. My own run: (a) the hash rule put only 1 of the 11 pre-registered papers in the holdout, so the held-out test has n = 2. (b) I broke my own entry rule for the held-out paper: its moduli are shown only in a figure, so I inferred n = 8.72 from its printed optimum r = 0.253 via m^2 n = 1; predictions over n = 5-15 are in results_table.csv. (c) The measured held-out curvatures are the paper's rounded 'approximately' values. (d) All 12 development records come from one paper and one geometry family, so they are not independent. (e) No figure digitisation was done, which is where most published curvature data sit. (f) The (1+nu) plate factor in the Lean file is an assumption carried from earlier agent work, not something I verified against data."
+ },
+ "lay_summary": [
+  "Glue a strip that swells in damp air to one that does not, and the pair bends, like a pine cone scale opening and closing.",
+  "A 100-year-old formula says how much it should bend, and a computer-checked proof says it can never bend more than one and a half times the swelling divided by the thickness.",
+  "We tested the formula on two wood strips from a paper we had set aside in advance, and it was right to within about a quarter, better than simple guesses.",
+  "But in another paper, where the air was cycled between damp and dry every few hours, most strips bent more than the 'maximum', by up to a third.",
+  "That most likely means the swelling was estimated too low or the strips were too wide for the simple formula, and we found far too few papers with complete numbers to settle it."
+ ],
+ "glossary": {
+  "bilayer": "Two thin layers of different material stuck together.",
+  "curvature (kappa)": "How tightly something is bent: 1 divided by the radius of the circle it follows. Bigger means more bent.",
+  "hygromorph": "A material that changes shape when the air gets damper or drier.",
+  "differential strain (delta_eps)": "How much more one layer wants to grow or shrink than the other, as a fraction of its length.",
+  "m and n": "m is the thickness of one layer divided by the other; n is the stiffness of one layer divided by the other.",
+  "Timoshenko formula": "A 1925 formula for how much a two-layer strip bends when one layer expands more than the other.",
+  "ceiling (3/2)": "The largest bend the formula allows: curvature times thickness divided by differential strain cannot exceed 1.5.",
+  "holdout": "Data set aside by a fixed rule before looking, used once at the end as a fair test.",
+  "baseline": "A deliberately simple guess, used to see whether the real model does any better.",
+  "RMSE of log10 ratio": "A typical size of the error between measured and predicted, on a scale where 0.1 means about 26% off.",
+  "shuffled-label control": "Scrambling which measurement goes with which prediction; a working test must score worse on scrambled data.",
+  "Lean": "A program that checks mathematical proofs line by line.",
+  "moisture content": "The weight of water in the wood as a percentage of its dry weight.",
+  "narrow strip assumption": "The formula assumes the strip is much narrower than it is long, so it bends in one direction only.",
+  "Poisson ratio (nu)": "How much a material thins sideways when stretched lengthways."
+ },
+ "key_claims": [
+  "Held-out (n=2, 1 paper): Timoshenko RMSE log10 0.085 vs 0.215 (C/h baseline) and 0.181 (ceiling-only); shuffled labels 0.407.",
+  "Development (n=12, 1 paper): measured/predicted median 1.17, range 1.07-1.66; 9 of 12 records exceed the 3/2 ceiling as point estimates, 4 of 12 at the lower error bound, maximum 2.06.",
+  "Held-out ceiling check: 1 of 2 point estimates above 3/2 (1.53), none outside a 10% strain uncertainty.",
+  "The ceiling theorem stands as mathematics; what the cyclic wood data contradict is the hypothesis set 'narrow strip + strain from bulk moisture change'.",
+  "New checked Lean file states the falsifier and a wide-plate ceiling of 9/4; the broken copy fails as required.",
+  "Only 2 of 21 screened papers print a complete input set and a measured curvature in machine-readable text."
+ ],
+ "recommendations": [
+  "Report the dashboard's efficiency score kappa*h/delta_eps only when delta_eps was measured on the same sample at the same time. Otherwise label it 'inferred strain' and do not treat values above 1.5 as impossible.",
+  "Do not use delta_eps >= (2/3)*kappa*h as a hard design floor for thick or cyclically driven parts until the cyclic-wood excess is explained.",
+  "Decide whether to add HygromorphFalsifier.lean to tracks/lean: it turns the ceiling into an explicit falsification test and carries the wide-plate (1+nu) variant as a named assumption.",
+  "Next data step: digitise Figure 2e of Rueggeberg 2015 (equilibrium, 24 h) and Figure 4 of Krueger 2021, and retry the ETH dataset (10.3929/ethz-b-000275694), to get more than 2 held-out records. Assign any new paper by the same hash rule.",
+  "For the Formlabs print: measure free strain on single-layer coupons printed and conditioned alongside the bilayer, and keep strip width below about 2*sqrt(h/kappa), so the strip law and its ceiling actually apply."
+ ],
+ "reproduce": [
+  {
+   "what": "Recompute every prediction, metric, baseline, shuffled control and ceiling count from records.csv (stdlib Python, no network)",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents5/cs-hygromorph-bilayer/evaluate.py",
+   "expected": "Prints JSON; HOLDOUT_final timoshenko_c1 rmse_log10 = 0.0849, baseline1 0.2153, baseline2 0.1806, shuffled 0.4069; dev ceiling counts 9 and 4; writes results.json and results_table.csv"
+  },
+  {
+   "what": "Reproduce the paper-level holdout split",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents5/cs-hygromorph-bilayer/split.py 10.3390/polym14081624 10.1089/3dp.2022.0061 10.3390/biomimetics6040058 10.3390/mi14050924 10.1002/adma.202007982 10.1039/d5me00018a 10.3390/mi11040392 10.3390/molecules28196752 10.1002/advs.202200458 10.3390/ijms23158467",
+   "expected": "HOLDOUT for 10.1371/journal.pone.0205607, 10.1089/3dp.2022.0061, 10.3390/biomimetics6040058, 10.3390/molecules28196752; dev for the rest"
+  },
+  {
+   "what": "Check the Lean falsifier file (needs elan at C:/Temp/elan and the repo's lean/ lake project)",
+   "command_or_url": "bash D:/Users/ashenoy00000/delphi-work/agents5/cs-hygromorph-bilayer/check_lean.sh",
+   "expected": "No errors; prints 'lean exit=0'"
+  },
+  {
+   "what": "Re-fetch the two scored papers and turn them into text",
+   "command_or_url": "curl -s https://www.ebi.ac.uk/europepmc/webservices/rest/PMC4383548/fullTextXML -o PMC4383548.xml && curl -s https://www.ebi.ac.uk/europepmc/webservices/rest/PMC6191116/fullTextXML -o PMC6191116.xml && python -I D:/Users/ashenoy00000/delphi-work/agents5/cs-hygromorph-bilayer/xml2txt.py PMC4383548.xml PMC6191116.xml",
+   "expected": "PMC4383548.txt holds Table 1 (delta u 3.3/2.1/1.3 %, curvatures 4.1 ... 1.0 e-3 per mm); PMC6191116.txt holds Table 1 thicknesses and the 4.5 / 1.5 per m sentence"
+  }
+ ],
+ "citations": [
+  {
+   "authors": "Rueggeberg M, Burgert I",
+   "title": "Bio-inspired wooden actuators for large scale applications",
+   "venue": "PLoS ONE",
+   "year": 2015,
+   "doi_or_arxiv": "10.1371/journal.pone.0120718",
+   "verified": true,
+   "how_verified": "Europe PMC full-text XML (PMC4383548) fetched and read in this run",
+   "used_for": "12 development records (Table 1), swelling coefficients, modulus-ratio range"
+  },
+  {
+   "authors": "Groenquist P, Wittel FK, Rueggeberg M",
+   "title": "Modeling and design of thin bending wooden bilayers",
+   "venue": "PLoS ONE",
+   "year": 2018,
+   "doi_or_arxiv": "10.1371/journal.pone.0205607",
+   "verified": true,
+   "how_verified": "Europe PMC full-text XML (PMC6191116) fetched and read in this run",
+   "used_for": "2 held-out records, swelling coefficients, r_opt used to infer n"
+  },
+  {
+   "authors": "Krueger F et al. (first author as listed by Europe PMC; author list not re-checked)",
+   "title": "Development of a Material Design Space for 4D-Printed Bio-Inspired Hygroscopically Actuated Bilayer Structures with Unequal Effective Layer Widths",
+   "venue": "Biomimetics",
+   "year": 2021,
+   "doi_or_arxiv": "10.3390/biomimetics6040058",
+   "verified": true,
+   "how_verified": "Europe PMC full-text XML (PMC8544213) fetched and read; title partly truncated in the search listing",
+   "used_for": "Held-out paper with no tabulated curvature; fitted vs measured strain and modulus ratio"
+  },
+  {
+   "authors": "not re-checked",
+   "title": "Mechanics of a Biomimetic Moisture Sensitive Actuator Based on Compression Wood",
+   "venue": "Polymers",
+   "year": 2022,
+   "doi_or_arxiv": "10.3390/polym14081624",
+   "verified": true,
+   "how_verified": "Europe PMC full-text XML (PMC9031849) fetched and read",
+   "used_for": "Development corroboration: predicted-vs-measured slopes 0.919 and 0.69"
+  },
+  {
+   "authors": "not re-checked",
+   "title": "Codesign of Biobased Cellulose-Filled Filaments and Mesostructures for 4D Printing Humidity Responsive Smart Structures",
+   "venue": "3D Printing and Additive Manufacturing",
+   "year": 2023,
+   "doi_or_arxiv": "10.1089/3dp.2022.0061",
+   "verified": true,
+   "how_verified": "Europe PMC full-text XML (PMC9963502) fetched and read; title truncated in the search listing",
+   "used_for": "Held-out paper found to lack inputs"
+  },
+  {
+   "authors": "Krapez Tomec D et al. (author list not re-checked)",
+   "title": "Hygromorphic Response Dynamics of 3D-Printed Wood-PLA Composite Bilayer Actuators",
+   "venue": "Polymers",
+   "year": 2021,
+   "doi_or_arxiv": "10.3390/polym13193209",
+   "verified": true,
+   "how_verified": "Europe PMC full-text XML (PMC8513051) fetched and read",
+   "used_for": "Development paper found to give curvature only in figures"
+  },
+  {
+   "authors": "Le Duigou A, Castro M",
+   "title": "Evaluation of force generation mechanisms in natural, passive hydraulic actuators",
+   "venue": "Scientific Reports",
+   "year": 2016,
+   "doi_or_arxiv": "10.1038/srep18105",
+   "verified": true,
+   "how_verified": "Europe PMC full-text XML (PMC4733047) fetched and read",
+   "used_for": "Found to report blocking force, not curvature; excluded"
+  }
+ ],
+ "could_not_find": [
+  "Reyssat & Mahadevan 2009 measured curvature data: no open XML in Europe PMC (150-byte error body); not transcribed from the HTML page in this run",
+  "Holstov 2015, Correa 2015 and the Le Duigou flax/PP paper: no Europe PMC record for the DOIs tried (the Le Duigou DOI was itself a guess, flagged in prereg.md)",
+  "Correa 2020 (10.1098/rsta.2019.0445): in PMC but no open XML",
+  "Gladman 2016 (10.1038/nmat4544): not open access",
+  "Classical bimetal measured curvature with component moduli: none located",
+  "A 4D-printed hydrogel bilayer with thicknesses, both moduli, swelling strain and curvature all in text: none located (10.3390/molecules28196752 gives bending angles only)",
+  "ETH research-collection dataset 10.3929/ethz-b-000275694 (all six Groenquist configurations over time): landing page returned HTTP 500",
+  "Groenquist 2018 moduli as numbers: shown only in the paper's Figure 1",
+  "Six fetched development papers were not screened for records in the time available: 10.3390/mi14050924, 10.1002/adma.202007982, 10.1039/d5me00018a, 10.3390/mi11040392, 10.1002/advs.202200458, 10.3390/ijms23158467"
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-hygromorph-bilayer/prereg.md",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-hygromorph-bilayer/split.py",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-hygromorph-bilayer/xml2txt.py",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-hygromorph-bilayer/records.csv",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-hygromorph-bilayer/evaluate.py",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-hygromorph-bilayer/results.json",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-hygromorph-bilayer/results_table.csv",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-hygromorph-bilayer/HygromorphFalsifier.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-hygromorph-bilayer/check_lean.sh"
+ ],
+ "check_output": "evaluate.py (single run): dev n=12 median ratio 1.1717, frozen_c=1.0, rmse_log10 0.1045, shuffled mean 0.2650 (2000/2000 perms worse), ceiling 9 above (point) / 4 above (lower bound), max 2.064. HOLDOUT_final n=2, 1 paper: timoshenko rmse_log10 0.0849 (medabs 0.0726), baseline C/h 0.2153, baseline ceiling 0.1806, shuffled 0.4069, ceiling 1 above (point, 1.531) / 0 above (lower bound). Lean: 'lake env lean HygromorphFalsifier.lean' exit 0 with no output; #print axioms gives [propext, Classical.choice, Quot.sound] for exceeds_ceiling_refutes and plateCurvature_le; broken copy (kappa 0.0010) gives 'error: unsolved goals ⊢ False', exit 1; grep for sorry/axiom in the file: 0."
+}

@@ -1,0 +1,149 @@
+{
+ "label": "cs-fire-ignition",
+ "topic": "Green fire-retardant coatings: thermally-thick ignition-time law tested on real cone-calorimeter data (FSRI Materials Database)",
+ "summary": "Full-suite run on real data: 501 cone-calorimeter ignition records for 56 materials with measured conductivity and volumetric heat capacity. Two things held and one failed.\n\n- **Bound direction holds.** With a 250 C ignition-temperature floor and room-temperature properties, measured ignition time was at or above the no-loss prediction in 393 of 393 development records and 108 of 108 held-out records.\n- **Flux scaling holds.** The log-log slope of ignition time against heat flux was -2.11 (dev median) and -2.16 (held-out median); the law predicts -2. Median R2 of 1/sqrt(t_ig) against flux was 0.997 (dev) and 0.994 (held-out).\n- **The law fails as an absolute predictor.** On held-out materials its RMSE in log10(t_ig) was 0.655, worse than a flux-only baseline that ignores material properties (0.414) and a per-flux mean (0.469).\n\nThe reason for the failure is visible on the development set: the single fitted ignition temperature came out at 945 C, which is not physical, and ignition time scaled with thermal inertia to the power of about 0.5 rather than 1. So the formula is safe only as a lower bound on ignition time. That confirms the earlier critique that `thick_ignition_eliminates` in `FireCoatingCertificate.lean` points the wrong way for a certificate.\n\nThe scorer control behaved: shuffling thermal inertia across held-out materials raised RMSE to 0.839 on average, worse than the real assignment in 98% of 200 permutations.\n\nNot done: no bio-based coated samples were tested (I did not look for cone data with thermal properties for them), no Lean was written or run, and the 1/sqrt(t) form could not be told apart from the thin 1/t form with only three flux levels.\n\nFiles are in D:/Users/ashenoy00000/delphi-work/agents5/cs-fire-ignition/:\n- prereg.md\n- fetch.py\n- analyze.py\n- results_dev.json\n- results_final.json\n- dev_materials.csv\n- holdout_records.csv\n- holdout_t3_rows.csv",
+ "findings": [
+  {
+   "claim": "Bound direction holds on held-out materials: measured t_ig >= no-loss thick prediction (T_ig floor 250 C, room-temperature k and rho*c) in every record.",
+   "value": "0 violations of 108 held-out records (12 materials); 0 of 393 development records (43 materials)",
+   "source": "https://github.com/ulfsri/fsri_materials_database (01_Data/*/Cone/*Scalar*.csv, 01_Data/*/HFM/*.tst); D:/Users/ashenoy00000/delphi-work/agents5/cs-fire-ignition/results_final.json",
+   "evidence_quote": "TIME TO IGN,113",
+   "confidence": "high for the direction; the 250 C floor is my assumption from memory, not an opened source"
+  },
+  {
+   "claim": "The no-loss formula with room-temperature properties underpredicts ignition time so much that the implied ignition temperature is unphysical.",
+   "value": "Implied T_ig median 945 C (dev) and 940 C (held-out); held-out range 452 to 10752 C; dev fitted dT_eff = 924.9 K",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/cs-fire-ignition/results_final.json and results_dev.json",
+   "confidence": "high (computed); the physical reading (surface losses, hot-property kpc, non-thick samples) is interpretation"
+  },
+  {
+   "claim": "As an absolute predictor calibrated on development materials, the law is worse on held-out materials than baselines that ignore material properties.",
+   "value": "RMSE log10(t_ig): law 0.655; per-flux dev mean 0.469; flux-scaling-only fit 0.414; n = 108 records, 12 materials",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/cs-fire-ignition/results_final.json",
+   "confidence": "high (single pre-registered final evaluation)"
+  },
+  {
+   "claim": "Broken-input control: shuffling thermal inertia across held-out materials makes the score worse, so the scorer is sensitive to the material property.",
+   "value": "Mean shuffled RMSE 0.839 against 0.655 real; worse in 98% of 200 seeded permutations",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/cs-fire-ignition/results_final.json",
+   "confidence": "high"
+  },
+  {
+   "claim": "Ignition time does not scale linearly with measured k*rho*c as the law requires.",
+   "value": "Dev slope of log t_ig vs log kpc at fixed flux: 0.51 (25 kW/m2), 0.58 (50), 0.52 (75); the law says 1. The 35 kW/m2 value (1.94) rests on few records.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/cs-fire-ignition/results_dev.json",
+   "confidence": "medium (development set only, materials span foams to solid plastics)"
+  },
+  {
+   "claim": "The flux dependence of the law holds: t_ig falls roughly as 1/q^2 and 1/sqrt(t_ig) is close to linear in flux.",
+   "value": "Median log-log slope -2.11 dev (n=40 materials), -2.16 held-out (n=10); interquartile -3.42 to -1.80 held-out. Median R2 of 1/sqrt(t) vs q: 0.997 dev, 0.994 held-out; R2 >= 0.95 in 80% of held-out materials.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/cs-fire-ignition/results_final.json; holdout_t3_rows.csv",
+   "confidence": "medium: only three flux levels (25, 50, 75 kW/m2) per material, so R2 is a weak test"
+  },
+  {
+   "claim": "Three flux levels cannot separate the thick form (1/sqrt(t) linear) from the thin form (1/t linear).",
+   "value": "Held-out median R2 0.994 thick vs 0.992 thin; predicting t at 50 from 25 and 75: mean abs log10 error 0.086 for both, against 0.244 for a geometric-mean baseline; thick better in 6 of 10 materials (22 of 40 on dev)",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/cs-fire-ignition/results_final.json",
+   "confidence": "high that they are not separated here"
+  },
+  {
+   "claim": "The FSRI files named *_Ignition_Temp_Properties.csv contain no ignition temperature, so the bound could not be tested with a measured T_ig.",
+   "value": "10 files; fields are thermal conductivity, heat capacity, density only",
+   "source": "https://raw.githubusercontent.com/ulfsri/fsri_materials_database/main/01_Data/Basswood_Panel/HFM/Basswood_Panel_Ignition_Temp_Properties.csv",
+   "evidence_quote": "Thermal Conductivity (W/m-K),0.10099999999999999",
+   "confidence": "high for the one file opened; the other nine were not opened"
+  },
+  {
+   "claim": "The checked Lean file states the thick ignition time and an 'elimination' theorem whose docstring claims early ignition, but the data show the formula time is far below the real time.",
+   "value": "thick_ignition_eliminates concludes tigThick < treq; real t_ig exceeded the no-loss time in 501 of 501 records",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/research/lean/FireCoatingCertificate.lean lines 223-246",
+   "evidence_quote": "enough to prove ignition happens before the required non-ignition time",
+   "confidence": "high"
+  }
+ ],
+ "suite": {
+  "case_name": "Green fire-retardant coatings: thermally-thick time to ignition",
+  "statement": "Law under test: t_ig = (pi/4) * k*rho*c * ((T_ig - T0)/q)^2 for a thermally thick solid under constant heat flux q with no surface loss. It implies (a) real t_ig is at or above this value, (b) t_ig scales as q^-2 so 1/sqrt(t_ig) is linear in q, and (c) t_ig is proportional to k*rho*c. The checked Lean file tracks/research/lean/FireCoatingCertificate.lean defines it as tigThick and proves tigThick_antitone_flux and thick_ignition_eliminates. The latter only shows the formula value is below a required time, which is not the safe direction.",
+  "data_used": "FSRI Materials and Products Database (GitHub ulfsri/fsri_materials_database, branch main), fetched during this run: 1588 small files, 12 MB. Cone-calorimeter scalar files give heat flux and time to ignition; heat-flow-meter files give conductivity and volumetric heat capacity of unconditioned samples near room temperature. 92 materials in the database, 81 with cone data, 56 eligible (properties and cone data both present). 501 ignited records at 25, 50 and 75 kW/m2 (a few at 35). No ignition temperatures are in the database. No bio-based coated samples were included.",
+  "holdout_set": "Rule written to prereg.md at 2026-11-14T04:20:29Z (shell clock, UTC), before any analysis: a whole material is held out if sha256(material directory name) mod 4 == 0. That gave 13 held-out materials of 56 eligible; 12 of them had ignited records, 108 records in all, plus 17 held-out records with no ignition recorded. The development part was 43 materials and 393 records. Held-out cone outcomes were read once, in the final run. Before the rule was written I had seen one outcome value (ABS, 25 kW/m2, 113 s); ABS fell in the development part.",
+  "validation": "On development materials only: one parameter was fitted, an effective temperature rise of 924.9 K (T_ig about 945 C), with residual SD 0.545 in log10 t. Leave-one-material-out RMSE was 0.560, against 0.577 for a per-flux mean and 0.579 for flux scaling alone, so the law barely beat the baselines even here. The bound held in 393 of 393 records. Median log-log slope of t_ig against flux was -2.11 (law: -2). Median R2 of 1/sqrt(t) against flux was 0.997 over 40 materials. The slope of log t_ig against log k*rho*c at fixed flux was about 0.5 where the law says 1.",
+  "performance": "Single final held-out evaluation, metric RMSE of log10(t_ig), n = 108 records from 12 materials. Law with the dev-calibrated temperature: 0.655. Baselines: per-flux development mean 0.469; flux-scaling-only fit 0.414. The law is worse than both baselines. Bound direction: 0 violations in 108. Linearity: median R2 0.994 over 10 materials, median slope -2.16. Broken-input control: shuffling k*rho*c across held-out materials raised RMSE to 0.839 on average and was worse than the real assignment in 98% of 200 permutations, so the scorer responds to the input as it should.",
+  "what_was_wrong": "1. The law as an absolute predictor: with room-temperature properties it underpredicts ignition time by a large factor (implied T_ig about 940 C), and t_ig scales with k*rho*c to the power of about 0.5, not 1. It is usable only as a lower bound. 2. The Lean file: thick_ignition_eliminates and thin_ignition_eliminates claim to prove ignition before a required time, but the formula is a lower bound on real ignition time, so they certify nothing physical; the earlier critique in lf-verify-lean.json was right, and it had not been checked against data or run through Lean. That critique also could not open a source for the formula; I did not open one either. 3. The data: no ignition temperatures (the files named Ignition_Temp_Properties hold only k, c and density), so the bound was tested with an assumed 250 C floor taken from memory. Only three flux levels per material, so thick and thin forms cannot be separated. Properties are measured near 20 to 45 C, not at ignition temperature. Many materials are foams, fabrics and thin sheets where the thick assumption is doubtful; I did not filter by thickness. 4. My run: 20 records with time to ignition of 0 (3 dev, 17 held-out) were dropped as non-ignition without checking whether 0 means no ignition or not recorded. One of the 13 held-out materials had no ignited record. The pre-registered label-swap control for the linearity test was vacuous (a midpoint interpolation is unchanged by it) and was replaced before the final run by the geometric-mean baseline. The planned test with measured ignition temperature was dropped. Replicates of one material are not independent, so n = 108 overstates the evidence; the effective n is 12 materials. No coated or bio-based samples from lf-green-retardants.json were tested, so this says nothing direct about coatings. No Lean was written or compiled.",
+  "lean_status": "No Lean was written or run in this case. The existing FireCoatingCertificate.lean was read only. The data support restating the ignition theorems as lower bounds (real t_ig >= tigThick) rather than eliminations."
+ },
+ "lay_summary": [
+  "A simple formula says how long a material takes to catch fire under a heater, using how well it conducts and stores heat.",
+  "We tested it on real lab burn tests of 56 everyday materials, keeping 13 of them hidden until the very end.",
+  "The formula never said a material would take longer to light than it really did, so it works as a safe 'at least this long' number.",
+  "But as an actual guess of the time it was poor: just knowing how strong the heater was gave better guesses.",
+  "The part of the formula about heater strength was right: doubling the heat cut the time to about a quarter."
+ ],
+ "glossary": {
+  "cone calorimeter": "A lab device that heats a small flat sample from above with a known heat strength and records when it catches fire.",
+  "heat flux": "How much heat lands on each square metre of surface per second, in kW/m2.",
+  "time to ignition (t_ig)": "Seconds from the start of heating until the sample catches fire.",
+  "thermal inertia (k*rho*c)": "Conductivity times density times heat capacity; a high value means the surface warms slowly.",
+  "thermally thick": "A sample thick enough that its back side stays cool during the test.",
+  "no-loss prediction": "The formula's answer when you pretend the hot surface loses no heat back to the room.",
+  "lower bound": "A number the real value can never go below.",
+  "held-out set": "Data set aside by a fixed rule and looked at only once, at the end, to give an honest score.",
+  "baseline": "A very simple guess used for comparison, such as the average.",
+  "RMSE of log10": "Typical size of the error measured in factors of ten; 0.3 means about a factor of two off.",
+  "R2": "How close points lie to a straight line; 1 is perfect.",
+  "Lean": "A program that checks mathematical proofs step by step."
+ },
+ "key_claims": [
+  "Measured ignition time was at or above the no-loss thick prediction in 108 of 108 held-out records (250 C floor assumed).",
+  "Calibrated absolute law scored RMSE 0.655 in log10 t on held-out materials, worse than flux-only baselines at 0.414 and 0.469.",
+  "Flux exponent matched the law: median log-log slope -2.16 on held-out materials against -2 predicted.",
+  "Ignition time scaled with measured k*rho*c to the power of about 0.5 on development data, not 1.",
+  "Three flux levels cannot distinguish the thick 1/sqrt(t) form from the thin 1/t form."
+ ],
+ "recommendations": [
+  "Restate thick_ignition_eliminates and thin_ignition_eliminates in FireCoatingCertificate.lean as lower bounds on real ignition time, and drop the claim that they prove early ignition.",
+  "Do not use the thick formula with room-temperature properties to rank or approve coatings; use it only to say ignition cannot be earlier than the computed time.",
+  "To test coatings directly, find cone data for coated bio-based samples with measured ignition temperature and at least five flux levels.",
+  "Repeat the run with a thickness filter so only samples that are plausibly thermally thick are scored."
+ ],
+ "reproduce": [
+  {
+   "what": "Fetch the cone scalar and heat-flow-meter files (12 MB, skip-if-done)",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents5/cs-fire-ignition/fetch.py",
+   "expected": "wanted 1588 downloaded 1588 cached 0 failed 0"
+  },
+  {
+   "what": "Development-only stage",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents5/cs-fire-ignition/analyze.py dev",
+   "expected": "eligible 56; dev 43; held-out 13; dT_eff_K 924.9; leave-one-material-out RMSE 0.56"
+  },
+  {
+   "what": "Final held-out evaluation",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents5/cs-fire-ignition/analyze.py final",
+   "expected": "rmse_log10_model 0.655, B0 0.469, B1 0.414, shuffled 0.839, T1 violations 0 of 108"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-fire-ignition/fetch.py",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-fire-ignition/analyze.py",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-fire-ignition/prereg.md"
+ ],
+ "could_not_find": [
+  "Measured ignition temperatures for the FSRI materials (the Ignition_Temp_Properties files hold only k, c and density)",
+  "Cone data with thermal properties for bio-based coated samples; I did not search beyond the FSRI database in the time available",
+  "An opened primary source for the (pi/4) k rho c formula or for the 250 C ignition-temperature floor; both are from memory",
+  "NIST Fire Calorimetry Database and NIST/FAA property reports were not tried"
+ ],
+ "citations": [
+  {
+   "title": "FSRI Materials and Products Database (repository fsri_materials_database)",
+   "authors": "UL Fire Safety Research Institute",
+   "venue": "GitHub, ulfsri/fsri_materials_database, branch main",
+   "year": 2026,
+   "doi_or_arxiv": "",
+   "verified": true,
+   "how_verified": "Downloaded 1588 files from raw.githubusercontent.com during this run and parsed them; the year is the access year, not a publication year",
+   "used_for": "All ignition times, heat fluxes, conductivities and heat capacities"
+  }
+ ],
+ "check_output": "Final run printed: n_records 108, n_materials 12, rmse_log10_model 0.655, rmse_log10_B0_flux_mean 0.469, rmse_log10_B1_flux_scaling 0.414, shuffled_kpc_rmse_mean 0.839, shuffled_kpc_frac_worse_than_real 0.98, T1 violations 0, T3 median_r2_thick 0.994, median_loglog_slope -2.163."
+}

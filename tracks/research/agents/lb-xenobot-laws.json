@@ -1,0 +1,191 @@
+{
+ "label": "lb-xenobot-laws",
+ "topic": "Lean elimination certificates for xenobots / cell-aggregate biobots (energy budget, Stokes speed, diffusion size limit, shrinking self-replication), with published numbers plugged in",
+ "summary": "The main file XenobotLaws.lean reached ALL CHECKED on the first run (13 theorems, 0 errors, 0 sorryAx, 13/13 axiom lines), and the negative control was rejected (sorryAx=1, FAILED). Two Lean runs were used in total.\n\nWhat is proved (every physical assumption is a named hypothesis):\n1. Energy: `lifetime_le` (T <= Estore/Pmin) and `mission_eliminated` (no feasible spend for a longer mission).\n2. Locomotion: `stokes_speed_le` (v <= n*fmax/(6*pi*mu*R)), `speed_eliminated`, and `reynolds_lt_one` (Re < 1 at vmax implies Re < 1 at v).\n3. Diffusion: `anoxic_core_iff` (centre concentration of the constant-consumption profile is negative exactly when R^2 > 6*D*c0/q), `radius_eliminated`, `profile_surface`, `profile_satisfies_ode`.\n4. Replication: `diameter_le_geometric` (induction), `replication_stops`, `log_bound_implies_small`, and `generations_le` (every viable generation n satisfies n <= log(d0/dmin)/log(1/r)).\n\nWhat was wrong or weak:\n- The Stokes law and the oxygen profile are not derived in Lean. `profile_satisfies_ode` checks the balance equation from derivative formulas written by hand; it does not prove they are derivatives (no HasDerivAt proof). The docstrings say this.\n- Only two of the three named papers were opened in full text (Kriegman 2020 and 2021, via Europe PMC). Blackiston 2021 Science Robotics has no open full text; only its PubMed abstract was read, and it gives no speed, cilia count or size.\n- No xenobot speed, cilia count, per-cilium force, yolk energy, metabolic power or oxygen consumption rate was found in any opened source. Certificates 1, 2 and 3 therefore could not be tested directly and were inverted into thresholds.\n\nDo real xenobots sit inside each bound?\n1. Energy: CANNOT TEST numerically. Published unfed lifetime is 10 to 14 days, and the paper attributes death to depleted maternal energy stores, which is qualitative support only.\n2. Speed and Reynolds: the force ceiling CANNOT be tested. Reynolds consistency is very likely inside: with a body length of about 833 um (derived from Kriegman 2020) and assumed water properties, Re < 1 for any speed below 1.2 mm/s. Moving at an assumed 100 um/s would need about 0.79 nN of Stokes force.\n3. Diffusion: inside ONLY IF oxygen use is below about 0.019 mol/m^3/s (R about 417 um; D = 2e-9 m^2/s and c0 = 0.27 mol/m^3 are assumed from memory, not from an opened source). At an assumed q = 0.01 the critical radius is 569 um (inside); at 0.05 it is 255 um (outside).\n4. Replication: d0/dmin = (3000/50)^(1/3) = 3.9 from published cell counts, assuming volume is proportional to cell number. Published maxima are 2 generations (wild-type spheroids) and 4 (AI-designed semitoroids). These sit inside the bound only if the per-generation shrink factor r is at least 0.51 and 0.71 respectively. r itself is only in the paper's Fig. 2E, not in the text, so this is a falsifiable prediction, not a confirmed fit. The paper's reported correlation between first-offspring size and generations achieved (rho = 0.93) is in the direction the law predicts.\n\nNo holdout-clade data was used; all organisms are frog-cell constructs.\n\nFiles are in D:/Users/ashenoy00000/delphi-work/agents5/lb-xenobot-laws/:\n- XenobotLaws.lean\n- XenobotLawsNegativeControl.lean\n- results.tsv\n- sentences.txt\n- README.md",
+ "findings": [
+  {
+   "claim": "Unfed wild-type xenobots live 10 to 14 days and the authors attribute the end to depleted maternal energy stores (supports the form of certificate 1; E_store and P_min are not given).",
+   "source": "Kriegman et al. 2021 PNAS, full text via Europe PMC PMC8670470, https://doi.org/10.1073/pnas.2112672118",
+   "evidence_quote": "for a period of 10 to 14 d before shedding cells and deteriorating",
+   "value": "10-14 d",
+   "confidence": "high (verbatim from opened full text)"
+  },
+  {
+   "claim": "The 2020 xenobots move for days or weeks without added nutrients.",
+   "source": "Kriegman et al. 2020 PNAS, full text via Europe PMC PMC6994979, https://doi.org/10.1073/pnas.1910837117",
+   "evidence_quote": "for a period of days or weeks without additional nutrients",
+   "value": "days to weeks",
+   "confidence": "high"
+  },
+  {
+   "claim": "Body length is about 833 um (so R about 417 um), derived from the statement that 100 um is 12% of body length.",
+   "source": "Kriegman et al. 2020 PNAS, PMC6994979, https://doi.org/10.1073/pnas.1910837117",
+   "evidence_quote": "width of 100 µm or greater (12% of total body length)",
+   "value": "L = 833 um (derived: 100/0.12)",
+   "confidence": "medium (derived; applies to the 2020 designed organisms)"
+  },
+  {
+   "claim": "A parent spheroid has about 3,000 cells and a pile needs at least 50 cells to become an offspring. This gives d0/dmin = (3000/50)^(1/3) = 3.9 if volume is proportional to cell number.",
+   "source": "Kriegman et al. 2021 PNAS, PMC8670470, https://doi.org/10.1073/pnas.2112672118",
+   "evidence_quote": "if sufficiently large (at least 50 cells), develop into ciliated offspring",
+   "value": "d0/dmin = 3.915 (derived)",
+   "confidence": "medium (the cube-root step is my assumption)"
+  },
+  {
+   "claim": "Generations achieved were 1,1,1,1,2 for wild-type spheroids and 2,3,4 for AI-designed semitoroids. Under the proved bound these are admissible only if the shrink factor r is at least 0.505 (2 generations) and 0.711 (4 generations).",
+   "source": "Kriegman et al. 2021 PNAS, PMC8670470, https://doi.org/10.1073/pnas.2112672118; plug_in.py results.tsv",
+   "evidence_quote": "(2, 3, and 4 g) was no greater than ... wild-type spheroids (1, 1, 1, 1, and 2 g)",
+   "value": "max 2 and 4 generations; r_min 0.505 and 0.711",
+   "confidence": "high for the counts; r is not reported in the text, so inside/outside is conditional"
+  },
+  {
+   "claim": "Larger first-generation offspring go with more generations, the direction the shrinkage law predicts.",
+   "source": "Kriegman et al. 2021 PNAS, PMC8670470, https://doi.org/10.1073/pnas.2112672118",
+   "evidence_quote": "size of the first generation of offspring correlated with the total number of generations",
+   "value": "Spearman rho = 0.93, P < 0.001",
+   "confidence": "high (verbatim); it is a correlation over 8 trials"
+  },
+  {
+   "claim": "Reynolds consistency: for L = 833 um in water, Re < 1 for any speed below 1.2 mm/s. At an assumed 100 um/s, Re = 0.083 and the Stokes force needed is 0.79 nN.",
+   "source": "plug_in.py (my arithmetic); water viscosity and density assumed, speed assumed; L derived from Kriegman 2020",
+   "value": "v(Re=1) = 1.2 mm/s",
+   "confidence": "medium (no xenobot speed was found in an opened source)"
+  },
+  {
+   "claim": "Diffusion certificate: a 417 um radius solid aggregate stays oxygenated at the centre only if oxygen use is below about 0.019 mol/m^3/s.",
+   "source": "plug_in.py (my arithmetic); D = 2e-9 m^2/s and c0 = 0.27 mol/m^3 are assumed from memory, not from an opened source",
+   "value": "q_max = 0.0187 mol/m^3/s",
+   "confidence": "low (two assumed constants; q for frog cells not found)"
+  },
+  {
+   "claim": "The Blackiston 2021 abstract confirms cilia-driven locomotion but gives no speed, cilia count or size.",
+   "source": "PubMed abstract PMID 34043553, https://doi.org/10.1126/scirobotics.abf1571",
+   "evidence_quote": "xenobots exhibit coordinated locomotion via cilia present on their surface",
+   "confidence": "high for what the abstract says; full text not opened"
+  },
+  {
+   "claim": "XenobotLaws.lean: 13 theorems kernel-checked with only the standard axioms (propext, Classical.choice, Quot.sound) for the first one shown; no sorryAx in any of the 13. The negative control is rejected.",
+   "source": "check.sh output saved in D:/Users/ashenoy00000/delphi-work/agents5/lb-xenobot-laws/run1.txt and neg.txt",
+   "evidence_quote": "errors=0 sorryAx=0 axiom-lines=13/13 ... ALL CHECKED: no errors, no sorryAx",
+   "confidence": "high"
+  }
+ ],
+ "check_output": "MAIN (run1.txt):\ntoolchain: leanprover/lean4:v4.35.0   mathlib: \nXenobotLaws.lean                                     errors=0 sorryAx=0 axiom-lines=13/13\nXenobotLaws.lifetime_le <- [propext, Classical.choice, Quot.sound] XenobotLaws.mission_eliminated depends on axioms: [propext, Classical.choice, Quot.\n\nALL CHECKED: no errors, no sorryAx\nexit=0\n\nNEGATIVE CONTROL (neg.txt):\ntoolchain: leanprover/lean4:v4.35.0   mathlib: \nXenobotLawsNegativeControl.lean                      errors=0 sorryAx=1 axiom-lines=1/1\n sorryAx,\nFAILED\nexit=1",
+ "suite": {
+  "case_name": "Xenobot / biobot elimination certificates",
+  "statement": "Four designer-facing bounds proved in Lean: unfed lifetime <= E_store/P_min; Stokes speed <= n*f_max/(6*pi*mu*R) with Re<1 consistency; solid aggregate has a starved centre iff R^2 > 6*D*c0/q; number of self-replication generations <= log(d0/dmin)/log(1/r).",
+  "lean_status": "ALL CHECKED, 13 theorems",
+  "validation": "Kernel check through tracks/lean/check.sh (0 errors, 0 sorryAx, 13/13 axiom lines). Negative control with a sorry-ed false theorem was REJECTED. Published numbers from two opened full texts were plugged in with plug_in.py.",
+  "data_used": "Kriegman 2020 PNAS (PMC6994979) and Kriegman 2021 PNAS (PMC8670470) full text from Europe PMC; Blackiston 2021 Science Robotics abstract only. Frog-cell constructs only.",
+  "holdout_set": "No holdout-clade data touched or named. No separate numerical holdout exists for this case: the natural one is the per-generation offspring diameters in Kriegman 2021 Fig. 2E, which were not extracted, so r >= 0.71 (semitoroids) and r >= 0.51 (spheroids) stand as untested predictions.",
+  "performance": "1 of 4 certificates tested against published numbers, conditionally: replication, where observed maxima of 2 and 4 generations are inside the bound if r >= 0.51 and r >= 0.71. Reynolds consistency holds for any speed below 1.2 mm/s. Energy, the ciliary force ceiling and the diffusion limit could only be turned into thresholds (for example q < 0.019 mol/m^3/s).",
+  "what_was_wrong": "No opened source gave xenobot speed, cilia count or force, yolk energy, metabolic power or oxygen uptake. D, c0 and water properties are assumed from memory. Stokes drag and the oxygen profile are named hypotheses, not derived in Lean; the ODE check uses hand-written derivative formulas. The shrink factor r is a hypothesis: real offspring are built from supplied feeder cells and the experimenters picked the largest offspring each round, so a fixed r may not hold."
+ },
+ "key_claims": [
+  "13 Lean theorems for xenobot design limits pass check.sh with no sorry and no new axioms; the negative control is rejected.",
+  "Published generation counts (max 2 for spheroids, max 4 for semitoroids) are inside the replication bound only if offspring shrink by no more than a factor r >= 0.51 and r >= 0.71 per generation; r was not measured from the text.",
+  "Energy, ciliary-force and oxygen certificates could not be tested directly because the needed measurements were not in any opened source; they are reported as thresholds.",
+  "Xenobots of about 0.83 mm are in the low-Reynolds regime for any speed below about 1.2 mm/s (water properties assumed)."
+ ],
+ "lay_summary": [
+  "Xenobots are tiny living machines made from frog cells, less than a millimetre across.",
+  "We wrote four simple rules that say what such a machine can never do: it cannot live longer than its stored food allows, cannot swim faster than its tiny hairs can push, cannot be so big that its middle runs out of oxygen, and cannot keep making smaller and smaller copies forever.",
+  "A computer proof checker confirmed that each rule follows from its stated assumptions, and it correctly refused a fake rule we gave it as a test.",
+  "Published experiments only let us test the copying rule: xenobots made at most 2 to 4 rounds of copies, which fits the rule if each round is not much smaller than the last.",
+  "For the other three rules the needed measurements were not in the papers we could open, so we report the limits a designer should measure against."
+ ],
+ "glossary": {
+  "xenobot": "A small living machine built from frog embryo cells that moves on its own.",
+  "elimination certificate": "A proved rule that lets you throw out a design because it would break a physical limit.",
+  "named hypothesis": "An assumption written out explicitly in the theorem, so the reader can see exactly what the proof relies on.",
+  "Stokes drag": "The resisting force on a small sphere moving slowly through a thick-feeling fluid: 6 times pi times viscosity times radius times speed.",
+  "Reynolds number": "A number comparing a moving body's momentum with the fluid's stickiness; below 1, stickiness dominates.",
+  "cilia": "Tiny beating hairs on cells that push fluid and move the xenobot.",
+  "anoxic": "Without oxygen.",
+  "diffusion": "The slow spreading of molecules, such as oxygen, from where there is more to where there is less.",
+  "kinematic self-replication": "Making copies by pushing loose cells into piles that grow into new xenobots, instead of by growing and dividing.",
+  "shrink factor r": "How many times smaller each generation's diameter is compared with its parent's (r below 1 means smaller).",
+  "sorry / sorryAx": "Lean's placeholder for a missing proof; a file containing it does not count as proved.",
+  "negative control": "A deliberately wrong input used to confirm that the checker really rejects bad proofs."
+ },
+ "citations": [
+  {
+   "title": "A scalable pipeline for designing reconfigurable organisms",
+   "authors": "Kriegman S, Blackiston D, Levin M, Bongard J",
+   "year": 2020,
+   "venue": "PNAS 117(4):1853-1859",
+   "doi_or_arxiv": "10.1073/pnas.1910837117",
+   "verified": true,
+   "how_verified": "PubMed metadata (PMID 31932426) and full-text XML opened from Europe PMC (PMC6994979)",
+   "used_for": "unfed lifetime statement; body length"
+  },
+  {
+   "title": "Kinematic self-replication in reconfigurable organisms",
+   "authors": "Kriegman S, Blackiston D, Levin M, Bongard J",
+   "year": 2021,
+   "venue": "PNAS 118(49)",
+   "doi_or_arxiv": "10.1073/pnas.2112672118",
+   "verified": true,
+   "how_verified": "PubMed metadata (PMID 34845026) and full-text XML opened from Europe PMC (PMC8670470)",
+   "used_for": "10-14 d lifetime, 3,000 cells, 50-cell threshold, generation counts"
+  },
+  {
+   "title": "A cellular platform for the development of synthetic living machines",
+   "authors": "Blackiston D, Lederer E, Kriegman S, Garnier S, Bongard J, Levin M",
+   "year": 2021,
+   "venue": "Science Robotics 6(52)",
+   "doi_or_arxiv": "10.1126/scirobotics.abf1571",
+   "verified": true,
+   "how_verified": "PubMed metadata and abstract only (PMID 34043553); full text not opened",
+   "used_for": "cilia-driven locomotion (qualitative only)"
+  }
+ ],
+ "could_not_find": [
+  "Xenobot swimming speed in any opened source (Blackiston 2021 full text is not open access; its abstract has no numbers)",
+  "Number of cilia or multiciliated cells per xenobot, and force per cilium",
+  "Yolk or stored energy per xenobot and minimum metabolic power (E_store, P_min)",
+  "Oxygen consumption rate per volume for frog animal-cap tissue (q); D and c0 were assumed from memory",
+  "Per-generation offspring diameters (Kriegman 2021 Fig. 2E) as numbers; the text gives only relative statements",
+  "A HasDerivAt proof that the oxygen profile's stated derivatives are its derivatives (not attempted, to stay within the run budget)"
+ ],
+ "recommendations": [
+  "Digitise Kriegman 2021 Fig. 2E (offspring diameter by generation) to measure r and test the predictions r >= 0.71 (semitoroids) and r >= 0.51 (spheroids); this would be the holdout for certificate 4.",
+  "Open the Blackiston 2021 full text or SI through a library route to get speed and cilia coverage, then test the Stokes ceiling.",
+  "Find a measured oxygen uptake for frog ectoderm explants to turn the q < 0.019 mol/m^3/s threshold into a real inside/outside verdict.",
+  "Upgrade profile_satisfies_ode to a HasDerivAt-based proof so the oxygen profile is derived, not asserted.",
+  "Add a wall-drag correction factor as a named hypothesis to the Stokes certificate, since xenobots move along a dish floor."
+ ],
+ "reproduce": [
+  {
+   "what": "Download the two open full texts and extract number-bearing sentences",
+   "command_or_url": "cd D:/Users/ashenoy00000/delphi-work/agents5/lb-xenobot-laws && python -I fetch_papers.py",
+   "expected": "sentences.txt rewritten (82 lines); raw XML in C:/Temp/delphi-sprint/lb-xenobot-laws/"
+  },
+  {
+   "what": "Plug the numbers into the four certificates",
+   "command_or_url": "cd D:/Users/ashenoy00000/delphi-work/agents5/lb-xenobot-laws && python -I plug_in.py",
+   "expected": "results.tsv with 22 rows; e.g. d0/d_min = 3.915, r_min 0.5054 and 0.7109, q_max 0.01866"
+  },
+  {
+   "what": "Kernel-check the laws",
+   "command_or_url": "bash D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/lean/check.sh D:/Users/ashenoy00000/delphi-work/agents5/lb-xenobot-laws/XenobotLaws.lean",
+   "expected": "errors=0 sorryAx=0 axiom-lines=13/13 ... ALL CHECKED: no errors, no sorryAx"
+  },
+  {
+   "what": "Negative control must be rejected",
+   "command_or_url": "bash D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/lean/check.sh D:/Users/ashenoy00000/delphi-work/agents5/lb-xenobot-laws/XenobotLawsNegativeControl.lean",
+   "expected": "sorryAx=1 ... FAILED (exit 1)"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-xenobot-laws/XenobotLaws.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-xenobot-laws/XenobotLawsNegativeControl.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-xenobot-laws/fetch_papers.py",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-xenobot-laws/plug_in.py",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-xenobot-laws/results.tsv",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-xenobot-laws/sentences.txt",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-xenobot-laws/README.md",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-xenobot-laws/run1.txt",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-xenobot-laws/neg.txt"
+ ]
+}

@@ -1,0 +1,108 @@
+{
+ "label": "lb-binding-thermo-fix",
+ "topic": "Repair of BindingThermo.lean (cheng_prusoff_binding unsolved goal / sorryAx)",
+ "summary": "The repaired BindingThermo.lean reaches ALL CHECKED on the first run: 9 theorems, 0 errors, 0 sorryAx, 9/9 axiom lines, each depending only on propext, Classical.choice and Quot.sound. The statement of cheng_prusoff_binding is true as written and was not changed or weakened; only the proof was broken. I replaced the fragile `field_simp` / `first | ring | ...` chain with explicit cancellation lemmas and `linear_combination`. I did not re-run the old file to see exactly which tactic failed, so the cause is a reading of the proof, not a measurement: the last line's `first` could fall through to a bare `field_simp`, which can succeed without closing the goal. The other seven theorems are kept with identical statements; `half_occupancy_at_Kd` got a sturdier proof for the same reason. I added one new theorem, `cheng_prusoff_binding_unique` (the converse: a non-negative inhibitor concentration that halves occupancy must equal Ki*(1+L/Kd)), so the IC50 relation is now if-and-only-if inside the model. All docstrings were rewritten to say what each theorem shows and does not show. The negative control (a false 'IC50 = Ki' claim closed with sorry) is rejected by check.sh as required (sorryAx=1, FAILED). Lean runs used: 2 (one through check.sh via run.sh, one direct to capture the full axiom lines). Files are in D:/Users/ashenoy00000/delphi-work/agents5/lb-binding-thermo-fix/: BindingThermo.lean, BindingThermoNegativeControl.lean, run.sh, check_main.txt, check_negative.txt, axioms_full.txt. The repo was not edited; the failed copy is still in tracks/research/lean/failed/.",
+ "findings": [
+  {
+   "claim": "The repaired BindingThermo.lean passes the kernel check with 9 theorems and no sorryAx.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-binding-thermo-fix/check_main.txt (output of tracks/lean/check.sh)",
+   "evidence_quote": "BindingThermo.lean errors=0 sorryAx=0 axiom-lines=9/9 ... ALL CHECKED: no errors, no sorryAx",
+   "value": "9 theorems, 0 errors, 0 sorryAx",
+   "confidence": "high"
+  },
+  {
+   "claim": "cheng_prusoff_binding is true as stated; the statement was left unchanged and now depends only on the three standard Mathlib axioms.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-binding-thermo-fix/axioms_full.txt",
+   "evidence_quote": "'BindingThermo.cheng_prusoff_binding' depends on axioms: [propext, Classical.choice, Quot.sound]",
+   "confidence": "high"
+  },
+  {
+   "claim": "What was wrong was the proof, not the statement. With I = Ki(1+L/Kd) the denominator L + Kd(1 + I/Ki) equals 2(L+Kd), so occupancy is exactly half. The likely failure point is the final `first | ring | (field_simp; ring) | field_simp`, whose last branch can succeed while leaving the goal open; this was inferred from the source and STATE.md, not re-measured by re-running the old file.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/research/lean/failed/hv-mol-binding-thermo__BindingThermo.lean lines 43-56; STATE.md line 66",
+   "evidence_quote": "BindingThermo FAILS (cheng_prusoff_binding: unsolved goal, sorryAx) -> failed/",
+   "confidence": "medium"
+  },
+  {
+   "claim": "New converse theorem cheng_prusoff_binding_unique checked: if I >= 0 halves labelled-ligand occupancy in the competitive single-site formula, then I = Ki(1+L/Kd).",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-binding-thermo-fix/axioms_full.txt",
+   "evidence_quote": "'BindingThermo.cheng_prusoff_binding_unique' depends on axioms: [propext, Classical.choice, Quot.sound]",
+   "confidence": "high"
+  },
+  {
+   "claim": "The negative control (false claim that I = Ki halves occupancy, closed with sorry) is rejected by check.sh.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-binding-thermo-fix/check_negative.txt",
+   "evidence_quote": "BindingThermoNegativeControl.lean errors=0 sorryAx=1 axiom-lines=1/1 ... FAILED",
+   "confidence": "high"
+  },
+  {
+   "claim": "Limit: all nine theorems are algebra about the single-site, ideal-solution, free-concentration model. None shows that any real molecule or linker obeys that model, and none has been tested against binding data in this task.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/lb-binding-thermo-fix/BindingThermo.lean (module docstring and per-theorem DOES NOT SHOW lines)",
+   "confidence": "high"
+  }
+ ],
+ "check_output": "$ bash D:/Users/ashenoy00000/delphi-work/agents5/lb-binding-thermo-fix/run.sh\ntoolchain: leanprover/lean4:v4.35.0   mathlib: \nBindingThermo.lean                                   errors=0 sorryAx=0 axiom-lines=9/9\nBindingThermo.occupancy_bounds <- [propext, Classical.choice, Quot.sound] BindingThermo.half_occupancy_at_Kd depends on axioms: [propext, Classical.ch\n\nALL CHECKED: no errors, no sorryAx\ntoolchain: leanprover/lean4:v4.35.0   mathlib: \nBindingThermoNegativeControl.lean                    errors=0 sorryAx=1 axiom-lines=1/1\n'BindingThermoNegativeControl.wrong_ic50_equals_ki' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]\nFAILED\nRESULT: main ALL CHECKED, negative control REJECTED (as required)\n\nFull axiom lines (direct `lake env lean BindingThermo.lean`, saved as axioms_full.txt):\n'BindingThermo.occupancy_bounds' depends on axioms: [propext, Classical.choice, Quot.sound]\n'BindingThermo.half_occupancy_at_Kd' depends on axioms: [propext, Classical.choice, Quot.sound]\n'BindingThermo.dG_neg_of_Kd_lt_one' depends on axioms: [propext, Classical.choice, Quot.sound]\n'BindingThermo.dG_mono' depends on axioms: [propext, Classical.choice, Quot.sound]\n'BindingThermo.cheng_prusoff_le' depends on axioms: [propext, Classical.choice, Quot.sound]\n'BindingThermo.cheng_prusoff_binding' depends on axioms: [propext, Classical.choice, Quot.sound]\n'BindingThermo.cheng_prusoff_binding_unique' depends on axioms: [propext, Classical.choice, Quot.sound]\n'BindingThermo.cycle_closure' depends on axioms: [propext, Classical.choice, Quot.sound]\n'BindingThermo.compensation_exact' depends on axioms: [propext, Classical.choice, Quot.sound]",
+ "suite": {
+  "case_name": "Binding thermodynamics (single-site binding, Cheng-Prusoff) - Lean repair",
+  "statement": "In the competitive single-site model, inhibitor at I = Ki*(1 + L/Kd) exactly halves labelled-ligand occupancy, and that is the only non-negative I that does so.",
+  "lean_status": "ALL CHECKED, 9 theorems",
+  "validation": "Kernel check through tracks/lean/check.sh: errors=0, sorryAx=0, axiom-lines=9/9. Negative control (false IC50 = Ki claim with sorry) is rejected. No comparison with experimental binding data was made in this task.",
+  "holdout_set": "Not applicable: pure algebra, no organism data used; nothing from the frozen holdout clade was read or written.",
+  "performance": "9 of 9 theorems proved on the first check run; 2 Lean runs used of the 6 allowed.",
+  "data_used": "None. No downloads.",
+  "what_was_wrong": "The statement was true; the proof was fragile. It relied on field_simp followed by `first | ring | ...` fallbacks, and the last fallback could succeed while leaving the goal open, which Lean records as sorryAx. Replaced with explicit cancellation lemmas and linear_combination. The exact failing tactic was inferred from reading the file, not confirmed by re-running the old version."
+ },
+ "key_claims": [
+  "BindingThermo.lean now ends ALL CHECKED: 9 theorems, no sorryAx, standard axioms only.",
+  "cheng_prusoff_binding was true as written; statement unchanged, proof repaired.",
+  "Added converse cheng_prusoff_binding_unique, making IC50 = Ki(1+L/Kd) an iff inside the model.",
+  "Negative control is rejected by check.sh (sorryAx=1, FAILED).",
+  "These are model algebra only; no theorem shows a real molecule follows the single-site model."
+ ],
+ "lay_summary": [
+  "When a molecule sticks to a protein, a simple formula says what fraction of the protein is covered.",
+  "One proof about that formula, on how much of a blocking molecule cuts the coverage in half, had a gap, so the computer checker did not accept it.",
+  "The claim itself was right; only the written-out steps were sloppy, so I rewrote the steps and the checker now accepts all nine proofs.",
+  "I also proved the reverse: there is only one amount of blocker that cuts coverage exactly in half.",
+  "To make sure the checker is not just saying yes to everything, I gave it a wrong claim on purpose and it said no."
+ ],
+ "glossary": {
+  "Kd": "Dissociation constant: the free ligand concentration at which half the binding sites are filled. Smaller means tighter binding.",
+  "Ki": "The same kind of constant for an inhibitor (the blocking molecule).",
+  "IC50": "The inhibitor concentration that cuts the measured binding or activity in half.",
+  "Cheng-Prusoff relation": "The formula linking IC50 to Ki: IC50 = Ki * (1 + L/Kd) for a competitive inhibitor.",
+  "occupancy": "The fraction of binding sites that have a ligand on them.",
+  "competitive single-site binding": "A model where ligand and inhibitor fight for the same one spot on the protein.",
+  "sorryAx": "Lean's marker that a proof has a hole in it; a theorem that depends on it is not proved.",
+  "#print axioms": "A Lean command listing the basic assumptions a proof rests on; it reveals hidden holes.",
+  "negative control": "A deliberately wrong input used to confirm the checker can say no.",
+  "named hypothesis": "A physical assumption written openly as an input to a theorem, instead of being hidden.",
+  "linear_combination": "A Lean tactic that proves an equation by adding up multiples of equations already known."
+ },
+ "reproduce": [
+  {
+   "what": "Check the repaired file and the negative control in one command (Git Bash)",
+   "command_or_url": "bash D:/Users/ashenoy00000/delphi-work/agents5/lb-binding-thermo-fix/run.sh",
+   "expected": "First block ends 'ALL CHECKED: no errors, no sorryAx' with axiom-lines=9/9; second block shows sorryAx=1 and FAILED; last line 'RESULT: main ALL CHECKED, negative control REJECTED (as required)', exit 0."
+  },
+  {
+   "what": "Check only the main file",
+   "command_or_url": "bash D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/lean/check.sh D:/Users/ashenoy00000/delphi-work/agents5/lb-binding-thermo-fix/BindingThermo.lean",
+   "expected": "errors=0 sorryAx=0 axiom-lines=9/9, ALL CHECKED"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-binding-thermo-fix/BindingThermo.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-binding-thermo-fix/BindingThermoNegativeControl.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents5/lb-binding-thermo-fix/run.sh"
+ ],
+ "recommendations": [
+  "Replace tracks/research/lean/failed/hv-mol-binding-thermo__BindingThermo.lean with this file through integrate-fleet.sh (I did not touch the repo).",
+  "In other harvested Lean files, look for `first | ... | field_simp` endings: a bare field_simp as the last alternative can succeed without closing the goal, the same defect pattern.",
+  "These theorems are only model algebra. To make them a validation case, pair them with measured IC50/Ki/Kd triples (e.g. ChEMBL) and test whether IC50/Ki = 1 + L/Kd holds; that was not done here.",
+  "For the linker-biology biomaterial proposal, the occupancy and Cheng-Prusoff theorems apply only if the linker binds one site with free ligand in excess; multivalent linkers need an avidity model, which this file does not cover."
+ ],
+ "could_not_find": [
+  "The original Lean error text for the failed file: I did not re-run the old version (to save runs), so the exact failing tactic is inferred, not observed.",
+  "No experimental validation or holdout test was attempted; this task was the proof repair only."
+ ]
+}

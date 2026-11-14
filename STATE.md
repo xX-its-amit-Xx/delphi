@@ -1,88 +1,67 @@
 # STATE — DELPHI atlas + six tracks (antigravity session b0ad0789)
 
-Read this first. Updated 2026-11-13.
+Read this first. Updated 2026-11-13 (late).
 
 ## What this session owns
 - `sim-engine/scales/atlas/`, `sim-engine/scales/micro/division.mjs`, `sim-engine/scales/molecular/`
-- `tracks/` (new, 2026-11-12) and `dashboard/public/blueprint3d/studio-live/{atlas,tracks,retro,embryo/embryo-nuclei.*,embryo/embryo-divisions.json}`
+- `tracks/` and `dashboard/public/blueprint3d/studio-live/{atlas,tracks,retro,embryo/embryo-nuclei.*,embryo/embryo-divisions.json}`
 - `benchmarks/retro-validation/`, `devlog/`
 - NOT ours: `lean/` (31), `genotype/` (68), `organism-design/` (32), `physics/` (58), `holdout/` (93), blueprint3d viz (51). Read only.
 
-## The pivot (Amit, 2026-11-12) — brief saved at `tracks/BRIEF-2026-11-12.md`
-Two strategies: the PAPER (with Markus Buehler and Lee Marom) and CONTRACTING (Mamou-Mani, Formlabs print).
-Six tracks: 1 reporter response · 2 spatial patterns · 3 lumen geometry · 4 passive glide surrogate ·
-5 new biomaterial printed on Formlabs · 6 flying fish framework.
+## Briefs (all saved verbatim in tracks/)
+- `BRIEF-2026-11-12.md`: PAPER (with Buehler, Marom) and CONTRACTING (Mamou-Mani, Formlabs print); six tracks.
+- `BRIEF-2026-11-13-green-fire-coatings.md`: fire-coatings lead. `BRIEF-2026-11-13-group-split.md`: group splits into academic zebrafish paper and industry (biomaterials, zebot, locomotion).
+- `BRIEF-2026-11-13-deliverables.md`: top deliverables = Formlabs print file, biomaterial proposal grounded in "linker biology", validation-suite improvements and more cases (validation / holdout / performance / what was wrong). Biomaterials and xenobots must use Lean for Biology.
 
-## Upstream moved
-- `origin` is now `https://github.com/fractastical/delphi.git` (old `delphisci` 404s). main was force-updated 2026-11-08.
-- Lean library split out: `fractastical/leanbio`, law set 1.6.0. Shallow clone at `D:\Users\ashenoy00000\delphi-work\upstream\leanbio`.
+## Upstream
+- `origin` = `fractastical/delphi` (issues #17-#42 are ours). Lean library split out as `fractastical/leanbio` (law set 1.6.0; this repo 1.8.1).
 - We push to `fork` (`xX-its-amit-Xx/delphi`), branch `generalise-any-base-organism`.
 
-## Data and paths (nothing big on C:)
-- Working data: `D:\Users\ashenoy00000\delphi-work\` — `idr0068/` (embryo XML), `tahoe/`, `paxdb/`, `agents/` (workflow outputs), `upstream/`.
-- Agent outputs are NOT committed. `tracks/build.mjs` merges and checks them into `tracks/research/` and the dashboard bundle.
-- Corpus: `tracks/research/corpus/buehler.json` (795 of 892 works, OpenAlex, year-by-year walk; cursor paging 401s without a key).
+## Data and paths (nothing big on C: or D:; D: has under 5 GB free)
+- Working data: `D:\Users\ashenoy00000\delphi-work\` (`agents*/` = raw workflow outputs, not committed). Agent downloads of this round: `C:\Temp\delphi-sprint\`.
+- Committed copies: `tracks/research/agents/*.json` (127), `agent-scripts/`, `lean/*.lean`, `lean/failed/`, `lean/CHECKED.txt`.
 
 ## How to run
-- Tracks bundle: `python tracks/scripts/verify-dois.py && node tracks/build.mjs`
-- Atlas bundle: `node sim-engine/scales/atlas/build.mjs`
-- Render check (starts and stops its own server): `node sim-engine/scales/atlas/shoot.mjs [--page tracks/] [--live]`
-- Tests (each also takes `--fail-once`; a surviving assertion is a test bug): `sim-engine/scales/atlas/test-{counts,embryo-divisions,motion}.mjs`, `sim-engine/scales/micro/test-division.mjs`, `sim-engine/scales/molecular/test-*.mjs`, `devlog/test-registers.mjs`
-- Holdout: `node holdout/check-leaks.mjs <path>` on every .mjs/.md; `node sim-engine/scales/atlas/holdout-html-scan.mjs` for the .html/.json the gate skips.
-- Deploy: `node dashboard/predeploy.mjs` then `cd dashboard && npx wrangler deploy`. Live: https://delphi-mission-control.ashenoy000.workers.dev/blueprint3d/studio-live/{atlas,tracks}/
+- Bring a fleet in (one command; fails on a leak or a surviving negative control): `bash tracks/scripts/integrate-fleet.sh <journal.jsonl> <agents_out_dir>`
+- Bundle: `node tracks/build.mjs`. Render check: `node sim-engine/scales/atlas/shoot.mjs --page tracks/`
+- Everything: `node tracks/reproduce.mjs [--online] [--only lean,print,suite]`
+- Lean: `bash tracks/lean/check.sh <file>` (v2, strict) and `bash tracks/lean/check.sh --probes`
+- Print files: `python -I tracks/print/make_poc.py && python -I tracks/print/test_poc.py [--fail-once]`
+- Holdout: `node holdout/check-leaks.mjs tracks`; `node sim-engine/scales/atlas/holdout-html-scan.mjs`
+- Deploy: `node dashboard/predeploy.mjs` then `cd dashboard && npx wrangler deploy`. Live: https://delphi-mission-control.ashenoy000.workers.dev/blueprint3d/studio-live/tracks/
 
-## Done 2026-11-12 (workflow wf_42562527-bc5, 39 agents, finished; registry claim removed)
-- Live: https://delphi-mission-control.ashenoy000.workers.dev/blueprint3d/studio-live/tracks/
-- All six tracks designed with frozen predictions; synthesis in `tracks/synthesis.json`; agent outputs in `D:/Users/ashenoy00000/delphi-work/agents/` (not committed).
-- Citations: 217 of 221 resolve with matching titles (`tracks/scripts/verify-dois.py`: Crossref, then DataCite, then arXiv). Corpus: 544 relevant, 357/357 quotes verbatim.
-- KNOWN GAP: the law-mapping agents read leanbio at law set 1.6.0; this repo is 1.8.1, so six laws are missing from their maps (`python tracks/scripts/lawset-diff.py 1.6.0 1.8.1`). The four new candidates have no sorry/axiom in code (the grep hits are the docstring words "not an axiom"), but each is a NAMED HYPOTHESIS its theorem is conditional on. 14 of 59 pinned laws have no Lean theorem at all.
-- Proposed Lean, UNCHECKED (Mathlib not built here): `tracks/lean/HygromorphCeiling.lean`. Hand to session 31; do not write into lean/.
-- Embryo drawn as nuclei at measured radii (Gemini-written `atlas/embryo-render.mjs`, reviewed).
+## Deliverables of 2026-11-13 (dashboard section "Deliverables")
+1. PRINT: `tracks/print/make_poc.py` -> `studio-live/tracks/print/{single-print-plate,active-plate,passive-plate,bonding-jig}.stl` + manifest. Thicknesses doubled to meet Formlabs' 0.4 mm supported-wall minimum. NOT met: Form Now's 1.5 mm rule for Flexible 80A. Nothing printed.
+2. PROPOSAL: `tracks/proposals/mamou-mani-biomaterial.md` (soybean-oil resin + polysaccharide, one face dipped in citric/tannic acid; three-stage contract). Hypothesis; nobody contacted; partner name unconfirmed.
+3. SUITE: `check.sh` v2 closes four holes (no toolchain, sorry without audit line, hand-written axiom, empty file); probes in `tracks/lean/probes/`. `tracks/suite/suite-gate.mjs` + schema (self-test 29/29) is NOT yet run on real cases. Eight `cs-*` cases have validation / holdout / performance / what-was-wrong (bundle `deliverables.cases`).
 
-## Done 2026-11-12 (second fleet, wf_af15c8ea-cdf, 77 agents, finished)
-- Outputs copied to `tracks/research/agents/*.json` (77), `tracks/research/agent-scripts/` (agent-written scripts), `tracks/research/lean/*.lean` (12). Originals stay in `D:/Users/ashenoy00000/delphi-work/agents2/`.
-- COPY RULES: after copying, run `python -I tracks/scripts/scrub-holdout.py tracks/research` (agents wrote the held-out clade's common names and two claim ids; the gate caught 20), then `node tracks/build.mjs`, then `node holdout/check-leaks.mjs tracks`.
-- Three agent files were stubs ("full result returned via StructuredOutput"): pp-sentry-agent-platform, q1-critic, q1-theory-lean. Recovered from the workflow journal (`.../subagents/workflows/wf_af15c8ea-cdf/journal.jsonl`, `result` lines). Check for `findings` in every file after a copy.
-- Bundle now has `fleet` (77 agents, 2,583 findings); page section "The research fleet". Evidence quotes are labelled the agent's own: a verifier pass has NOT run.
-- Citations: 529 of 1,021 resolved independently, 0 failed, 484 not yet checked (no DOI/arXiv id, or not in the resolver run).
-- `tracks/lean/check.sh` now makes relative paths absolute (it runs from lean/). A deliberate negative control, `bm-lean-materials-laws__NegativeControl.lean`, MUST fail (it does).
+## Case results worth remembering (each is the agent's own run; no second re-run yet)
+- Enhancer rank: multiplicative model held-out R2 0.835; exact no-reversal law FALSIFIED (1,051 significant flips, about 25 expected) but the violation is 0.039% of comparisons.
+- Binding affinity: ligand-only model on held-out targets r 0.164, worse than a constant in RMSE; noise ceiling is too unstable to diagnose leakage.
+- Fire ignition: bound direction holds 108/108 held-out, but as a predictor the law is WORSE than both baselines.
+- Xenobots: energy-store lifetime bound FAILED out of sample (0/4; held-out bots are fed in medium, so the closed-store hypothesis is false).
+- Hygromorph: 2 held-out records only; 9 of 12 development records sit ABOVE the 3/2 ceiling (inferred strain, wide strips). Unresolved; settle on our own coupons.
+- Crosslink swelling: 9/11 held-out series right sign, effective n about 3-4. Fish: Strouhal band holds 80% held-out; larval zebrafish sit at 0.72-2.5.
+- Lean added and passing: crosslinker window (14 thm), xenobot laws (13), print structure (21), fire certificate V2 (11; v1's three eliminations were wrong-way), binding thermo fixed (9).
 
-## Done 2026-11-12/13: phase 2 (verify + explain), live and pushed (fork commit 9bc802cac)
-- 298 key claims re-checked: 185 supported, 105 partly, 5 not fetchable, 3 not checkable. Results: `tracks/research/phase2/` (extract with `tracks/scripts/extract-journal.py <journal> <dir>`, then scrub, then `node tracks/build.mjs`).
-- Explainers: measured grade 3.5-4.5, but no-context readers rate them 3-4 of 5 even after a revision round. NOT yet layperson-ready; do not claim it.
-- `node tracks/reproduce.mjs --online`: 19 passed, 0 failed, 0 skipped. The online DOI row reads the cached resolution file first.
-
-- Issues POSTED 2026-11-13 to fractastical/delphi: #17-#41 (25 issues; labels not on repo, named in each body's first line). Re-running file-issues.py will not duplicate. Sentry is #36, paper location #37. The Delphi bot posts daily updates there; check those issues for replies.
-
-## Lead 2026-11-13: green fire-retardant coatings (brief: tracks/BRIEF-2026-11-13-green-fire-coatings.md; issue #42)
-- 3 agents (lf-mogas, lf-fire-regs, lf-lean-fire) in tracks/research/agents/, group `fire-coatings`. FireCoatingCertificate.lean: 16 theorems, passes check.sh (I re-ran it); negative control fails. Worked-example limits are PLACEHOLDERS.
-- GAPS: ISO/ASTM/BSI pages 403, so standard editions and pass numbers mostly unconfirmed; no evidence of her own fire-coating work; the shortage claim is Amit's seminar account only. These 3 agents have NOT had a verifier pass.
-- Versions checked 2026-11-13: Lean v4.35.0 is the latest release; Mathlib pinned at tag v4.35.0 (do not bump; lean/ is session 31's); leanbio law set 1.6.0 vs app repo 1.8.1.
-
-## Sprint 2026-11-13 (wf_d2c15cee-c76, 30 agents; brief: tracks/BRIEF-2026-11-13-group-split.md)
-- Group is splitting: (1) academic zebrafish-engineering paper, (2) industry (biomaterials, zebot, locomotion). Common thread: harvest -> formalize -> validate statements.
-- Integrate any fleet with ONE command: `bash tracks/scripts/integrate-fleet.sh <journal.jsonl> <agents_out_dir>` (extract, copy, scrub, Lean-check new files, build, gates). Lean files the kernel rejects go to `tracks/research/lean/failed/` and are never counted.
-- Groups added: `hv-*` statement-harvest (14), `gs-*` group-split (4), `is-fix-*` issue-fixes (5), 7 more `lf-*`. Fleet now 110 agents, 2,962 findings.
-- Lean: 7 new files pass check.sh (HalpinTsaiBounds, CentralDogma, MorphogenGradient, AllometryScaling, FinLocomotion, ClockWavefront, TuringFiniteDomain). BindingThermo FAILS (cheng_prusoff_binding: unsolved goal, sorryAx) -> failed/.
-- FIRE CERTIFICATE CAVEAT (lf-verify-lean, a read of statements, not re-run): the two ignition eliminations use no-loss ignition times, which are LOWER bounds on real ignition time, so they do not show a coating ignites in time; the finite-time elimination lacks a hypothesis tying the one-node curve to the real back face. Proofs are valid; three theorems are UNSAFE as physical certificates until restated. NOT FIXED.
-- Standards now confirmed from open sources: Euroclass A1-F thresholds (2016/364), E84 classes and NFPA 286 criteria (IBC 2021 ch.8), UK Approved Document B. Still unconfirmed: E119 limits, ISO 5660 edition.
-- Issues #17-#42: 1 resolved (#27), 12 partly, 11 need Amit, 2 blocked (#19, #36). Patches/drafts in `tracks/research/agent-scripts/is-fix-*/`; NOT applied, no comments posted.
-- gs-academic-paper finding: none of tracks 1-4/6 is a zebrafish system today; the zebrafish paper is a re-instantiation.
-- LEAK NEAR-MISS: hv-morph-allometry downloaded the AnAge table (all classes). Its script reads mammal rows only; the table/zip were removed from the repo copy (original stays in delphi-work/agents4). integrate-fleet.sh no longer copies zip/gz/html/pdf.
+## Known gaps
+- Fire v1 file `FireCoatingCertificate.lean` is still in the folder; quote V2 only.
+- 29 theorems in four older files have no axiom line of their own (check.sh prints a NOTE).
+- Pre-registration times in `design-validation/` and `validation/` are self-attested (not ours to change; reported).
+- Explainers still read 3-4 of 5 to no-context readers. Agent quotes are unverified unless a verify-* file says otherwise.
+- Issues #17-#42: 1 resolved (#27), 12 partly, 11 need Amit, 2 blocked. Drafts in `tracks/research/agent-scripts/is-fix-*/`; no comments posted.
 
 ## What is running
-- No background jobs. Corpus top-up ran: 799 of 892 works, 93 still missing (OpenAlex returned only 4); the 4 new ones are unread by agents. No cluster jobs, no GPUs. Explorer/Discovery still decline the SSH key (since 2026-11-07).
-- Nothing else. Phase 2 and its revision round are finished (workflows wf_add95fb8-427, wf_871015f9-839).
+- Nothing after this turn's Lean re-run finishes. No cluster jobs, no GPUs. Explorer/Discovery still decline the SSH key.
 
 ## Standing constraints
-- Frozen holdout: nothing from the held-out clade (roster in holdout/split.json) in any file, mesh, manifest or log. Never add allowlist entries.
+- Frozen holdout: nothing from the held-out clade (roster in holdout/split.json) in any file, mesh, manifest or log. Never add allowlist entries. Agents may download tables that contain it: keep raw downloads out of the repo.
 - No credentials in the repo; no personal identifiers to outside services. Do not commit `genotype/map.json`.
-- Thirteen other-thread dirty files in the working tree stay untouched and unstaged.
+- Thirteen other-thread dirty files stay untouched and unstaged (stage only STATE.md, tracks/, studio-live/tracks).
 - Email ashenoy000@gmail.com with the live link when a feature ships.
 
 ## Open decisions for Amit
-1. "Senty" — nothing by that name found; asked as issue #36 on fractastical/delphi for the other agents.
-2. "The paper is in repo" — no manuscript on any fetched branch. Which repo and path?
-3. "Mobile Money" in the brief is read as Mamou-Mani — confirm.
-4. Anthropic Lean token grant: the 14 pinned laws with no theorem, or the 17 laws the biomaterial track needs? (my pick: the 14)
-5. Standing: revoke the GitHub token (repo/admin:org/admin:enterprise), rotate the Frontier token, Nebius key, cluster SSH key.
+1. Sentry: where is it (#36)?  2. Which repo holds the manuscript (#37)?  3. Is the partner Mamou-Mani (#28)?
+4. Does "linker biology" mean crosslinker chemistry (how I read it) or "Lean for biology"?
+5. Post the drafted issue replies as public comments?  6. Coupon swelling measurement (#21) needs a printer.
+7. Standing: revoke the GitHub token, rotate the Frontier token, Nebius key, cluster SSH key.

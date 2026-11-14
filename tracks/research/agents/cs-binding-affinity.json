@@ -1,0 +1,200 @@
+{
+ "label": "cs-binding-affinity",
+ "topic": "Why small-molecule/protein binding-affinity prediction models work poorly: experimental noise floor from ChEMBL replicates, the attenuation ceiling on held-out TARGETS, and trivial baselines",
+ "summary": "I fetched Ki activity data now from the ChEMBL REST API (40 targets from the earlier q2-data roster; 6.9 MB; max 4000 rows/target) and held out whole targets by an untunable rule (sha256(target_id) mod 4 == 0; 15 held out, 14 with data, 25 development), pre-registered at 2026-11-14T04:17:57Z before any download. Noise floor from cross-document replicate differences of the same compound-target pair: s = 0.622 pKi on development targets and 0.546 on held-out targets (ratio 0.88, so noise transfers), with 57-65% of replicate pairs being identical re-cited numbers and 14-17% of the non-identical ones differing by more than 1 log. The implied attenuation ceiling (Lean theorem Q2.pearson_attenuation, r <= sqrt(vy/(vy+s^2))) is pooled r <= 0.882 on held-out targets and 0.787-0.926 per target. Single final held-out evaluation: a ligand-only 5-NN Morgan/Tanimoto model trained only on development targets gets pooled Pearson r = 0.164 (n = 33,826 pairs, 14 targets; target-bootstrap CI [-0.001, 0.306]), RMSE 1.534 - worse in RMSE than the constant development grand mean (1.331) and no better than a leave-one-out target-mean predictor that knows nothing about the compound (r = 0.193, RMSE 1.296). The identical model scored with a random within-target split - the leaky protocol - gets r = 0.824 / RMSE 0.753. So the ceiling is not what binds: split choice moves r by a factor of five, 0.16 to 0.82, and the leaky number lands just under the noise ceiling, which is exactly how a leaked benchmark looks near-optimal. The broken-input control (training labels shuffled) collapses to r = 0.004, so the scorer works.",
+ "findings": [
+  {
+   "claim": "Experimental noise floor for ChEMBL Ki: SD of a single measurement, from cross-document replicates of the same compound-target pair, excluding identical re-cited values",
+   "value": "s = 0.622 pKi (development, 20,226 replicate pairs); s = 0.546 (held out, 13,339 pairs); ratio 0.88, so pre-registered prediction P1 (within 25%) held",
+   "source": "ChEMBL REST API activity.json fetched 2026-11-14; D:/Users/ashenoy00000/delphi-work/agents5/cs-binding-affinity/final_results.json",
+   "evidence_quote": "s_primary: 0.6224 ... s_primary: 0.5464",
+   "confidence": "high"
+  },
+  {
+   "claim": "More than half of ChEMBL cross-document replicate pairs are literally the same number re-cited, so an unfiltered noise estimate is far too small",
+   "value": "frac_identical 0.575 (dev) / 0.654 (held out); s over all pairs is only 0.41 / 0.32 vs 0.62 / 0.55 after excluding identical values",
+   "source": "final_results.json, dev_results.json",
+   "confidence": "high"
+  },
+  {
+   "claim": "Attenuation ceiling on held-out targets using the development noise estimate (Lean Q2.pearson_attenuation)",
+   "value": "pooled r <= 0.882; mean within-target r <= 0.865 (per-target range 0.787-0.926)",
+   "source": "final_results.json heldout_ceilings_using_s_dev",
+   "confidence": "high"
+  },
+  {
+   "claim": "HEADLINE held-out performance: ligand-only 5-NN (Morgan r=2, 2048 bits, Tanimoto, k=5) trained only on development targets, evaluated once on held-out targets",
+   "value": "pooled Pearson r = 0.164, 95% target-bootstrap CI [-0.001, 0.306]; mean within-target r = 0.146; RMSE 1.534",
+   "source": "final_results.json heldout_models.knn5_ligand_only_target_heldout",
+   "confidence": "high"
+  },
+  {
+   "claim": "Trivial baselines beat it on RMSE: a constant (development grand mean) and a target-mean predictor that knows nothing about the molecule",
+   "value": "constant 7.084 -> RMSE 1.331; leave-one-out target mean -> pooled r 0.193, RMSE 1.296; vs 5-NN RMSE 1.534",
+   "source": "final_results.json heldout_models",
+   "confidence": "high"
+  },
+  {
+   "claim": "The leaky protocol inflates the SAME model by a factor of five in r: random within-target split of the held-out targets instead of holding out whole targets",
+   "value": "pooled r = 0.824 (CI [0.790, 0.847]), mean within-target r 0.799, RMSE 0.753, vs 0.164 / 1.534 honest",
+   "source": "final_results.json heldout_models.knn5_LEAKY_random_split_within_target",
+   "evidence_quote": "pooled_r: 0.8244 ... pooled_r: 0.1644",
+   "confidence": "high"
+  },
+  {
+   "claim": "The leaky score lands just below the computed noise ceiling, which is how a leaked benchmark looks near-optimal: 0.824 vs ceiling 0.882. The ceiling therefore cannot by itself diagnose leakage - the split contrast can.",
+   "value": "0.824 / 0.882 = 0.93 of ceiling (leaky) vs 0.19 of ceiling (honest)",
+   "source": "final_results.json (own arithmetic)",
+   "confidence": "high"
+  },
+  {
+   "claim": "The honest model has zero skill on chemistry unlike anything in training, and modest skill only where a close analogue exists",
+   "value": "pooled r = 0.0007 where nearest training Tanimoto < 0.4 (n = 12,282); r = 0.244 where >= 0.4 (n = 21,544); median top-1 Tanimoto 0.526; 32% of held-out pairs use a compound seen in training against another target",
+   "source": "final_results.json heldout_models.knn5_by_similarity",
+   "confidence": "high"
+  },
+  {
+   "claim": "Broken-input control: the same scorer with training labels shuffled (seed 0) collapses, so the test is not broken",
+   "value": "pooled r = 0.004, CI [-0.013, 0.018], mean within-target r = -0.011",
+   "source": "final_results.json heldout_models.knn5_SHUFFLED_train_labels_control",
+   "confidence": "high"
+  },
+  {
+   "claim": "Almost all variance is within target, not between targets, on the held-out set - so knowing the target gives a model almost nothing and benchmark skill must come from the compound axis",
+   "value": "between-target share 0.038 (held out), 0.141 (development)",
+   "source": "final_results.json, dev_results.json",
+   "confidence": "high"
+  },
+  {
+   "claim": "The ceiling estimate is itself unstable: the replicate-correlation route gives a much higher ceiling than the squared-difference route on the same held-out data",
+   "value": "r(doc A vs doc B) = 0.954 on 2,132 replicated pairs -> ceiling sqrt(r) = 0.977, vs 0.882 from s = 0.546; the replicated subset has a wider label SD (1.326)",
+   "source": "final_results.json heldout_replicate_check",
+   "confidence": "medium"
+  },
+  {
+   "claim": "The noise estimate depends on which half of the targets you use, because duplicate-citation density differs wildly between targets - so a single published sigma should not be trusted to 2 digits",
+   "value": "development split-half: s = 0.726 (targets with 79% identical pairs) vs 0.566 (17% identical)",
+   "source": "dev_results.json dev_split_half_noise",
+   "confidence": "high"
+  },
+  {
+   "claim": "Published CASF-2016 numbers quoted by the earlier repo agents all sit BELOW the ceilings measured here, so reported benchmark performance exceeding the noise ceiling is not where the leakage shows up; the split contrast and the authors' own hard holdouts are",
+   "value": "quoted: ligand-only bias baseline r 0.76, ML scoring functions 0.74-0.82, CleanSplit-trained 0.75-0.80, peptide/bias-free holdouts 0.17-0.41 vs ceiling 0.79-0.93",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/research/agents/q2-literature.json and q2-critic.json (read this run; the underlying papers were NOT re-opened by me)",
+   "confidence": "medium"
+  }
+ ],
+ "suite": {
+  "case_name": "Binding-affinity prediction: experimental noise floor, attenuation ceiling, and whole-target holdout on ChEMBL Ki",
+  "statement": "The law under test is the attenuation bound: for any predictor whose errors are uncorrelated with assay noise, Pearson r against a single noisy measurement satisfies r <= sqrt(vy/(vy+s^2)), where s is the SD of one measurement; and a predictor that knows only the target attains r^2 = the between-target share of variance. Both are stated and proved in the checked Lean file D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/research/lean/q2-theory-lean__Q2Theory.lean as Q2.pearson_attenuation (with Q2.attenuation_tight for attainment) and Q2.r2_target_only / Q2.target_only_floor. Quantitatively under test here: with s estimated from ChEMBL cross-document replicates, the ceiling on held-out targets is pooled r <= 0.882 and per-target 0.787 to 0.926, and the target-only predictor should reach about sqrt(0.038) = 0.195.",
+  "holdout_set": "Whole TARGETS held out by an untunable rule: a target is held out iff int(sha256(target_chembl_id),16) mod 4 == 0. The rule, the 40-target roster (copied unchanged from the earlier q2-data agent), the fingerprint settings, k=5 and six predictions were written to D:/Users/ashenoy00000/delphi-work/agents5/cs-binding-affinity/prereg.md at 2026-11-14T04:17:57Z from the shell, before any activity row was downloaded in this run. That gives 15 held-out ids and 25 development ids; of the 15, one returned 0 rows and one 5 rows, so 14 held-out targets carry data and 12 have the 30+ pairs needed for a within-target correlation. Held-out size: 33,826 compound-target pairs; development size: 34,165 pairs. The dev stage of analyze.py raises an error if asked to open a held-out file, and the held-out files were read exactly once, at 2026-11-14T04:21:29Z.",
+  "validation": "Calibration used development targets only. (a) Noise: s = 0.622 pKi from 20,226 non-identical cross-document replicate pairs; 57.5% of all replicate pairs are identical numbers and were excluded by the pre-registered filter; 17.4% of the remaining pairs differ by more than 1 log (heavy tails; robust estimate 0.409). (b) Stability: development split-half gave s = 0.726 and 0.566. (c) Pipeline rehearsal inside development (3 targets, 3,859 pairs): honest 5-NN r = 0.094, leaky within-target split r = 0.771, shuffled control -0.041. (d) Development ceilings: pooled 0.864, mean within-target 0.837.",
+  "performance": "Single final held-out evaluation, metric pooled Pearson r on 33,826 compound-target pairs across 14 held-out targets (CI from 1,000 bootstraps resampling whole targets). Ligand-only 5-NN Morgan/Tanimoto trained on development targets only: r = 0.164, CI [-0.001, 0.306], mean within-target r = 0.146, RMSE 1.534. Baselines: constant development grand mean (7.084) RMSE 1.331 - the model is WORSE than a constant in RMSE; leave-one-out target mean (knows the target, nothing about the compound) r = 0.193, RMSE 1.296, matching the predicted sqrt(between-target share) = 0.195 from the Lean target-only theorem. Ceiling check (P2): the honest model (0.164) and every per-target value stay well below the ceilings (pooled 0.882; per-target 0.787-0.926), so the bound was never violated and is nowhere near binding. Leak contrast (P4, confirmed): the same model and data with a random within-target split scores r = 0.824, CI [0.790, 0.847], RMSE 0.753 - 0.93 of the noise ceiling. Broken-input control (P5, passed): shuffling the training labels drops the honest model from 0.164 to 0.004, CI [-0.013, 0.018], so the scorer is not reporting spurious structure. Noise transfer (P1, held): held-out s / dev s = 0.88.",
+  "data_used": "ChEMBL REST API (public, no key), activity.json, standard_type=Ki, standard_relation '=', pchembl_value present, assay_type=B, 40 target ids, at most 4,000 rows each (14 targets were capped, so those targets are a non-random first page of their data). Fetched 2026-11-14, 6.9 MB, stored under C:/Temp/delphi-sprint/cs-binding-affinity/raw. No simulated data anywhere in the performance numbers. The ChEMBL release version string was not recorded in this run (a gap).",
+  "what_was_wrong": "In the law: nothing was falsified, but the ceiling is close to useless as a diagnostic. Its own estimate is unstable - 0.882 from squared replicate differences versus 0.977 from the replicate correlation (r = 0.954, n = 2,132) on the SAME held-out data - and the leaky score (0.824) already sits inside that gap, so 'the model is near the noise ceiling' can be true of a purely memorising model. The bound also assumes predictor error is uncorrelated with assay noise, which fails exactly under leakage (the predictor has seen the noisy label), so the theorem does not apply to the leaky number it appears to explain. In the earlier agent work: (1) agent-scripts/is-fix-27-31/noise_floor.py reports 'between-target share 0.0 within 1.0' for its 2-target sample, an artefact of computing a between-target share from two targets with nearly equal means, not a finding; (2) the same script prints a line labelled 'Landrum&Riniker 2024 approx 0.7?' with a question mark - a guessed number left in output; (3) it fetched only 1,000 of 4,125 rows for one target and reports per-target r_max without noting the cap; (4) q2-critic's headline claim that 'noise of 0.8 log units moves r by under 0.05' rests on a simulation whose true-value SD is 2.64, far wider than the 1.32 I measure, and the critic says so itself - the honest version is what is measured here, that split choice moves r from 0.16 to 0.82 while plausible noise moves the ceiling from 0.88 to 0.98; (5) q2-data describes its own 40-target roster as hand-picked rather than a random ChEMBL sample - I inherited that bias rather than fixing it, so neither run generalises to ChEMBL as a whole; (6) q2-critic converts a Kendall tau to Pearson via r = sin(pi*tau/2) assuming bivariate normality on data it elsewhere shows is heavy-tailed (14-17% of replicate pairs off by over 1 log). In the data: 57-65% of 'replicate' measurements in ChEMBL are the same number cited twice, so any noise floor computed without filtering them is biased low by roughly 40%; per-target duplicate density varies enough to swing s from 0.57 to 0.73 across halves of the roster. In my own run: the pre-registration promised a within-target correlation for every held-out target, but 2 of 14 have under 30 pairs (one 0 rows, one 5) - I added a 30-pair minimum after hitting a division-by-zero, a post-hoc change, declared here and in a code comment; the leaky arm uses a single fixed seed (no repeats); I reused the earlier agent's REST filters and roster without auditing whether assay_type=B excludes relevant assays; the published CASF-2016 comparison numbers come from reading the repo's own q2-literature.json and q2-critic.json this run, not from re-opening the papers, so they are second-hand here; and the 4,000-row cap means 14 of 40 targets contribute a biased subset of their data."
+ },
+ "key_claims": [
+  "On ChEMBL Ki data with whole targets held out, a ligand-only nearest-neighbour model reaches pooled Pearson r = 0.164 (n = 33,826; 14 targets) - worse in RMSE than predicting a constant.",
+  "The same model and data with a random within-target split reaches r = 0.824, so the split, not the noise, accounts for almost all apparent skill.",
+  "The experimental noise ceiling on these held-out targets is r <= 0.882, which the honest model misses by a factor of five and the leaky protocol nearly touches: 'close to the noise ceiling' is not evidence of a good model.",
+  "The ChEMBL noise floor must be computed after removing identical re-cited values: 57-65% of cross-document replicate pairs are the same number, and keeping them halves the estimated noise.",
+  "Nearly all affinity variance is within target (between-target share 0.038 held out), so a target-only predictor reaches r = 0.193 - as the Lean target-only theorem predicts - and already matches the fingerprint model."
+ ],
+ "lay_summary": [
+  "Scientists measure how tightly a drug molecule sticks to a protein, and computers try to predict that number. The lab measurements themselves disagree: when two different papers measure the same molecule on the same protein, they differ by about half a unit, so no predictor can ever score better than about 0.88 out of 1.",
+  "I downloaded about 68,000 of these measurements from the public ChEMBL database and, before looking at any of them, used a fixed rule based on the protein's ID number to lock away a quarter of the proteins.",
+  "When I asked a simple 'find the most similar molecule I already know' predictor about those locked-away proteins, it scored 0.16 - worse than just guessing the average every time.",
+  "When I let the same predictor peek at other molecules tested on the very same protein, its score jumped to 0.82, almost touching the theoretical limit. The predictor did not get smarter; the test got easier.",
+  "So the main reason these models look good in papers and disappoint in the lab is not noisy measurements - it is that the test usually lets the model see neighbours of the answer."
+ ],
+ "could_not_find": [
+  "The ChEMBL release version string for this fetch (I did not record the status endpoint before the run ended).",
+  "Independent re-verification of the published CASF-2016 / PDBbind benchmark numbers; they are quoted from the repo's own earlier agent JSON files, not from papers I opened in this run.",
+  "Whether a protein-aware model (not just ligand fingerprints) would do better on held-out targets - out of scope in 20 minutes and would need heavy packages."
+ ],
+ "recommendations": [
+  "Make the DELPHI suite's affinity scorer refuse to report a number without a whole-target (or whole-assay) holdout, and always print the matched leaky-split number beside it: the pair 0.164 / 0.824 is the finding, neither number alone is.",
+  "Report the noise ceiling two ways (squared replicate differences and replicate correlation) and treat the spread, 0.88 to 0.98 here, as the honest uncertainty; a single sigma quoted to two digits is not supportable.",
+  "Always strip identical cross-document values before estimating ChEMBL noise, and report the duplicate fraction alongside - it varies enough per target to move the estimate by 30%.",
+  "Add a Lean lemma making the uncorrelated-error hypothesis of Q2.pearson_attenuation explicit as a side condition that leakage violates, so the bound cannot be cited to justify a leaky score.",
+  "Re-run with a randomly sampled target roster rather than the inherited hand-picked 40, and without the 4,000-row cap, before any of these numbers go in a paper."
+ ],
+ "reproduce": [
+  {
+   "what": "Whole pipeline from a clean folder: roster + split, ChEMBL download, development calibration, single held-out evaluation",
+   "command_or_url": "bash D:/Users/ashenoy00000/delphi-work/agents5/cs-binding-affinity/run_all.sh",
+   "expected": "prints the held-out block: knn5_ligand_only_target_heldout pooled_r 0.1644, knn5_LEAKY_random_split_within_target pooled_r 0.8244, shuffled control 0.0038, pooled_ceiling_r 0.8819. Needs python with numpy and rdkit; downloads about 7 MB from ChEMBL."
+  },
+  {
+   "what": "Just the split rule (no network)",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents5/cs-binding-affinity/targets.py",
+   "expected": "heldout 15 ['CHEMBL204','CHEMBL220','CHEMBL224','CHEMBL228','CHEMBL230','CHEMBL233','CHEMBL237','CHEMBL244','CHEMBL253','CHEMBL259','CHEMBL264','CHEMBL1824','CHEMBL3594','CHEMBL4005','CHEMBL3038']; dev 25"
+  },
+  {
+   "what": "The raw API call pattern used (one target, 2 rows)",
+   "command_or_url": "curl -s \"https://www.ebi.ac.uk/chembl/api/data/activity.json?target_chembl_id=CHEMBL203&standard_type=Ki&standard_relation=%3D&pchembl_value__isnull=false&assay_type=B&limit=2&only=molecule_chembl_id,canonical_smiles,pchembl_value,assay_chembl_id,document_chembl_id,target_chembl_id\"",
+   "expected": "JSON with 2 activities and page_meta.total_count 538"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-binding-affinity/targets.py (roster + sha256 split rule)",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-binding-affinity/fetch.py (ChEMBL REST download, skip-if-done, resumable)",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-binding-affinity/analyze.py (noise floor, ceilings, 5-NN, baselines, leaky arm, shuffled control)",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-binding-affinity/run_all.sh (one-command rerun)",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-binding-affinity/prereg.md (timestamped pre-registration)",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-binding-affinity/results.md (tables)",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-binding-affinity/dev_results.json and final_results.json (full numbers), dev_output.txt, final_output.txt, fetch.log, final_run_stamp.txt"
+ ],
+ "citations": [
+  {
+   "title": "ChEMBL database, activity REST endpoint (Ki records for 40 targets)",
+   "authors": "EMBL-EBI ChEMBL team",
+   "venue": "https://www.ebi.ac.uk/chembl/api/data/activity.json",
+   "year": 2026,
+   "verified": true,
+   "how_verified": "fetched 2026-11-14 by fetch.py; 40 JSON files under C:/Temp/delphi-sprint/cs-binding-affinity/raw; total_count values recorded per target in fetch.log",
+   "used_for": "all noise-floor, ceiling and model numbers"
+  },
+  {
+   "title": "Q2Theory.lean (DELPHI checked Lean file: attenuation bound and target-only predictor theorems)",
+   "authors": "DELPHI q2-theory-lean agent",
+   "venue": "delphisci/tracks/research/lean/q2-theory-lean__Q2Theory.lean",
+   "year": 2026,
+   "verified": true,
+   "how_verified": "opened and grepped theorem names this run: Q2.pearson_attenuation, Q2.attenuation_tight, Q2.r2_target_only, Q2.target_only_floor present",
+   "used_for": "the statement under test"
+  },
+  {
+   "title": "q2-literature.json, q2-critic.json, q2-data.json, q2-physics.json (earlier DELPHI agent outputs)",
+   "authors": "DELPHI research agents",
+   "venue": "delphisci/tracks/research/agents/",
+   "year": 2026,
+   "verified": true,
+   "how_verified": "read this run; published CASF/PDBbind numbers quoted from them are second-hand, the underlying papers were not re-opened",
+   "used_for": "published-benchmark comparison and the audit of earlier work"
+  },
+  {
+   "title": "noise_floor.py and noise_floor_output.txt (earlier noise-floor script on 2 ChEMBL targets)",
+   "authors": "DELPHI is-fix-27-31 agent",
+   "venue": "delphisci/tracks/research/agent-scripts/is-fix-27-31/",
+   "year": 2026,
+   "verified": true,
+   "how_verified": "read source and saved output this run; reproduced its 'excluding identical values' s = 0.71 logic at larger scale",
+   "used_for": "what_was_wrong items 1-3"
+  }
+ ],
+ "glossary": {
+  "Ki / pKi": "Ki is the concentration of a molecule needed to half-occupy a protein; pKi is minus its base-10 logarithm, so bigger pKi means tighter binding. A change of 1 pKi is a 10-fold change in potency.",
+  "pChEMBL value": "ChEMBL's standardised negative log of a potency measurement (Ki, IC50 etc.), the unit used throughout here.",
+  "noise floor (s)": "the standard deviation of a single lab measurement, estimated from how much two independent papers disagree about the same molecule-protein pair.",
+  "attenuation ceiling": "the highest correlation any predictor can have with a noisy measurement; equal to sqrt(variance of truth / variance of measurement).",
+  "Pearson r": "a correlation between -1 and 1; 1 means predictions track the truth exactly, 0 means no relationship.",
+  "RMSE": "root-mean-square error, the typical size of a prediction's miss, here in pKi units.",
+  "held-out set": "data locked away before any fitting, opened once at the end, so the score cannot be tuned.",
+  "leakage": "when the test set shares information with the training set (for example a near-identical molecule), making a model look better than it is.",
+  "Morgan fingerprint / Tanimoto": "a fingerprint turns a molecule into a list of substructure bits; Tanimoto measures what fraction of bits two molecules share, i.e. how similar they are.",
+  "5-NN": "a prediction made by averaging the known values of the 5 most similar molecules.",
+  "between-target share": "the fraction of all variation in affinity explained purely by which protein is being measured, rather than which molecule."
+ },
+ "check_output": "Broken-input control passed: with training labels shuffled (seed 0) the held-out pooled Pearson r falls from 0.164 to 0.004 (CI [-0.013, 0.018]) and mean within-target r to -0.011, so the scorer is not manufacturing correlation. A second control: the leaky within-target arm rises to 0.824 on the same data, confirming the pipeline can detect strong signal when it exists."
+}

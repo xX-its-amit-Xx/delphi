@@ -25,4 +25,10 @@ for f in "${NEW[@]}"; do
   if bash tracks/lean/check.sh "$f" > /dev/null 2>&1; then echo "PASS $(basename "$f")"; else echo "FAIL $(basename "$f")"; mv "$f" tracks/research/lean/failed/; fi
 done | tee -a tracks/research/lean/CHECKED.txt
 echo "== build =="; node tracks/build.mjs | tail -4
-echo "== gates =="; node holdout/check-leaks.mjs tracks | tail -2; node sim-engine/scales/atlas/holdout-html-scan.mjs | tail -2
+echo "== gates =="   # the exit codes are kept: a leak fails this script (the audit found they were being thrown away)
+node holdout/check-leaks.mjs tracks > /tmp/gate1.$$ 2>&1; g1=$?; tail -2 /tmp/gate1.$$
+node sim-engine/scales/atlas/holdout-html-scan.mjs > /tmp/gate2.$$ 2>&1; g2=$?; tail -2 /tmp/gate2.$$
+for f in tracks/research/lean/*NegativeControl*.lean; do
+  if bash tracks/lean/check.sh "$f" > /dev/null 2>&1; then echo "NEGATIVE CONTROL SURVIVED: $f"; g1=1; fi
+done
+[ "$g1" -eq 0 ] && [ "$g2" -eq 0 ] && echo "integrate: gates clean" || { echo "integrate: GATE FAILED"; exit 1; }

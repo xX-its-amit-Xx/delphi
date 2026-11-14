@@ -1,0 +1,113 @@
+== make toy cases ==
+wrote D:\Users\ashenoy00000\delphi-work\agents5\cs-suite-audit\toy-cases\good\good.case.json and D:\Users\ashenoy00000\delphi-work\agents5\cs-suite-audit\toy-cases\bad\bad.case.json
+[exit 0, as expected]
+
+== gate: good case only ==
+PASS  good.case.json  (toy-strip-curvature)
+      warn WARN-T1: toy case: never count it in a suite total
+
+1 case(s): 1 pass, 0 fail
+[exit 0, as expected]
+
+== gate: bad case only ==
+FAIL  bad.case.json  (toy-strip-curvature-overclaimed)
+      S1  stage "holdout" is missing (a skipped stage must be written as not_done with a reason)
+      P1  prereg was hashed at 2026-11-11T15:31:00Z, not before the number computed at 2026-11-11T15:30:00Z
+      P3  performance is claimed with no baseline
+      P4  broken-input control observed "not-run"; it must have been run and must have FAILED
+      P5  a pass "on holdout" with the holdout stage not done
+      W1  performance is claimed but what_was_wrong is empty (write "none found after search" and what was searched, if so)
+      warn WARN-T1: toy case: never count it in a suite total
+      warn WARN-D1: prereg date is self-attested: nothing outside the case vouches that it came first
+
+1 case(s): 0 pass, 1 fail
+[exit 1, as expected]
+
+== gate: both ==
+FAIL  bad\bad.case.json  (toy-strip-curvature-overclaimed)
+      S1  stage "holdout" is missing (a skipped stage must be written as not_done with a reason)
+      P1  prereg was hashed at 2026-11-11T15:31:00Z, not before the number computed at 2026-11-11T15:30:00Z
+      P3  performance is claimed with no baseline
+      P4  broken-input control observed "not-run"; it must have been run and must have FAILED
+      P5  a pass "on holdout" with the holdout stage not done
+      W1  performance is claimed but what_was_wrong is empty (write "none found after search" and what was searched, if so)
+      warn WARN-T1: toy case: never count it in a suite total
+      warn WARN-D1: prereg date is self-attested: nothing outside the case vouches that it came first
+PASS  good\good.case.json  (toy-strip-curvature)
+      warn WARN-T1: toy case: never count it in a suite total
+
+2 case(s): 1 pass, 1 fail
+[exit 1, as expected]
+
+== self-test (--fail-once) ==
+  ok       control: the untouched good case passes
+  caught   S1  delete the holdout stage
+  caught   S1  delete what_was_wrong
+  caught   S2  status "skipped"
+  caught   S2  not_applicable with no reason
+  caught   S3  evidence hash altered
+  caught   S3  evidence file missing
+  caught   P1  prereg hashed after the number
+  caught   P1  prereg hashed in the same second
+  caught   P1  prereg stage not done
+  caught   P1  prereg date not a UTC timestamp
+  caught   P1  git-dated prereg with no commit
+  caught   P2  prereg file edited after hashing
+  caught   P3  no baseline
+  caught   P3  baseline value is text
+  caught   P3  baseline evidence missing
+  caught   P4  no broken-input control
+  caught   P4  broken-input control PASSED
+  caught   P4  broken-input control never run
+  caught   P5  pass on holdout, holdout not done
+  caught   P5  leak gate exit 1
+  caught   P5  holdout smaller than the power minimum
+  caught   P6  pass on in-sample data
+  caught   P7  holdout frozen after the number
+  caught   L1  Lean negative control accepted
+  caught   W1  what_was_wrong has no items
+  caught   N1  nanopub draft marked signed
+  caught   P0  number kept, status not_done
+  caught   E1  empty folder
+  caught   J1  truncated JSON
+
+--fail-once: 29 of 29 faults caught, 0 survivor(s)
+no survivors
+[exit 0, as expected]
+
+== self-test with rule P3 off ==
+  ok       control: the untouched good case passes
+  caught   S1  delete the holdout stage
+  caught   S1  delete what_was_wrong
+  caught   S2  status "skipped"
+  caught   S2  not_applicable with no reason
+  caught   S3  evidence hash altered
+  caught   S3  evidence file missing
+  caught   P1  prereg hashed after the number
+  caught   P1  prereg hashed in the same second
+  caught   P1  prereg stage not done
+  caught   P1  prereg date not a UTC timestamp
+  caught   P1  git-dated prereg with no commit
+  caught   P2  prereg file edited after hashing
+  SURVIVOR P3  no baseline  <- gate said: PASS
+  SURVIVOR P3  baseline value is text  <- gate said: PASS
+  SURVIVOR P3  baseline evidence missing  <- gate said: PASS
+  caught   P4  no broken-input control
+  caught   P4  broken-input control PASSED
+  caught   P4  broken-input control never run
+  caught   P5  pass on holdout, holdout not done
+  caught   P5  leak gate exit 1
+  caught   P5  holdout smaller than the power minimum
+  caught   P6  pass on in-sample data
+  caught   P7  holdout frozen after the number
+  caught   L1  Lean negative control accepted
+  caught   W1  what_was_wrong has no items
+  caught   N1  nanopub draft marked signed
+  caught   P0  number kept, status not_done
+  caught   E1  empty folder
+  caught   J1  truncated JSON
+
+--fail-once: 26 of 29 faults caught, 3 survivor(s)  [rule(s) switched off: P3]
+SELF-TEST FAILED: the gate let a broken case through
+[exit 1, as expected]
+

@@ -1,0 +1,258 @@
+{
+ "label": "cs-suite-audit",
+ "topic": "Audit of the DELPHI / MorphoLemma validation suite itself, with a case schema and a gate script ready to apply",
+ "summary": "The suite's Lean check can be passed by files that prove nothing, and neither pre-registration can be shown from git to pre-date its results. I confirmed the first by running probes and the second from commit dates; none of the 22 committed Lean files exploits the Lean holes today.\n\n**What was wrong (each reproduced or read directly):**\n\n- **`tracks/lean/check.sh` passes four kinds of non-proof.** It printed \"ALL CHECKED\" with exit 0 for a theorem closed with `sorry` and no `#print axioms` line, a theorem derived from a hand-written `axiom`, an empty file, and a run where `lake` was not found.\n- **29 theorems are not individually audited.** Four committed files have more theorems than `#print axioms` lines: FireCoatingCertificate 19/16, EnhancerPromoterRank 26/14, Q2Theory 28/16, LumenAreaCeiling 8/6. I re-ran those four and Lean gave no sorry warnings, so they are unaudited, not broken.\n- **Pre-registration order is self-attested.** `design-validation/PREREG.md`, its hash file and `scorecard.json` were all first committed in one commit (3d46351ca). `validation/PREREG.md` says it was written \"about 18:25 UTC\", but it was committed at 18:19:54Z and the results at 18:21:09Z, so the stated time and the commit dates disagree.\n- **`integrate-fleet.sh` cannot fail on a leak.** The scrub and both leak gates are piped to `tail` with no `pipefail`, so the script's exit code ignores them. It also skips negative-control files without checking that they are rejected.\n- **`reproduce.mjs` has loose patterns and silent skips.** The pattern `0 failed` also matches \"10 failed\", and `0 passed` matches \"110 passed\"; only the exit code protects the first, and nothing protects the second because `--fail-once` runs exit 0. A missing test file is skipped without a SKIPPED row, and eight test files that exist are never run (five molecular, three devlog).\n- **`--fail-once` is a weak control.** All 13 test files had 0 survivors across 1,371 assertions, but the mode mostly inverts each predicate, so it tests the counting harness more than whether an assertion depends on the code.\n- **The leak gate has stated blind spots.** By its own header it does not match common names, and it skips file types outside its extension list (.html, .sh, .svg among them) and files of 5 MB or more.\n- **No pre-registered performance claim is evaluated on the frozen holdout.** The design scorecard and the simulation report both use in-sample or simulated data. Both say so honestly, but nothing enforces it.\n\n**What I built:**\n\n- `suite-case.schema.json` defines one use case with eight required stages, each pointing to a hashed evidence file.\n- `suite-gate.mjs` (no dependencies) exits 1 when a case claims performance without an earlier-hashed prereg, a baseline, or a broken-input control that failed. It also fails an empty folder.\n- On the toy cases the good one passes and the bad one fails on six rules. Its `--fail-once` caught 29 of 29 injected faults; with rule P3 switched off it reported 3 survivors and exit 1, so the self-test can fail.\n- `check-strict.sh` is a proposed replacement for `check.sh`. It rejects all four bad probes and still passes the two real files I tried.\n\nNothing in the repo was edited. I did not run `reproduce.mjs` or `integrate-fleet.sh`, because both write into the repo; findings about them come from reading the code and testing their patterns. The gate has not been run on any real case, because no real case file exists yet.\n\nEverything is in `D:/Users/ashenoy00000/delphi-work/agents5/cs-suite-audit/`; `run-output.txt` holds the full gate output.",
+ "findings": [
+  {
+   "claim": "tracks/lean/check.sh reports ALL CHECKED (exit 0) for a theorem closed with sorry when the file has no '#print axioms' line; Lean only warns, and the script greps only for 'error' and 'sorryAx'.",
+   "source": "Ran: bash tracks/lean/check.sh lean-probes/ProbeSorryNoPrint.lean (output saved in D:/Users/ashenoy00000/delphi-work/agents5/cs-suite-audit/lean-probes/check-sh-probe-output.txt)",
+   "evidence_quote": "warning: declaration uses `sorry` ... ALL CHECKED: no errors, no sorryAx",
+   "value": "exit 0",
+   "confidence": "high (reproduced)"
+  },
+  {
+   "claim": "check.sh accepts a theorem derived from a user-declared axiom that assumes the result; only sorryAx is refused, there is no axiom allow-list.",
+   "source": "Ran check.sh on lean-probes/ProbeCustomAxiom.lean",
+   "evidence_quote": "probe_from_axiom <- [probe_assumed] ... ALL CHECKED: no errors, no sorryAx",
+   "value": "exit 0",
+   "confidence": "high (reproduced)"
+  },
+  {
+   "claim": "check.sh passes an empty file (0 axiom lines asked equals 0 printed).",
+   "source": "Ran check.sh on lean-probes/ProbeEmpty.lean",
+   "evidence_quote": "errors=0 sorryAx=0 axiom-lines=0/0",
+   "value": "exit 0",
+   "confidence": "high (reproduced)"
+  },
+  {
+   "claim": "With no Lean toolchain on PATH, check.sh still prints ALL CHECKED and exits 0 for a file with no '#print axioms' line, because 'command not found' contains no 'error'. reproduce.mjs guards this with a toolchain check; integrate-fleet.sh does not.",
+   "source": "Ran: ELAN_BIN=/nonexistent PATH=/usr/bin:/bin bash tracks/lean/check.sh ProbeSorryNoPrint.lean",
+   "evidence_quote": "lake: command not found ... ALL CHECKED: no errors, no sorryAx",
+   "value": "exit 0",
+   "confidence": "high (reproduced)"
+  },
+  {
+   "claim": "check.sh does correctly reject sorry when a '#print axioms' line is present (positive control for the checker).",
+   "source": "Ran check.sh on lean-probes/ProbeHonestSorry.lean",
+   "evidence_quote": "'probe_sorry_printed' depends on axioms: [sorryAx]",
+   "value": "exit 1",
+   "confidence": "high (reproduced)"
+  },
+  {
+   "claim": "A theorem with contradictory hypotheses is kernel-valid and passes both the current and the proposed checker; no script here detects a vacuous statement.",
+   "source": "Ran check.sh and check-strict.sh on lean-probes/ProbeVacuous.lean",
+   "evidence_quote": "probe_vacuous does not depend on any axioms",
+   "confidence": "high (reproduced)"
+  },
+  {
+   "claim": "Four committed Lean files have more theorem/lemma declarations than '#print axioms' lines, leaving 29 theorems without their own axiom audit: FireCoatingCertificate 19/16, q1-theory-lean EnhancerPromoterRank 26/14, q2-theory-lean Q2Theory 28/16, t3-lumen-law LumenAreaCeiling 8/6. The other 18 files match.",
+   "source": "grep counts over tracks/research/lean/*.lean and tracks/lean/HygromorphCeilingCheck.lean, saved in D:/Users/ashenoy00000/delphi-work/agents5/cs-suite-audit/theorem-vs-axiom-audit.txt",
+   "value": "29 unaudited theorems in 4 of 22 files",
+   "confidence": "medium (line-anchored grep count of 'theorem'/'lemma'; some may be helper lemmas used by audited theorems)"
+  },
+  {
+   "claim": "Those four files do not currently hide a sorry: re-running Lean on each gave zero 'declaration uses sorry' warnings and zero errors. No committed file in tracks/research/lean uses the 'axiom' keyword, and all have at least one '#print axioms' line. The check.sh holes are latent, not exploited.",
+   "source": "lake env lean on the four files (outputs in C:/Temp/delphi-sprint/cs-suite-audit/*.out); grep for '^\\s*axiom ' over tracks/research/lean",
+   "evidence_quote": "FireCoatingCertificate exit=0 sorry-warnings=0 errors=0 axiom-lines=16",
+   "confidence": "high for the four files re-run; the grep covers the rest"
+  },
+  {
+   "claim": "design-validation: PREREG.md, PREREG.sha256 and scorecard.json were all first committed in the same commit, so git cannot show the prereg came before the numbers. The order rests on two timestamps the scorecard writes about itself (hashed 22:00:34Z, built 22:09:19Z). The stored hash does still match the file.",
+   "source": "git log --diff-filter=A on the three files; sha256sum design-validation/PREREG.md; design-validation/scorecard.json 'prereg' block",
+   "evidence_quote": "\"note\":\"hashed before the first number was produced\"",
+   "value": "commit 3d46351ca, 2026-10-31T18:14:54-04:00, for all three",
+   "confidence": "high"
+  },
+  {
+   "claim": "validation/PREREG.md states it was written 'about 18:25 UTC, before any simulation code was written or run', but it was first committed at 18:19:54Z and run.py plus results.json were committed at 18:21:09Z, 75 seconds later. The stated time and the commit dates are inconsistent; I cannot tell which is wrong. The prereg and results are at least in separate commits, in the right order.",
+   "source": "validation/PREREG.md line 3; git log --diff-filter=A for validation/PREREG.md, validation/sim/run.py, validation/sim/results.json",
+   "evidence_quote": "Written 2026-10-31, about 18:25 UTC, by the `validation` thread, before any simulation code",
+   "value": "e49df84aa 18:19:54Z (prereg); dfa850ee8 18:21:09Z (code + results)",
+   "confidence": "high on the dates; cause unknown"
+  },
+  {
+   "claim": "validation/sim/run.py computes the prereg hash at run time and stores it, so it records which prereg text the run saw but cannot show the text was fixed beforehand. The stored hash matches the current file.",
+   "source": "validation/sim/run.py line 136; validation/sim/results.json line 2; sha256sum validation/PREREG.md",
+   "evidence_quote": "\"prereg_sha256\": hashlib.sha256(prereg).hexdigest()",
+   "value": "42a0fad3...90d1 matches",
+   "confidence": "high"
+  },
+  {
+   "claim": "integrate-fleet.sh cannot fail on a holdout leak or a failed scrub: the scrub and both leak gates are piped to tail with no pipefail, and the script's exit status is that of the last tail.",
+   "source": "Read tracks/scripts/integrate-fleet.sh lines 9, 19, 28 (not executed: it writes into the repo)",
+   "evidence_quote": "node holdout/check-leaks.mjs tracks | tail -2",
+   "confidence": "high from code reading; not executed"
+  },
+  {
+   "claim": "integrate-fleet.sh skips NegativeControl files instead of checking that the kernel rejects them, and discards check.sh output so the reason for a FAIL is lost. reproduce.mjs does check the controls.",
+   "source": "Read tracks/scripts/integrate-fleet.sh lines 24-25",
+   "evidence_quote": "case \"$f\" in *NegativeControl*) continue;; esac",
+   "confidence": "high from code reading"
+  },
+  {
+   "claim": "reproduce.mjs success patterns are loose: '0 failed' also matches '10 failed' and '0 passed' also matches '110 passed'. The first is protected by the exit-code check; the second is not, because --fail-once runs exit 0, so a fail-once run with 110 survivors would still be marked PASSED.",
+   "source": "tracks/reproduce.mjs lines 70-71; tested both patterns with grep -E on sample strings (both matched); all 13 --fail-once runs exited 0",
+   "evidence_quote": "expect: /0 passed|no survivors/",
+   "confidence": "high for the pattern behaviour; the mis-pass scenario was not triggered in the repo"
+  },
+  {
+   "claim": "reproduce.mjs silently drops a missing test file (no SKIPPED row), and never runs eight test files that exist: five under sim-engine/scales/molecular and three under devlog. It also does not re-run validation/sim/run.py, the design-validation scorecard or the holdout exam.",
+   "source": "tracks/reproduce.mjs lines 67-72 compared with directory listings",
+   "evidence_quote": "if (!have(t)) continue;",
+   "value": "5 of 13 test files run",
+   "confidence": "high"
+  },
+  {
+   "claim": "All 13 test files pass normally and have zero surviving assertions under --fail-once (1,371 assertions in total). Every --fail-once run exits 0.",
+   "source": "Ran each test with and without --fail-once on 2026-11-13",
+   "evidence_quote": "all 176 assertions failed under their own fault: no survivors",
+   "value": "1,371 assertions, 0 survivors",
+   "confidence": "high (reproduced)"
+  },
+  {
+   "claim": "--fail-once is a weak control by design: it mostly inverts each predicate or substitutes a wrong value inside the assertion, so it shows the harness counts failures, not that the assertion depends on the code or data under test. A tautological assertion would also 'fail once'.",
+   "source": "sim-engine/scales/atlas/test-counts.mjs lines 26-33; devlog/test-laws.mjs line 7",
+   "evidence_quote": "injects one fault into every assertion by inverting its predicate or substituting a wrong",
+   "confidence": "medium (read the mechanism in 4 of 13 files, not every assertion)"
+  },
+  {
+   "claim": "The leak gate has blind spots it states itself or that follow from its filters: common names are not matched, only listed text extensions are scanned (.html, .sh, .svg and others are not), and files of 5 MB or more are skipped without a message. It has no self-test mode.",
+   "source": "holdout/check-leaks.mjs header and lines 46-51",
+   "evidence_quote": "Common names (...) are not matched",
+   "confidence": "high from code reading; a separate html scan exists for tracks pages"
+  },
+  {
+   "claim": "Neither pre-registered performance claim is evaluated on the frozen holdout: the design scorecard compares against an in-sample reference group, and the simulation report checks idealised models only. Both say so, but nothing in the suite forces a 'pass' to be labelled by what it was evaluated on.",
+   "source": "design-validation/PREREG.md (rules section); validation/SIM-REPORT.md line 10",
+   "evidence_quote": "These are idealised models. Nothing here says anything about real organisms.",
+   "confidence": "high"
+  },
+  {
+   "claim": "The design-validation prereg is strong on negative framing (UNDECIDED is not a pass, same gate run on the real animal, ablation of inputs, drop-the-claim conditions) and its report did drop the claim. It has a baseline organism but no broken-input control such as a shuffled or random gene pair for the 1-of-74 overlap.",
+   "source": "design-validation/PREREG.md Parts 2-3; design-validation/REPORT.md lines 10-22",
+   "evidence_quote": "UNDECIDED IS NOT A PASS.",
+   "confidence": "medium (REPORT.md read only to line 25; RUNS.md not read)"
+  },
+  {
+   "claim": "The new gate passes the good toy case and fails the bad toy case on six rules (S1, P1, P3, P4, P5, W1), with exit codes 0 and 1.",
+   "source": "bash run.sh; output in D:/Users/ashenoy00000/delphi-work/agents5/cs-suite-audit/run-output.txt",
+   "evidence_quote": "2 case(s): 1 pass, 1 fail",
+   "confidence": "high (reproduced)"
+  },
+  {
+   "claim": "The gate's own --fail-once caught 29 of 29 injected faults, and with rule P3 switched off it reported 3 survivors and exit 1, so the self-test itself can fail.",
+   "source": "bash run.sh (sections 'self-test' and 'self-test with rule P3 off')",
+   "evidence_quote": "--fail-once: 26 of 29 faults caught, 3 survivor(s)  [rule(s) switched off: P3]",
+   "confidence": "high (reproduced)"
+  },
+  {
+   "claim": "The proposed check-strict.sh rejects all four bad probes, exits 3 with no toolchain, and still passes two real committed files (HalpinTsaiBounds 5/5; LumenAreaCeiling with a note that 2 of 8 theorems lack an audit line).",
+   "source": "bash check-strict.sh --probes; output in check-strict-probe-output.txt",
+   "evidence_quote": "probes: 4 of 4 bad files rejected",
+   "confidence": "high for the probes; only 2 of 22 real files tried"
+  }
+ ],
+ "key_claims": [
+  "tracks/lean/check.sh can print ALL CHECKED for a sorry'd theorem, a self-assumed axiom, an empty file and a missing toolchain; all four reproduced.",
+  "No committed Lean file exploits these holes today, but 29 theorems in four files have no axiom audit line of their own.",
+  "Neither pre-registration can be shown from git to pre-date its results; one has a stated writing time later than the commit that holds its results.",
+  "integrate-fleet.sh exits 0 even when the leak gate fails, because gate output is piped to tail.",
+  "All 13 --fail-once tests have 0 survivors (1,371 assertions), but the mode inverts predicates, so it is a weak control.",
+  "suite-gate.mjs enforces prereg-before-number, baseline and broken-input control; its self-test caught 29 of 29 faults and fails when a rule is switched off."
+ ],
+ "recommendations": [
+  "Replace tracks/lean/check.sh with check-strict.sh (or port its five checks): fail on missing toolchain, on 'declaration uses sorry', on zero '#print axioms' lines, and on any axiom outside propext / Classical.choice / Quot.sound. Hand to the session that owns the Lean tooling.",
+  "Add '#print axioms' lines for the 29 unaudited theorems in FireCoatingCertificate, EnhancerPromoterRank, Q2Theory and LumenAreaCeiling, then make theorems == audit lines a hard failure.",
+  "In integrate-fleet.sh add 'set -o pipefail', capture each gate's exit code and exit non-zero on a leak; run each NegativeControl file and require rejection instead of skipping it.",
+  "In reproduce.mjs anchor the patterns (/\\b0 failed\\b/ after a line start, /^\\s*0 passed/m), emit a SKIPPED row for a missing test, and add the five molecular and three devlog tests plus validation/sim/run.py.",
+  "Commit every future PREREG.md and its hash in a commit of its own before any result commit, and record that commit hash in the case file (dated_by: git-commit). Treat the two existing preregs as self-attested and say so where they are cited.",
+  "Write one *.case.json per real use case (biomaterial strip, fire certificate, design-validation, the three simulations) against suite-case.schema.json and add 'node suite-gate.mjs <cases>' as a row in reproduce.mjs. Expect most current cases to fail P3/P4/P5; that is the honest state.",
+  "Add a data-level negative control to each validation: a shuffled or wrong-sign input that must fail, alongside the predicate-inverting --fail-once.",
+  "Give check-leaks.mjs a --fail-once that plants a held-out identifier in a temp file and requires exit 1, and print a count of files skipped for size or extension.",
+  "A vacuous theorem (contradictory hypotheses) passes every script; add a per-theorem 'hypotheses are satisfiable' witness (an example instantiating them) as a Lean stage requirement."
+ ],
+ "could_not_find": [
+  "Any independent (third-party) timestamp for either pre-registration; only git commit dates and self-written times exist.",
+  "A --fail-once or self-test mode for holdout/check-leaks.mjs, holdout-html-scan.mjs, scrub-holdout.py, verify-dois.py or tracks/build.mjs.",
+  "Any existing per-case manifest in the repo that the new gate could be run on; the gate was run on toy cases only.",
+  "Did not run tracks/reproduce.mjs or integrate-fleet.sh end to end (both write into the repo, which is read-only for this agent).",
+  "Did not read design-validation/RUNS.md, calls.json, most of REPORT.md and MCP-TEST-REPORT.md, or holdout/README.md beyond a keyword scan (time limit).",
+  "Did not check clean-clone reproducibility beyond code reading: check.sh and reproduce.mjs hard-code C:/Temp/elan and need the lean/.lake junction, so Lean rows would be SKIPPED on a fresh machine."
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-suite-audit/suite-case.schema.json",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-suite-audit/suite-gate.mjs",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-suite-audit/run.sh",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-suite-audit/check-strict.sh",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-suite-audit/lean-probes/ProbeSorryNoPrint.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-suite-audit/lean-probes/ProbeCustomAxiom.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-suite-audit/lean-probes/ProbeEmpty.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-suite-audit/lean-probes/ProbeVacuous.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-suite-audit/lean-probes/ProbeHonestSorry.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-suite-audit/lean-probes/check-sh-probe-output.txt",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-suite-audit/check-strict-probe-output.txt",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-suite-audit/run-output.txt",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-suite-audit/theorem-vs-axiom-audit.txt",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-suite-audit/toy-cases/good/good.case.json",
+  "D:/Users/ashenoy00000/delphi-work/agents5/cs-suite-audit/toy-cases/bad/bad.case.json"
+ ],
+ "reproduce": [
+  {
+   "what": "Gate on toy cases, gate self-test, and sabotaged self-test (needs only Node)",
+   "command_or_url": "bash D:/Users/ashenoy00000/delphi-work/agents5/cs-suite-audit/run.sh",
+   "expected": "good case PASS (exit 0); bad case FAIL on S1,P1,P3,P4,P5,W1 (exit 1); --fail-once 29 of 29 caught; with P3 off 3 survivors (exit 1); run.sh itself exits 0"
+  },
+  {
+   "what": "Show the holes in the current Lean check (needs the Lean toolchain at C:/Temp/elan)",
+   "command_or_url": "cd D:/Users/ashenoy00000/delphi-work/agents5/cs-suite-audit/lean-probes && for f in Probe*.lean; do bash D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/lean/check.sh $PWD/$f; echo exit=$?; done",
+   "expected": "exit 0 and ALL CHECKED for ProbeSorryNoPrint, ProbeCustomAxiom, ProbeEmpty, ProbeVacuous; exit 1 only for ProbeHonestSorry"
+  },
+  {
+   "what": "Proposed strict Lean check on the same probes",
+   "command_or_url": "bash D:/Users/ashenoy00000/delphi-work/agents5/cs-suite-audit/check-strict.sh --probes",
+   "expected": "4 REJECTED, ProbeVacuous CHECKED with a note, 'probes: 4 of 4 bad files rejected', exit 0"
+  },
+  {
+   "what": "Pre-registration commit order",
+   "command_or_url": "cd D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci && git log --format='%h %ad' --date=iso-strict --diff-filter=A -- validation/PREREG.md validation/sim/results.json design-validation/PREREG.md design-validation/scorecard.json",
+   "expected": "3d46351ca for both design-validation files; e49df84aa 18:19:54Z (prereg) and dfa850ee8 18:21:09Z (results) for validation"
+  },
+  {
+   "what": "Every test with --fail-once",
+   "command_or_url": "cd D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci && for t in tracks/scripts/test-readability.mjs sim-engine/scales/atlas/test-*.mjs sim-engine/scales/micro/test-division.mjs sim-engine/scales/molecular/test-*.mjs devlog/test-*.mjs; do node $t --fail-once | tail -1; done",
+   "expected": "'0 passed, N failed' for each of 13 files; N sums to 1,371"
+  }
+ ],
+ "lay_summary": [
+  "A science project needs a referee that can actually say no, so I tested the referee instead of the science.",
+  "I gave the proof-checking script four fake proofs, including an empty page and one that just assumed its own answer, and it said all four were fine.",
+  "None of the real proofs in the project cheat this way, but the checker would not have noticed if they did.",
+  "I also found that the project's promises about 'we set the rules before we saw the results' cannot be proven from the saved history.",
+  "So I wrote a new referee script that refuses any result unless the rules came first, there is something simple to compare against, and a deliberately broken version was shown to fail."
+ ],
+ "glossary": {
+  "pre-registration (prereg)": "Writing down the pass and fail rules before looking at any result, so the rules cannot be bent afterwards.",
+  "hash (SHA-256)": "A short fingerprint of a file; if one letter of the file changes, the fingerprint changes.",
+  "holdout": "Data set aside and never looked at while building a claim, used only for the final test.",
+  "baseline": "The simplest possible alternative, such as always guessing the average, that a result must beat to mean anything.",
+  "broken-input control": "Running the same test on deliberately scrambled data; if it still passes, the test is not measuring anything.",
+  "negative control": "Something that is supposed to fail, included to prove the checker can say no.",
+  "--fail-once": "A test mode that injects a fault into every check; a check that still passes is called a survivor and is a bug in the test.",
+  "Lean kernel": "The small trusted core of the Lean proof checker that accepts or rejects a proof.",
+  "sorry": "A Lean placeholder meaning 'proof missing'; Lean only warns about it.",
+  "axiom": "A statement accepted without proof; a hand-written one can smuggle in the answer.",
+  "vacuous theorem": "A statement that is technically true only because its starting conditions can never all hold.",
+  "self-attested": "Vouched for only by the same process that produced the result, with no outside record.",
+  "nanopub draft": "A small, unsigned machine-readable record of one claim and its evidence."
+ },
+ "suite": {
+  "case_name": "The validation suite itself (meta-audit)",
+  "statement": "A suite case may claim performance only if its rules were fixed first, it beats a baseline, and a broken input fails.",
+  "lean_status": "Current check.sh passes 4 of 5 bad probes; proposed check-strict.sh rejects 4 of 4 rejectable ones. Vacuous theorems remain undetectable by script. 29 committed theorems lack their own axiom audit line; no sorry found in them on re-run.",
+  "data_used": "Repo files only (design-validation/, validation/, holdout/ code and split.json key structure, tracks/ scripts), git commit dates, and five small Lean probe files written for this audit. No external data downloaded.",
+  "holdout_set": "Not applicable to this audit: no organism data was used. Finding: neither existing pre-registered performance claim is evaluated on the frozen holdout.",
+  "validation": "Probes run against check.sh; 13 test files run with --fail-once (1,371 assertions, 0 survivors); gate run on one good and one bad toy case; gate self-test with 29 injected faults.",
+  "performance": "Gate: 29 of 29 injected faults caught; 3 survivors and exit 1 when rule P3 is switched off. Not yet run on any real case.",
+  "what_was_wrong": "check.sh can pass non-proofs; prereg order is self-attested and one stated time contradicts its commit dates; integrate-fleet.sh ignores gate exit codes; reproduce.mjs has loose patterns and silently skips; --fail-once only inverts predicates; no stage manifest exists, so a case can skip holdout, baseline or controls unnoticed."
+ }
+}

@@ -1,0 +1,247 @@
+{
+ "label": "pr-print-geometry-review",
+ "topic": "Formlabs printability limits (read 2026-11-13) and a check of the five proof-of-concept objects against them",
+ "summary": "The five objects in bm-poc-designs.json break published Formlabs minimums in three of five cases, so printable files cannot be generated from them unchanged. All Formlabs pages were read on 2026-11-13 through a page-summarising fetch tool, so the quoted strings are as that tool relayed them, not byte-checked.\n\nA script (check_poc.py) checks each layer as a separately printed sheet, as the designs file recommends. It finds 13 rows below a published minimum, on 9 distinct sheets:\n- **Object 1:** the 0.6 mm Silicone 40A passive layer is under the 0.7 mm unsupported-wall threshold.\n- **Object 2:** six sheets fail. The 0.2 and 0.3 mm Flexible 80A V2 rungs and the 0.2 and 0.3 mm Flexible 50A rungs are under the 0.4 mm supported-wall minimum, and the 0.2 mm rungs also sit at the generic Form 4 limit (\"0.2 mm or less may warp\").\n- **Object 4:** the twig fails on both layers (0.2 mm active, 0.3 mm passive).\n- **Objects 3 and 5:** no row below a hard minimum.\n\nBeyond the hard failures:\n- **At risk (20 rows):** every 0.4-0.5 mm sheet is under the 0.6 mm unsupported-wall minimum, and sheets of 0.2-0.3 mm are only two or three printed layers at 0.1 mm.\n- **Service rule (21 rows):** every Flexible 80A V2 layer in all five objects, 0.2 to 1.2 mm, is under the 1.5 mm minimum wall in the Form Now guide for that resin. That guide is for the print service and is deliberately conservative.\n- **Orientation (6 rows):** Flexible 50A allows a horizontal bridge of only 0.6 mm, so no strip may span unsupported. Silicone 40A allows 8:1 height to thickness upright, and the 30 mm strip would be 50:1.\n\nWhat passes: every footprint fits the Form 4 (200 x 125 x 210 mm), the frame fits the Fuse 1+ 30W (165 x 165 x 300 mm), and the comb and blade gaps (3 mm, 11 mm) exceed the 1.0 mm clearance.\n\nNot checkable: the designs file gives no mesh, orientation, support plan, labels, holes or frame wall thickness. The Fuse limits were collected but only the frame envelope could be checked.\n\nGaps in the limits themselves:\n- No Flexible 80A V2 design table exists on the support site. I used the V1 table (0.4 / 0.6 mm) and the Form Now V2 guide (1.5 mm).\n- The Form 4L layer range and the 100 micron elastomer minimum layer were not re-opened today.\n- Flexible 80A V2 has no Formlabs touchpoint or support-density figure; the tilt figure is the V1 20 degree minimum.\n- The Flexible 80A V2 data-sheet PDF downloaded but I could not extract its text (no PDF library in the isolated Python).\n\nThe practical fix is to set a 0.4 mm floor on every sheet (0.6 mm recommended, 0.7 mm for silicone) and scale the ladders and twig up. Nothing was printed.",
+ "findings": [
+  {
+   "claim": "Form 4 build volume is 200 x 125 x 210 mm, XY resolution 50 micron, layer thickness 25-200 micron; it uses LEDs, not a laser. [opened-source]",
+   "source": "https://formlabs.com/3d-printers/resin/tech-specs/",
+   "value": "200 x 125 x 210 mm; 50 um; 25-200 um",
+   "evidence_quote": "20.0 × 12.5 × 21.0 cm | 50 µm pixel size | 25–200 µm",
+   "confidence": "high"
+  },
+  {
+   "claim": "Form 4L build volume is 353 x 196 x 350 mm with a 46 micron pixel. The Form 4L layer range was not on the page I opened (the tech-specs URL I tried returned 404). [opened-source for volume and pixel; layer range not found]",
+   "source": "https://formlabs.com/3d-printers/form-4l/",
+   "value": "353 x 196 x 350 mm; 46 um",
+   "evidence_quote": "353 x 196 x 350 mm (13.9 x 7.7 x 13.8 in), 24.2 L",
+   "confidence": "high"
+  },
+  {
+   "claim": "Form 4 generation design specifications (developed with Grey Resin V5 at 50 micron): supported wall 0.2 mm, unsupported wall 0.2 mm, overhang 5.0 mm and 10 degrees from level, embossed 0.1 mm, engraved 0.15 mm, hole 0.5 mm, clearance 0.4 mm, drain hole 0.75 mm, vertical wire 0.3 mm (7 mm tall) or 0.6 mm (30 mm tall), maximum horizontal span 29 mm for a 5 x 3 mm beam. The page names no elastic or flexible resin. [opened-source]",
+   "source": "https://formlabs.com/support/Design-specifications-for-3D-models-Form-4-generation/",
+   "value": "wall 0.2 / emboss 0.1 / engrave 0.15 / hole 0.5 / clearance 0.4 mm",
+   "evidence_quote": "developed using Formlabs Grey Resin V5 printing at 50 microns on the Form 4",
+   "confidence": "high"
+  },
+  {
+   "claim": "Form 4L generation design specifications (Grey V4 at 100 micron): same as Form 4 except engraved detail 0.20 mm; walls 0.2 mm, emboss 0.1 mm, hole 0.5 mm, clearance 0.4 mm, drain 0.75 mm. The 0.2 mm wall is a threshold at which failure is expected, not a safe value. [opened-source]",
+   "source": "https://formlabs.com/support/Design-specifications-for-3D-models-Form-4L-generation/",
+   "value": "engraved 0.20 mm; wall 0.2 mm",
+   "evidence_quote": "An unsupported wall with a thickness of 0.2 mm or less may warp or detach",
+   "confidence": "high"
+  },
+  {
+   "claim": "Flexible 80A V2, Form Now material guide: minimum wall 1.5 mm (supported and unsupported), embossed 0.2 mm, engraved 0.3 mm wide and deep, hole 1.0 mm, drain hole 2.5 mm, clearance 0.5 mm, overhang 5.0 mm at 10 degrees minimum. This is the print-service guide and is deliberately above the rigid-resin minimums. [opened-source]",
+   "source": "https://now.formlabs.com/resources/flexible-80a-resin",
+   "value": "wall 1.5 mm; emboss 0.2; engrave 0.3; hole 1.0; clearance 0.5 mm",
+   "evidence_quote": "Flexible 80A V2 is held to a higher minimum wall than our rigid resins.",
+   "confidence": "medium (service guide, not the printer support site)"
+  },
+  {
+   "claim": "Flexible 80A V1 support page (the only Flexible 80A design table on the support site; it says V1.1 is replaced by V2 on Form 4 / 4L): supported wall minimum 0.4 mm (recommended 0.6), unsupported wall minimum 0.6 mm (recommended 0.8), shallow angle minimum 19 degrees, horizontal span maximum 0.6 mm, vertical wire 0.3-1.5 mm, adjacent-part clearance 1.0 mm, hole 0.8 mm; V1 prints at 50 and 100 micron; orient low on the platform at 20 degrees minimum. I found no V2-specific design table, orientation or touchpoint guidance on formlabs.com/support (the URL I guessed for a V2 page returned 404). [opened-source, but V1]",
+   "source": "https://formlabs.com/support/Using-Flexible-80A-Resin-V1/",
+   "value": "wall 0.4 supported / 0.6 unsupported mm; tilt >= 20 deg",
+   "evidence_quote": "orient the part closer to the build platform but at a 20° angle minimum",
+   "confidence": "medium (applies to V1; V2 values unknown)"
+  },
+  {
+   "claim": "Flexible 50A (the page states Elastic 50A Resin V2 was renamed Flexible 50A on 9 June 2026): supported wall minimum 0.4 mm (recommended 0.6), unsupported wall minimum 0.6 mm (recommended 0.8), shallow angle minimum 19 degrees (recommended 45), horizontal span or bridge maximum 0.6 mm, vertical wire 0.3-1.5 mm, clearance between adjacent parts 1.0 mm, hole 0.8 mm. Increase support density for large cross sections and keep them near the platform; isolated supports over 20 mm may fail. No touchpoint size is given. [opened-source]",
+   "source": "https://formlabs.com/global/support/Using-Elastic-Resin/",
+   "value": "wall 0.4 / 0.6 mm; bridge <= 0.6 mm; hole 0.8 mm; clearance 1.0 mm",
+   "evidence_quote": "Generating isolated supports more than 20 mm long may lead to print failures.",
+   "confidence": "high"
+  },
+  {
+   "claim": "Silicone 40A: unsupported thin walls under 0.7 mm are not recommended; maximum aspect ratio 8:1 when printing perpendicular to the build platform; wash in 80 % IPA / 20 % n-butyl acetate; post-cure in water in a glass beaker inside the Form Cure. [opened-source]",
+   "source": "https://formlabs.com/support/Using-Silicone-40A-Resin/",
+   "value": "wall >= 0.7 mm; aspect <= 8:1",
+   "evidence_quote": "Unsupported thin-walled geometries (thinner than 0.7 mm)",
+   "confidence": "high"
+  },
+  {
+   "claim": "Form Wash times: Flexible 80A V2 is 5 min + 5 min in two cycles with fresh solvent for the second; Flexible 50A 20 min or until clean; Silicone 40A 20 min in the 80/20 IPA / n-butyl acetate mix or by the IPA sonication guide, never plain IPA otherwise, and only in a bucket not exposed to other solvents. Resin Washing Solution is not recommended for any of the three. The Flexible 80A product page contradicts this by offering Resin Washing Solution in its generic wash text. [opened-source]",
+   "source": "https://formlabs.com/support/Form-Wash-Time-Settings/ ; https://formlabs.com/products/flexible-80a-resin/",
+   "value": "80A V2 5+5 min; 50A 20 min; Si 40A 20 min",
+   "evidence_quote": "Wash parts printed in Flexible 80A Resin V2 in two cycles",
+   "confidence": "high"
+  },
+  {
+   "claim": "Form Cure V2 settings: Flexible 80A V2 5 min at 80 C (a second column shows 5 min, no heat; I could not tell which cure unit each column refers to); Flexible 50A 7 min at 70 C fully submerged in room-temperature water in a UV-transparent container; Silicone 40A 10 min at 60 C. Form Cure V1 values were not opened. A search snippet reported 30 min at 70 C for Elastic 50A V2 on the store page; that is snippet-only and conflicts with the 7 min. [opened-source for Form Cure V2; snippet-only for the 30 min]",
+   "source": "https://formlabs.com/support/Form-Cure-2nd-Generation-time-and-temperature-settings/",
+   "value": "80A V2 5 min 80 C; 50A 7 min 70 C in water; Si 40A 10 min 60 C",
+   "evidence_quote": "completely submerge the parts in room temperature water",
+   "confidence": "medium (Form Cure V2 only; column meaning for 80A V2 unclear)"
+  },
+  {
+   "claim": "PreForm accepts STL, OBJ and 3MF meshes plus native CAD (STEP, SolidWorks, CATIA are named on the Fuse page) and outputs a FORM file. Model units are switched under Edit > Model Units between mm and inches. That STL carries no units, so PreForm must guess, and that the command-line option --modelUnits defaults to mm, are snippet-only (forum and search summary). Generated STL files should be in millimetres and the size confirmed after import. [opened-source for formats and menu; snippet-only for the guess and the CLI default]",
+   "source": "https://formlabs.com/3d-printers/resin/tech-specs/ ; https://formlabs.com/3d-printers/fuse-1/tech-specs/ ; https://formlabs.com/support/Design-Models-for-Printability/",
+   "value": "STL / OBJ / 3MF; mm or in",
+   "evidence_quote": "STL, OBJ, 3MF, & other mesh files and native CAD formats",
+   "confidence": "high for formats; medium for units behaviour"
+  },
+  {
+   "claim": "Fuse 1+ 30W: build volume 165 x 165 x 300 mm, layer 110 micron, laser spot 247 micron. Fuse 1 generation design specifications (Nylon 12 baseline): vertical walls 0.6 mm, horizontal walls 0.3 mm, hole 1.0 mm, pin 0.8 mm, escape hole 3.5 mm, assembly clearance 0.2 mm (under 20 mm2) or 0.4 mm (over), printed-in-place clearance 0.3 / 0.6 mm, separate parts 1.0 mm minimum and 2.0 mm recommended; embossed 0.15 mm deep on horizontal faces and 0.35 mm on vertical; engraved 0.1 / 0.15 mm. Nylon 11 needs at least 1 mm for integrated assemblies and slightly larger features, with no other numbers given. [opened-source]",
+   "source": "https://formlabs.com/3d-printers/fuse-1/tech-specs/ ; https://formlabs.com/support/Design-specifications-for-3D-models-Fuse-1/",
+   "value": "PA12 wall 0.6 vertical / 0.3 horizontal mm; hole 1.0 mm; clearance 0.2-0.6 mm",
+   "evidence_quote": "Vertical walls: 0.6 mm/600 microns",
+   "confidence": "high"
+  },
+  {
+   "claim": "Form Now service guides are more conservative: Nylon 12 wall 0.8 mm both directions, hole 1.0 mm; TPU 90A wall 1.0 mm both directions, hole 1.0 mm, escape holes 3.5 mm (two per cavity), clearance between unrelated parts 1.0 mm minimum and 5.0 mm recommended. The support page adds that TPU 90A integrated assemblies need at least 1 mm clearance and the largest TPU part is 161.2 x 161.2 x 295.0 mm. [opened-source]",
+   "source": "https://now.formlabs.com/resources/nylon-12-sls ; https://now.formlabs.com/resources/tpu-90a-sls ; https://formlabs.com/support/Design-specifications-for-3D-models-Fuse-1/",
+   "value": "PA12 0.8 mm; TPU 90A 1.0 mm wall, 1 mm integrated clearance",
+   "evidence_quote": "1.0 mm for both",
+   "confidence": "high"
+  },
+  {
+   "claim": "VIOLATION, object 1: the 0.6 mm Silicone 40A passive layer (pair B) is below the 0.7 mm threshold under which Formlabs does not recommend unsupported silicone walls. The 0.4 mm Flexible 80A V2 active layer equals the V1 supported-wall minimum, is below the V1 unsupported minimum (0.6 mm) and below the Form Now V2 rule (1.5 mm). The 0.6 mm Flexible 50A layer sits exactly at its unsupported minimum (recommended 0.8 mm).",
+   "source": "python -I D:/Users/ashenoy00000/delphi-work/agents5/pr-print-geometry-review/check_poc.py (violations.tsv)",
+   "value": "0.6 < 0.7 mm (Si 40A); 0.4 < 0.6 mm (80A unsupported); 0.4 < 1.5 mm (Form Now)",
+   "confidence": "high (arithmetic); the 80A V2 limit is borrowed from V1"
+  },
+  {
+   "claim": "VIOLATION, object 2: six sheets are below a published minimum. Ratio ladder: Flexible 80A V2 at 0.2 and 0.3 mm (minimum 0.4) and Flexible 50A at 0.3 and 0.2 mm (minimum 0.4). Thickness ladder, 0.5 mm rung: 0.2 mm active and 0.3 mm passive. The 0.2 mm sheets also sit at the generic Form 4 0.2 mm limit. Eleven more sheets are at risk (0.4-0.5 mm, below the 0.6 mm unsupported minimum, or only two or three printed layers). Only the 0.6-1.2 mm sheets clear the unsupported minimum. The 3 mm finger gap passes the 1.0 mm clearance.",
+   "source": "python -I D:/Users/ashenoy00000/delphi-work/agents5/pr-print-geometry-review/check_poc.py (violations.tsv)",
+   "value": "hard rows 9, at-risk 11, service-rule 11",
+   "confidence": "high (arithmetic)"
+  },
+  {
+   "claim": "VIOLATION, object 4: the twig's 0.2 mm Flexible 80A V2 layer is at the generic 0.2 mm limit and below the 0.4 mm flexible supported-wall minimum; its 0.3 mm Flexible 50A layer is below 0.4 mm. At 0.1 mm layers the twig sheets are two and three printed layers, so one layer of error is 50 % and 33 % of thickness. The branch layers (0.4 / 0.6 mm) are at risk; the trunk (0.8 / 1.2 mm) passes the support-site minimums.",
+   "source": "python -I D:/Users/ashenoy00000/delphi-work/agents5/pr-print-geometry-review/check_poc.py (violations.tsv)",
+   "value": "0.2 <= 0.2 mm; 0.2 < 0.4 mm; 0.3 < 0.4 mm",
+   "confidence": "high (arithmetic)"
+  },
+  {
+   "claim": "Objects 3 and 5 have no row below a hard minimum. Object 3's 0.4 mm active sheets (all five widths) are below the 0.6 mm unsupported minimum and the 1.5 mm Form Now rule. Object 5's 1.2 mm active layer is below only the 1.5 mm Form Now rule; its 1.8 mm passive layer passes everything. Object 5's Nylon 12 frame (about 150 x 60 mm) fits the Fuse 1+ 30W, but its wall thickness, holes and blade-clamp clearance are not specified in the designs file and could not be checked.",
+   "source": "python -I D:/Users/ashenoy00000/delphi-work/agents5/pr-print-geometry-review/check_poc.py",
+   "value": "object 3: at-risk 5, service-rule 5; object 5: service-rule 1",
+   "confidence": "high (arithmetic)"
+  },
+  {
+   "claim": "Orientation constraint for all five objects: Flexible 50A allows a horizontal bridge of at most 0.6 mm, and the strips are 12.5-120 mm long, so no strip can be printed as an unsupported span. Each must sit directly on the build platform or be tilted on dense supports with none isolated beyond 20 mm. A silicone strip printed upright would be 30 / 0.6 = 50:1 against the 8:1 limit. Formlabs publishes no touchpoint size for these resins; forum users report about 0.4 mm at density 0.8-1.0 and a 15-25 degree tilt, which is snippet-only and years old.",
+   "source": "https://formlabs.com/global/support/Using-Elastic-Resin/ ; https://formlabs.com/support/Using-Silicone-40A-Resin/ ; forum.formlabs.com threads (snippet-only)",
+   "value": "bridge <= 0.6 mm; aspect 50 > 8",
+   "evidence_quote": "The maximum aspect ratio recommended for printing perpendicularly to the build platform is 8:1.",
+   "confidence": "medium"
+  },
+  {
+   "claim": "Checks that pass: every object footprint (largest about 150 x 60 mm) fits the Form 4's 200 x 125 mm platform; all sheet thicknesses are multiples of 0.1 mm; comb gap 3 mm and louver gap 11 mm exceed the 1.0 mm adjacent-part clearance. The 100 micron minimum layer for Flexible 50A and Silicone 40A is taken from the earlier agent's product-page reading and was not re-opened by me. The object 4 footprint (87.5 x 60 mm) is my upper guess from the chain length, since the designs file gives none.",
+   "source": "python -I D:/Users/ashenoy00000/delphi-work/agents5/pr-print-geometry-review/check_poc.py ; D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/research/agents/bm-poc-designs.json",
+   "value": "8 of 8 envelope and clearance checks pass",
+   "confidence": "high for arithmetic; medium for the layer minimum"
+  },
+  {
+   "claim": "The designs file's phrase 'every layer >= 0.2 mm' as the printable floor is too optimistic: 0.2 mm is the thickness at which Formlabs says a rigid Grey V5 wall may warp or detach, and the published floors for the soft resins actually used are 0.4 mm supported, 0.6 mm unsupported (Flexible 50A; Flexible 80A V1) and 0.7 mm (Silicone 40A).",
+   "source": "https://formlabs.com/support/Design-specifications-for-3D-models-Form-4-generation/ ; https://formlabs.com/global/support/Using-Elastic-Resin/ ; bm-poc-designs.json finding 14",
+   "value": "floor 0.4-0.7 mm, not 0.2 mm",
+   "evidence_quote": "A supported wall with a thickness of 0.2 mm or less may warp",
+   "confidence": "high"
+  }
+ ],
+ "key_claims": [
+  "Three of the five objects (1, 2 and 4) contain sheets below a published Formlabs minimum wall: 13 rule rows on 9 distinct sheets; objects 3 and 5 have none.",
+  "The soft-resin floors are 0.4 mm supported and 0.6 mm unsupported (Flexible 50A; Flexible 80A V1 table) and 0.7 mm for Silicone 40A, not the 0.2 mm the designs file assumed.",
+  "Every Flexible 80A V2 layer in all five objects (0.2-1.2 mm) is below the 1.5 mm wall in the Form Now service guide, so a print-service order would likely be flagged; an in-house Form 4 is not bound by that rule.",
+  "No V2-specific Flexible 80A design table, tilt or touchpoint guidance was found on the Formlabs support site; the V1 table was used as a stand-in and labelled as such.",
+  "PreForm takes STL, OBJ and 3MF; export in millimetres and confirm under Edit > Model Units."
+ ],
+ "recommendations": [
+  "Before generating files, set a floor of 0.4 mm on every sheet (0.6 mm recommended) and 0.7 mm for Silicone 40A. For object 1 pair B, use 0.5 mm active and 0.7 mm silicone, or drop pair B.",
+  "Object 2: scale the ratio ladder to 2.0 mm total (active 0.4-1.6 mm, passive 1.6-0.4 mm) so every sheet is at least 0.4 mm, and start the thickness ladder at 1.0 mm total. The catch is soak time, which grows with thickness squared.",
+  "Object 4: scale the tree by 2 (twig 1.0 mm total, 0.4 + 0.6) or drop the third generation. The 0.2 mm twig should not be printed.",
+  "Print sheets flat on the build platform or tilted about 20 degrees on dense supports, never bridging; keep isolated supports under 20 mm. Treat touchpoint 0.4 mm and density 0.8-1.0 as a starting guess from forum reports, not a Formlabs figure.",
+  "Export STL or 3MF in millimetres as watertight solids and verify the bounding box in PreForm after import.",
+  "Follow the wash and cure rules per resin before bonding: Flexible 80A V2 5 + 5 min IPA then 5 min at 80 C; Flexible 50A 20 min then 7 min at 70 C under water; Silicone 40A 20 min in 80/20 IPA / n-butyl acetate in a dedicated bucket then 10 min at 60 C.",
+  "Specify the object 5 frame before printing: Nylon 12 walls at least 0.8 mm, holes at least 1.0 mm, blade-slot clearance 0.2-0.4 mm for parts assembled after printing.",
+  "Ask Formlabs support for the Flexible 80A V2 design table (minimum wall, tilt, touchpoint), since the support site only carries the V1 version."
+ ],
+ "could_not_find": [
+  "A Flexible 80A V2-specific design table, orientation or touchpoint guidance on formlabs.com/support (the URL I guessed returned 404; the V1 page and the Form Now V2 guide were used instead).",
+  "Form 4L layer-thickness range (formlabs.com/3d-printers/form-4l/tech-specs/ returned 404; the product page gives only volume and pixel size).",
+  "Any Formlabs-published support touchpoint size or density for Flexible 80A V2, Flexible 50A or Silicone 40A; only forum reports, snippet-only.",
+  "Supported layer heights for Flexible 80A V2, Flexible 50A and Silicone 40A from a page opened today; the 100 micron figure is relayed from bm-poc-designs.json.",
+  "Form Cure V1 settings for the three resins (only the Form Cure V2 table was opened), and which cure unit the two Flexible 80A V2 columns ('Cycle 15' / 'Cycle 2') refer to.",
+  "The print, wash and cure footnote of the Flexible 80A V2 data sheet: the PDF was downloaded but its text could not be extracted (no PDF library in the isolated Python).",
+  "An opened Formlabs page stating that STL has no units or that PreForm defaults to mm; snippet-only.",
+  "TPU 90A numeric minimum wall on the printer support page (it only says features are slightly larger than Nylon 12); the 1.0 mm figure is from the Form Now guide. Nylon 11 has no numeric wall figure.",
+  "Frame wall thickness, holes, labels, orientation, support plan or meshes for any object: the designs file gives nominal bar dimensions only, so embossed/engraved, hole and Fuse wall checks had nothing to check."
+ ],
+ "lay_summary": [
+  "A resin printer cannot make sheets as thin as you like: very thin, soft sheets tear or curl while printing.",
+  "We looked up Formlabs' own rules today and compared them with the five test objects the project wants to print.",
+  "Three of the five objects have layers that are too thin, like trying to cut a slice of jelly thinner than the knife allows.",
+  "The fix is simple: make every soft layer at least 0.4 millimetres thick (0.7 for the silicone), and make the smallest pieces bigger.",
+  "All the objects do fit inside the printer, and the gaps between their fingers are wide enough."
+ ],
+ "glossary": {
+  "supported wall": "A thin sheet joined to other walls on two or more sides, so it is held while printing.",
+  "unsupported wall": "A thin sheet that stands free, held along one edge or none; it needs to be thicker.",
+  "layer height": "The thickness of each printed slice; these soft resins print in 0.1 mm slices.",
+  "bridge / horizontal span": "A flat stretch printed with nothing under it between two holds.",
+  "touchpoint": "The small tip where a support pillar meets the part.",
+  "build volume": "The largest box of space the printer can print in.",
+  "clearance": "The gap left between two neighbouring parts so they do not fuse.",
+  "embossed / engraved": "Raised or sunken lettering and marks on a surface.",
+  "post-cure": "Extra light and heat after printing that finishes hardening the part.",
+  "SLS": "A printer that fuses nylon powder with a laser (the Fuse 1+).",
+  "Form Now": "Formlabs' own print-to-order service, which has stricter design rules.",
+  "PreForm": "Formlabs' free program that prepares a 3D file for the printer.",
+  "STL / OBJ / 3MF": "Common file types that describe a 3D shape as a mesh of triangles.",
+  "bilayer": "Two different sheets stuck together; one swells in water so the pair bends.",
+  "snippet-only": "A number seen only in a search result summary, not on a page I opened."
+ },
+ "reproduce": [
+  {
+   "what": "Check the five objects against the limits (standard library only, no network; writes violations.tsv and limits_used.tsv next to the script)",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents5/pr-print-geometry-review/check_poc.py",
+   "expected": "violations: 60 rows; last line 'TOTAL hard=13 at-risk=20 service-rule=21 orientation=6'; object 3 and object 5 HARD=0; 8 PASS lines"
+  },
+  {
+   "what": "Form 4 generation design specifications",
+   "command_or_url": "https://formlabs.com/support/Design-specifications-for-3D-models-Form-4-generation/",
+   "expected": "supported and unsupported wall 0.2 mm, embossed 0.1, engraved 0.15, hole 0.5, clearance 0.4 mm"
+  },
+  {
+   "what": "Flexible 50A (formerly Elastic 50A V2) design rules",
+   "command_or_url": "https://formlabs.com/global/support/Using-Elastic-Resin/",
+   "expected": "supported wall minimum 400 microns, unsupported 600 microns, span maximum 600 microns, hole 800 microns"
+  },
+  {
+   "what": "Silicone 40A rules",
+   "command_or_url": "https://formlabs.com/support/Using-Silicone-40A-Resin/",
+   "expected": "unsupported walls thinner than 0.7 mm not recommended; aspect ratio 8:1"
+  },
+  {
+   "what": "Flexible 80A V2 service design rules",
+   "command_or_url": "https://now.formlabs.com/resources/flexible-80a-resin",
+   "expected": "minimum wall 1.5 mm, embossed 0.2, engraved 0.3, hole 1.0 mm"
+  },
+  {
+   "what": "Wash and cure tables",
+   "command_or_url": "https://formlabs.com/support/Form-Wash-Time-Settings/ and https://formlabs.com/support/Form-Cure-2nd-Generation-time-and-temperature-settings/",
+   "expected": "80A V2 5+5 min wash, 5 min 80 C; 50A 20 min wash, 7 min 70 C in water; Si 40A 20 min wash, 10 min 60 C"
+  },
+  {
+   "what": "Fuse 1 generation design specifications",
+   "command_or_url": "https://formlabs.com/support/Design-specifications-for-3D-models-Fuse-1/",
+   "expected": "vertical walls 0.6 mm, horizontal 0.3 mm, hole 1.0 mm, escape hole 3.5 mm"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents5/pr-print-geometry-review/check_poc.py",
+  "D:/Users/ashenoy00000/delphi-work/agents5/pr-print-geometry-review/violations.tsv",
+  "D:/Users/ashenoy00000/delphi-work/agents5/pr-print-geometry-review/limits_used.tsv"
+ ],
+ "check_output": "violations: 60 rows -> violations.tsv\nobject 1: HARD=1, AT-RISK=1, SERVICE-RULE=1, ORIENTATION=2\nobject 2: HARD=9, AT-RISK=11, SERVICE-RULE=11, ORIENTATION=1\nobject 3: HARD=0, AT-RISK=5, SERVICE-RULE=5, ORIENTATION=1\nobject 4: HARD=3, AT-RISK=3, SERVICE-RULE=3, ORIENTATION=1\nobject 5: HARD=0, AT-RISK=0, SERVICE-RULE=1, ORIENTATION=1\nTOTAL hard=13 at-risk=20 service-rule=21 orientation=6",
+ "suite": {
+  "case_name": "Print-geometry review of the five biomaterial proof-of-concept objects",
+  "statement": "Every separately printed sheet of each object must be at or above the published Formlabs minimum wall for its resin and fit the build volume.",
+  "data_used": "Formlabs support, product and Form Now pages opened 2026-11-13; nominal dimensions from tracks/research/agents/bm-poc-designs.json (table rows Object 1-5).",
+  "validation": "check_poc.py asserts each transcribed dimension string is still present in the designs file, then compares against limits tagged opened or snippet-only; 8 envelope and clearance checks pass, 13 hard rows fail.",
+  "holdout_set": "Not applicable: no organism data used; the frozen clade was not touched or named.",
+  "performance": "Objects 3 and 5 pass the hard minimums; objects 1 (silicone pair), 2 and 4 fail; 9 distinct sheets below a published minimum.",
+  "what_was_wrong": "The designs assumed a 0.2 mm printable floor, which is the generic rigid-resin failure threshold; the soft resins need 0.4-0.7 mm. No V2-specific Flexible 80A table was found, so its limit is borrowed from V1. Pages were read through a summarising fetch tool, so quotes are not byte-checked. The designs carry no mesh, orientation or frame detail, so embossing, hole and Fuse wall checks had nothing to check.",
+  "lean_status": "Not used: this is a tolerance lookup, not a law; no Lean file written."
+ }
+}

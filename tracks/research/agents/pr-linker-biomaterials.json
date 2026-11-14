@@ -1,0 +1,355 @@
+{
+ "label": "pr-linker-biomaterials",
+ "topic": "Bio-based, crosslinker-designed printable resin for a Formlabs printer: evidence table, Formlabs Open Material Mode facts, first formulation and risks",
+ "summary": "Partial result from a roughly 20-minute pass: 36 numbers collected (25 from opened pages or full text, 4 from PubMed abstracts only, 7 snippet-only), and every one carries that status in sources.json and table.md.\n\n**What the sources support**\n- **Printed bio-based resins:** soybean-oil acrylate (AESO) and itaconate resins have been printed at 405 nm on desktop-class DLP/MSLA machines, with viscosity, exposure and modulus numbers. None of the opened papers used a Formlabs printer.\n- **Formlabs (pages opened 2026-11-13):** Open Material Mode accepts \"any 405 nm photopolymer resin or 1064 nm powder\". It is included on Form Studio 1 and is a one-time purchase per printer on Form 3, Form 4 and Fuse series. Print Settings Editor is free and exposes exposure, layer height and heating.\n- **Crosslinkers:** citric acid, tannic acid and genipin each have numbers in the table (citric acid from full text, tannic acid and genipin from abstracts only), measured in different base materials. Only citric acid has a dose series (modulus 13.37 to 29.62 MPa), and none was measured in a printed resin.\n\n**What was wrong or missing**\n- **No viscosity limit:** neither opened Formlabs page states a viscosity or temperature limit. The Formlabs support article returned 404.\n- **Licence price is unsettled:** the one opened price list is a regional dental page in \"$\" with \"incl. 8% GST\" and no named currency (Form 4 $864, Form 3 generation $2,158.92). Snippet-only listings disagree ($1,999 to $4,999).\n- **Named systems not covered:** no opened numbers for GelMA, methacrylated chitosan, methacrylated alginate or vanillin methacrylates. The lignin evidence is snippet-only, and the methacrylated cellulose paper printed at 385 nm, not 405 nm.\n- **Crosslinker gaps:** transglutaminase was not found, laccase was not searched, and PEGDA has no opened modulus or swelling number.\n- **No bilayer precedent opened:** I found no opened source for a vat-printed humidity bilayer or any facade use. The first formulation below is therefore a hypothesis, not a demonstrated material.\n- **Risk evidence is uneven:** the photoinitiator (TPO) listing rests on a mid-2023 secondary page; no cytotoxicity or VOC data for cured parts was opened. The cure-depth risk rests on snippets and the creep risk on thermal proxies, since no creep test was opened.\n\n**Proposed first formulation (hypothesis)**\nPrint one layer type from AESO thinned with a bio-based reactive diluent and a TPO-free photoinitiator, with a methacrylated polysaccharide as the water-absorbing phase. Then dip one face in tannic acid or citric acid to tighten the network there, which creates the swelling contrast from a single print.\n\n**Lean**\nLinkerBilayer.lean (core Lean 4.35.0, no Mathlib, 4 theorems, no sorry or axiom) passes with the local lean binary; the negative control fails as it must. The theorems are order statements conditional on a named hypothesis that swelling falls as crosslink density rises. They do not predict a curvature and were not run through the repo's check.sh.\n\nThe holdout leak gate ran clean on the output folder.\n\nFiles are in D:/Users/ashenoy00000/delphi-work/agents5/pr-linker-biomaterials:\n- sources.json\n- table.md\n- build_table.py\n- run.sh\n- LinkerBilayer.lean\n- NegativeControl.lean",
+ "findings": [
+  {
+   "claim": "Formlabs Open Material Mode allows any 405 nm resin or 1064 nm powder (page opened 2026-11-13).",
+   "source": "https://formlabs.com/open-platform/",
+   "evidence_quote": "print with any 405 nm photopolymer resin or 1064 nm powder",
+   "value": "405 nm SLA; 1064 nm SLS",
+   "confidence": "high (opened)"
+  },
+  {
+   "claim": "Open Material Mode is included with Form Studio 1 and is an optional one-time purchase per printer on Form 3, Form 4 and Fuse series.",
+   "source": "https://formlabs.com/open-platform/",
+   "evidence_quote": "one-time purchase per printer for lifetime access",
+   "confidence": "high (opened)"
+  },
+  {
+   "claim": "Print Settings Editor is free and exposes exposure, layer height and heating for SLA; layer thickness, XYZ correction and exposure for SLS.",
+   "source": "https://formlabs.com/open-platform/",
+   "evidence_quote": "Free access to anyone",
+   "confidence": "high (opened)"
+  },
+  {
+   "claim": "No viscosity or temperature limit for third-party resins is stated on either opened Formlabs page; the support article URL returned 404.",
+   "source": "https://formlabs.com/open-platform/ and https://dental.formlabs.com/global/products/open-material-mode/",
+   "value": "not stated",
+   "confidence": "high that it is absent from these two pages; unknown elsewhere"
+  },
+  {
+   "claim": "Licence prices on the opened regional dental page are in '$' including 8% GST with no named currency or country, so they are probably not US list prices.",
+   "source": "https://dental.formlabs.com/global/products/open-material-mode/",
+   "evidence_quote": "$864 incl. 8% GST",
+   "value": "Form 4 $864; Form 4B $2,698.92; Form 4L gen $5,182.92; Form 3 gen $2,158.92; Form 3L gen $4,318.92; Fuse 1 gen $12,310.92",
+   "confidence": "medium (opened, currency unknown)"
+  },
+  {
+   "claim": "Other licence price listings conflict with the opened page.",
+   "source": "search snippets (dental.formlabs.com, store.proto3000.com, forum.formlabs.com); not opened",
+   "value": "$1,999 Form 3 / $2,499 Form 4 / $3,999 Form 3L / $4,999 Form 4L; reseller $3,699 for Form 4",
+   "confidence": "low (snippet-only)"
+  },
+  {
+   "claim": "Third-party-material failure modes are excluded from the standard warranty, and activation needs a temporary internet connection.",
+   "source": "https://dental.formlabs.com/global/products/open-material-mode/",
+   "evidence_quote": "more likely to be caused by third-party materials",
+   "confidence": "high (opened)"
+  },
+  {
+   "claim": "Neat AESO is too viscous for a desktop vat printer; a directly acrylated soybean oil is about seven times thinner.",
+   "source": "Mendes-Felipe et al., Polymers 2023, doi:10.3390/polym15143136 (PMC full text opened)",
+   "value": "AESO 11.8 +/- 0.6 Pa.s; ASO 1.66 +/- 0.04 Pa.s (25 C, 1 1/s)",
+   "confidence": "high (opened)"
+  },
+  {
+   "claim": "AESO with 1 wt% BAPO printed on an Asiga MAX X27 DLP at 405 nm with 2 s per 50 um layer at 35-40 mW/cm2 (about 70-80 mJ/cm2 by my multiplication).",
+   "source": "doi:10.3390/polym15143136 (opened)",
+   "value": "2 s/layer AESO; 4 s/layer ASO",
+   "confidence": "high for exposure time; the dose is my arithmetic"
+  },
+  {
+   "claim": "Cured AESO is far stiffer and more crosslinked than cured ASO, which is rubbery at room temperature.",
+   "source": "doi:10.3390/polym15143136 (opened)",
+   "value": "rubbery storage modulus 40 vs 2.6 MPa; Tg 48 vs -6 C; crosslink density 2.58 vs 0.26 mmol/cm3",
+   "confidence": "high (opened); the extracted Young's modulus of 1.433 MPa was not re-checked for its unit"
+  },
+  {
+   "claim": "A 65/30/5 AESO/HDDA/TMPTA resin with TPO printed on a desktop Prusa SL1 at 405 nm; neat AESO did not.",
+   "source": "Barkane et al., Polymers 2021, doi:10.3390/polym13081195 (PMC full text opened)",
+   "evidence_quote": "exceeds the range of the SLA printer",
+   "value": "storage modulus 726 MPa at 20 C, 72 MPa at 80 C; 7.5 s per layer after 35 s for the first 10",
+   "confidence": "high (opened)"
+  },
+  {
+   "claim": "A terpene-itaconate thiol-ene resin is very thin but cures slowly at 405 nm.",
+   "source": "Chiaradia et al., ACS Sustain. Chem. Eng. 2024, doi:10.1021/acssuschemeng.3c08191 (PMC full text opened)",
+   "evidence_quote": "Young's modulus and strain at break ranging from 3.6 to 358 MPa",
+   "value": "60 mPa.s; 120 s per 50 um layer at 225 W/m2 (about 2.7 J/cm2, my arithmetic); cure depth 110 um after 110 s",
+   "confidence": "high (opened)"
+  },
+  {
+   "claim": "Methacrylated carboxymethyl cellulose hydrogel printed by DLP is very soft and swells strongly, but it was printed at 385 nm, not 405 nm.",
+   "source": "Melilli et al., Polymers 2020, doi:10.3390/polym12081655 (PDF downloaded and text-extracted)",
+   "evidence_quote": "absorb up to 650% of their initial weight in water",
+   "value": "Young's modulus 32 kPa; 20 mg/mL polymer; LAP 2 wt% of polymer; 30 mW/cm2; 50 um layers",
+   "confidence": "high (opened)"
+  },
+  {
+   "claim": "Methacrylated lignin was printed at up to 15 wt% on a commercial desktop printer; lignin absorbs at 405 nm and chemical modification cut that absorbance by 25% to at least 60%.",
+   "source": "search snippets of Sutton et al. 2018 and a 2021 follow-up; the preprint PDF returned 403",
+   "value": "15 wt%; 25% to >=60%",
+   "confidence": "low (snippet-only; printer model unconfirmed)"
+  },
+  {
+   "claim": "Citric acid roughly doubles the modulus of a starch/carboxymethyl cellulose film and stops it disintegrating in water.",
+   "source": "Santos et al., ACS Omega 2026, doi:10.1021/acsomega.5c08949 (PMC full text opened)",
+   "value": "13.37 MPa (0%) -> 23.32 (5%) -> 26.79 (15%) -> 29.62 MPa (20%); 0% film disintegrated; 5% film 97.52% swelling at 1 h",
+   "confidence": "high (opened); the paper's abstract says about 115% while its table gives about 100%"
+  },
+  {
+   "claim": "A tannic acid soak after photopolymerisation doubled compressive modulus and cut swelling threefold in a printed GelMA-containing hydrogel.",
+   "source": "Dong et al., Int. J. Bioprint. 2022, doi:10.18063/ijb.v8i3.587 (PubMed abstract only)",
+   "evidence_quote": "The swelling rate was reduced by a factor of three.",
+   "confidence": "medium (abstract only)"
+  },
+  {
+   "claim": "Genipin at 0.1% gave a gelatin/PVA hydrogel a swelling ratio near 620% and a compression modulus near 2 MPa; genipin gelatin alone at 0.4% is only 2-10 kPa.",
+   "source": "Masri et al., Biomedicines 2022, doi:10.3390/biomedicines10102651; Ng et al., Sci. Rep. 2023, doi:10.1038/s41598-023-32080-y (PubMed abstracts only)",
+   "value": "621.1 +/- 93.18 %; 2.14 +/- 0.06 MPa; 2-10 kPa",
+   "confidence": "medium (abstracts only; no dose series opened)"
+  },
+  {
+   "claim": "Genipin-crosslinked chitosan scaffolds swell less than ionically (tripolyphosphate) crosslinked ones, with no significant modulus difference at equal concentration.",
+   "source": "Siddiqui et al., Mater. Sci. Eng. C 2015, doi:10.1016/j.msec.2015.05.005 (PubMed abstract only)",
+   "evidence_quote": "the percent swelling of CBG was lower than CBT",
+   "confidence": "medium (abstract only)"
+  },
+  {
+   "claim": "No modulus or swelling number was obtained for transglutaminase, laccase or PEGDA; transglutaminase searches returned nothing usable and laccase was not searched.",
+   "source": "this run",
+   "confidence": "n/a (gap)"
+  },
+  {
+   "claim": "The common desktop photoinitiator TPO was added to the EU SVHC Candidate List on 14 June 2023 for reproductive toxicity, so a client-facing resin should use a different initiator.",
+   "source": "https://criticalcatalyst.com/trimethylbenzoyl-diphenylphosphine-oxide-tpo-added-to-svhc-candidate-list (opened; secondary source dated mid-2023)",
+   "evidence_quote": "On 14 June 2023, the European Chemicals Agency (ECHA) announced",
+   "value": "CAS 75980-60-8",
+   "confidence": "medium (opened secondary source; the later Repr. 1B entry date is snippet-only)"
+  },
+  {
+   "claim": "Most credible first formulation (my synthesis, untested): AESO thinned with a bio-based reactive diluent, a TPO-free 405 nm initiator, a methacrylated polysaccharide as the water-absorbing phase, printed as one layer type, then one face dipped in tannic or citric acid to create the crosslink contrast.",
+   "source": "synthesis of doi:10.3390/polym15143136, 10.3390/polym13081195, 10.3390/polym12081655, 10.18063/ijb.v8i3.587, 10.1021/acsomega.5c08949",
+   "confidence": "low (hypothesis; no opened source demonstrates a vat-printed humidity bilayer or a facade use)"
+  },
+  {
+   "claim": "Risk 1, cytotoxicity/VOC: the photoinitiator is the known regulatory problem; no leachable or VOC data for cured bio-resins was opened. HDDA/TMPTA diluents used in the printable AESO mix are petro-acrylates.",
+   "source": "criticalcatalyst.com page (opened); doi:10.3390/polym13081195 (opened)",
+   "confidence": "medium for the initiator; unquantified for VOC"
+  },
+  {
+   "claim": "Risk 2, cure depth with pigmented bio-fillers: even an unfilled itaconate resin reached only 110 um after 110 s, and lignin absorbs at the print wavelength.",
+   "source": "doi:10.1021/acssuschemeng.3c08191 (opened); lignin absorbance from snippets",
+   "confidence": "medium; no working-curve numbers (critical dose, penetration depth) were opened for any filled resin"
+  },
+  {
+   "claim": "Risk 3, creep: no creep test was opened. Proxies are a Tg of -6 C for ASO and a 90% drop in storage modulus between 20 and 80 C for the AESO mix, which a sun-heated facade would reach.",
+   "source": "doi:10.3390/polym15143136; doi:10.3390/polym13081195 (both opened)",
+   "value": "726 -> 72 MPa",
+   "confidence": "low as a creep estimate (proxy only)"
+  },
+  {
+   "claim": "Lean: four order theorems about a crosslink-contrast bilayer check in core Lean 4.35.0 with no Mathlib, sorry or axiom; a negative control that drops the swelling hypothesis fails.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents5/pr-linker-biomaterials/run.sh output: 'LinkerBilayer.lean PASS', 'negative control fails as it must'",
+   "confidence": "high that they check; they are conditional order statements, not a curvature model, and were not run through the repo's check.sh"
+  }
+ ],
+ "key_claims": [
+  "Formlabs Open Material Mode accepts any 405 nm resin or 1064 nm powder; included on Form Studio 1, one-time purchase per printer on Form 3, Form 4 and Fuse series (opened 2026-11-13).",
+  "No Formlabs page opened states a viscosity limit, and the licence price is not settled: the opened regional page and snippet listings disagree.",
+  "Neat AESO (11.8 Pa.s) is too thick for a desktop vat printer; a 65/30/5 mix with reactive diluents printed on a Prusa SL1 at 405 nm with 726 MPa storage modulus at 20 C.",
+  "Citric acid (opened) and tannic acid and genipin (abstract only) each raise stiffness or cut swelling; none was measured in a printed resin.",
+  "The proposed first formulation (AESO-based print plus a one-sided bio-crosslinker dip) is an untested hypothesis; no opened source shows a vat-printed humidity bilayer.",
+  "LinkerBilayer.lean passes in core Lean 4.35.0 and its negative control fails; it proves order statements conditional on a named swelling hypothesis."
+ ],
+ "could_not_find": [
+  "A Formlabs-stated viscosity or temperature limit for third-party resins (support article 404; not on the two opened pages)",
+  "A confirmed US list price for the Open Material Mode licence",
+  "Opened numbers for GelMA, methacrylated chitosan, methacrylated alginate or vanillin methacrylate printed at 405 nm",
+  "Opened lignin resin numbers (preprint PDF returned 403); critical cure dose and penetration depth for any filled bio-resin",
+  "Any bio-based resin printed on a Formlabs printer in an opened source",
+  "Modulus or swelling numbers for transglutaminase, laccase (not searched) or PEGDA",
+  "An opened paper on a vat-printed humidity-responsive bilayer or a facade application (one candidate PDF returned 404)",
+  "Creep data, and cytotoxicity or VOC data, for cured bio-based resins",
+  "Water swelling of the cured AESO or itaconate resins (not reported in the opened papers)"
+ ],
+ "recommendations": [
+  "Ask Formlabs directly for the viscosity and heating limits and the local licence price before quoting either to the client.",
+  "First bench step: measure a working curve (critical dose and penetration depth) for the diluted AESO resin with and without the polysaccharide filler; that decides the cure-depth risk.",
+  "Choose a TPO-free 405 nm initiator and bio-based diluents in place of HDDA/TMPTA before any client claim of 'bio-based' or 'safe'.",
+  "Test the one-sided crosslinker dip on a cast film first (swelling of each face, then curl against humidity) before printing.",
+  "Run a verifier pass on the four abstract-only and seven snippet-only rows before they enter the proposal.",
+  "Hand LinkerBilayer.lean to the Lean thread to run under check.sh and to replace the order hypothesis with a measured swelling-versus-crosslink law."
+ ],
+ "lay_summary": [
+  "We looked for plant- and animal-based liquids that harden under violet light, so they can be used in a Formlabs 3D printer.",
+  "Soybean-oil and itaconic-acid resins have really been printed on small printers, but plain soybean resin is as thick as honey and must be thinned first.",
+  "Formlabs sells a one-time unlock that lets its printers use anyone's resin, but its website does not say how thick the resin may be, and the price we found is unclear.",
+  "Natural 'linkers' such as citric acid from lemons and tannic acid from tea tie the material's chains together, which makes it stiffer and makes it soak up less water.",
+  "Our idea is to print one sheet and tie only one side more tightly, so the sheet curls when the air gets damp; nobody has shown this yet, so it is a plan to test, not a result."
+ ],
+ "glossary": {
+  "SLA / DLP / MSLA": "Printers that harden a liquid resin layer by layer with light (a laser, a projector, or a screen).",
+  "405 nm": "The colour of light (violet) these printers use to harden resin.",
+  "Crosslinker": "A molecule that ties long chains together into a net; more ties make a stiffer material that swells less.",
+  "AESO": "Acrylated epoxidized soybean oil: soybean oil changed so that light can harden it.",
+  "Photoinitiator": "The ingredient that starts the hardening when light hits it. TPO, BAPO and LAP are examples.",
+  "Viscosity": "How thick a liquid is. Water is about 1 mPa.s; honey is several thousand.",
+  "Modulus": "How stiff a material is; a bigger number means harder to stretch or squash.",
+  "Swelling": "How much water a material soaks up, usually as a percentage of its weight.",
+  "Tg (glass transition)": "The temperature above which a plastic turns from stiff to rubbery.",
+  "Cure depth": "How deep the light hardens the resin in one exposure.",
+  "Creep": "Slow sagging of a material under a steady load.",
+  "Bilayer": "Two layers stuck together; if one swells more than the other, the strip bends.",
+  "Reactive diluent": "A thin liquid added to make resin runnier that also hardens into the final part.",
+  "SVHC": "EU list of 'substances of very high concern' that companies must declare and try to replace.",
+  "Genipin / tannic acid / citric acid": "Crosslinkers from gardenia fruit, plant tannins and citrus fruit.",
+  "Open Material Mode": "A Formlabs paid unlock that lets its printers run other companies' resins or powders.",
+  "Lean": "A program that checks a mathematical proof line by line and rejects it if a step is wrong.",
+  "Negative control": "A deliberately wrong statement that the checker must reject, to show the check can fail."
+ },
+ "citations": [
+  {
+   "title": "One-Step Method for Direct Acrylation of Vegetable Oils: A Biobased Material for 3D Printing",
+   "authors": "Mendes-Felipe C, Isusi I, Gomez-Jimenez-Aberasturi O, Prieto-Fernandez S, Ruiz-Rubio L, Sangermano M, Vilas-Vilela JL",
+   "venue": "Polymers (Basel)",
+   "year": 2023,
+   "doi_or_arxiv": "10.3390/polym15143136",
+   "verified": true,
+   "how_verified": "PMC full text opened (PMC10384493)",
+   "used_for": "AESO/ASO viscosity, exposure, modulus, Tg"
+  },
+  {
+   "title": "UV-Light Curing of 3D Printing Inks from Vegetable Oils for Stereolithography",
+   "authors": "Barkane A, Platnieks O, Jurinovs M, Kasetaite S, Ostrauskaite J, Gaidukovs S, Habibi Y",
+   "venue": "Polymers (Basel)",
+   "year": 2021,
+   "doi_or_arxiv": "10.3390/polym13081195",
+   "verified": true,
+   "how_verified": "PMC full text opened (PMC8068002)",
+   "used_for": "desktop printing of diluted AESO, storage modulus, printability of neat AESO"
+  },
+  {
+   "title": "Improving the Performance of Photoactive Terpene-Based Resin Formulations for Light-Based Additive Manufacturing",
+   "authors": "Chiaradia V, Pensa E, Machado TO, Dove AP",
+   "venue": "ACS Sustainable Chemistry & Engineering",
+   "year": 2024,
+   "doi_or_arxiv": "10.1021/acssuschemeng.3c08191",
+   "verified": true,
+   "how_verified": "PMC full text opened (PMC11077580)",
+   "used_for": "itaconate resin viscosity, exposure, modulus range"
+  },
+  {
+   "title": "DLP 3D printing meets lignocellulosic biopolymers: Carboxymethyl cellulose inks for 3D biocompatible hydrogels",
+   "authors": "Melilli G, Carmagnola I, Tonda-Turo C, Pirri F, Ciardelli G, Sangermano M, Hakkarainen M, Chiappone A",
+   "venue": "Polymers",
+   "year": 2020,
+   "doi_or_arxiv": "10.3390/polym12081655",
+   "verified": true,
+   "how_verified": "repository PDF downloaded and text-extracted",
+   "used_for": "methacrylated cellulose printing conditions, modulus, swelling"
+  },
+  {
+   "title": "Corn starch/Carboxymethyl Cellulose Films: Influence of Citric Acid on Water Susceptibility, Morphological and Tensile Properties",
+   "authors": "Santos MB, et al.",
+   "venue": "ACS Omega",
+   "year": 2026,
+   "doi_or_arxiv": "10.1021/acsomega.5c08949",
+   "verified": true,
+   "how_verified": "PMC full text opened (PMC12878765)",
+   "used_for": "citric acid effect on modulus and water behaviour"
+  },
+  {
+   "title": "Tannic Acid-mediated Multifunctional 3D Printed Composite Hydrogel for Osteochondral Regeneration",
+   "authors": "Dong L, Han Z, Li X",
+   "venue": "International Journal of Bioprinting",
+   "year": 2022,
+   "doi_or_arxiv": "10.18063/ijb.v8i3.587",
+   "verified": true,
+   "how_verified": "PubMed abstract only",
+   "used_for": "tannic acid effect on modulus and swelling"
+  },
+  {
+   "title": "Injectable Crosslinked Genipin Hybrid Gelatin-PVA Hydrogels for Future Use as Bioinks in Expediting Cutaneous Healing Capacity",
+   "authors": "Masri S, Maarof M, Mohd NF, Hiraoka Y, Tabata Y, Fauzi MB",
+   "venue": "Biomedicines",
+   "year": 2022,
+   "doi_or_arxiv": "10.3390/biomedicines10102651",
+   "verified": true,
+   "how_verified": "PubMed abstract only",
+   "used_for": "genipin swelling ratio and compression modulus"
+  },
+  {
+   "title": "In vitro evaluation of genipin-crosslinked gelatin hydrogels for vocal fold injection",
+   "authors": "Ng WC, Lokanathan Y, Fauzi MB, Baki MM, Zainuddin AA, Phang SJ, Azman M",
+   "venue": "Scientific Reports",
+   "year": 2023,
+   "doi_or_arxiv": "10.1038/s41598-023-32080-y",
+   "verified": true,
+   "how_verified": "PubMed abstract only",
+   "used_for": "genipin gelatin modulus and gel time"
+  },
+  {
+   "title": "Osteogenic differentiation of human mesenchymal stem cells in freeze-gelled chitosan/nano beta-tricalcium phosphate porous scaffolds crosslinked with genipin",
+   "authors": "Siddiqui N, Pramanik K, Jabbari E",
+   "venue": "Materials Science & Engineering C",
+   "year": 2015,
+   "doi_or_arxiv": "10.1016/j.msec.2015.05.005",
+   "verified": true,
+   "how_verified": "PubMed abstract only",
+   "used_for": "genipin versus ionic crosslinker, direction of swelling"
+  },
+  {
+   "title": "Lignin-Containing Photoactive Resins for 3D Printing by Stereolithography",
+   "authors": "Sutton JT, Rajan K, Harper DP, Chmely SC",
+   "venue": "ACS Applied Materials & Interfaces",
+   "year": 2018,
+   "doi_or_arxiv": "",
+   "verified": false,
+   "how_verified": "search snippet only; preprint PDF returned 403; DOI not confirmed",
+   "used_for": "15 wt% lignin loading, cure-depth risk"
+  }
+ ],
+ "reproduce": [
+  {
+   "what": "Check every number has a status and a source, write table.md, check the Lean file and its negative control",
+   "command_or_url": "bash D:/Users/ashenoy00000/delphi-work/agents5/pr-linker-biomaterials/run.sh",
+   "expected": "rows: 36 {'opened': 25, 'snippet': 7, 'abstract': 4}; LinkerBilayer.lean PASS; negative control fails as it must; ALL OK. Needs python and a Lean 4 binary (found under C:/Temp/elan/toolchains, or set LEAN=...)."
+  },
+  {
+   "what": "Formlabs Open Material Mode facts",
+   "command_or_url": "https://formlabs.com/open-platform/",
+   "expected": "'any 405 nm photopolymer resin or 1064 nm powder'; no viscosity limit on the page"
+  },
+  {
+   "what": "Regional licence prices",
+   "command_or_url": "https://dental.formlabs.com/global/products/open-material-mode/",
+   "expected": "Form 4 '$864 incl. 8% GST'; currency not named"
+  },
+  {
+   "what": "Holdout leak gate on the output folder",
+   "command_or_url": "node D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/holdout/check-leaks.mjs D:/Users/ashenoy00000/delphi-work/agents5/pr-linker-biomaterials",
+   "expected": "no held-out organism named; 0 warnings"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents5/pr-linker-biomaterials/run.sh",
+  "D:/Users/ashenoy00000/delphi-work/agents5/pr-linker-biomaterials/build_table.py",
+  "D:/Users/ashenoy00000/delphi-work/agents5/pr-linker-biomaterials/sources.json",
+  "D:/Users/ashenoy00000/delphi-work/agents5/pr-linker-biomaterials/table.md",
+  "D:/Users/ashenoy00000/delphi-work/agents5/pr-linker-biomaterials/LinkerBilayer.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents5/pr-linker-biomaterials/NegativeControl.lean"
+ ],
+ "check_output": "rows: 36  {'opened': 25, 'snippet': 7, 'abstract': 4}\ntable written: D:/Users/ashenoy00000/delphi-work/agents5/pr-linker-biomaterials/table.md\nLEAN: LinkerBilayer.lean PASS\nLEAN: negative control fails as it must\nALL OK\nholdout gate: no held-out organism named; 0 warning(s)",
+ "suite": {
+  "case_name": "Crosslinker-designed humidity bilayer from a bio-based 405 nm resin",
+  "statement": "If swelling falls as crosslink density rises (named hypothesis), a strip whose passive face is more crosslinked has non-negative swelling mismatch; equal density gives zero mismatch; extra crosslinker on the passive face never reduces the mismatch.",
+  "lean_status": "LinkerBilayer.lean: 4 theorems, core Lean 4.35.0, no Mathlib, no sorry/axiom, passes with the local lean binary; NegativeControl.lean fails as required. Not run through the repo's tracks/lean/check.sh.",
+  "data_used": "36 literature and vendor numbers in sources.json (25 opened, 4 abstract-only, 7 snippet-only). The Lean statements use none of them numerically.",
+  "validation": "None against data. The swelling hypothesis is supported in direction only by citric acid (opened), tannic acid and genipin (abstracts), each in a different base material.",
+  "holdout_set": "None defined for this case. The frozen clade was not used; the leak gate ran clean on the output folder.",
+  "performance": "Not measured: no curvature, swelling or cure prediction was made or scored.",
+  "what_was_wrong": "No opened source shows a vat-printed humidity bilayer; no Formlabs viscosity limit or settled licence price; four of the named bio-resin families have no opened numbers; transglutaminase, laccase and PEGDA have no numbers; creep and cytotoxicity rest on proxies; the theorems are order statements, not a physical model."
+ }
+}
