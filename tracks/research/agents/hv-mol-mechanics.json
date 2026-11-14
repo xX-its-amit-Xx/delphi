@@ -1,0 +1,259 @@
+{
+ "label": "hv-mol-mechanics",
+ "topic": "Molecular and cell mechanics statements: motor force-velocity, actomyosin tension, osmotic/turgor pressure, worm-like chain",
+ "summary": "Partial harvest inside the 7-minute budget. 11 statements are listed: 6 rest on PubMed records I opened (Svoboda & Block 1994, Finer 1994, Gittes 1993, Wang 1997, Bell 1978, Peskin 1993; for the last two only the abstract was opened and the formula is from memory), and 5 are stated from memory with no source opened (Hill 1938, Marko-Siggia, the ATP work bound, van't Hoff/turgor, cortical tension). No files were written, and none of the datasets named for falsification tests was opened.\n\nRegistry check: grep of lean/*.lean and lean/*.md finds none of force-velocity, worm-like chain, persistence length, turgor, stall force, kinesin, myosin or actomyosin. Only two neighbours exist: Physiology.laplace_pressure_limit (thin-wall stress, proved with no instance) and Perturb.depth_le_isosmotic (osmolyte depth cap). In tracks/, the terms appear only in tracks/research/buehler-corpus.json, tracks/research/corpus/buehler.json and one workflow script (17 hits, contents not read).\n\nValidations (3 run, by hand arithmetic):\n- PASS: persistence length = flexural rigidity / kT. From Gittes' rigidities at an assumed 25 C, actin gives 17.8 um against 17.7 um reported, and microtubules 5350 um against 5200 um (2.9% off, inside the 6.4% stated uncertainty). This is a consistency check within one paper, not an independent test.\n- PASS, weak: stall force x step <= free energy of one ATP. Kinesin 5-6 pN x 8 nm = 40-48 pN nm; myosin 3-4 pN x 11 nm = 33-44 pN nm; both below roughly 80-100 pN nm. The 8 nm step and the ATP free energy are from memory, not from an opened source.\n- FAIL / mixed: 'DNA persistence length is 50 nm'. Wang 1997 reports about 47 nm in 10 mM Na+ (6% low) and about 40 nm with multivalent ions (20% low). The constant is buffer-dependent; a law must carry ionic strength as a parameter.\n- FAIL of generalisation (read from an abstract, no calculation): Hill's hyperbolic force-velocity curve does not carry over to single kinesin, where velocity falls linearly with load.\n\nThree PMIDs I guessed (Visscher 1999, Dogterom & Yanagida 1997, Schnitzer & Block 1997) and one for Deng 2011 resolved to unrelated papers, so those sources are unverified and listed in could_not_find. The holdout clade was not used or named.",
+ "findings": [
+  {
+   "claim": "S1 Kinesin force-velocity is linear with a stall near 5-6 pN. Formal: v(F) = v0 (1 - F/Fs), 0<=F<=Fs, Fs in [5,6] pN (single molecule, in vitro, bead assay). Registry: absent. Falsifier: digitised single-kinesin force-velocity curves (force-clamp data, e.g. Visscher 1999 figures; dataset not opened); fit linear vs Hill-hyperbolic and reject if the hyperbolic fit wins by AIC > 10 or the fitted Fs falls outside 4-8 pN.",
+   "source": "PubMed PMID 8205624, https://doi.org/10.1016/0092-8674(94)90060-4",
+   "evidence_quote": "Velocity decreased linearly with increasing force",
+   "value": "stall 5-6 pN",
+   "confidence": "high for the 1994 abstract; later force-clamp work reports a non-linear curve, not opened"
+  },
+  {
+   "claim": "S2 A single myosin II head produces about 11 nm steps at low load and 3-4 pN isometric force. Formal: d = 11 nm (low load), F_iso in [3,4] pN. Registry: absent. Falsifier: later single-molecule myosin step-size reports (not opened; smaller steps near 5 nm are claimed in later literature, from memory); reject if the pooled step-size CI excludes 11 nm.",
+   "source": "PubMed PMID 8139653, https://doi.org/10.1038/368113a0",
+   "evidence_quote": "single force transients averaging 3-4 pN were measured under isometric conditions",
+   "value": "11 nm; 3-4 pN",
+   "confidence": "high for the abstract values"
+  },
+  {
+   "claim": "S3 Thermodynamic work bound for a stepping motor: F_stall * d <= DeltaG_ATP (one ATP per step, tight coupling assumed). VALIDATION: kinesin 5-6 pN x 8 nm = 40-48 pN nm; myosin 3-4 pN x 11 nm = 33-44 pN nm; bound about 80-100 pN nm. PASS (implied efficiency below about 0.6). Registry: absent. Falsifier: any motor whose measured stall force times step exceeds DeltaG_ATP at the assay's nucleotide concentrations (a BioNumbers motor table would serve; not opened).",
+   "source": "Derived from PMID 8205624 and PMID 8139653 (DOIs 10.1016/0092-8674(94)90060-4, 10.1038/368113a0)",
+   "evidence_quote": "kinesin molecules moved against applied loads of up to 5-6 pN",
+   "value": "40-48 and 33-44 pN nm vs bound ~80-100 pN nm: pass",
+   "confidence": "medium-low: the 8 nm kinesin step and DeltaG_ATP ~80-100 pN nm are from memory, no source opened; myosin force and step were measured under different load conditions, so their product is only an upper estimate of work"
+  },
+  {
+   "claim": "S4 Semiflexible filament: persistence length Lp = EI / (kB T). VALIDATION at assumed T = 298 K (kT = 4.11e-21 J): actin 7.3e-26 / 4.11e-21 = 17.8 um vs 17.7 um reported, PASS; microtubule 2.2e-23 / 4.11e-21 = 5350 um vs 5200 um reported, 2.9% off, inside the 6.4% uncertainty, PASS. Registry: absent. Falsifier: independent flexural-rigidity measurements of the same filaments by a non-thermal method (e.g. hydrodynamic or optical-trap bending); reject if EI/kT disagrees with the thermally measured Lp beyond combined error.",
+   "source": "PubMed PMID 8432732 (PMC2200075), https://doi.org/10.1083/jcb.120.4.923",
+   "evidence_quote": "corresponds to a persistence length of 5,200 microns",
+   "value": "predicted 17.8 um and 5350 um; reported 17.7 um and 5200 um",
+   "confidence": "high for the numbers; this is internal consistency within one paper, not an independent test; the assay temperature was assumed, not read"
+  },
+  {
+   "claim": "S5 Double-stranded DNA is a worm-like chain with Lp about 50 nm (textbook constant). VALIDATION: measured Lp about 47 nm in 10 mM Na+ (6% below 50) and about 40 nm with Mg2+ or spermidine (20% below). FAIL as a universal constant at a 10% tolerance; passes only in low monovalent salt. Formal fix: Lp = Lp(ionic conditions), with intrinsic Lp near 40 nm. Registry: absent. Falsifier: force-extension curves across buffers; reject a fixed Lp if fitted values differ between buffers beyond fit error.",
+   "source": "PubMed PMID 9138579 (PMC1184516), https://doi.org/10.1016/S0006-3495(97)78780-0",
+   "evidence_quote": "Fits yielded a persistence length, Lp, of approximately 47 nm",
+   "value": "47 nm (10 mM Na+); ~40 nm (multivalent); stretch modulus ~1100 pN",
+   "confidence": "high for the measured values; the '50 nm' textbook figure is from memory"
+  },
+  {
+   "claim": "S6 Marko-Siggia worm-like-chain interpolation: F Lp / kT = 1/(4 (1 - x/L)^2) - 1/4 + x/L, for an inextensible chain with L >> Lp. Registry: absent. Falsifier: the single-molecule DNA force-extension data of Wang 1997 (0.1 to 50 pN); the inextensible form must fail above roughly 10 pN, where an elastic modulus term is needed; reject if residuals at high force exceed measurement error.",
+   "source": "PubMed PMID 8079175, https://doi.org/10.1126/science.8079175 (record opened, abstract not available); high-force failure supported by PMID 9138579",
+   "evidence_quote": "incorporating both enthalpic and entropic contributions to stiffness fit the experimental results extremely well",
+   "value": "formula only",
+   "confidence": "low for the formula text: written from memory, the Science record has no abstract and Marko & Siggia 1995 (Macromolecules) was not opened"
+  },
+  {
+   "claim": "S7 Bell model: bond off-rate grows exponentially with force, k_off(F) = k0 * exp(F * x_b / kT) (slip bond, single barrier). Registry: absent. Falsifier: single-bond lifetime versus force data; catch bonds (lifetime rising with force, e.g. selectin or FimH literature, not opened) falsify monotonic slip behaviour.",
+   "source": "PubMed PMID 347575, https://doi.org/10.1126/science.347575",
+   "evidence_quote": "adhesion is mediated by reversible bonds between specific molecules",
+   "value": "formula only",
+   "confidence": "medium: the abstract was opened and confirms the paper and topic, but the exponential formula is not in the abstract and is stated from memory"
+  },
+  {
+   "claim": "S8 Polymerisation (Brownian) ratchet: a growing filament stalls at F_stall = (kT / delta) * ln(C / C_crit), with velocity falling roughly exponentially with load, v ~ delta * (k_on C exp(-F delta / kT) - k_off). Registry: absent. Falsifier: measured force-velocity curve of growing microtubules (Dogterom & Yanagida 1997, not opened); reject if the decay length differs from delta = 8 nm / 13 by more than a factor of 2.",
+   "source": "PubMed PMID 8369439 (PMC1225726), https://doi.org/10.1016/S0006-3495(93)81035-X",
+   "evidence_quote": "chemical reactions generate protrusive forces by rectifying Brownian motion",
+   "value": "formula only",
+   "confidence": "medium: abstract opened; the formulas are from memory, not read in the full text"
+  },
+  {
+   "claim": "S9 Hill muscle force-velocity relation: (F + a)(v + b) = (F0 + a) b, with a/F0 about 0.25 for whole muscle in shortening. Cross-check: single kinesin shows a linear, not hyperbolic, curve (S1), so the Hill form does not generalise to single processive motors: FAIL of generalisation. Registry: absent. Falsifier: fit hyperbolic vs linear to single-molecule and whole-muscle curves separately.",
+   "source": "Hill 1938, Proc R Soc B (not opened); contrast from PMID 8205624, https://doi.org/10.1016/0092-8674(94)90060-4",
+   "evidence_quote": "Velocity decreased linearly with increasing force",
+   "value": "hyperbolic (muscle) vs linear (single kinesin)",
+   "confidence": "low for the Hill equation and constants: from memory, primary source not opened"
+  },
+  {
+   "claim": "S10 van't Hoff osmotic and turgor pressure: Pi = R T * delta_c (dilute, ideal solution), and turgor P = Pi_in - Pi_out at water equilibrium. At 298 K, 1 mOsm corresponds to about 2.48 kPa. Registry: only the osmolyte depth cap (Perturb.depth_le_isosmotic); no van't Hoff or turgor law. Falsifier: paired measurements of internal/external osmolality and directly measured turgor (AFM or pressure probe) in one organism; reject if P differs from RT*delta_c beyond error.",
+   "source": "No source opened (textbook relation); registry check: D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/Delphi/Perturb.lean",
+   "value": "2.48 kPa per mOsm at 298 K (computed)",
+   "confidence": "low: no primary source opened; the bacterial turgor paper I tried to reach (Deng, Sun, Shaevitz 2011) was not found"
+  },
+  {
+   "claim": "S11 Cortical actomyosin tension and cell pressure (Young-Laplace for a thin cortex): delta_P = 2 T / R for a sphere of radius R with cortical tension T. Registry: PARTLY present as the wall-stress form sigma = P r / (2 t) in Physiology.laplace_pressure_limit (proved, no instance); the tension form and any cell-scale instance are absent. Falsifier: micropipette-aspiration or AFM data giving T, R and internal pressure for the same rounded cells; reject if delta_P * R / (2 T) differs from 1 beyond error.",
+   "source": "Registry: D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/Delphi/Physiology.lean and lean/LAWS.md line 98; no literature source opened",
+   "evidence_quote": "For a thin-walled sphere the wall stress is P r / (2 t)",
+   "value": "formula only",
+   "confidence": "low for the biology (no cell-mechanics source opened); high for the registry status"
+  },
+  {
+   "claim": "Registry coverage: lean/*.lean and lean/*.md contain no force-velocity, worm-like chain, persistence length, turgor, stall force, kinesin, myosin or actomyosin statement; tracks/ hits are confined to the buehler corpus files and one workflow script.",
+   "source": "grep of D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean and D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks",
+   "value": "17 hits in 3 files under tracks/; 0 law hits under lean/ besides Laplace and osmolyte depth cap",
+   "confidence": "medium: the lean content listing was capped at 20 lines and the broader count search matched 'Hill', 'Bell' and 'Stokes' in many files I did not inspect; contents of the buehler hits were not read"
+  }
+ ],
+ "citations": [
+  {
+   "title": "Force and velocity measured for single kinesin molecules",
+   "authors": "Svoboda K, Block SM",
+   "venue": "Cell 77(5):773-84",
+   "year": 1994,
+   "doi_or_arxiv": "10.1016/0092-8674(94)90060-4",
+   "verified": true,
+   "how_verified": "PubMed record PMID 8205624 opened, abstract read",
+   "used_for": "S1, S3, S9"
+  },
+  {
+   "title": "Single myosin molecule mechanics: piconewton forces and nanometre steps",
+   "authors": "Finer JT, Simmons RM, Spudich JA",
+   "venue": "Nature 368:113-9",
+   "year": 1994,
+   "doi_or_arxiv": "10.1038/368113a0",
+   "verified": true,
+   "how_verified": "PubMed record PMID 8139653 opened, abstract read",
+   "used_for": "S2, S3"
+  },
+  {
+   "title": "Flexural rigidity of microtubules and actin filaments measured from thermal fluctuations in shape",
+   "authors": "Gittes F, Mickey B, Nettleton J, Howard J",
+   "venue": "J Cell Biol 120(4):923-34",
+   "year": 1993,
+   "doi_or_arxiv": "10.1083/jcb.120.4.923",
+   "verified": true,
+   "how_verified": "PubMed record PMID 8432732 opened, abstract read",
+   "used_for": "S4 validation"
+  },
+  {
+   "title": "Stretching DNA with optical tweezers",
+   "authors": "Wang MD, Yin H, Landick R, Gelles J, Block SM",
+   "venue": "Biophys J 72(3):1335-46",
+   "year": 1997,
+   "doi_or_arxiv": "10.1016/S0006-3495(97)78780-0",
+   "verified": true,
+   "how_verified": "PubMed record PMID 9138579 opened, abstract read",
+   "used_for": "S5 validation, S6"
+  },
+  {
+   "title": "Entropic elasticity of lambda-phage DNA",
+   "authors": "Bustamante C, Marko JF, Siggia ED, Smith S",
+   "venue": "Science 265:1599-600",
+   "year": 1994,
+   "doi_or_arxiv": "10.1126/science.8079175",
+   "verified": true,
+   "how_verified": "PubMed record PMID 8079175 opened; bibliographic data only, no abstract available",
+   "used_for": "S6"
+  },
+  {
+   "title": "Models for the specific adhesion of cells to cells",
+   "authors": "Bell GI",
+   "venue": "Science 200:618-27",
+   "year": 1978,
+   "doi_or_arxiv": "10.1126/science.347575",
+   "verified": true,
+   "how_verified": "PubMed record PMID 347575 opened, abstract read; formula not in abstract",
+   "used_for": "S7"
+  },
+  {
+   "title": "Cellular motions and thermal fluctuations: the Brownian ratchet",
+   "authors": "Peskin CS, Odell GM, Oster GF",
+   "venue": "Biophys J 65(1):316-24",
+   "year": 1993,
+   "doi_or_arxiv": "10.1016/S0006-3495(93)81035-X",
+   "verified": true,
+   "how_verified": "PubMed record PMID 8369439 opened, abstract read; formulas not in abstract",
+   "used_for": "S8"
+  },
+  {
+   "title": "The heat of shortening and the dynamic constants of muscle",
+   "authors": "Hill AV",
+   "venue": "Proc R Soc Lond B",
+   "year": 1938,
+   "doi_or_arxiv": "not confirmed",
+   "verified": false,
+   "how_verified": "not opened; cited from memory",
+   "used_for": "S9"
+  }
+ ],
+ "could_not_find": [
+  "Visscher, Schnitzer, Block 1999 (kinesin force clamp): the PMID I tried (10476964) is an unrelated paper; source not opened",
+  "Dogterom & Yanagida 1997 (microtubule force-velocity): the PMID I tried (9353200) is an unrelated paper; source not opened",
+  "Schnitzer & Block 1997 (one ATP per 8 nm step): the PMID I tried (9261218) is an unrelated item; the 8 nm step is therefore unsourced here",
+  "Deng, Sun, Shaevitz 2011 (bacterial turgor): the PMID I tried (22107562) is an unrelated paper; no turgor value verified",
+  "Hill 1938 primary paper: not opened, DOI not confirmed",
+  "Marko & Siggia 1995 (Macromolecules): not in PubMed, not opened; the interpolation formula is from memory",
+  "A sourced value for the free energy of ATP hydrolysis in pN nm: none opened",
+  "Any open dataset: BioNumbers and the single-molecule datasets named as falsifiers were not opened or checked for availability",
+  "Contents of the tracks/research buehler corpus hits: counted, not read"
+ ],
+ "key_claims": [
+  "None of the motor, worm-like-chain or turgor statements is in the Lean law registry; only a thin-wall Laplace law and an osmolyte depth cap are nearby.",
+  "Lp = EI/kT reproduces Gittes' reported persistence lengths to within 3% (pass, internal consistency).",
+  "Kinesin and myosin stall-work stay under the one-ATP energy budget (pass, with unsourced constants).",
+  "The textbook 50 nm DNA persistence length fails as a constant: 47 nm in low salt, about 40 nm with multivalent ions.",
+  "Hill's hyperbolic force-velocity form does not hold for single kinesin, which is linear in the 1994 data."
+ ],
+ "lay_summary": [
+  "Inside every cell there are tiny machines that pull and push, and stringy molecules like DNA that act like very thin springs.",
+  "I collected eleven rules that scientists use to describe how hard these machines pull and how stiff the strings are, and checked whether this project already has them written down as proofs; it mostly does not.",
+  "I tested three rules with real published numbers: a stiffness rule for cell 'bones' matched very well, and a rule saying a motor cannot do more work than its fuel allows also held.",
+  "One popular number, the stiffness of DNA, turned out not to be a fixed number: it changes with the salt in the water, so the simple rule fails.",
+  "Several papers I wanted could not be opened in the time available, and I say clearly which rules are from memory only."
+ ],
+ "glossary": {
+  "motor protein": "A tiny protein machine that walks along a track inside a cell using chemical fuel.",
+  "kinesin": "A motor protein that walks along microtubules carrying cargo.",
+  "myosin": "A motor protein that pulls on actin filaments; it powers muscle.",
+  "actomyosin": "Actin filaments together with myosin motors, the cell's pulling machinery.",
+  "ATP": "The small molecule cells use as fuel; splitting one releases a fixed packet of energy.",
+  "DeltaG_ATP": "The usable energy released by splitting one ATP molecule.",
+  "force-velocity relation": "How a motor's speed drops as the load it pulls against grows.",
+  "stall force": "The load at which a motor stops moving forward.",
+  "pN (piconewton)": "A millionth of a millionth of a newton; the size of forces single molecules make.",
+  "nm, um": "Nanometre (a billionth of a metre) and micrometre (a millionth of a metre).",
+  "kT": "The typical energy of random thermal jiggling at a given temperature, about 4.1 pN nm at room temperature.",
+  "worm-like chain": "A model of a molecule as a smoothly bendable rod that thermal jiggling keeps crumpling.",
+  "persistence length (Lp)": "The distance over which a filament stays roughly straight before thermal bending takes over.",
+  "flexural rigidity (EI)": "How strongly a rod resists being bent.",
+  "microtubule": "A stiff hollow protein tube that acts as a cell's girders and tracks.",
+  "actin filament": "A thin, more flexible protein filament in the cell skeleton.",
+  "Hill equation": "A hyperbolic formula relating muscle force and shortening speed.",
+  "Bell model": "A rule that a molecular bond breaks exponentially faster when pulled harder.",
+  "slip bond / catch bond": "A bond that breaks sooner under pull (slip) or, unusually, lasts longer under pull (catch).",
+  "Brownian ratchet": "Force made by a growing filament that locks in random thermal movements of the thing it pushes.",
+  "osmotic pressure": "Pressure created when water moves toward the side with more dissolved particles.",
+  "van't Hoff relation": "Osmotic pressure equals gas constant times temperature times the concentration difference, for dilute solutions.",
+  "turgor pressure": "The internal pressure pushing a cell's contents against its wall.",
+  "mOsm": "A unit for the concentration of dissolved particles.",
+  "Young-Laplace relation": "Pressure difference across a curved stretched surface equals twice the tension divided by the radius, for a sphere.",
+  "cortical tension": "The pulling tension in the thin actomyosin layer just under a cell's surface.",
+  "ionic strength": "How much dissolved salt (charged particles) a solution holds.",
+  "AIC": "A score for comparing how well competing formulas fit data, penalising extra parameters.",
+  "in vitro": "Done in a dish or tube, outside a living organism.",
+  "registry": "This project's list of laws that have been stated and proved in Lean."
+ },
+ "recommendations": [
+  "Formalise first the two statements with opened sources and clean numbers: Lp = EI/kT (Gittes 1993) and the linear kinesin force-velocity law with its stall range (Svoboda & Block 1994).",
+  "Record the DNA persistence-length failure as a law with an explicit ionic-conditions parameter rather than a constant 50 nm.",
+  "Before any nanopublication, open and quote the unverified sources (Hill 1938, Marko & Siggia 1995, Visscher 1999, Dogterom & Yanagida 1997, Deng 2011) and a sourced ATP free-energy value; the work-bound validation depends on it.",
+  "Read the buehler corpus hits in tracks/research to see whether worm-like-chain or persistence-length material is already harvested there.",
+  "Find an independent rigidity dataset before calling S4 validated; the current check uses one paper for both sides."
+ ],
+ "reproduce": [
+  {
+   "what": "Persistence length from flexural rigidity (S4)",
+   "command_or_url": "python -c \"kT=1.380649e-23*298; print(7.3e-26/kT*1e6, 2.2e-23/kT*1e6)\"",
+   "expected": "about 17.7 and 5347 (micrometres); abstract of https://doi.org/10.1083/jcb.120.4.923 reports 17.7 and 5200"
+  },
+  {
+   "what": "Motor work per step vs ATP budget (S3)",
+   "command_or_url": "python -c \"print(5*8, 6*8, 3*11, 4*11)\"",
+   "expected": "40 48 33 44 pN nm, all below an assumed 80-100 pN nm per ATP"
+  },
+  {
+   "what": "DNA persistence length values (S5)",
+   "command_or_url": "https://doi.org/10.1016/S0006-3495(97)78780-0",
+   "expected": "abstract states about 47 nm in 10 mM Na+ and about 40 nm with multivalent cations"
+  },
+  {
+   "what": "Registry absence check",
+   "command_or_url": "rg -i \"force.velocity|worm.like|persistence length|turgor|stall force|actomyosin|kinesin|myosin\" D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean -g \"*.lean\" -g \"*.md\"",
+   "expected": "no matches for these terms (Laplace and osmotic hits appear only if those words are added)"
+  }
+ ],
+ "scripts_written": [],
+ "check_output": "No scripts or files were written; D:/Users/ashenoy00000/delphi-work/agents4/hv-mol-mechanics/ was not created. Validation arithmetic was done by hand, not executed: 7.3e-26/4.11e-21 = 1.78e-5 m; 2.2e-23/4.11e-21 = 5.35e-3 m; 5-6 pN x 8 nm = 40-48 pN nm; 3-4 pN x 11 nm = 33-44 pN nm."
+}

@@ -1,0 +1,64 @@
+@prefix this: <http://purl.org/nanopub/temp/ex1/> .
+@prefix sub: <http://purl.org/nanopub/temp/ex1/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix schema: <https://schema.org/> .
+@prefix delphi: <https://w3id.org/delphi/ontology/> .
+@prefix claim: <https://w3id.org/delphi/resource/claim/> .
+@prefix agent: <https://w3id.org/delphi/resource/agent/> .
+
+# UNSIGNED DRAFT. Temp URI, no trusty hash, no signature, no human ORCID. Not published.
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  claim:chargaff-second-parity-rule a delphi:Hypothesis ;
+    rdfs:label "Within one strand of a double-stranded DNA genome, count(A) is about count(T) and count(G) is about count(C)." ;
+    delphi:formalStatement "abs(nA/nT - 1) <= 0.05 and abs(nG/nC - 1) <= 0.05, counted on the single deposited strand" ;
+    delphi:hasAssessment sub:assessment .
+  sub:assessment a delphi:Assessment ;
+    rdfs:label "Chargaff second parity rule on phage lambda: A/T within 5 percent, G/C not" ;
+    delphi:evaluatesHypothesis claim:chargaff-second-parity-rule ;
+    delphi:assessmentType "single-genome-base-count" ;
+    delphi:hasVerdict "refuted-at-stated-tolerance" ;
+    dct:description "example-1-lambda.trig2" ;
+    delphi:hasEvidence sub:evidence .
+  sub:evidence a delphi:Evidence ;
+    dct:source <https://www.ncbi.nlm.nih.gov/nuccore/NC_001416.1> ;
+    schema:variableMeasured
+      [ a schema:PropertyValue ; schema:name "nA" ; schema:value "12334"^^xsd:integer ] ,
+      [ a schema:PropertyValue ; schema:name "nC" ; schema:value "11362"^^xsd:integer ] ,
+      [ a schema:PropertyValue ; schema:name "nG" ; schema:value "12820"^^xsd:integer ] ,
+      [ a schema:PropertyValue ; schema:name "nT" ; schema:value "11986"^^xsd:integer ] ,
+      [ a schema:PropertyValue ; schema:name "nA/nT" ; schema:value "1.029"^^xsd:decimal ] ,
+      [ a schema:PropertyValue ; schema:name "nG/nC" ; schema:value "1.128"^^xsd:decimal ] .
+}
+
+sub:provenance {
+  sub:assertion prov:wasAttributedTo agent:hv-nanopub-format ;
+    prov:wasDerivedFrom <https://www.ncbi.nlm.nih.gov/nuccore/NC_001416.1> ;
+    prov:wasGeneratedBy sub:activity .
+  sub:activity a prov:Activity ;
+    rdfs:label "NCBI efetch FASTA for NC_001416.1 on 2026-11-13; letters counted with grep/fold/sort/uniq; tolerance 0.05 chosen by the agent, not taken from a source" .
+}
+
+sub:pubinfo {
+  this: dct:created "2026-11-13T00:00:00Z"^^xsd:dateTime ;
+    dct:creator agent:hv-nanopub-format ;
+    rdfs:label "Draft: Chargaff second parity rule on phage lambda: A/T within 5 percent, G/C not" ;
+    dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+    npx:hasNanopubType delphi:Assessment ;
+    npx:introduces sub:assessment ;
+    rdfs:comment "Unsigned draft, not published. Creator is a software agent; a key holder's identity is added only if that person approves and signs. Timestamp is date-only precision." .
+  agent:hv-nanopub-format a prov:SoftwareAgent ;
+    rdfs:label "DELPHI harvest agent hv-nanopub-format (language model, no human identity)" .
+}

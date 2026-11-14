@@ -1,0 +1,278 @@
+{
+ "label": "hv-mol-evo-popgen",
+ "topic": "Population-genetic statements usable as axioms: fixation probability, neutral substitution rate, mutation-selection balance, drift barrier, Haldane cost",
+ "summary": "Ten statements harvested and formalised; two checked against reported numbers. Only 5 of the 10 primary sources were opened (PubMed records, mostly abstracts) in the 7-minute budget; the classical formulas for the other 5 are from memory and are marked so.\n\nValidation 1 (neutral clock, k = mu) FAILS by about 2x under naive assumptions: the pedigree mutation rate 1.20e-8 with ~35 million human-chimpanzee single-nucleotide changes gives a split of 13.0 Myr (generation 25 yr) or 15.5 Myr (29.7 yr), against fossils of 6-7 Myr. The genome length (2.8e9 bp) and generation times are my assumptions, not opened values, and ancestral polymorphism is ignored, so treat this as a real but soft failure.\n\nValidation 2 (Haldane cost) PASSES as a consistency check: a limit of 1 selective substitution per 300 generations allows about 867 adaptive substitutions per lineage in 260,000 generations, against about 17.5 million observed, so at most ~5e-5 of them can be adaptive. The chimpanzee genome abstract independently says fixation is dominated by neutral and slightly deleterious alleles. The 300-generation figure is from memory.\n\nRegistry coverage: lean/Delphi/Kimura.lean already has neutral fixation probability (wrightFisher_fixation_one) and the neutral substitution rate (neutral_substitution_rate, _diploid, _tendsto); lean/Delphi/Favored.lean has a lower bound for favoured alleles (wrightFisherSelection_fixation_one_ge) but not Kimura's closed form or Haldane's 2s. A grep for drift barrier, mutation-selection balance, mutational/substitution load, cost of selection, nearly neutral and fixation time found only 4 hits (lean/Delphi/Genotype.lean x2, lean/assessment/inputs.json, lean/assessment/prompts/kimura-substitution-rate.md), which I did not open; no law for these exists in Kimura.lean, Favored.lean or the registry proposals (kimura-heterozygosity, maynardsmith-hitchhiking). tracks/research mentions fixation/Kimura mainly in t6-flyingfish-law.json and t2-patterns-law.json.\n\nScript: D:/Users/ashenoy00000/delphi-work/agents4/hv-mol-evo-popgen/validate.py. Nothing was written to the repo. No held-out clade data were used.",
+ "findings": [
+  {
+   "claim": "S1 Neutral fixation probability. Formal: in a Wright-Fisher population of N diploids, a new neutral mutation (1 copy of 2N) fixes with probability 1/(2N). Assumptions: neutrality, constant N, random mating. Registry: ALREADY PRESENT (lean/Delphi/Kimura.lean, wrightFisher_fixation_one, fixationProbability_eq). Falsifier: experimental-evolution barcode lineage data (e.g. Levy et al. 2015 yeast barcodes): fraction of neutral barcodes reaching fixation must equal starting frequency within binomial error.",
+   "source": "https://doi.org/10.1093/genetics/47.6.713 (Kimura 1962; PubMed record opened, no abstract available, formula from memory)",
+   "value": "u = 1/(2N)",
+   "confidence": "high for the maths; source text itself not read (PubMed has no abstract)"
+  },
+  {
+   "claim": "S2 Fixation probability under selection (Kimura 1962). Formal: u(p) = (1 - exp(-4 Ne s p)) / (1 - exp(-4 Ne s)) for genic selection, initial frequency p; for p = 1/(2N), Ne = N, small s > 0: u ~ 2s (Haldane 1927). Assumptions: diffusion limit, additive selection, constant Ne. Registry: PARTIAL - Favored.lean proves only a lower bound (wrightFisherSelection_fixation_one_ge, fixationProbability_ge); the closed form and the 2s limit are absent. Falsifier: Lenski LTEE / barcode-lineage establishment data: establishment probability of a mutation with measured s must be within a factor ~2 of 2s.",
+   "source": "https://doi.org/10.1093/genetics/47.6.713",
+   "value": "u = (1-e^{-4 Ne s p})/(1-e^{-4 Ne s}); u ~ 2s",
+   "confidence": "medium: formula recalled from memory; PubMed record has no abstract and full text was not opened"
+  },
+  {
+   "claim": "S3 Neutral substitution rate equals mutation rate. Formal: k = 2N * mu * 1/(2N) = mu per site per generation, independent of N. Assumptions: strict neutrality, constant mu. Registry: ALREADY PRESENT (Kimura.lean neutral_substitution_rate, neutral_substitution_rate_diploid, neutral_substitution_rate_tendsto; assessment prompt kimura-substitution-rate.md). Falsifier: pedigree mutation rate (trio sequencing) vs divergence/(2 x split time in generations) for a fossil-dated species pair; ratio must be ~1.",
+   "source": "https://doi.org/10.1038/217624a0 (Kimura 1968; PubMed record opened, no abstract)",
+   "value": "k = mu",
+   "confidence": "high for the statement; original text not read"
+  },
+  {
+   "claim": "VALIDATION 1 of S3 - FAIL (soft, ~2x). Prediction: split time T = d * g / (2 mu). Inputs: mu = 1.20e-8 (opened), ~35 million single-nucleotide changes (opened), aligned length 2.8e9 bp (ASSUMED), g = 25 or 29.7 yr (ASSUMED). Result: d = 0.0125; T = 13.0 Myr (g=25) or 15.5 Myr (g=29.7). Measured: fossils attributed to the human lineage at 6-7 Myr. Ratio 2.0-2.4. Ancestral polymorphism and a slower ancestral per-year rate are not modelled; Langergraber et al. themselves get 'at least 7-8' Myr.",
+   "source": "https://doi.org/10.1038/nature11396 ; https://doi.org/10.1038/nature04072 ; https://doi.org/10.1073/pnas.1211740109",
+   "evidence_quote": "average de novo mutation rate is 1.20 × 10(-8) per nucleotide per generation",
+   "value": "predicted 13.0-15.5 Myr vs fossil 6-7 Myr: FAIL by ~2x",
+   "confidence": "medium: two inputs (genome length, generation time) are assumptions, not opened values; the published 1.23% divergence figure could not be opened (paywall redirect)"
+  },
+  {
+   "claim": "S4 Haldane's cost of selection. Formal: total selective deaths per substitution C ~ -2 ln(p0) x N (about 30N for typical p0); with a tolerable selection intensity of ~0.1 per generation, adaptive substitutions occur at most ~1 per 300 generations per lineage. Assumptions: independent loci, hard selection, constant N. Registry: ABSENT (no 'cost of selection' or 'substitution load' law; Favored.lean has an expectedSubstitutions budget definition only). Falsifier: McDonald-Kreitman adaptive substitution counts (e.g. Drosophila DGRP / PopFly alpha estimates): adaptive substitutions per generation per lineage must not exceed 1/300.",
+   "source": "Haldane 1957, J. Genet. 55:511-524 (NOT opened; no DOI given because I could not verify one)",
+   "value": "<= 1 adaptive substitution per ~300 generations",
+   "confidence": "low-medium: figures from memory, primary source not opened"
+  },
+  {
+   "claim": "VALIDATION 2 of S4 - PASS (consistency check). With a 6.5 Myr split and g = 25 yr (both assumed mid-values) there are 260,000 generations per lineage; Haldane's limit allows ~867 adaptive substitutions; observed ~17.5 million substitutions per lineage (half of ~35 million) = 67 per generation. So at most 5e-5 of substitutions can be adaptive; the rest must be non-selective. The genome paper's own conclusion agrees. Neutral expectation mu*L = 33.6 per generation vs 67 observed (the same 2x gap as Validation 1).",
+   "source": "https://doi.org/10.1038/nature04072",
+   "evidence_quote": "dominated by the fixation of neutral and slightly deleterious alleles",
+   "value": "Haldane max 867 adaptive vs 1.75e7 observed total; max adaptive fraction 4.95e-5: consistent",
+   "confidence": "medium: a consistency check, not a strict falsification test; the 300-generation limit is from memory"
+  },
+  {
+   "claim": "S5 Drift-barrier hypothesis. Formal: selection lowers the per-site mutation rate u until the selective advantage of a further reduction is below ~1/(2Ne) (diploid) or 1/Ne (haploid); hence across species u * Ge (Ge = coding genome size) scales negatively with Ne (log-log slope < 0). Assumptions: mutation-rate modifiers are mostly deleterious-load reducing; Ne estimated from silent diversity pi = 4 Ne u. Registry: ABSENT. Falsifier: mutation-accumulation rate table in Lynch et al. 2016 (Nat Rev Genet) supplementary: regression of log(u*Ge) on log(Ne) must have negative slope; a zero or positive slope falsifies. Note the circularity risk: Ne is derived from pi/u.",
+   "source": "https://doi.org/10.1073/pnas.1216223109 (Sung et al. 2012, abstract opened)",
+   "evidence_quote": "scales negatively with both the effective population size",
+   "value": "d log(u Ge) / d log(Ne) < 0",
+   "confidence": "high that the source states this; not numerically validated here (could not open a per-species table in time)"
+  },
+  {
+   "claim": "S6 Drift barrier limits molecular refinement generally. Formal: a trait improvement with selective advantage s is unreachable by selection when |s| < 1/(2Ne); replication fidelity is the worked case. Assumptions as S5. Registry: ABSENT. Falsifier: same Lynch 2016 table; also error-prone polymerase fidelity vs number of nucleotides replicated per generation.",
+   "source": "https://doi.org/10.1038/nrg.2016.104 (Lynch et al. 2016, abstract opened)",
+   "evidence_quote": "ultimate limits to what can be achieved set by the power of random genetic drift",
+   "value": "|s| < 1/(2Ne) is effectively neutral",
+   "confidence": "high for the qualitative statement; the 1/(2Ne) threshold is the standard form, not quoted from the abstract"
+  },
+  {
+   "claim": "S7 Mutation-selection balance. Formal: equilibrium frequency of a deleterious allele: q = mu/(h s) if partially dominant (h s >> mu); q = sqrt(mu/s) if fully recessive; for a dominant lethal, incidence at birth = 2 mu. Assumptions: infinite population, random mating, constant mu and s. Registry: ABSENT as a law (grep hits only in Genotype.lean and assessment inputs, not opened). Falsifier: gnomAD constraint table: for haploinsufficient lethal genes, summed loss-of-function allele frequency must be ~ mu_LoF/(h s); or birth incidence of a fully penetrant dominant disorder must equal 2 x per-gene mutation rate from trio data.",
+   "source": "Haldane 1927/1937 (NOT opened; no DOI verified)",
+   "value": "q = mu/(hs); q = sqrt(mu/s)",
+   "confidence": "medium: textbook result stated from memory; primary source not opened"
+  },
+  {
+   "claim": "S8 Haldane-Muller mutational load principle. Formal: at mutation-selection balance mean fitness is reduced by L = 1 - exp(-U) (multiplicative loci, U = genomic deleterious mutation rate per diploid genome per generation), independent of the selection coefficients. Assumptions: no epistasis, equilibrium. Registry: ABSENT. Falsifier: human trio data (Kong 2012: 1.20e-8 x 2 x 3e9 ~ 70 new mutations per birth) times the constrained fraction of the genome gives U; if U > ~2 the predicted load > 86% conflicts with observed viability unless epistasis/soft selection holds.",
+   "source": "Haldane 1937, Am. Nat. 71:337 (NOT opened); mutation count from https://doi.org/10.1038/nature11396",
+   "value": "L = 1 - e^{-U}",
+   "confidence": "medium: from memory; primary source not opened"
+  },
+  {
+   "claim": "S9 Nearly neutral theory (Ohta 1973). Formal: mutations with |Ne s| < ~1 behave as neutral; therefore the ratio of nonsynonymous to synonymous substitution rate (dN/dS) decreases as Ne increases. Assumptions: most nonsynonymous mutations are slightly deleterious; fixed DFE across species. Registry: ABSENT ('nearly neutral' not found as a law). Falsifier: cross-species dN/dS vs silent diversity pi_S (Ne proxy) in a public comparative set (e.g. Galtier 2016 PLoS Genet animal transcriptomes): Spearman correlation must be negative.",
+   "source": "Ohta 1973, Nature 246:96 (PubMed title search returned nothing; NOT opened). Indirect support opened: https://doi.org/10.1038/nature04072",
+   "evidence_quote": "dominated by the fixation of neutral and slightly deleterious alleles",
+   "value": "corr(dN/dS, Ne) < 0",
+   "confidence": "medium: primary source not opened"
+  },
+  {
+   "claim": "S10 Mean time to fixation of a neutral mutation. Formal: conditional on fixation, a new neutral mutation takes on average 4 Ne generations to fix. Assumptions: diffusion limit, constant Ne. Registry: ABSENT ('fixation time' not found). Falsifier: coalescent depth in resequencing data: mean TMRCA of autosomal neutral loci must be ~4 Ne generations with Ne from pi/(4 mu); e.g. 1000 Genomes pi with trio mu.",
+   "source": "Kimura & Ohta 1969, Genetics 61:763 (PubMed title search returned nothing; NOT opened)",
+   "value": "t_fix = 4 Ne generations",
+   "confidence": "medium: from memory; primary source not opened"
+  },
+  {
+   "claim": "S11 Paternal-age dependence breaks the constant-mu assumption behind S3. Formal: mu per generation is not constant; de novo count rises ~2 per year of father's age, so k = mu holds per generation only at fixed generation time. This is a marked assumption for any Lean statement of the molecular clock in years.",
+   "source": "https://doi.org/10.1038/nature11396",
+   "evidence_quote": "The effect is an increase of about two mutations per year",
+   "value": "+~2 mutations per paternal year; doubling every 16.5 years",
+   "confidence": "high (abstract opened)"
+  }
+ ],
+ "key_claims": [
+  "Already in the Lean registry: neutral fixation probability 1/(2N) and neutral substitution rate k = mu (lean/Delphi/Kimura.lean); a lower bound only for favoured alleles (lean/Delphi/Favored.lean).",
+  "Not in the registry as laws: Kimura's closed-form fixation probability and the 2s limit, Haldane's cost of selection, mutation-selection balance, mutational load, drift barrier, nearly neutral dN/dS-Ne relation, 4Ne fixation time.",
+  "Validation 1: k = mu with the pedigree rate predicts a human-chimpanzee split of 13.0-15.5 Myr versus fossils at 6-7 Myr - fails by about 2x under naive assumptions.",
+  "Validation 2: Haldane's limit allows ~867 adaptive substitutions per lineage versus ~17.5 million observed - consistent only if almost all substitutions are neutral, which the genome paper also concludes.",
+  "Five of ten primary sources were not opened; their formulas are from memory and flagged."
+ ],
+ "citations": [
+  {
+   "authors": "Kimura M",
+   "title": "On the probability of fixation of mutant genes in a population",
+   "venue": "Genetics 47(6):713-9",
+   "year": 1962,
+   "doi_or_arxiv": "10.1093/genetics/47.6.713",
+   "verified": true,
+   "how_verified": "PubMed record PMID 14456043 opened (metadata only, no abstract)",
+   "used_for": "S1, S2"
+  },
+  {
+   "authors": "Kimura M",
+   "title": "Evolutionary rate at the molecular level",
+   "venue": "Nature 217:624-6",
+   "year": 1968,
+   "doi_or_arxiv": "10.1038/217624a0",
+   "verified": true,
+   "how_verified": "PubMed record PMID 5637732 opened (metadata only, no abstract)",
+   "used_for": "S3"
+  },
+  {
+   "authors": "Kong A et al.",
+   "title": "Rate of de novo mutations and the importance of father's age to disease risk",
+   "venue": "Nature 488:471-5",
+   "year": 2012,
+   "doi_or_arxiv": "10.1038/nature11396",
+   "verified": true,
+   "how_verified": "PubMed abstract PMID 22914163 read",
+   "used_for": "mutation rate for validations 1 and 2; S11"
+  },
+  {
+   "authors": "Chimpanzee Sequencing and Analysis Consortium",
+   "title": "Initial sequence of the chimpanzee genome and comparison with the human genome",
+   "venue": "Nature 437:69-87",
+   "year": 2005,
+   "doi_or_arxiv": "10.1038/nature04072",
+   "verified": true,
+   "how_verified": "PubMed abstract PMID 16136131 read; full text paywalled",
+   "used_for": "~35 million single-nucleotide changes; neutral/slightly deleterious dominance"
+  },
+  {
+   "authors": "Langergraber KE et al.",
+   "title": "Generation times in wild chimpanzees and gorillas suggest earlier divergence times in great ape and human evolution",
+   "venue": "PNAS 109(39):15716-21",
+   "year": 2012,
+   "doi_or_arxiv": "10.1073/pnas.1211740109",
+   "verified": true,
+   "how_verified": "PubMed abstract PMID 22891323 read",
+   "used_for": "fossil dates 6-7 Myr; genetic split at least 7-8 Myr"
+  },
+  {
+   "authors": "Sung W, Ackerman MS, Miller SF, Doak TG, Lynch M",
+   "title": "Drift-barrier hypothesis and mutation-rate evolution",
+   "venue": "PNAS 109(45):18488-92",
+   "year": 2012,
+   "doi_or_arxiv": "10.1073/pnas.1216223109",
+   "verified": true,
+   "how_verified": "PubMed abstract PMID 23077252 read",
+   "used_for": "S5"
+  },
+  {
+   "authors": "Lynch M et al.",
+   "title": "Genetic drift, selection and the evolution of the mutation rate",
+   "venue": "Nat Rev Genet 17(11):704-714",
+   "year": 2016,
+   "doi_or_arxiv": "10.1038/nrg.2016.104",
+   "verified": true,
+   "how_verified": "PubMed abstract PMID 27739533 read",
+   "used_for": "S6"
+  },
+  {
+   "authors": "Haldane JBS",
+   "title": "The cost of natural selection",
+   "venue": "J. Genet. 55:511-524",
+   "year": 1957,
+   "doi_or_arxiv": "",
+   "verified": false,
+   "how_verified": "not opened; cited from memory",
+   "used_for": "S4"
+  },
+  {
+   "authors": "Ohta T",
+   "title": "Slightly deleterious mutant substitutions in evolution",
+   "venue": "Nature 246:96-98",
+   "year": 1973,
+   "doi_or_arxiv": "",
+   "verified": false,
+   "how_verified": "PubMed title search returned no hit; not opened",
+   "used_for": "S9"
+  },
+  {
+   "authors": "Kimura M, Ohta T",
+   "title": "The average number of generations until fixation of a mutant gene in a finite population",
+   "venue": "Genetics 61:763-771",
+   "year": 1969,
+   "doi_or_arxiv": "",
+   "verified": false,
+   "how_verified": "PubMed title search returned no hit; not opened",
+   "used_for": "S10"
+  }
+ ],
+ "could_not_find": [
+  "The 1.23% human-chimpanzee nucleotide divergence figure: nature.com redirected to a login page and the Europe PMC record has only the abstract; I used '~35 million changes' from the abstract with an assumed 2.8e9 bp aligned length.",
+  "Haldane 1957 (cost of selection), Haldane 1937 (load), Ohta 1973, Kimura & Ohta 1969: not opened; formulas and the 300-generation figure are from memory, no DOIs asserted.",
+  "Full text of Kimura 1962 and Kimura 1968: PubMed records have no abstract; exact wording of the formulas not checked.",
+  "A per-species mutation-rate vs Ne table for a numeric drift-barrier test (Lynch 2016 supplement; the E. coli rate paper was not found by three PubMed searches).",
+  "The 4 grep hits for drift barrier / mutation-selection / load terms in lean/Delphi/Genotype.lean and lean/assessment were counted but not read, so 'absent as a law' is based on theorem-name listing of Kimura.lean and Favored.lean plus the registry proposals list, not a full read.",
+  "tracks/lean was not grepped separately (the tracks grep covered tracks/ as a whole and showed no tracks/lean hits in the first 22 files)."
+ ],
+ "reproduce": [
+  {
+   "what": "Both validations (arithmetic)",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents4/hv-mol-evo-popgen/validate.py",
+   "expected": "d = 0.0125; split 13.0 Myr (g=25) and 15.5 Myr (g=29.7); Haldane max adaptive = 867 vs 1.75e7 observed; mu*L = 33.6 vs 67.3 per generation"
+  },
+  {
+   "what": "Mutation rate input",
+   "command_or_url": "https://doi.org/10.1038/nature11396",
+   "expected": "1.20e-8 per nucleotide per generation, average father's age 29.7"
+  },
+  {
+   "what": "Divergence count input",
+   "command_or_url": "https://pubmed.ncbi.nlm.nih.gov/16136131/",
+   "expected": "approximately thirty-five million single-nucleotide changes"
+  },
+  {
+   "what": "Fossil and genetic split dates",
+   "command_or_url": "https://doi.org/10.1073/pnas.1211740109",
+   "expected": "split at least 7-8 million years; fossils 6-7 million years old"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents4/hv-mol-evo-popgen/validate.py"
+ ],
+ "check_output": "divergence d = 0.0125\nV1 neutral clock k=mu: g=25.0 yr -> split 13.0 Myr (fossil 6-7 Myr; ratio 2.00)\nV1 neutral clock k=mu: g=29.7 yr -> split 15.5 Myr (fossil 6-7 Myr; ratio 2.38)\nV2 Haldane: generations/lineage=260000, observed subs/lineage=1.75e+07, per generation=67.3, Haldane max adaptive=867, max adaptive fraction=4.95e-05\nneutral expectation per generation (mu*L) = 33.6",
+ "recommendations": [
+  "Add Kimura's closed-form fixation probability and the 2s limit to Favored.lean; only a lower bound exists today.",
+  "Add mutation-selection balance (q = mu/(hs), sqrt(mu/s)) and the load L = 1 - e^{-U} as new registry proposals; both are short algebraic statements.",
+  "State the molecular clock law per generation, with generation time and constant mu as explicit hypotheses; Validation 1 shows the per-year reading fails by ~2x.",
+  "Before any nanopublication, open the five unopened primary sources and replace the assumed 2.8e9 bp and generation times with cited values.",
+  "For the drift barrier, pre-register the regression of log(u*Ge) on log(Ne) and address the circularity that Ne is itself computed from u."
+ ],
+ "lay_summary": [
+  "Every living thing copies its DNA with small mistakes, and scientists have simple maths rules for what happens to those mistakes over time.",
+  "We collected ten of these rules, such as how likely a new mistake is to spread to everyone, and checked which ones the project has already proved by computer.",
+  "We tested one rule that says harmless changes should pile up at the same speed as mistakes happen; using real human numbers it predicted humans and chimpanzees split about 13 million years ago, but fossils say 6 to 7 million, so the simple version of the rule is off by about two times.",
+  "We tested a second rule that says helpful changes can only spread slowly; it fits the data only if nearly all the DNA differences between humans and chimpanzees are harmless ones, which is what the genome scientists also concluded.",
+  "Some of the old original papers could not be opened in the time allowed, so those rules are written from memory and need checking."
+ ],
+ "glossary": {
+  "fixation": "when a new gene version spreads until every individual in the population has it",
+  "fixation probability": "the chance that a new gene version eventually reaches everyone",
+  "neutral mutation": "a DNA change that neither helps nor harms its carrier",
+  "mutation rate (mu)": "how often a DNA letter is copied wrongly, per letter per generation",
+  "substitution rate (k)": "how fast DNA differences become permanent in a whole species",
+  "N and Ne (effective population size)": "the number of breeding individuals, adjusted so the maths of chance works as in an ideal population",
+  "selection coefficient (s)": "how much a gene version raises or lowers the number of offspring, as a fraction",
+  "dominance (h)": "how much of a gene version's effect shows when only one copy is carried",
+  "genetic drift": "random change in how common a gene version is, caused by chance in who has offspring",
+  "Wright-Fisher model": "a simple idealised population where each generation is a random draw from the previous one",
+  "diffusion limit": "a maths shortcut that treats gene frequencies as changing smoothly in a large population",
+  "mutation-selection balance": "the steady level of a harmful gene version, where new mistakes arrive as fast as selection removes them",
+  "mutational load": "the drop in average fitness of a population caused by harmful mutations",
+  "Haldane's cost of selection": "the number of deaths or failed births needed to replace one gene version by a better one, which limits how fast helpful changes can spread",
+  "drift barrier": "the point where an improvement is so small that chance overwhelms selection, so it cannot be perfected further",
+  "nearly neutral theory": "the idea that slightly harmful changes act as harmless in small populations",
+  "dN/dS": "the rate of protein-changing DNA changes divided by the rate of silent ones",
+  "divergence (d)": "the fraction of DNA letters that differ between two species",
+  "generation time (g)": "the average age of parents when their offspring are born",
+  "pedigree or trio sequencing": "reading the DNA of parents and child to count new mutations directly",
+  "ancestral polymorphism": "differences that already existed in the ancestor population before two species split",
+  "molecular clock": "using the steady build-up of DNA differences to date when species split",
+  "McDonald-Kreitman test": "a method comparing differences within and between species to estimate how many changes were helpful",
+  "Myr": "million years",
+  "epistasis": "when the effect of one gene change depends on other gene changes",
+  "DFE": "distribution of fitness effects, the spread of how helpful or harmful new mutations are",
+  "TMRCA": "time back to the most recent common ancestor of a set of gene copies",
+  "pi (nucleotide diversity)": "the average fraction of DNA letters that differ between two individuals of one species"
+ }
+}

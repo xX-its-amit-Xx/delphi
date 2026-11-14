@@ -1,6 +1,6 @@
 # STATE — DELPHI atlas + six tracks (antigravity session b0ad0789)
 
-Read this first. Updated 2026-11-12.
+Read this first. Updated 2026-11-13.
 
 ## What this session owns
 - `sim-engine/scales/atlas/`, `sim-engine/scales/micro/division.mjs`, `sim-engine/scales/molecular/`
@@ -58,6 +58,17 @@ Six tracks: 1 reporter response · 2 spatial patterns · 3 lumen geometry · 4 p
 - 3 agents (lf-mogas, lf-fire-regs, lf-lean-fire) in tracks/research/agents/, group `fire-coatings`. FireCoatingCertificate.lean: 16 theorems, passes check.sh (I re-ran it); negative control fails. Worked-example limits are PLACEHOLDERS.
 - GAPS: ISO/ASTM/BSI pages 403, so standard editions and pass numbers mostly unconfirmed; no evidence of her own fire-coating work; the shortage claim is Amit's seminar account only. These 3 agents have NOT had a verifier pass.
 - Versions checked 2026-11-13: Lean v4.35.0 is the latest release; Mathlib pinned at tag v4.35.0 (do not bump; lean/ is session 31's); leanbio law set 1.6.0 vs app repo 1.8.1.
+
+## Sprint 2026-11-13 (wf_d2c15cee-c76, 30 agents; brief: tracks/BRIEF-2026-11-13-group-split.md)
+- Group is splitting: (1) academic zebrafish-engineering paper, (2) industry (biomaterials, zebot, locomotion). Common thread: harvest -> formalize -> validate statements.
+- Integrate any fleet with ONE command: `bash tracks/scripts/integrate-fleet.sh <journal.jsonl> <agents_out_dir>` (extract, copy, scrub, Lean-check new files, build, gates). Lean files the kernel rejects go to `tracks/research/lean/failed/` and are never counted.
+- Groups added: `hv-*` statement-harvest (14), `gs-*` group-split (4), `is-fix-*` issue-fixes (5), 7 more `lf-*`. Fleet now 110 agents, 2,962 findings.
+- Lean: 7 new files pass check.sh (HalpinTsaiBounds, CentralDogma, MorphogenGradient, AllometryScaling, FinLocomotion, ClockWavefront, TuringFiniteDomain). BindingThermo FAILS (cheng_prusoff_binding: unsolved goal, sorryAx) -> failed/.
+- FIRE CERTIFICATE CAVEAT (lf-verify-lean, a read of statements, not re-run): the two ignition eliminations use no-loss ignition times, which are LOWER bounds on real ignition time, so they do not show a coating ignites in time; the finite-time elimination lacks a hypothesis tying the one-node curve to the real back face. Proofs are valid; three theorems are UNSAFE as physical certificates until restated. NOT FIXED.
+- Standards now confirmed from open sources: Euroclass A1-F thresholds (2016/364), E84 classes and NFPA 286 criteria (IBC 2021 ch.8), UK Approved Document B. Still unconfirmed: E119 limits, ISO 5660 edition.
+- Issues #17-#42: 1 resolved (#27), 12 partly, 11 need Amit, 2 blocked (#19, #36). Patches/drafts in `tracks/research/agent-scripts/is-fix-*/`; NOT applied, no comments posted.
+- gs-academic-paper finding: none of tracks 1-4/6 is a zebrafish system today; the zebrafish paper is a re-instantiation.
+- LEAK NEAR-MISS: hv-morph-allometry downloaded the AnAge table (all classes). Its script reads mammal rows only; the table/zip were removed from the repo copy (original stays in delphi-work/agents4). integrate-fleet.sh no longer copies zip/gz/html/pdf.
 
 ## What is running
 - No background jobs. Corpus top-up ran: 799 of 892 works, 93 still missing (OpenAlex returned only 4); the 4 new ones are unread by agents. No cluster jobs, no GPUs. Explorer/Discovery still decline the SSH key (since 2026-11-07).

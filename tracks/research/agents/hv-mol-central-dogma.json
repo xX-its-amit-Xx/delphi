@@ -1,0 +1,320 @@
+{
+ "label": "hv-mol-central-dogma",
+ "topic": "Quantitative gene-expression statements: steady-state protein = synthesis/degradation, mRNA-protein correlation, burst statistics, Fano factor",
+ "summary": "Harvested 12 quantitative gene-expression statements from primary papers (abstracts opened via PubMed; full text opened for Taniguchi 2010 and Raj 2006). None of them is in the law registry: a grep of lean/**/*.lean, lean/laws.json, lean/registry/laws and tracks/lean for Fano|mRNA|gene expression|transcription returned no matches. tracks/research has hits for 'burst'/'degradation' only in materials and flying-fish agent files, which I did not open one by one.\n\nValidated 5 predictions against reported numbers; 3 failed, 2 passed:\n- Poisson mRNA (Fano = 1) vs E. coli: measured about 1.6. FAIL.\n- Poisson mRNA vs a mammalian reporter gene: mean about 40, variance about 1,600, so Fano about 40. FAIL (bursty model consistent).\n- Deterministic \"protein proportional to mRNA\" inside a single cell: predicts strong positive correlation; measured r = 0.01 +/- 0.03 (N = 5,447). FAIL at single-cell level.\n- The same relation across genes (means): r = 0.77 by FISH (r^2 about 0.59), 0.54 by RNA-seq. PASS as a positive trend, far from exact.\n- Gamma-distribution law for protein numbers: 1,009 of 1,018 strains fit (99.1%). PASS.\nAlso noted: the pure intrinsic gamma model (CV^2 = 1/a, falling without limit) fails at high expression, where noise plateaus at about 0.1.\n\nLean: D:/Users/ashenoy00000/delphi-work/agents4/hv-mol-central-dogma/CentralDogma.lean has 6 theorems (steady state p = k/d; two-stage mean; Poisson Fano = 1; bursty Fano = 1 + b > 1; gamma CV^2 = 1/a and Fano = b; variance proportional to mean iff CV^2 = B/mean). Run 1 failed on an environment error (could not read a Mathlib .olean.private file that does exist on disk; probably another process using the cache). Run 2, same file unchanged: ALL CHECKED, 0 errors, 0 sorryAx, 6/6 axiom lines. These are algebraic identities with the biology as named hypotheses; they do not prove the stochastic models themselves (no probability distributions are formalised).\n\nLimits: the exact formulas for Thattai (Fano = 1 + b), Elowitz (noise decomposition), Paulsson and Schwanhäusser (R^2 about 0.4, model equations) are stated from memory of the papers; only their abstracts were opened, and the abstracts do not contain those formulas. The proposed open datasets (supplementary tables, GEO) were not opened. Based on articles retrieved from PubMed; DOIs are in the findings and citations.",
+ "findings": [
+  {
+   "claim": "S1. Steady-state protein level = synthesis rate / degradation rate. Formal: dp/dt = k_s - k_d*p; at dp/dt = 0, p* = k_s/k_d (assumes first-order loss, constant rates, dilution folded into k_d). Registry: absent. Falsifier: Schwanhäusser 2011 supplementary table (mRNA and protein copies, half-lives, >5,000 genes, mouse fibroblasts); test = across genes, log protein vs log(mRNA * translation rate * protein half-life) must have slope 1; note the paper derives translation rates from this model, so an independent rate (ribosome profiling) is needed for a real test.",
+   "source": "https://doi.org/10.1038/nature10098 (PubMed 21593866, abstract opened)",
+   "evidence_quote": "cellular abundance of proteins is predominantly controlled at the level of translation",
+   "value": "p* = k_s / k_d",
+   "confidence": "Medium: abstract opened; model equation from memory of the paper; dataset not opened. Lean: steady_state_protein, checked."
+  },
+  {
+   "claim": "S2. Two-stage model mean: m* = k_m/d_m, p* = k_m*k_p/(d_m*d_p). Formal as stated; assumes constant rates, one gene copy. Registry: absent. Falsifier: Li et al. 2014 E. coli ribosome-profiling synthesis rates (GEO, accession not verified by me) vs independent protein abundance; test = synthesis rate / dilution rate predicts copies per cell within a stated fold-error for stable proteins.",
+   "source": "https://doi.org/10.1073/pnas.151588598 (PubMed 11438714, abstract opened); https://doi.org/10.1016/j.cell.2014.02.033 (PubMed 24766808, abstract opened)",
+   "evidence_quote": "mean and variance of protein concentration can be independently controlled",
+   "value": "p* = k_m k_p / (d_m d_p)",
+   "confidence": "Medium: formula is standard, not in the abstract. Lean: two_stage_mean, checked."
+  },
+  {
+   "claim": "S3. Protein Fano factor in the two-stage model: var/mean = 1 + b, with b = k_p/d_m (proteins made per mRNA lifetime), valid when protein lifetime >> mRNA lifetime. Registry: absent. Falsifier: Ozbudak et al. 2002 B. subtilis translation-efficiency mutants; test = Fano rises linearly with translational efficiency and stays flat with transcription rate.",
+   "source": "https://doi.org/10.1073/pnas.151588598 (PubMed 11438714, abstract opened)",
+   "evidence_quote": "noise is essentially determined at the translational level",
+   "value": "Fano_p = 1 + k_p/d_m",
+   "confidence": "Medium: exact formula from memory, abstract supports the qualitative claim only. Ozbudak paper not opened. Lean: bursty_fano (algebra only), checked."
+  },
+  {
+   "claim": "S4. Proteins per burst follow a geometric distribution: P(n) = (1-q) q^n, each burst from one mRNA. Registry: absent. Falsifier: Yu et al. 2006 burst-size histogram; test = chi-square goodness of fit of geometric vs Poisson burst sizes.",
+   "source": "https://doi.org/10.1126/science.1119623 (PubMed 16543458, abstract opened)",
+   "evidence_quote": "protein copy numbers in the bursts follow a geometric distribution",
+   "value": "P(n) = (1-q) q^n",
+   "confidence": "High for the statement; dataset not opened."
+  },
+  {
+   "claim": "S5. Burst size is exponentially distributed (continuous limit of S4); burst size and frequency recoverable from the steady-state copy-number distribution. Registry: absent. Falsifier: Cai et al. 2006 real-time beta-galactosidase traces; test = burst size and frequency from real-time traces must equal those fitted from the population histogram.",
+   "source": "https://doi.org/10.1038/nature04599 (PubMed 16541077, abstract opened)",
+   "evidence_quote": "number of molecules per burst following an exponential distribution",
+   "value": "P(n) proportional to exp(-n/b)",
+   "confidence": "High for the statement; dataset not opened."
+  },
+  {
+   "claim": "S6. Steady-state protein number is gamma distributed, p(x) = x^(a-1) e^(-x/b) / (Gamma(a) b^a), with a = k1/gamma2 (bursts per cell cycle) and b = k2/gamma1 (burst size); so mean = a*b, CV^2 = 1/a, Fano = b. VALIDATED: 1,009 of 1,018 E. coli strains fit = 99.1%. PASS. Registry: absent. Falsifier: Taniguchi 2010 supplementary per-gene table; test = fraction of genes whose single-cell histogram rejects a gamma fit.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC2922915/ (full text opened); https://doi.org/10.1126/science.1188308; theory https://doi.org/10.1103/PhysRevLett.97.168302 (abstract opened)",
+   "evidence_quote": "1,009 out of the 1,018 strains can be well fit by the gamma distribution",
+   "value": "Prediction: gamma fits; measured 1009/1018 = 99.1%; PASS",
+   "confidence": "High; the formula subscripts were partly lost in the page text. Lean: gamma_cv2_fano (moment algebra only), checked."
+  },
+  {
+   "claim": "S7. Constitutive (Poisson) transcription predicts mRNA Fano factor = 1. VALIDATED against E. coli: measured about 1.6. FAIL (mRNA is not Poisson, even in bacteria). Registry: absent. Falsifier: Taniguchi 2010 FISH table for 137 genes (number recalled, not re-read); test = one-sided test that mean Fano > 1.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC2922915/ (full text opened); https://doi.org/10.1126/science.1188308",
+   "evidence_quote": "mRNA Fano factor values ... are close to ∼1.6",
+   "value": "Prediction 1.0; measured ~1.6; FAIL",
+   "confidence": "High for the measured value. Lean: poisson_fano, checked."
+  },
+  {
+   "claim": "S8. In mammalian cells mRNA is made in bursts, so Fano >> 1 (telegraph model: Fano about 1 + mean burst size when the gene is mostly off). VALIDATED: reporter gene mean about 40 mRNA per cell, variance about 1,600, so Fano about 40 against the Poisson prediction of 1. Poisson FAILS; bursty model consistent. A natural gene (RNA polymerase II large subunit) had variance over 50 times the mean. Registry: absent. Falsifier: Raj 2006 single-cell FISH counts; test = variance/mean with bootstrap interval vs 1.",
+   "source": "https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.0040309 (full text opened); https://doi.org/10.1371/journal.pbio.0040309",
+   "evidence_quote": "the variance was roughly 1,600 molecules squared",
+   "value": "Poisson prediction Fano 1; measured ~40 (1600/40); FAIL for Poisson",
+   "confidence": "High for the numbers (Fano 40 is my division). The 1 + burst-size formula is from memory; the paper's numeric burst size was only in a figure I could not read."
+  },
+  {
+   "claim": "S9. mRNA and protein copy numbers of the same gene in the same single cell are uncorrelated. Formal: Pearson r(m_i, p_i) about 0 across cells, when protein lifetime >> mRNA lifetime. VALIDATED: a deterministic p proportional to m reading predicts r clearly > 0; measured r = 0.01 +/- 0.03 (SEM, N = 5,447). The proportional reading FAILS at single-cell level; the statement itself passes. Registry: absent. Falsifier: any joint single-cell mRNA + protein count; test = r differs from 0.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC2922915/ (full text opened); https://doi.org/10.1126/science.1188308",
+   "evidence_quote": "not correlated (r = 0.01 ± 0.03, SEM, N = 5,447)",
+   "value": "r = 0.01 +/- 0.03",
+   "confidence": "High. Golding 2005 (https://doi.org/10.1016/j.cell.2005.09.031) reports weaker correlation early in the cell cycle, so timing matters."
+  },
+  {
+   "claim": "S10. Across genes, mean protein rises with mean mRNA but far from perfectly. VALIDATED: E. coli r = 0.77 (FISH), 0.54 (RNA-seq), so mRNA explains about 59% and 29% of variance in means. PASS as a positive trend; FAILS as an exact law. Mammalian cells: mRNA and protein levels correlate 'better than previously thought', while half-lives do not correlate. Registry: absent. Falsifier: Schwanhäusser 2011 table; test = R^2 of log protein vs log mRNA and of protein vs mRNA half-life.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC2922915/ (full text opened); https://doi.org/10.1038/nature10098 (abstract opened)",
+   "evidence_quote": "corresponding half-lives showed no correlation",
+   "value": "E. coli r = 0.77 (FISH), 0.54 (RNA-seq)",
+   "confidence": "High for E. coli values. The widely quoted mammalian R^2 of about 0.4 was NOT verified by me."
+  },
+  {
+   "claim": "S11. Protein noise scales inversely with abundance up to a floor: variance proportional to mean (CV^2 = B/mean) in yeast; in E. coli CV^2 proportional to 1/mean below about 10 molecules per cell, then a plateau near 0.1 from extrinsic noise. So the pure intrinsic gamma model (CV^2 = 1/a, falling without limit) FAILS at high expression. Registry: absent. Falsifier: Newman 2006 yeast GFP-library flow cytometry (>2,500 proteins); test = slope of log CV^2 vs log mean equals -1 and no floor.",
+   "source": "https://doi.org/10.1038/ng1807 (PubMed 16715097, abstract opened); https://pmc.ncbi.nlm.nih.gov/articles/PMC2922915/ (opened); https://doi.org/10.1038/nature04785 (abstract opened)",
+   "evidence_quote": "the expression variance was approximately proportional to the mean",
+   "value": "CV^2 = B/mean, floor ~0.1 in E. coli",
+   "confidence": "High for the statements; datasets not opened. Lean: cv2_inverse_mean, checked."
+  },
+  {
+   "claim": "S12. Total noise splits into intrinsic and extrinsic parts: eta_tot^2 = eta_int^2 + eta_ext^2, with eta_int measured from the difference between two identical reporter genes in one cell. And bursting is not universal: most constitutive yeast genes show small variation consistent with single, separated initiation events (near-Poisson), while PDR5 is bursty. Registry: absent. Falsifier: Zenklusen 2008 single-mRNA counts; test = Fano of constitutive genes vs 1, and PDR5 vs 1.",
+   "source": "https://doi.org/10.1126/science.1070919 (PubMed 12183631, abstract opened); https://doi.org/10.1038/nsmb.1514 (PubMed 19011635, abstract opened); https://doi.org/10.1038/nature02257 (abstract opened)",
+   "evidence_quote": "rather than by transcriptional bursts",
+   "value": "eta_tot^2 = eta_int^2 + eta_ext^2",
+   "confidence": "Medium: the decomposition formula is from memory, not in the abstract."
+  }
+ ],
+ "key_claims": [
+  "None of the 12 gene-expression statements exists in the Lean law registry (grep returned no matches).",
+  "The Poisson 'Fano = 1' law fails against data in both bacteria (about 1.6) and mammalian cells (about 40).",
+  "Within a single cell, mRNA and protein counts of one gene are uncorrelated (r = 0.01), although across genes the means correlate (r = 0.77).",
+  "The gamma law for protein numbers fits 99.1% of 1,018 E. coli strains, but its noise prediction breaks at high expression (plateau near 0.1).",
+  "CentralDogma.lean: 6 theorems, ALL CHECKED on the second run; the first run failed on a file-read error in the Mathlib cache."
+ ],
+ "check_output": "Run 1 (FAILED, environment):\ntoolchain: leanprover/lean4:v4.35.0   mathlib: \nCentralDogma.lean                                    errors=1 sorryAx=0 axiom-lines=0/6\nD:/Users/ashenoy00000/delphi-work/agents4/hv-mol-central-dogma/CentralDogma.lean:1:0: error: failed to read file 'C:\\Temp\\delphi-lean-lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Ring\\CentroidHom.olean.private'\nFAILED\n\nRun 2 (same file, unchanged; output was piped through tail -40):\ntoolchain: leanprover/lean4:v4.35.0   mathlib: \nCentralDogma.lean                                    errors=0 sorryAx=0 axiom-lines=6/6\nCentralDogma.steady_state_protein <- [propext, Classical.choice, Quot.sound] CentralDogma.two_stage_mean depends on axioms: [propext, Classical.choice\n\nALL CHECKED: no errors, no sorryAx",
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents4/hv-mol-central-dogma/CentralDogma.lean"
+ ],
+ "could_not_find": [
+  "Ozbudak et al. 2002 (Nat Genet, noise vs translational efficiency): the PMID I tried (12021783) was a different paper; not opened, no DOI given.",
+  "Schwanhäusser 2011 mammalian mRNA-protein R^2 (commonly quoted as about 0.4): only the abstract was opened; number not verified.",
+  "Raj 2006 numeric mean burst size: appears only in a figure and Protocol S1, not read.",
+  "Exact formulas of Thattai 2001 (Fano = 1 + b), Elowitz 2002 (noise decomposition) and Paulsson 2004: abstracts opened only; formulas stated from memory.",
+  "None of the proposed open datasets (Taniguchi, Schwanhäusser, Newman supplementary tables; Li 2014 GEO) was opened or downloaded; accessions not verified.",
+  "tracks/research agent files with 'burst'/'degradation' hits (e.g. t1-reporter-deep.json, q1-mechanisms.json) were not opened, so overlap there is unchecked.",
+  "Cause of the first Lean check failure: the named file exists on disk; I did not diagnose further (likely concurrent use of the shared cache)."
+ ],
+ "lay_summary": [
+  "A cell makes a protein by first copying a gene into a message (mRNA) and then building the protein from that message.",
+  "The simplest rule says the amount of a protein settles where making it and breaking it down balance, like a bathtub with the tap on and the drain open.",
+  "But cells make messages and proteins in random spurts, so two identical cells can hold very different amounts.",
+  "We checked the simple 'smooth and steady' rule against published counts and it failed: real cells were 1.6 to 40 times more uneven than the rule allows.",
+  "A better rule that includes spurts matched 99 out of every 100 bacterial genes tested, and a computer proof-checker confirmed the algebra behind six of these rules."
+ ],
+ "glossary": {
+  "mRNA": "The message copied from a gene that tells the cell how to build a protein.",
+  "protein": "A molecule that does work in the cell, built from an mRNA message.",
+  "synthesis rate": "How many molecules are made per unit of time.",
+  "degradation rate": "The fraction of molecules broken down (or diluted by growth) per unit of time.",
+  "steady state": "The level at which making and losing balance, so the amount stops changing.",
+  "half-life": "The time it takes for half of the molecules to be lost.",
+  "mean": "The average count across cells.",
+  "variance": "A measure of how spread out the counts are around the average.",
+  "Fano factor": "Variance divided by mean; equals 1 for purely random, independent events.",
+  "CV^2 (noise)": "Variance divided by the mean squared; spread relative to the average.",
+  "Poisson distribution": "The pattern of counts you get when events happen independently at a constant rate.",
+  "burst": "A short spell in which many molecules are made at once, followed by a quiet spell.",
+  "burst size": "The average number of molecules made in one burst.",
+  "burst frequency": "How often bursts happen.",
+  "geometric distribution": "A pattern where each extra molecule in a burst is less likely by a fixed factor.",
+  "exponential distribution": "The smooth version of the geometric pattern.",
+  "gamma distribution": "A two-number curve (shape a, scale b) that describes protein counts when production is bursty.",
+  "telegraph model": "A model where a gene randomly switches between on and off.",
+  "two-stage model": "A model with two steps: gene to mRNA, then mRNA to protein.",
+  "intrinsic noise": "Randomness from the gene's own chemical steps.",
+  "extrinsic noise": "Cell-to-cell differences in shared machinery that affect all genes together.",
+  "correlation coefficient (r)": "A number from -1 to 1 saying how closely two quantities move together; r^2 is the share of variation explained.",
+  "FISH": "A microscope method that lights up and counts individual mRNA molecules.",
+  "RNA-seq": "A sequencing method that measures the amounts of all mRNAs.",
+  "ribosome profiling": "A method that measures how fast each protein is being made.",
+  "constitutive gene": "A gene that is on all the time.",
+  "Lean / Mathlib": "A computer proof checker and its maths library.",
+  "axiom": "A basic assumption the proof checker accepts without proof.",
+  "named hypothesis": "An assumption written openly in a theorem instead of being hidden.",
+  "law registry": "The project's list of formal laws already written down."
+ },
+ "citations": [
+  {
+   "authors": "Schwanhäusser B, Busse D, Li N, Dittmar G, Schuchhardt J, Wolf J, Chen W, Selbach M",
+   "title": "Global quantification of mammalian gene expression control",
+   "venue": "Nature",
+   "year": 2011,
+   "doi_or_arxiv": "10.1038/nature10098",
+   "verified": true,
+   "how_verified": "PubMed metadata and abstract (PMID 21593866)",
+   "used_for": "S1, S10"
+  },
+  {
+   "authors": "Taniguchi Y, Choi PJ, Li GW, Chen H, Babu M, Hearn J, Emili A, Xie XS",
+   "title": "Quantifying E. coli proteome and transcriptome with single-molecule sensitivity in single cells",
+   "venue": "Science",
+   "year": 2010,
+   "doi_or_arxiv": "10.1126/science.1188308",
+   "verified": true,
+   "how_verified": "PubMed abstract plus PMC full text (PMC2922915) fetched",
+   "used_for": "S6, S7, S9, S10, S11 and validations"
+  },
+  {
+   "authors": "Thattai M, van Oudenaarden A",
+   "title": "Intrinsic noise in gene regulatory networks",
+   "venue": "PNAS",
+   "year": 2001,
+   "doi_or_arxiv": "10.1073/pnas.151588598",
+   "verified": true,
+   "how_verified": "PubMed abstract (PMID 11438714)",
+   "used_for": "S2, S3"
+  },
+  {
+   "authors": "Raj A, Peskin CS, Tranchina D, Vargas DY, Tyagi S",
+   "title": "Stochastic mRNA synthesis in mammalian cells",
+   "venue": "PLoS Biology",
+   "year": 2006,
+   "doi_or_arxiv": "10.1371/journal.pbio.0040309",
+   "verified": true,
+   "how_verified": "PubMed abstract plus PLOS full text fetched",
+   "used_for": "S8 validation"
+  },
+  {
+   "authors": "Yu J, Xiao J, Ren X, Lao K, Xie XS",
+   "title": "Probing gene expression in live cells, one protein molecule at a time",
+   "venue": "Science",
+   "year": 2006,
+   "doi_or_arxiv": "10.1126/science.1119623",
+   "verified": true,
+   "how_verified": "PubMed abstract (PMID 16543458)",
+   "used_for": "S4"
+  },
+  {
+   "authors": "Cai L, Friedman N, Xie XS",
+   "title": "Stochastic protein expression in individual cells at the single molecule level",
+   "venue": "Nature",
+   "year": 2006,
+   "doi_or_arxiv": "10.1038/nature04599",
+   "verified": true,
+   "how_verified": "PubMed abstract (PMID 16541077)",
+   "used_for": "S5"
+  },
+  {
+   "authors": "Friedman N, Cai L, Xie XS",
+   "title": "Linking stochastic dynamics to population distribution: an analytical framework of gene expression",
+   "venue": "Physical Review Letters",
+   "year": 2006,
+   "doi_or_arxiv": "10.1103/PhysRevLett.97.168302",
+   "verified": true,
+   "how_verified": "PubMed abstract (PMID 17155441)",
+   "used_for": "S6"
+  },
+  {
+   "authors": "Bar-Even A, Paulsson J, Maheshri N, Carmi M, O'Shea E, Pilpel Y, Barkai N",
+   "title": "Noise in protein expression scales with natural protein abundance",
+   "venue": "Nature Genetics",
+   "year": 2006,
+   "doi_or_arxiv": "10.1038/ng1807",
+   "verified": true,
+   "how_verified": "PubMed abstract (PMID 16715097)",
+   "used_for": "S11"
+  },
+  {
+   "authors": "Newman JR, Ghaemmaghami S, Ihmels J, Breslow DK, Noble M, DeRisi JL, Weissman JS",
+   "title": "Single-cell proteomic analysis of S. cerevisiae reveals the architecture of biological noise",
+   "venue": "Nature",
+   "year": 2006,
+   "doi_or_arxiv": "10.1038/nature04785",
+   "verified": true,
+   "how_verified": "PubMed abstract (PMID 16699522)",
+   "used_for": "S11 dataset"
+  },
+  {
+   "authors": "Elowitz MB, Levine AJ, Siggia ED, Swain PS",
+   "title": "Stochastic gene expression in a single cell",
+   "venue": "Science",
+   "year": 2002,
+   "doi_or_arxiv": "10.1126/science.1070919",
+   "verified": true,
+   "how_verified": "PubMed abstract (PMID 12183631)",
+   "used_for": "S12"
+  },
+  {
+   "authors": "Paulsson J",
+   "title": "Summing up the noise in gene networks",
+   "venue": "Nature",
+   "year": 2004,
+   "doi_or_arxiv": "10.1038/nature02257",
+   "verified": true,
+   "how_verified": "PubMed abstract (PMID 14749823)",
+   "used_for": "S12"
+  },
+  {
+   "authors": "Zenklusen D, Larson DR, Singer RH",
+   "title": "Single-RNA counting reveals alternative modes of gene expression in yeast",
+   "venue": "Nature Structural & Molecular Biology",
+   "year": 2008,
+   "doi_or_arxiv": "10.1038/nsmb.1514",
+   "verified": true,
+   "how_verified": "PubMed abstract (PMID 19011635)",
+   "used_for": "S12"
+  },
+  {
+   "authors": "Golding I, Paulsson J, Zawilski SM, Cox EC",
+   "title": "Real-time kinetics of gene activity in individual bacteria",
+   "venue": "Cell",
+   "year": 2005,
+   "doi_or_arxiv": "10.1016/j.cell.2005.09.031",
+   "verified": true,
+   "how_verified": "PubMed abstract (PMID 16360033)",
+   "used_for": "S9 caveat"
+  },
+  {
+   "authors": "Li GW, Burkhardt D, Gross C, Weissman JS",
+   "title": "Quantifying absolute protein synthesis rates reveals principles underlying allocation of cellular resources",
+   "venue": "Cell",
+   "year": 2014,
+   "doi_or_arxiv": "10.1016/j.cell.2014.02.033",
+   "verified": true,
+   "how_verified": "PubMed abstract (PMID 24766808)",
+   "used_for": "S2 dataset"
+  }
+ ],
+ "reproduce": [
+  {
+   "what": "Re-check the Lean file",
+   "command_or_url": "bash D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/lean/check.sh D:/Users/ashenoy00000/delphi-work/agents4/hv-mol-central-dogma/CentralDogma.lean",
+   "expected": "errors=0 sorryAx=0 axiom-lines=6/6; ALL CHECKED (a first attempt may fail on a cache read error; rerun)"
+  },
+  {
+   "what": "E. coli numbers (Fano ~1.6, r = 0.01, r = 0.77, 1,009/1,018 gamma fits, plateau ~0.1)",
+   "command_or_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC2922915/",
+   "expected": "Quoted sentences present in the main text"
+  },
+  {
+   "what": "Mammalian reporter mean ~40, variance ~1,600",
+   "command_or_url": "https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.0040309",
+   "expected": "Fano = 1600/40 = 40"
+  },
+  {
+   "what": "Registry absence check",
+   "command_or_url": "grep -riE 'Fano|mRNA|gene.expression|transcription' over lean/**/*.lean, lean/laws.json, lean/registry/laws/*.json, tracks/lean",
+   "expected": "No matches"
+  }
+ ],
+ "recommendations": [
+  "Add a 'gene-expression noise' law family to the registry, starting with the Poisson Fano = 1 law recorded as FAILED (1.6 in E. coli, about 40 in a mammalian reporter) and the gamma law recorded as passing with a stated scope (low expression; fails above the extrinsic floor).",
+  "Before any nanopublication, open the papers' full text or supplements to confirm the formulas I stated from memory (Thattai Fano = 1 + b, Elowitz decomposition, Schwanhäusser R^2).",
+  "Download the Taniguchi per-gene supplementary table (small) and recompute Fano, gamma a and b, and the CV^2-vs-mean slope per gene, so the tests run on rows instead of reported summary values.",
+  "The Lean file proves only moment algebra; a real formalisation would define the birth-death process in Mathlib probability and derive the Poisson and negative-binomial stationary laws."
+ ]
+}

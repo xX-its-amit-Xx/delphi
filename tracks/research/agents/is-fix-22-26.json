@@ -1,0 +1,115 @@
+{
+ "label": "is-fix-22-26",
+ "topic": "Fix open issues #22 to #26 of fractastical/delphi",
+ "summary": "None of the five issues is fully resolved: three are partly done, one has a moved target and one needs a decision from Amit. No Lean was run in this pass, so every statement about Lean files comes from reading text, not from the kernel. All five issues were open with no comments when read. I wrote two files under D:/Users/ashenoy00000/delphi-work/agents4/is-fix-22-26/: certificate-coverage.py (new script, run once) and RESOLUTION-22-26.md (per-issue notes and apply steps). Main facts: track 1 has no elimination certificate; the ThompsonLaws folder now lives in the public leanbio repo, not the application repo; leanbio's law sets stop at 1.6.0.",
+ "findings": [
+  {
+   "claim": "#22 Track 6 (flying fish): bring the evaluation framework up to law set 1.8.1 and reuse it: PARTLY - wrote and ran a coverage script that lists the elimination certificates per track and exits 1 if a track has none. Today t2, t3, t4, t5 and t6 each have at least one; t1 (reporter / Hill separability) has none, so the first checkbox is one theorem short. The script reads the newest law set file (1.8.1), which with lawset-diff.py covers the second checkbox once it is added to the track build. The t1 certificate was not written, and the existing ones were not re-run through check.sh.",
+   "value": "D:/Users/ashenoy00000/delphi-work/agents4/is-fix-22-26/certificate-coverage.py (proposed repo path tracks/scripts/certificate-coverage.py)",
+   "source": "https://api.github.com/repos/fractastical/delphi/issues/22 ; local tracks/research/lean/*.lean and tracks/lean/*.lean ; lean/registry/lawsets/",
+   "evidence_quote": "One `*_rules_out` certificate per track (the hygromorph one is checked)",
+   "confidence": "high for the counts (script output); the mapping of the hygromorph files to t5 is my assumption from the file name"
+  },
+  {
+   "claim": "#23 Land the checked Timoshenko ceiling in lean/ThompsonLaws: PARTLY - the target has moved. The application repo no longer has lean/ThompsonLaws; public fractastical/leanbio has lean/ThompsonLaws/Hygromorphs.lean, which defines timoshenkoCoefficient and bilayerCurvature but has none of the five ceiling theorems. Wrote the paste instructions. Still needs the Lean owner's go-ahead, and the two definitions must be compared with those the checked file assumes before pasting.",
+   "value": "D:/Users/ashenoy00000/delphi-work/agents4/is-fix-22-26/RESOLUTION-22-26.md (section #23)",
+   "source": "https://raw.githubusercontent.com/fractastical/leanbio/main/lean/ThompsonLaws/Hygromorphs.lean ; https://api.github.com/repos/fractastical/leanbio/commits ; local tracks/lean/HygromorphCeiling.lean",
+   "evidence_quote": "Move ThompsonLaws (12 modules) and DarwinLaws (4) in from Delphi's claim-sources",
+   "confidence": "high that the theorems are absent from the public file (grep of theorem names); not kernel-checked in leanbio"
+  },
+  {
+   "claim": "#24 14 of 59 pinned laws have no Lean theorem: PARTLY - reproduced the list of 14 and proposed an order for the four the tracks need: aspect-ratio-induced-drag first (the t4 and t6 track files already use the induced-drag variables), then elastic-similarity (check leanbio's LimbBoneSimilarity.lean for overlap first), fin-length-ratio, and gene-regulatory-dynamics last. One of the 14 is retired, so there are 13 real gaps. No theorem was written. Missing fact: the Lean owner's yes or no on this order.",
+   "value": "D:/Users/ashenoy00000/delphi-work/agents4/is-fix-22-26/RESOLUTION-22-26.md (section #24)",
+   "source": "python tracks/scripts/lawset-diff.py 1.6.0 1.8.1 ; lean/registry/laws/<id>.json for the four laws ; https://api.github.com/repos/fractastical/delphi/issues/24",
+   "evidence_quote": "PINNED BUT WITH NO LEAN THEOREM (14 of 59)",
+   "confidence": "high for the list; the ordering is my judgement; LimbBoneSimilarity.lean was seen in the tree but not opened"
+  },
+  {
+   "claim": "#25 Law set drift: the split-out leanbio library is at 1.6.0, the application repo at 1.8.1: NEEDS-AMIT - drift confirmed today. leanbio's lean/registry/lawsets holds 1.0.0 to 1.6.0 plus current.json; the application repo holds up to 1.8.1 (6 laws added, 0 removed, 0 status changes). No leanbio path contains fisher-sex, hamilton-rule or turing-wavelength. Wrote the copy-over steps. Single missing fact: is leanbio the source of truth that the application repo vendors, or a mirror the application repo pushes to, and so who cuts its law sets?",
+   "value": "D:/Users/ashenoy00000/delphi-work/agents4/is-fix-22-26/RESOLUTION-22-26.md (section #25)",
+   "source": "https://api.github.com/repos/fractastical/leanbio/git/trees/main?recursive=1 ; local lawset-diff.py output",
+   "evidence_quote": "1.6.0: 53 laws   1.8.1: 59 laws",
+   "confidence": "high"
+  },
+  {
+   "claim": "#26 Lean for Bio, question 1 (promoter-specific enhancer effects, rank reversal): PARTLY - the formal half already exists unlanded in tracks/research/lean: q1-theory-lean__EnhancerPromoterRank.lean (no_reversal_of_monotone, certificate_singleIndex to certificate_all, noisy_certificate, twoFactor_reverses) and q1-mechanisms__RankSaturation.lean. Neither has a theorem named *rules_out*, so the coverage script counts q1 as 0; an alias would fix that. The noise-only simulation and the observed reversal rate in public data were not done, and no rate is reported.",
+   "value": "D:/Users/ashenoy00000/delphi-work/agents4/is-fix-22-26/RESOLUTION-22-26.md (section #26)",
+   "source": "https://api.github.com/repos/fractastical/delphi/issues/26 ; local tracks/research/lean/q1-*.lean (theorem names read by grep)",
+   "evidence_quote": "an observed rank reversal beyond measurement noise *rules out* that whole model class",
+   "confidence": "medium: theorem names were read, the proofs were not kernel-checked in this pass"
+  }
+ ],
+ "could_not_find": [
+  "Kernel check of any Lean file (no Lean run in the 7-minute budget)",
+  "Null reversal rate from simulation and observed reversal rate in public MPRA/STARR-seq data for #26 (no dataset opened)",
+  "Whether leanbio's definitions of timoshenkoCoefficient and bilayerCurvature match the ones the checked ceiling file was compiled against (not compared)",
+  "Content of leanbio lean/ThompsonLaws/LimbBoneSimilarity.lean (only the file name was seen)",
+  "Any bot or agent replies on issues #22 to #26 (comment lists were empty)",
+  "tracks/issues/ISSUES.md drafts (not opened; the live issue bodies were used instead)"
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents4/is-fix-22-26/certificate-coverage.py",
+  "D:/Users/ashenoy00000/delphi-work/agents4/is-fix-22-26/RESOLUTION-22-26.md"
+ ],
+ "reproduce": [
+  {
+   "what": "Per-track elimination certificate coverage",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents4/is-fix-22-26/certificate-coverage.py D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci",
+   "expected": "newest law set lawset-1.8.1.json; t1: 0, t2: 1, t3: 2, t4: 1, t5: 2, t6: 1; exit code 1"
+  },
+  {
+   "what": "Law set diff",
+   "command_or_url": "python tracks/scripts/lawset-diff.py 1.6.0 1.8.1 (from the repo root)",
+   "expected": "53 -> 59 laws, 6 added, 14 pinned without a Lean theorem, 3 law files unpinned"
+  },
+  {
+   "what": "leanbio law sets stop at 1.6.0",
+   "command_or_url": "https://api.github.com/repos/fractastical/leanbio/git/trees/main?recursive=1",
+   "expected": "lean/registry/lawsets/lawset-1.0.0.json to lawset-1.6.0.json and current.json only"
+  },
+  {
+   "what": "Ceiling theorems absent from public Hygromorphs.lean",
+   "command_or_url": "https://raw.githubusercontent.com/fractastical/leanbio/main/lean/ThompsonLaws/Hygromorphs.lean",
+   "expected": "defines timoshenkoCoefficient and bilayerCurvature; no timoshenkoCoefficient_le or bilayer_rules_out"
+  }
+ ],
+ "recommendations": [
+  "Write and kernel-check a *_rules_out theorem for track 1 to close the first checkbox of #22.",
+  "Add certificate-coverage.py to tracks/scripts and call it from the track build.",
+  "Retarget #23 at fractastical/leanbio, where ThompsonLaws now lives, and run the axiom audit there after pasting.",
+  "Ask Amit the one question for #25: is leanbio the source of truth or a mirror, and who cuts its law sets?",
+  "For #26, alias certificate_singleIndex as single_index_rules_out, then run the noise-only simulation before touching public data.",
+  "Drop the retired test-loop-only-density-sanity from the count in #24 (13 real gaps)."
+ ],
+ "lay_summary": [
+  "The project writes rules of biology in a language a computer can check, and keeps a to-do list of open problems.",
+  "I looked at five of those problems and wrote a small program that counts, for each research track, how many 'this design is impossible' proofs exist.",
+  "Five tracks have one, but track 1 has none, so that job is not finished.",
+  "I also found that some proof files moved to a second public library, and that library is two versions behind on its list of rules.",
+  "One question only the project lead can answer: which of the two libraries is the master copy."
+ ],
+ "glossary": {
+  "Lean": "A computer language for writing maths proofs that a program checks line by line.",
+  "kernel": "The small trusted core of Lean that decides whether a proof is really correct.",
+  "theorem": "A statement that has been proved.",
+  "elimination certificate (rules_out theorem)": "A proof that a particular design cannot work because it would break a known law.",
+  "law set": "A numbered, frozen list of the laws the project currently relies on (for example 1.8.1).",
+  "pinned law": "A law that is included in a given law set.",
+  "registry": "The folder of records describing each law and where its proof lives.",
+  "axiom audit": "A check of which basic assumptions a proof depends on; it exposes unfinished proofs.",
+  "sorryAx": "Lean's marker for a proof with a hole in it.",
+  "Timoshenko ceiling": "The upper limit on how much a two-layer strip can curl when one layer swells more than the other.",
+  "hygromorph": "A material that changes shape when it gets damp or dry.",
+  "induced drag": "The air resistance a wing pays for making lift.",
+  "aspect ratio": "How long and narrow a wing or fin is.",
+  "elastic similarity": "A rule for how the thickness of supports should grow with length so they bend the same amount.",
+  "enhancer": "A stretch of DNA that turns a gene's activity up.",
+  "promoter": "The stretch of DNA where reading of a gene starts.",
+  "rank reversal": "Two things swapping places in an ordered list when conditions change.",
+  "monotone": "Always going the same direction: more input never gives less output.",
+  "MPRA / STARR-seq": "Lab methods that measure the strength of thousands of DNA switches at once.",
+  "null rate": "How often something appears by chance alone, with no real effect.",
+  "source of truth": "The one copy that everyone else is meant to follow.",
+  "Mathlib": "The large shared library of maths already proved in Lean."
+ }
+}

@@ -1,0 +1,448 @@
+{
+ "label": "gs-zebot-locomotion",
+ "topic": "Zebot engineering and locomotion: biohybrid swimmers/biobots, larval zebrafish swimming kinematics and scaling, and candidate Lean-statable laws with open data",
+ "summary": "Harvested 20 papers; 19 DOIs resolved through Crossref and/or Europe PMC with matching titles, and 15 abstracts were opened for numbers. One DOI (Fuiman & Webb 1988) did not resolve and is listed in could_not_find. Nothing was run beyond metadata/abstract fetches; no full texts were opened, so all numbers are abstract-level.\n\nMost useful result for Lean: van Leeuwen, Voesenek & Muller 2015 gives a complete numeric tuple for larval zebrafish (frequency 80-95 Hz, tail amplitude 1.8-2.4 mm, Re 60 to 1400, St 2.5 falling to 0.72, versus 0.2-0.6 for large swimmers). This supports three statements: (1) St = f*A/v as a definitional identity; (2) St is monotonically decreasing in Re across the larval range; (3) larval St lies strictly above the adult band 0.2-0.6. My own arithmetic check on the abstract numbers: f*A = 95 Hz * 2.4 mm = 228 mm/s; with St 0.72 that implies v about 317 mm/s, and with a body length near 4 mm (my assumption, not in the abstract) in water Re is about 1270, the same order as the reported 1400.\n\nOther candidate laws: (4) viscous/inertial regime threshold for coasting zebrafish, viscous at Re < 300 and inertial at Re > 1000 (McHenry & Lauder 2005); (5) frequency band law, 2-20 Hz below a 0.5-1 m crossover and f inversely proportional to length above it (Sanchez-Rodriguez et al. 2023, about 1200 individuals, open access) - larval zebrafish at up to 100 Hz sit outside the 2-20 Hz band, a useful falsification target; (6) speed scales as length times frequency (same paper; Bainbridge 1958); (7) Gazzola et al. 2014 swimming-number scaling; (8) low-Re time-irreversibility (Purcell 1977) as the design constraint for biohybrid flagellar swimmers (Williams 2014, Aydin 2019).\n\nBiobot numbers from abstracts: anthrobots 30-500 micron diameter and 5-50 micron/s; cardiomyocyte flagellar swimmer 5-10 micron/s (one tail) and 81 micron/s (two tails); tissue-engineered ray at 1/10 scale. Xenobot abstracts give no speeds.\n\nCaveats: the Gazzola 2014 and Sanchez-Rodriguez 2023 compilations span many animal groups and must be filtered against holdout/split.json before any use; I did not open either dataset. Gazzola, Bainbridge and Purcell have no abstract in Europe PMC, so the laws attributed to them are from my memory of the papers, with only the title/DOI verified. I did not confirm which papers deposit raw kinematic data. Working files are in D:/Users/ashenoy00000/delphi-work/agents4/gs-zebot-locomotion/ (dois.txt, show.py, epmc/*.json raw responses).",
+ "findings": [
+  {
+   "claim": "Larval zebrafish Strouhal number falls nonlinearly from 2.5 to 0.72 as Reynolds number rises from 60 to 1400; large swimmers sit at 0.2-0.6.",
+   "source": "https://doi.org/10.1098/rsif.2015.0479 (abstract via Europe PMC, PMID 26269230)",
+   "evidence_quote": "decreases nonlinearly towards values of large swimmers (0.2-0.6)",
+   "value": "Re 60->1400; St 2.5->0.72; adult band 0.2-0.6",
+   "confidence": "high (abstract opened)"
+  },
+  {
+   "claim": "Larval zebrafish at 4-5 dpf reach higher tail-beat frequency and amplitude than at 2 dpf.",
+   "source": "https://doi.org/10.1098/rsif.2015.0479",
+   "evidence_quote": "reach higher f (95 Hz) and Atail (2.4 mm) than at 2 dpf (80 Hz, 1.8 mm)",
+   "value": "95 Hz, 2.4 mm vs 80 Hz, 1.8 mm",
+   "confidence": "high (abstract opened)"
+  },
+  {
+   "claim": "Larval zebrafish (2-21 dpf) sustain tail-beat frequencies up to 100 Hz in cyclic swimming; strain up to 0.19, strain rate up to 120 per s; body-wave to curvature-wave length ratio 1:1.2.",
+   "source": "https://doi.org/10.1242/jeb.00821 (abstract via Europe PMC, PMID 14747416)",
+   "evidence_quote": "fish larvae maintain tail beat frequencies of up to 100 Hz",
+   "value": "f max 100 Hz; strain 0.19; strain rate 120 s^-1; phase shift 57-63 degrees",
+   "confidence": "high (abstract opened)"
+  },
+  {
+   "claim": "Zebrafish coasting has a viscous regime below Re 300 (larvae and juveniles) and an inertial regime above Re 1000 (adults), with adult inertial drag coefficient about 0.024.",
+   "source": "https://doi.org/10.1242/jeb.01642 (abstract via Europe PMC, PMID 15939771)",
+   "evidence_quote": "We found a viscous regime at Re < 300",
+   "value": "viscous Re<300; inertial Re>1000; C_inert ~0.024",
+   "confidence": "high (abstract opened)"
+  },
+  {
+   "claim": "Simulated 3 and 5 dpf zebrafish larvae: raising body-wave amplitude raises speed from 7 to 21 body lengths per second and propulsive efficiency from 0.22 to 0.32 while power quadruples.",
+   "source": "https://doi.org/10.1242/jeb.071837 (abstract via Europe PMC, PMID 23100489)",
+   "evidence_quote": "increased forward swimming speed from 7 to 21 body lengths per second",
+   "value": "7-21 BL/s; efficiency 0.22-0.32; power x4",
+   "confidence": "high (abstract opened); simulation, not direct measurement"
+  },
+  {
+   "claim": "Across about 1200 undulatory swimmers, frequency is tuned in 2-20 Hz below a 0.5-1 m size crossover and is inversely proportional to length above it; predicted top speed 5-10 m/s.",
+   "source": "https://doi.org/10.1038/s41467-023-41368-6 (open access; abstract via Europe PMC, PMID 37689714)",
+   "evidence_quote": "the frequency can be tuned between 2-20 Hz due to biological constraints",
+   "value": "n~1200; crossover 0.5-1 m; 2-20 Hz; f ~ 1/L above; v max 5-10 m/s",
+   "confidence": "high for the abstract; dataset not opened and spans many animal groups, so filter against the holdout split before use"
+  },
+  {
+   "claim": "Larval fish swim in the intermediate hydrodynamic regime between viscous and inertial flow and shift toward inertial as they grow and speed up.",
+   "source": "https://doi.org/10.1242/jeb.149583 (abstract via Europe PMC, PMID 29326114)",
+   "evidence_quote": "larval fish operate in the intermediate hydrodynamic regime",
+   "value": "qualitative regime statement (review)",
+   "confidence": "high (abstract opened)"
+  },
+  {
+   "claim": "Larval zebrafish (6-9 days old) have two swim categories (burst and slow) and two turn categories (escape and routine); about 200 neurons project from brainstem to spinal cord.",
+   "source": "https://doi.org/10.1242/jeb.203.17.2565 (abstract via Europe PMC, PMID 10934000; Crossref lookup failed, DOI matched in Europe PMC)",
+   "evidence_quote": "Swimming episodes appeared to fall into two categories",
+   "value": "2 swim types, 2 turn types, ~200 descending neurons",
+   "confidence": "high (abstract opened)"
+  },
+  {
+   "claim": "Unsupervised clustering of millions of larval zebrafish swim bouts yields thirteen basic swimming patterns.",
+   "source": "https://doi.org/10.1016/j.cub.2017.12.002 (abstract via Europe PMC, PMID 29307558)",
+   "evidence_quote": "We identified a set of thirteen basic swimming patterns",
+   "value": "13 bout types; millions of bouts",
+   "confidence": "high (abstract opened); data deposit location not checked"
+  },
+  {
+   "claim": "Larval zebrafish swim in discrete bouts separated by longer rests, modelled as marked renewal processes dependent on hunger state.",
+   "source": "https://doi.org/10.1016/j.cub.2019.11.026 (abstract via Europe PMC, PMID 31866367)",
+   "evidence_quote": "Zebrafish larvae swim in punctuated bouts separated by longer periods of rest",
+   "value": "qualitative; bout/interbout structure",
+   "confidence": "high (abstract opened)"
+  },
+  {
+   "claim": "Anthrobots are self-constructing human-lung-cell biobots 30-500 microns across that move by cilia at 5-50 microns per second.",
+   "source": "https://doi.org/10.1002/advs.202303575 (open access; abstract via Europe PMC, PMID 38032125)",
+   "evidence_quote": "speeds ranging from 5-50 microns s-1",
+   "value": "diameter 30-500 um; speed 5-50 um/s; 2 weeks culture",
+   "confidence": "high (abstract opened; Crossref lookup failed, DOI matched in Europe PMC, which lists year 2024)"
+  },
+  {
+   "claim": "Xenobots are designed in silico by AI and built from frog cells; later versions self-organize and move by surface cilia without scaffolds.",
+   "source": "https://doi.org/10.1073/pnas.1910837117 and https://doi.org/10.1126/scirobotics.abf1571 (abstracts via Europe PMC)",
+   "evidence_quote": "These xenobots exhibit coordinated locomotion via cilia present on their surface",
+   "value": "no speeds given in either abstract",
+   "confidence": "high for the qualitative claim; no kinematic numbers obtained"
+  },
+  {
+   "claim": "Xenobot assemblies can replicate kinematically by gathering loose cells into functional copies.",
+   "source": "https://doi.org/10.1073/pnas.2112672118 (open access; abstract via Europe PMC, PMID 34845026)",
+   "evidence_quote": "moving and compressing dissociated cells in their environment into functional self-copies",
+   "value": "qualitative; generation counts not in abstract",
+   "confidence": "high (abstract opened)"
+  },
+  {
+   "claim": "A cardiomyocyte-driven PDMS flagellar swimmer self-propels at low Reynolds number at 5-10 microns per second; a two-tailed version reaches 81 microns per second.",
+   "source": "https://doi.org/10.1038/ncomms4081 (abstract via Europe PMC, PMID 24435099)",
+   "evidence_quote": "demonstrate a two-tailed swimmer swimming at 81",
+   "value": "5-10 um/s single tail; 81 um/s two-tailed",
+   "confidence": "high (abstract opened)"
+  },
+  {
+   "claim": "A tissue-engineered ray built from rat cardiomyocytes on an elastomer body with a gold skeleton swims by undulation at 1/10 scale and is steered by light.",
+   "source": "https://doi.org/10.1126/science.aaf4292 (abstract via Europe PMC, PMID 27387948)",
+   "evidence_quote": "we replicated fish morphology at 1/10 scale",
+   "value": "1/10 scale; swim speed not in abstract",
+   "confidence": "high (abstract opened)"
+  },
+  {
+   "claim": "A biohybrid fish with a muscular bilayer and an autonomous pacing node shows self-sustained body-caudal-fin swimming.",
+   "source": "https://doi.org/10.1126/science.abh0474 (abstract via Europe PMC, PMID 35143298)",
+   "evidence_quote": "demonstrated self-sustained body-caudal fin swimming",
+   "value": "no speed or duration in abstract",
+   "confidence": "high for the qualitative claim (Crossref lookup failed; DOI matched in Europe PMC)"
+  },
+  {
+   "claim": "The medusoid, a free-swimming jellyfish analogue of rat tissue on silicone, was designed to match jellyfish stroke kinematics and fluid interactions.",
+   "source": "https://doi.org/10.1038/nbt.2269 (abstract via Europe PMC, PMID 22820316)",
+   "evidence_quote": "freely swimming jellyfish from chemically dissociated rat tissue and silicone polymer",
+   "value": "qualitative",
+   "confidence": "high (abstract opened)"
+  },
+  {
+   "claim": "A biohybrid flagellar swimmer driven by on-board optogenetic neuromuscular units achieves untethered forward locomotion through time-irreversible flagellar dynamics.",
+   "source": "https://doi.org/10.1073/pnas.1907051116 (abstract via Europe PMC)",
+   "evidence_quote": "drive time-irreversible flagellar dynamics",
+   "value": "speed not in abstract",
+   "confidence": "high (abstract opened). Note: my first guess for this DOI (10.1073/pnas.1817682116) is a different paper, a skeletal-muscle pump-bot with flow up to 22.5 microlitres per minute."
+  },
+  {
+   "claim": "Gazzola, Argentina & Mahadevan propose swimming-number scaling for aquatic locomotion (Re proportional to Sw^(4/3) in the laminar regime and to Sw in the turbulent regime).",
+   "source": "https://doi.org/10.1038/nphys3078 (Crossref record only: title, authors, 2014)",
+   "value": "exponents 4/3 and 1 are from my memory of the paper, not from an opened text",
+   "confidence": "low for the numbers (no abstract available in Europe PMC; only DOI/title verified). Dataset spans many animal groups; filter against the holdout split."
+  },
+  {
+   "claim": "Bainbridge 1958 relates fish swimming speed to body size and tail-beat frequency and amplitude; Purcell 1977 sets out locomotion constraints at low Reynolds number.",
+   "source": "https://doi.org/10.1242/jeb.35.1.109 and https://doi.org/10.1119/1.10903 (Crossref records only)",
+   "value": "no numbers extracted",
+   "confidence": "DOI and title verified via Crossref; content not opened, so the linear speed-frequency law and the reciprocal-motion theorem attributed to them are from memory"
+  }
+ ],
+ "citations": [
+  {
+   "authors": "Kriegman, Blackiston, Levin, Bongard",
+   "title": "A scalable pipeline for designing reconfigurable organisms",
+   "venue": "PNAS",
+   "year": 2020,
+   "doi_or_arxiv": "10.1073/pnas.1910837117",
+   "verified": true,
+   "how_verified": "Crossref + Europe PMC abstract",
+   "used_for": "xenobot design pipeline"
+  },
+  {
+   "authors": "Blackiston, Lederer, Kriegman, Garnier, et al.",
+   "title": "A cellular platform for the development of synthetic living machines",
+   "venue": "Science Robotics",
+   "year": 2021,
+   "doi_or_arxiv": "10.1126/scirobotics.abf1571",
+   "verified": true,
+   "how_verified": "Crossref + Europe PMC abstract",
+   "used_for": "cilia-driven xenobots"
+  },
+  {
+   "authors": "Kriegman, Blackiston, Levin, Bongard",
+   "title": "Kinematic self-replication in reconfigurable organisms",
+   "venue": "PNAS",
+   "year": 2021,
+   "doi_or_arxiv": "10.1073/pnas.2112672118",
+   "verified": true,
+   "how_verified": "Crossref + Europe PMC abstract",
+   "used_for": "xenobot self-replication"
+  },
+  {
+   "authors": "Gumuskaya et al. (author list not fetched)",
+   "title": "Motile Living Biobots Self-Construct from Adult Human Somatic Progenitor Seed Cells",
+   "venue": "Advanced Science",
+   "year": 2024,
+   "doi_or_arxiv": "10.1002/advs.202303575",
+   "verified": true,
+   "how_verified": "Europe PMC abstract (Crossref lookup failed); first author from memory",
+   "used_for": "anthrobot size and speed"
+  },
+  {
+   "authors": "Nawroth, Lee, Feinberg, Ripplinger, et al.",
+   "title": "A tissue-engineered jellyfish with biomimetic propulsion",
+   "venue": "Nature Biotechnology",
+   "year": 2012,
+   "doi_or_arxiv": "10.1038/nbt.2269",
+   "verified": true,
+   "how_verified": "Crossref + Europe PMC abstract",
+   "used_for": "medusoid biohybrid swimmer"
+  },
+  {
+   "authors": "Park, Gazzola, Park, Park, et al.",
+   "title": "Phototactic guidance of a tissue-engineered soft-robotic ray",
+   "venue": "Science",
+   "year": 2016,
+   "doi_or_arxiv": "10.1126/science.aaf4292",
+   "verified": true,
+   "how_verified": "Crossref + Europe PMC abstract",
+   "used_for": "cardiomyocyte ray, 1/10 scale"
+  },
+  {
+   "authors": "Lee et al. (author list not fetched)",
+   "title": "An autonomously swimming biohybrid fish designed with human cardiac biophysics",
+   "venue": "Science",
+   "year": 2022,
+   "doi_or_arxiv": "10.1126/science.abh0474",
+   "verified": true,
+   "how_verified": "Europe PMC abstract (Crossref lookup failed); first author from memory",
+   "used_for": "autonomous biohybrid fish"
+  },
+  {
+   "authors": "Williams, Anand, Rajagopalan, Saif",
+   "title": "A self-propelled biohybrid swimmer at low Reynolds number",
+   "venue": "Nature Communications",
+   "year": 2014,
+   "doi_or_arxiv": "10.1038/ncomms4081",
+   "verified": true,
+   "how_verified": "Crossref + Europe PMC abstract",
+   "used_for": "cardiomyocyte flagellar swimmer speeds"
+  },
+  {
+   "authors": "Aydin, Zhang, Nuethong, Pagan-Diaz, Bashir, Gazzola, Saif",
+   "title": "Neuromuscular actuation of biohybrid motile bots",
+   "venue": "PNAS",
+   "year": 2019,
+   "doi_or_arxiv": "10.1073/pnas.1907051116",
+   "verified": true,
+   "how_verified": "Crossref + Europe PMC abstract",
+   "used_for": "neuromuscular biohybrid swimmer"
+  },
+  {
+   "authors": "Li, Seo, Aydin, Elhebeary, Kamm, Kong, Saif",
+   "title": "Biohybrid valveless pump-bot powered by engineered skeletal muscle",
+   "venue": "PNAS",
+   "year": 2019,
+   "doi_or_arxiv": "10.1073/pnas.1817682116",
+   "verified": true,
+   "how_verified": "Europe PMC abstract",
+   "used_for": "muscle pump-bot flow rate (found by accident)"
+  },
+  {
+   "authors": "Muller, van Leeuwen",
+   "title": "Swimming of larval zebrafish: ontogeny of body waves and implications for locomotory development",
+   "venue": "Journal of Experimental Biology",
+   "year": 2004,
+   "doi_or_arxiv": "10.1242/jeb.00821",
+   "verified": true,
+   "how_verified": "Crossref + Europe PMC abstract",
+   "used_for": "tail-beat frequency up to 100 Hz, strain"
+  },
+  {
+   "authors": "Budick, O'Malley",
+   "title": "Locomotor repertoire of the larval zebrafish: swimming, turning and prey capture",
+   "venue": "Journal of Experimental Biology",
+   "year": 2000,
+   "doi_or_arxiv": "10.1242/jeb.203.17.2565",
+   "verified": true,
+   "how_verified": "Europe PMC abstract (Crossref lookup failed); authors from memory",
+   "used_for": "swim and turn categories"
+  },
+  {
+   "authors": "van Leeuwen, Voesenek, Muller",
+   "title": "How body torque and Strouhal number change with swimming speed and developmental stage in larval zebrafish",
+   "venue": "Journal of the Royal Society Interface",
+   "year": 2015,
+   "doi_or_arxiv": "10.1098/rsif.2015.0479",
+   "verified": true,
+   "how_verified": "Crossref + Europe PMC abstract",
+   "used_for": "St vs Re, frequency, amplitude"
+  },
+  {
+   "authors": "Gazzola, Argentina, Mahadevan",
+   "title": "Scaling macroscopic aquatic locomotion",
+   "venue": "Nature Physics",
+   "year": 2014,
+   "doi_or_arxiv": "10.1038/nphys3078",
+   "verified": true,
+   "how_verified": "Crossref metadata only; no abstract opened",
+   "used_for": "swimming-number scaling law"
+  },
+  {
+   "authors": "Marques et al. (author list not fetched)",
+   "title": "Structure of the Zebrafish Locomotor Repertoire Revealed with Unsupervised Behavioral Clustering",
+   "venue": "Current Biology",
+   "year": 2018,
+   "doi_or_arxiv": "10.1016/j.cub.2017.12.002",
+   "verified": true,
+   "how_verified": "Europe PMC abstract (Crossref lookup failed); first author from memory",
+   "used_for": "13 bout types"
+  },
+  {
+   "authors": "Li, Muller, van Leeuwen, Liu",
+   "title": "Body dynamics and hydrodynamics of swimming fish larvae: a computational study",
+   "venue": "Journal of Experimental Biology",
+   "year": 2012,
+   "doi_or_arxiv": "10.1242/jeb.071837",
+   "verified": true,
+   "how_verified": "Crossref + Europe PMC abstract",
+   "used_for": "speed 7-21 BL/s, efficiency 0.22-0.32"
+  },
+  {
+   "authors": "Bainbridge",
+   "title": "The Speed of Swimming of Fish as Related to Size and to the Frequency and Amplitude of the Tail Beat",
+   "venue": "Journal of Experimental Biology",
+   "year": 1958,
+   "doi_or_arxiv": "10.1242/jeb.35.1.109",
+   "verified": true,
+   "how_verified": "Crossref metadata only",
+   "used_for": "classic speed-frequency relation"
+  },
+  {
+   "authors": "Voesenek, Muijres, van Leeuwen",
+   "title": "Biomechanics of swimming in developing larval fish",
+   "venue": "Journal of Experimental Biology",
+   "year": 2018,
+   "doi_or_arxiv": "10.1242/jeb.149583",
+   "verified": true,
+   "how_verified": "Crossref + Europe PMC abstract",
+   "used_for": "intermediate flow regime review"
+  },
+  {
+   "authors": "Purcell",
+   "title": "Life at low Reynolds number",
+   "venue": "American Journal of Physics",
+   "year": 1977,
+   "doi_or_arxiv": "10.1119/1.10903",
+   "verified": true,
+   "how_verified": "Crossref metadata only",
+   "used_for": "low-Re locomotion constraint"
+  },
+  {
+   "authors": "Sanchez-Rodriguez, Raufaste, Argentina",
+   "title": "Scaling the tail beat frequency and swimming speed in underwater undulatory swimming",
+   "venue": "Nature Communications",
+   "year": 2023,
+   "doi_or_arxiv": "10.1038/s41467-023-41368-6",
+   "verified": true,
+   "how_verified": "Crossref + Europe PMC abstract",
+   "used_for": "frequency-length scaling, ~1200 individuals"
+  },
+  {
+   "authors": "McHenry, Lauder",
+   "title": "The mechanical scaling of coasting in zebrafish (Danio rerio)",
+   "venue": "Journal of Experimental Biology",
+   "year": 2005,
+   "doi_or_arxiv": "10.1242/jeb.01642",
+   "verified": true,
+   "how_verified": "Europe PMC abstract (Crossref lookup failed); authors from memory",
+   "used_for": "Re regime thresholds 300 / 1000"
+  },
+  {
+   "authors": "Johnson et al. (author list not fetched)",
+   "title": "Probabilistic Models of Larval Zebrafish Behavior Reveal Structure on Many Scales",
+   "venue": "Current Biology",
+   "year": 2020,
+   "doi_or_arxiv": "10.1016/j.cub.2019.11.026",
+   "verified": true,
+   "how_verified": "Europe PMC abstract (Crossref lookup failed); first author from memory",
+   "used_for": "bout/interbout renewal models"
+  }
+ ],
+ "could_not_find": [
+  "Fuiman & Webb 1988, 'Ontogeny of routine swimming activity and performance in zebra danios', Animal Behaviour: the DOI I tried (10.1016/S0003-3472(88)80089-X) returned nothing from Crossref or Europe PMC, so it is unverified and not counted.",
+  "Full texts: none opened. All numbers are from abstracts; swim speeds for xenobots, the biohybrid ray, the biohybrid fish and the neuromuscular swimmer are not in their abstracts.",
+  "Abstracts for Gazzola 2014, Bainbridge 1958 and Purcell 1977 (Europe PMC has none); only DOI and title verified.",
+  "Open-data locations: I did not confirm where (or whether) raw kinematic data are deposited for any paper, including the ~1200-individual compilation and the zebrafish bout datasets.",
+  "Zebrafish-larva-inspired soft robots specifically: no paper found or verified in the time available; the list covers biohybrid swimmers and larval kinematics but not a larva-mimicking robot.",
+  "Crossref lookups failed (empty response, likely rate limiting) for 7 DOIs that Europe PMC did resolve; author lists for four of those are from memory."
+ ],
+ "key_claims": [
+  "Larval zebrafish St drops from 2.5 to 0.72 as Re rises from 60 to 1400, versus 0.2-0.6 in large swimmers (van Leeuwen et al. 2015).",
+  "Larval zebrafish tail-beat frequency reaches 80-100 Hz, far above the 2-20 Hz band reported for most undulatory swimmers under about 0.5-1 m.",
+  "Zebrafish coasting is viscous below Re 300 and inertial above Re 1000 (McHenry & Lauder 2005).",
+  "Cilia- and cardiomyocyte-driven biobots move at microns to tens of microns per second (anthrobots 5-50, flagellar swimmer 5-10 and 81).",
+  "19 of 20 attempted DOIs resolved; numbers for 15 come from opened abstracts, none from full text."
+ ],
+ "recommendations": [
+  "Lean statement 1 (definitional): St = f*A/v, with the van Leeuwen 2015 tuple as a worked instance; first open the full text to get the measured speeds rather than my back-calculated ~317 mm/s.",
+  "Lean statement 2 (empirical, falsifiable): St is antitone in Re over Re in [60, 1400] for larval zebrafish, and St > 0.6 throughout that range.",
+  "Lean statement 3: regime predicate for coasting, viscous if Re < 300 and inertial if Re > 1000, with the 300-1000 gap left explicitly undecided.",
+  "Lean statement 4: frequency band law (2-20 Hz below the size crossover, f proportional to 1/L above) from Sanchez-Rodriguez 2023; test whether larval zebrafish violate the band, and filter the compilation against holdout/split.json before touching it.",
+  "Before any nanopub draft, open the full texts and data supplements for van Leeuwen 2015 and Sanchez-Rodriguez 2023 and confirm a downloadable table exists.",
+  "Run a separate search for zebrafish-larva-inspired soft robots; this pass found none."
+ ],
+ "lay_summary": [
+  "Scientists have built tiny living robots from frog cells, human lung cells and rat heart cells; they swim very slowly, about the width of a hair every second or so.",
+  "Baby zebrafish are also tiny swimmers, and they wag their tails incredibly fast, up to about 100 times a second.",
+  "Because they are so small, water feels thick and sticky to them, so they waste more effort than big fish do; as they grow and speed up, their swimming gets more efficient.",
+  "We found published numbers for these facts in 19 papers and picked out a few simple rules that could be written as exact maths and checked against measurements.",
+  "We only read the short summaries of the papers, not the full papers, so the numbers still need a closer check."
+ ],
+ "glossary": {
+  "Reynolds number (Re)": "A number comparing how much a swimmer's motion is ruled by its own momentum versus the stickiness of the water; small animals have low values.",
+  "Strouhal number (St)": "Tail-beat frequency times tail-swing width divided by swimming speed; lower values (about 0.2-0.6) mean more efficient swimming.",
+  "Swimming number (Sw)": "A size-and-tail-beat measure used by Gazzola and colleagues to predict swimming speed.",
+  "tail-beat frequency": "How many times per second the tail swings back and forth.",
+  "amplitude": "How far the tail tip swings from side to side.",
+  "viscous regime": "Conditions where the water's stickiness dominates and a swimmer stops almost at once when it stops pushing.",
+  "inertial regime": "Conditions where momentum dominates and a swimmer keeps gliding after it stops pushing.",
+  "intermediate regime": "The in-between range where both stickiness and momentum matter.",
+  "dpf": "Days post-fertilization, the age of a fish embryo or larva.",
+  "body lengths per second (BL/s)": "Speed measured in how many of its own lengths an animal travels each second.",
+  "biohybrid": "A machine made partly of living cells and partly of man-made material.",
+  "biobot / xenobot / anthrobot": "Small moving clumps of living cells built or grown to act like robots; xenobots use frog cells, anthrobots use human lung cells.",
+  "cardiomyocyte": "A heart muscle cell that contracts on its own.",
+  "cilia": "Tiny hair-like structures on cells that beat to push fluid.",
+  "flagellum": "A whip-like tail used by very small swimmers.",
+  "time-irreversible motion": "A stroke that does not look the same played backwards; needed to move forward in very sticky conditions.",
+  "optogenetic": "Engineered so that cells respond to light.",
+  "PDMS": "A soft silicone rubber used for the bodies of small devices.",
+  "propulsive efficiency": "The share of a swimmer's effort that ends up as useful forward motion.",
+  "undulatory swimming": "Swimming by sending a wave down the body.",
+  "coasting": "Gliding without tail beats.",
+  "swim bout": "A short burst of swimming followed by a pause.",
+  "marked renewal process": "A statistical model of events that occur at random intervals, each with a type.",
+  "DOI": "A permanent identifier for a published paper.",
+  "Lean": "A computer language for writing maths statements that a program can check.",
+  "monotone / antitone": "Always going up / always going down as another quantity increases.",
+  "Crossref / Europe PMC": "Public databases of paper records and summaries."
+ },
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents4/gs-zebot-locomotion/show.py",
+  "D:/Users/ashenoy00000/delphi-work/agents4/gs-zebot-locomotion/dois.txt"
+ ],
+ "reproduce": [
+  {
+   "what": "Resolve a DOI and read its abstract",
+   "command_or_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:%2210.1098/rsif.2015.0479%22&resultType=core&format=json",
+   "expected": "One result titled 'How body torque and Strouhal number change with swimming speed and developmental stage in larval zebrafish' with the Re 60-1400 and St 2.5-0.72 numbers in abstractText"
+  },
+  {
+   "what": "Check DOI metadata",
+   "command_or_url": "https://api.crossref.org/works/10.1038/s41467-023-41368-6",
+   "expected": "Title 'Scaling the tail beat frequency and swimming speed in underwater undulatory swimming', Nature Communications, 2023"
+  },
+  {
+   "what": "Re-print all fetched records",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents4/gs-zebot-locomotion/show.py D:/Users/ashenoy00000/delphi-work/agents4/gs-zebot-locomotion",
+   "expected": "Crossref and Europe PMC title/abstract per DOI in dois.txt; some lines fail on the Windows console encoding for non-ASCII abstracts"
+  }
+ ],
+ "check_output": "19 of 20 attempted DOIs resolved to the expected title (Crossref and/or Europe PMC); 1 failed (Fuiman & Webb 1988); 1 guessed DOI resolved to a different paper and was corrected to 10.1073/pnas.1907051116. No tests or Lean checks were run."
+}

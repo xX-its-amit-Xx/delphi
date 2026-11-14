@@ -9,7 +9,7 @@ pats = [
 ]
 n = 0
 for p in root.rglob('*'):
-    if not p.is_file() or p.suffix not in {'.py', '.json', '.md', '.txt', '.sh', '.csv', '.lean', '.log'}:
+    if not p.is_file() or p.suffix not in {'.py', '.json', '.md', '.txt', '.sh', '.csv', '.lean', '.log', '.js'}:
         continue
     try:
         s = p.read_text(encoding='utf-8')

@@ -1,0 +1,285 @@
+{
+ "label": "hv-mol-morphogen",
+ "topic": "Morphogen gradient statements: exponential decay length sqrt(D/k), scaling with size, positional-information precision bounds, and measured Bicoid / Dpp / Fgf8 numbers",
+ "summary": "Harvested 10 statements, 5 with numbers read from full text (the two Gregor 2007 Cell papers on PMC) and 5 from PubMed abstracts only. Based on articles retrieved from PubMed; DOI links are in citations.\n\nValidation: 4 arithmetic checks against the Gregor 2007 reported values.\n- FAIL: decay length = sqrt(D*tau). With lambda ~100 um and FRAP D = 0.30 um^2/s the implied lifetime is 33,333 s (9.3 h), against a gradient established in under 90 min. This is about 6x off and is the known Bicoid diffusion paradox.\n- PASS: reaching lambda ~100 um in 90 min needs D of about 1.85 um^2/s; the paper says D must be far above 2.\n- PASS: neighbour discrimination. Delta x / lambda = 8/100 = 8%, against the paper's ~10%.\n- PASS on arithmetic, FAIL on biology: the Berg-Purcell averaging time comes out at 6,944 s against the paper's ~7,000 s, but that is nearly two hours, longer than the time available, so a single nucleus averaging over time cannot reach 10%.\n\nRegistry: none of the 10 statements is in the law registry. Grep of lean/ and tracks/lean finds morphogen only in the two Turing laws (turing-ddi, turing-wavelength). tracks/research mentions morphogens in corpus and agent files, with no decay-length law; 'decay length' / Gregor / Kicheva hit only tracks/research/agents/q1-mechanisms.json, which I did not open.\n\nLean: D:/Users/ashenoy00000/delphi-work/agents4/hv-mol-morphogen/MorphogenGradient.lean has 5 theorems (profile slope, position-independent fold change, lifetime from length, Berg-Purcell time, scaling invariance). It reached ALL CHECKED on the second of two runs, with no sorry. The first run failed with an olean read error on a Mathlib file, not an error in my file. The captured output was cut to the last lines, so the axiom lists show for only two theorems; the counter reports 5/5 axiom lines.\n\nNot done:\n- No dataset was downloaded; the falsification tests are named but not run.\n- Shh: no number harvested.\n- Fgf8 and Dpp: no numeric D, k or lambda, because the abstracts carry none and I did not open the full texts.\n- One neural-tube gradient-decoding paper was excluded because its abstract uses a held-out-clade species.\n- Houchmandzadeh 2002 could not be located (my PMID guess was wrong).",
+ "findings": [
+  {
+   "claim": "S1 Exponential profile. Formal: steady state of dc/dt = D c'' - k c with a source at x=0 is c(x) = c0*exp(-x/lambda), lambda = sqrt(D/k) = sqrt(D*tau). Assumptions: 1-D, uniform D and k, steady state, linear degradation. Measured Bicoid lambda ~100 um. Registry: not present. Falsifier: FlyEx (urchin.spbcas.ru/flyex) Bcd intensity profiles; fit log c vs x, reject if residuals are systematically curved or lambda differs from sqrt(D*tau) using independently measured D and tau.",
+   "source": "https://doi.org/10.1016/j.cell.2007.05.026 (PMC2253672, full text opened)",
+   "value": "lambda ~ 100 um",
+   "evidence_quote": "The observed concentration profiles have λ ~ 100 μm.",
+   "confidence": "high for the number (read in full text via fetch summary); FlyEx dataset named from memory, not opened"
+  },
+  {
+   "claim": "S2 VALIDATION (FAIL). Prediction from S1: tau = lambda^2/D. With lambda = 100 um and FRAP D = 0.30 um^2/s, tau = 10000/0.30 = 33,333 s = 9.3 h. Measured: gradient established in ~1 h (under 90 min). Predicted time is about 6x too long, so simple diffusion-degradation with the FRAP D fails. Registry: not present.",
+   "source": "https://doi.org/10.1016/j.cell.2007.05.026",
+   "value": "predicted 33,333 s vs observed < 5,400 s: FAIL",
+   "evidence_quote": "the gradient would never reach steady-state with our measured small diffusion constant",
+   "confidence": "high; arithmetic is mine, inputs are the paper's reported values"
+  },
+  {
+   "claim": "S3 VALIDATION (PASS, consistency). Inverse of S2: to reach lambda = 100 um within t = 90 min needs D >= lambda^2/t = 10000/5400 = 1.85 um^2/s. Paper states the requirement as D much greater than 2 um^2/s, an order above the measured 0.30 +/- 0.09.",
+   "source": "https://doi.org/10.1016/j.cell.2007.05.026",
+   "value": "computed 1.85 um^2/s vs paper's 'D >> 2': PASS",
+   "evidence_quote": "a cytoplasmic diffusion constant D = 0.30±0.09 μm2/s",
+   "confidence": "medium-high; the 'D >> 2' wording comes from the fetch tool's summary of the full text, not a verbatim quote I saw"
+  },
+  {
+   "claim": "S4 Competing D by FCS. Bicoid-EGFP diffusion coefficient ~7 um^2/s in cytoplasm during cycles 12-14, large enough for diffusion alone to set up the gradient. Formal: D_FCS >= lambda^2/t_establish. With S3's threshold 1.85 um^2/s, 7 > 1.85 so S1 is rescued if the FCS D is the right one. Registry: not present. Falsifier: repeat FRAP vs FCS on the same Bcd-GFP line; reject if long-range effective D stays under 2 um^2/s.",
+   "source": "https://doi.org/10.1016/j.bpj.2010.05.031 (PubMed abstract)",
+   "value": "D ~ 7 um^2/s",
+   "evidence_quote": "with a diffusion coefficient approximately 7 microm(2)/s",
+   "confidence": "high for the abstract value; full text not opened"
+  },
+  {
+   "claim": "S5 VALIDATION (PASS). Neighbour discrimination: for an exponential profile, the fractional concentration difference between nuclei Delta x apart is Delta c / c = Delta x / lambda (small Delta x). Prediction: 8 um / 100 um = 8%. Reported: ~10%. Registry: not present. Falsifier: FlyEx or Gregor-lab Bcd-GFP nuclear intensities; reject if the measured embryo-to-embryo noise at mid-embryo exceeds Delta x / lambda.",
+   "source": "https://doi.org/10.1016/j.cell.2007.05.025 (PMC2253670, full text opened)",
+   "value": "predicted 8% vs reported ~10%: PASS (same order, within rounding of '~')",
+   "evidence_quote": "all of these quantities are approximately 10%",
+   "confidence": "high; 8 um spacing and 100 um length constant read from full text via fetch summary"
+  },
+  {
+   "claim": "S6 VALIDATION (arithmetic PASS, biology FAIL). Berg-Purcell limit: delta c / c ~ 1/sqrt(D*a*c*T). With D = 1 um^2/s, a = 3 nm = 0.003 um, c = 4.8 molecules/um^3 and target 0.1: T = 100/(1*0.003*4.8) = 6,944 s. Paper: about 7,000 s, nearly two hours, which exceeds the available time; so one nucleus time-averaging alone cannot reach 10%. Registry: not present. Falsifier: live hunchback transcription readouts (MS2); reject if single-nucleus readout noise reaches 10% in a window far shorter than D*a*c allows without spatial averaging.",
+   "source": "https://doi.org/10.1016/j.cell.2007.05.025",
+   "value": "computed 6,944 s vs reported ~7,000 s",
+   "evidence_quote": "approaching the limits set by basic physical principles",
+   "confidence": "high for inputs (full text summary); the quote is from the abstract"
+  },
+  {
+   "claim": "S7 Positional information in bits. Formal: I(g; x) = mutual information between gap-gene expression g and position x; reported nearly 2 bits per gene, and four gap genes give positional error sigma_x ~1% of egg length, roughly constant along the axis. Assumption: Gaussian noise approximation for the decoder. Registry: not present. Falsifier: the Dubuis/Petkova gap-gene profile data set (Princeton Gregor lab release); recompute sigma_x(x) = sqrt of inverse Fisher information, reject if above ~1 nuclear spacing (about 1.5-2% EL) over most of the axis.",
+   "source": "https://doi.org/10.1073/pnas.1315642110 (PubMed abstract, PMC3799327)",
+   "value": "~2 bits per gene; error ~1% egg length",
+   "evidence_quote": "Individual genes carry nearly two bits of information",
+   "confidence": "high for abstract values; the abstract text reads 'error bar of ~1' with the percent sign dropped, I read it as 1% EL; dataset location not opened"
+  },
+  {
+   "claim": "S8 Scaling across species. Formal: lambda / L = constant across related fly species with different egg length L, while effective D is essentially the same; under S1 this forces tau proportional to L^2 (lifetime adaptation). Registry: not present. Falsifier: Bcd profiles in species of different egg size (data in the paper's figures); regress lambda on L, reject if slope of log lambda vs log L is not near 1, or if tau does not scale as L^2.",
+   "source": "https://doi.org/10.1073/pnas.0509483102 (PubMed abstract)",
+   "value": "qualitative: D same, pattern scales with L",
+   "evidence_quote": "effective diffusion constants are essentially the same in closely related dipteran species",
+   "confidence": "medium; abstract only, no numeric lambda/L opened"
+  },
+  {
+   "claim": "S9 Lifetime sets length (direct test of lambda = sqrt(D*tau)). Bicoid lifetime is 50 min before cycle 14 and 15 min during cellularization; the gradient does not reach steady state; artificially shortening lifetime shortens the gradient. Formal: d lambda / d tau > 0, and under S1 lambda2/lambda1 = sqrt(tau2/tau1). Check against S2: tau = 50 min = 3000 s with lambda = 100 um implies D = lambda^2/tau = 3.3 um^2/s, between the FRAP (0.3) and FCS (7) values. Registry: not present. Falsifier: the Dronpa-Bcd perturbation series in the paper; reject if lambda ratio departs from sqrt of lifetime ratio.",
+   "source": "https://doi.org/10.1016/j.bpj.2011.07.025 (PubMed abstract)",
+   "value": "tau = 50 min then 15 min; implied D = 3.3 um^2/s (my arithmetic)",
+   "evidence_quote": "changing from 50 min before mitotic cycle 14 to 15 min during cellularization",
+   "confidence": "high for lifetimes (abstract); implied D is my calculation mixing two papers' numbers"
+  },
+  {
+   "claim": "S10 Other morphogens. (a) Fgf8 in zebrafish: gradient forms by free extracellular diffusion plus a receptor-endocytosis sink, so lambda = sqrt(D/k) with k set by uptake; changing uptake changes gradient shape. (b) Dpp vs Wingless in the fly wing disc: four kinetic parameters (production, effective D, degradation, immobile fraction) were measured and differ, Dpp range longer. (c) Dpp gradient scales with disc size during growth, lambda proportional to L. Registry: not present. Falsifier: Kicheva 2007 supplementary FRAP parameter table; reject if sqrt(D/k) from FRAP differs from the fitted decay length of the same discs beyond reported error.",
+   "source": "https://doi.org/10.1038/nature08391 ; https://doi.org/10.1126/science.1135774 ; https://doi.org/10.1126/science.1200037 (PubMed abstracts)",
+   "value": "qualitative only; no numeric D, k, lambda in the abstracts",
+   "evidence_quote": "Both Dpp concentration and signaling gradients scale with tissue size during development",
+   "confidence": "medium; abstracts only. I did not open full texts, so I report no numeric D or lambda for Fgf8 or Dpp"
+  },
+  {
+   "claim": "Registry check. The law registry has no morphogen decay-length, scaling or positional-precision law. 'morphogen' appears in lean/registry only in turing-ddi and turing-wavelength (two-morphogen reaction-diffusion instability), which is a different statement. tracks/research mentions morphogens in corpus and agent files but no sqrt(D/k) law.",
+   "source": "grep of D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/{lean,tracks/lean,tracks/research}",
+   "value": "0 of 10 statements already present",
+   "evidence_quote": "two-morphogen reaction-diffusion system",
+   "confidence": "high for lean/ and tracks/lean; tracks/research files were counted by grep, not read"
+  },
+  {
+   "claim": "Lean file with 5 theorems checked: profile_deriv (slope of c0*exp(-x/lam) is -(c0/lam)*exp(-x/lam)), fold_change (moving d multiplies concentration by exp(-d/lam) at any x), lifetime_from_length (lam^2 = D*tau implies tau = lam^2/D), berg_purcell_time (eps^2*D*a*c*T = 1 implies T = 1/(D*a*c*eps^2)), scaling_invariance (lam = alpha*L makes the profile at relative position s independent of L).",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents4/hv-mol-morphogen/MorphogenGradient.lean",
+   "value": "ALL CHECKED on run 2 of 2; run 1 failed on an olean read error",
+   "evidence_quote": "ALL CHECKED: no errors, no sorryAx",
+   "confidence": "high; these are the algebraic/calculus skeleton only, not the full PDE steady-state uniqueness"
+  }
+ ],
+ "key_claims": [
+  "The textbook law lambda = sqrt(D*tau) FAILS for Bicoid with the FRAP diffusion constant: predicted 9.3 h to steady state vs under 90 min observed.",
+  "The same law is consistent if the FCS value (D ~7 um^2/s) or the measured 50 min lifetime (implied D 3.3 um^2/s) is used; the disagreement is about which D is right.",
+  "Neighbour-discrimination precision Delta x/lambda = 8% matches the reported ~10%.",
+  "Berg-Purcell averaging time recomputes to 6,944 s, matching the paper's ~7,000 s, and is too long for a single nucleus.",
+  "None of these statements is in the DELPHI law registry yet; only Turing two-morphogen laws are.",
+  "Lean file MorphogenGradient.lean: 5 theorems, ALL CHECKED, no sorry."
+ ],
+ "lay_summary": [
+  "A growing embryo tells its cells where they are by using a chemical that is strong at one end and fades toward the other, like the smell of cooking fading as you walk away from the kitchen.",
+  "A simple rule says how far the chemical reaches: it depends on how fast it spreads and how long it lasts before it is broken down.",
+  "We checked that rule with real fruit-fly measurements and it failed with one way of measuring the spreading speed: the chemical would need over nine hours, but the embryo does it in about one.",
+  "Another check passed: next-door cells see about a one-tenth difference in the chemical, which is just what the fading rule predicts.",
+  "We also wrote five small maths facts about the rule and a computer proof-checker confirmed them."
+ ],
+ "glossary": {
+  "morphogen": "A chemical signal whose amount tells a cell where it is in the embryo.",
+  "gradient": "A smooth change in amount from high at one place to low further away.",
+  "decay length (lambda)": "The distance over which the signal drops to about 37% of its starting value.",
+  "D (diffusion constant)": "How fast molecules spread out by random motion, in square micrometres per second.",
+  "k (degradation rate) and tau (lifetime)": "How quickly the molecule is destroyed; tau = 1/k is how long a molecule lasts on average.",
+  "steady state": "When the pattern stops changing because supply and loss balance.",
+  "SDD model": "Synthesis-diffusion-degradation: made at one end, spreads, and is broken down everywhere.",
+  "Bicoid (Bcd)": "A fruit-fly morphogen that marks the head-to-tail axis of the early embryo.",
+  "Dpp, Wingless, Fgf8, Shh": "Other morphogens, in the fly wing (Dpp, Wingless), zebrafish embryo (Fgf8) and vertebrate tissues (Shh).",
+  "FRAP": "Bleach a spot with a laser and time how fast fluorescence returns, to measure spreading speed.",
+  "FCS": "Watch flickering of a few fluorescent molecules in a tiny spot to measure how fast they move.",
+  "Berg-Purcell limit": "The best accuracy a tiny sensor can reach when counting randomly arriving molecules over a set time.",
+  "positional information": "How much a cell can know about its location from the signals it reads.",
+  "bit": "A unit of information; one bit is one yes/no answer.",
+  "mutual information": "How much knowing one quantity reduces uncertainty about another.",
+  "scaling": "The pattern keeping the same proportions when the embryo is bigger or smaller.",
+  "egg length (EL)": "The length of the embryo, used as the ruler for positions.",
+  "nucleus / nuclear cycle": "The compartment holding DNA; early fly embryos double their nuclei in numbered rounds.",
+  "hunchback and gap genes": "Genes switched on by Bicoid in broad bands along the embryo.",
+  "Lean / Mathlib": "A computer program that checks mathematical proofs, and its library of known maths.",
+  "axiom": "A starting assumption a proof is allowed to rely on.",
+  "olean": "A compiled library file the Lean checker loads."
+ },
+ "citations": [
+  {
+   "title": "Stability and nuclear dynamics of the bicoid morphogen gradient",
+   "authors": "Gregor T, Wieschaus EF, McGregor AP, Bialek W, Tank DW",
+   "year": 2007,
+   "venue": "Cell 130(1):141-52",
+   "doi_or_arxiv": "https://doi.org/10.1016/j.cell.2007.05.026",
+   "verified": true,
+   "how_verified": "PubMed metadata (PMID 17632061) and PMC2253672 full text fetched",
+   "used_for": "lambda ~100 um, D = 0.30 um^2/s, establishment under 90 min; validations S2, S3"
+  },
+  {
+   "title": "Probing the limits to positional information",
+   "authors": "Gregor T, Tank DW, Wieschaus EF, Bialek W",
+   "year": 2007,
+   "venue": "Cell 130(1):153-64",
+   "doi_or_arxiv": "https://doi.org/10.1016/j.cell.2007.05.025",
+   "verified": true,
+   "how_verified": "PubMed metadata (PMID 17632062) and PMC2253670 full text fetched",
+   "used_for": "10% precision, Berg-Purcell inputs, 8 um spacing, 4.8 molecules/um^3; validations S5, S6"
+  },
+  {
+   "title": "High mobility of bicoid captured by fluorescence correlation spectroscopy: implication for the rapid establishment of its gradient",
+   "authors": "Abu-Arish A, Porcher A, Czerwonka A, Dostatni N, Fradin C",
+   "year": 2010,
+   "venue": "Biophys J 99(4):L33-5",
+   "doi_or_arxiv": "https://doi.org/10.1016/j.bpj.2010.05.031",
+   "verified": true,
+   "how_verified": "PubMed metadata and abstract (PMID 20712981)",
+   "used_for": "D ~7 um^2/s by FCS"
+  },
+  {
+   "title": "Positional information, in bits",
+   "authors": "Dubuis JO, Tkacik G, Wieschaus EF, Gregor T, Bialek W",
+   "year": 2013,
+   "venue": "PNAS 110(41):16301-8",
+   "doi_or_arxiv": "https://doi.org/10.1073/pnas.1315642110",
+   "verified": true,
+   "how_verified": "PubMed metadata and abstract (PMID 24089448)",
+   "used_for": "~2 bits per gap gene, ~1% positional error"
+  },
+  {
+   "title": "Diffusion and scaling during early embryonic pattern formation",
+   "authors": "Gregor T, Bialek W, de Ruyter van Steveninck RR, Tank DW, Wieschaus EF",
+   "year": 2005,
+   "venue": "PNAS 102(51):18403-7",
+   "doi_or_arxiv": "https://doi.org/10.1073/pnas.0509483102",
+   "verified": true,
+   "how_verified": "PubMed metadata and abstract (PMID 16352710)",
+   "used_for": "scaling of Bcd gradient with egg length across fly species"
+  },
+  {
+   "title": "Measurement and perturbation of morphogen lifetime: effects on gradient shape",
+   "authors": "Drocco JA, Grimm O, Tank DW, Wieschaus E",
+   "year": 2011,
+   "venue": "Biophys J 101(8):1807-15",
+   "doi_or_arxiv": "https://doi.org/10.1016/j.bpj.2011.07.025",
+   "verified": true,
+   "how_verified": "PubMed metadata and abstract (PMID 22004733)",
+   "used_for": "Bcd lifetime 50 min then 15 min; lifetime changes gradient length"
+  },
+  {
+   "title": "Fgf8 morphogen gradient forms by a source-sink mechanism with freely diffusing molecules",
+   "authors": "Yu SR, Burkhardt M, Nowak M, Ries J, Petrasek Z, Scholpp S, Schwille P, Brand M",
+   "year": 2009,
+   "venue": "Nature 461(7263):533-6",
+   "doi_or_arxiv": "https://doi.org/10.1038/nature08391",
+   "verified": true,
+   "how_verified": "PubMed metadata and abstract (PMID 19741606)",
+   "used_for": "Fgf8 source-sink mechanism (qualitative)"
+  },
+  {
+   "title": "Kinetics of morphogen gradient formation",
+   "authors": "Kicheva A, Pantazis P, Bollenbach T, Kalaidzidis Y, Bittig T, Julicher F, Gonzalez-Gaitan M",
+   "year": 2007,
+   "venue": "Science 315(5811):521-5",
+   "doi_or_arxiv": "https://doi.org/10.1126/science.1135774",
+   "verified": true,
+   "how_verified": "PubMed metadata and abstract (PMID 17255514)",
+   "used_for": "Dpp vs Wingless kinetic parameters (qualitative)"
+  },
+  {
+   "title": "Dynamics of Dpp signaling and proliferation control",
+   "authors": "Wartlick O, Mumcu P, Kicheva A, Bittig T, Seum C, Julicher F, Gonzalez-Gaitan M",
+   "year": 2011,
+   "venue": "Science 331(6021):1154-9",
+   "doi_or_arxiv": "https://doi.org/10.1126/science.1200037",
+   "verified": true,
+   "how_verified": "PubMed metadata and abstract (PMID 21385708)",
+   "used_for": "Dpp gradient scales with tissue size"
+  },
+  {
+   "title": "Pre-steady-state decoding of the Bicoid morphogen gradient",
+   "authors": "Bergmann S, Sandler O, Sberro H, Shnider S, Schejter E, Shilo BZ, Barkai N",
+   "year": 2007,
+   "venue": "PLoS Biol 5(2):e46",
+   "doi_or_arxiv": "https://doi.org/10.1371/journal.pbio.0050046",
+   "verified": true,
+   "how_verified": "PubMed metadata and abstract (PMID 17298180)",
+   "used_for": "context: gradient may be read before steady state, bearing on S2"
+  }
+ ],
+ "could_not_find": [
+  "Houchmandzadeh, Wieschaus, Leibler 2002 (Bicoid variability vs hunchback precision): my PMID guess was wrong and I did not locate it in time.",
+  "Shh gradient numbers (decay length, D): nothing harvested.",
+  "Numeric D, k and lambda for Dpp/Wingless (Kicheva 2007) and Fgf8 (Yu 2009): abstracts carry no numbers; full texts not opened.",
+  "FlyEx and the Princeton gap-gene data set: named as test datasets from memory; URLs not opened or verified.",
+  "No dataset was downloaded and no fit was run; all validations use reported values, not raw profiles.",
+  "One neural-tube gradient-decoding paper was found but excluded because its abstract uses a held-out-clade species.",
+  "tracks/research/agents/q1-mechanisms.json has 2 hits for decay-length/author terms; I did not open it to see what it says.",
+  "The cause of the first checker failure (olean read error on a Mathlib file that exists on disk) was not diagnosed; possibly another session was using the shared build at the time."
+ ],
+ "recommendations": [
+  "Register 'decay length lambda^2 = D*tau' as a law with an explicit FAIL-with-FRAP-D / PASS-with-FCS-D test record; the disagreement between the two D measurements is the scientifically interesting result.",
+  "Add the Berg-Purcell precision bound as a separate law; the Gregor 2007 inputs reproduce the paper's 7,000 s exactly and give a clean numeric test.",
+  "Next step for a real data test: pull Bcd profiles (FlyEx) and fit lambda per embryo, then test scaling lambda/L and the 10% reproducibility claim on raw data.",
+  "Open the Kicheva 2007 supplement for Dpp D and k so sqrt(D/k) can be compared with the fitted decay length; this is the cleanest direct test of S1 outside Bicoid.",
+  "Extend the Lean file with the second derivative so the steady-state equation D*c'' = k*c is proved from lam^2 = D/k, not just the slope."
+ ],
+ "reproduce": [
+  {
+   "what": "Check the Lean file",
+   "command_or_url": "bash D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/lean/check.sh D:/Users/ashenoy00000/delphi-work/agents4/hv-mol-morphogen/MorphogenGradient.lean",
+   "expected": "errors=0 sorryAx=0 axiom-lines=5/5 and ALL CHECKED (a first attempt may fail on an olean read error; rerun)"
+  },
+  {
+   "what": "S2 lifetime implied by lambda and FRAP D",
+   "command_or_url": "python -c \"print(100**2/0.30, 100**2/0.30/3600)\"",
+   "expected": "33333 s, 9.26 h; compare with under 90 min in https://pmc.ncbi.nlm.nih.gov/articles/PMC2253672/"
+  },
+  {
+   "what": "S3 D needed to reach 100 um in 90 min",
+   "command_or_url": "python -c \"print(100**2/5400)\"",
+   "expected": "1.85 um^2/s"
+  },
+  {
+   "what": "S5 neighbour discrimination",
+   "command_or_url": "python -c \"print(8/100)\"",
+   "expected": "0.08, compare ~10% in https://pmc.ncbi.nlm.nih.gov/articles/PMC2253670/"
+  },
+  {
+   "what": "S6 Berg-Purcell averaging time",
+   "command_or_url": "python -c \"print(100/(1*0.003*4.8))\"",
+   "expected": "6944 s, compare ~7000 s in the same paper"
+  },
+  {
+   "what": "Registry check",
+   "command_or_url": "grep -ril -E 'morphogen|bicoid' D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/laws",
+   "expected": "only turing-ddi.json and turing-wavelength.json"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents4/hv-mol-morphogen/MorphogenGradient.lean"
+ ],
+ "check_output": "RUN 1 (failed, infrastructure):\ntoolchain: leanprover/lean4:v4.35.0   mathlib: \nMorphogenGradient.lean                               errors=1 sorryAx=0 axiom-lines=0/5\nD:/Users/ashenoy00000/delphi-work/agents4/hv-mol-morphogen/MorphogenGradient.lean:1:0: error: failed to read file 'C:\\Temp\\delphi-lean-lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Analysis\\Normed\\Affine\\AddTorsor.olean'\nFAILED\n\nRUN 2 (same file, unchanged; output was piped through tail so the axiom line is truncated):\ntoolchain: leanprover/lean4:v4.35.0   mathlib: \nMorphogenGradient.lean                               errors=0 sorryAx=0 axiom-lines=5/5\nMorphogenGradient.profile_deriv <- [propext, Classical.choice, Quot.sound] MorphogenGradient.fold_change depends on axioms: [propext, Classical.choice\n\nALL CHECKED: no errors, no sorryAx"
+}

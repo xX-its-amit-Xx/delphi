@@ -1,0 +1,250 @@
+{
+ "label": "hv-morph-fin-locomotion",
+ "topic": "Fish fin and swimming statements: Strouhal number range, elongated-body theory, fin-ray bilayer bending, glide ratio bounds",
+ "summary": "Harvested 10 statements; 7 rest on abstracts or metadata I opened (PubMed, Crossref), 3 are from memory and listed in could_not_find. Three validations ran against reported numbers. (1) The narrow optimal-efficiency Strouhal band 0.25-0.35 FAILS as a description of real swimmers: only 55% of 248 measured cetacean values fall in it, and the mode sits about 20% lower (0.225-0.275). (2) The broad band 0.2-0.4 passes only at species-mean level, with considerable scatter. (3) Flying-fish glide: steady-glide ceiling h*(L/D) = 13.2 m * 4.7 = 62 m against a simulated 45.4 m, a pass, but a weak one because both numbers come from the same CFD paper. A derived point: the two reported kinematic windows (amplitude/length 0.15-0.25, normalised frequency 1-2) only force St into [0.15, 0.5], so the 0.2-0.4 band is extra information, not a consequence of them.\n\nLEAN: NOT PROVED. One file with four theorems (Strouhal factorisation, Strouhal window, Lighthill thrust sign iff wave speed > swim speed, glide range bound) was written at D:/Users/ashenoy00000/delphi-work/agents4/hv-morph-fin-locomotion/FinLocomotion.lean. Both permitted check runs FAILED at line 1 (import Mathlib) with 'failed to read file ... .olean.private', a different Mathlib file each time; the first named file exists on disk, so this looks like an environment or contention fault in the shared Mathlib cache, not a proof error. The proofs themselves were never elaborated, so their correctness is unknown.\n\nRegistry overlap (grep only, not read in depth): lift-to-drag is already present (lean/constraints.json lift_to_drag_max; tracks/research/lean/t4-glide-law__MaxLiftToDrag.lean; t4-glide agents). Fin ray appears in tracks/research/agents/pp-fish-biomechanics-morphology.json. Strouhal, elongated-body and Bainbridge terms hit in tracks/research (t4-glide and pp-fish agent files) but I did not confirm any Lean law for Strouhal or Lighthill thrust in lean/ or tracks/lean; treat those as probably new. No file was written to the repo. Based on articles retrieved from PubMed; DOIs are given per finding.",
+ "findings": [
+  {
+   "claim": "S1 Strouhal band. Formal: St := f*A/U; for cruising lift-based swimmers 0.2 < St < 0.4 (assumption: steady cruise, oscillatory lift-based propulsion). Registry: Strouhal term found in tracks/research agent files, no Lean law confirmed. Falsifier: per-species f, A, U table in Rohr and Fish 2004 (JEB, open); test = fraction of species means outside [0.2,0.4] > 0. VALIDATED: prediction species means in [0.2,0.4]; measured: each species average within range (6 cetacean species, 248 values) -> PASS at mean level, with considerable individual scatter.",
+   "source": "https://doi.org/10.1038/nature02000 (PubMed 14562101, abstract opened)",
+   "evidence_quote": "usually peaks within the interval 0.2 < St < 0.4",
+   "value": "0.2 < St < 0.4",
+   "confidence": "high for the statement (abstract opened); validation uses the Rohr and Fish abstract only, not the table"
+  },
+  {
+   "claim": "S2 Narrow efficiency optimum. Formal: St in [0.25, 0.35] at maximum propulsive efficiency (oscillating-foil prediction, attributed to Triantafyllou et al. 1993). Registry: not found. Falsifier: same cetacean table; test = share of observations inside [0.25,0.35]. VALIDATED: prediction most values in 0.25-0.35; measured 55% inside, versus 74% in 0.20-0.30 and mode 0.225-0.275 -> FAIL as a tight bound (observed values about 20% lower than predicted).",
+   "source": "https://doi.org/10.1242/jeb.00948 (PubMed 15073196, abstract opened)",
+   "evidence_quote": "between 0.20 and 0.30 (74%) than the 0.25-0.35 (55%) range predicted",
+   "value": "55% inside predicted band; 74% in 0.20-0.30; 44% in 0.225-0.275",
+   "confidence": "high for the measured shares; the 1993 primary source for the 0.25-0.35 prediction was not opened"
+  },
+  {
+   "claim": "S3 Kinematic windows. Formal: k := f*L/U in [1,2] and a := A/L in [0.15,0.25] for toothed cetaceans; then St = a*k (identity) so St in [0.15, 0.5]. This is wider than 0.2-0.4, so the band is not implied by the windows. Registry: not found. Falsifier: same table; test = any animal with k or a outside the window while cruising. Consistency check: midpoint 0.2*1.5 = 0.30, observed mode 0.225-0.275 lies inside [0.15,0.5] -> PASS (weak, necessary only).",
+   "source": "https://doi.org/10.1242/jeb.00948 (PubMed 15073196, abstract opened)",
+   "evidence_quote": "generally restricted from 1 to 2",
+   "value": "f*L/U in [1,2]; A/L predominantly 0.15-0.25",
+   "confidence": "high for the windows; the derived interval is my own arithmetic, Lean proof written but unchecked"
+  },
+  {
+   "claim": "S4 Elongated-body theory, wave speed. Formal: for a slender fish with body wave h = g(x - V t), mean thrust T = (m/2)*(V^2 - U^2)*g'^2 at the tail (m = added mass per length), so T > 0 iff V > U; recommended V about (5/4)*U for high Froude efficiency. Assumptions: slender body, inviscid, small amplitude. Registry: 'Lighthill'/'elongated' hits in tracks/research only; no Lean law confirmed. Falsifier: any open kinematics table giving body-wave speed V and swim speed U (for example midline kinematics in Dryad swimming datasets); test = any steady swimmer with U/V >= 1. Not validated against data here.",
+   "source": "https://doi.org/10.1017/S0022112060001110 (Crossref record opened; abstract seen only as a paraphrase by the fetch tool)",
+   "value": "V approx 1.25 U; thrust requires V > U",
+   "confidence": "medium: the 5/4 figure came through a tool paraphrase of the abstract, not a verbatim read; the thrust formula is from my memory of the theory"
+  },
+  {
+   "claim": "S5 Fin-ray bilayer stiffness control. Formal: a fin ray is two bending half-rays (hemitrichs) joined along their length; a base offset d between them sets curvature, and effective bending stiffness K(actuated)/K(unactuated) > 10; curvature is concentrated at the base or at the load point. Assumption: linear elasticity. Registry: 'fin ray' appears in tracks/research/agents/pp-fish-biomechanics-morphology.json; no Lean law confirmed. Falsifier: force-displacement curves in the open PMC article (PMC2359861); test = stiffness ratio between actuated and unactuated < 10.",
+   "source": "https://doi.org/10.1098/rsif.2006.0181 (PubMed 17251142, abstract opened)",
+   "evidence_quote": "variation in ray stiffness over more than an order of magnitude",
+   "value": "stiffness ratio > 10x",
+   "confidence": "high for the qualitative bound; exact ratio not read from the full text"
+  },
+  {
+   "claim": "S6 Flying-fish glide ratio ceiling. Formal: (L/D)max = 4.7, so minimum steady glide angle = atan(1/4.7) = 12.0 degrees, and steady glide distance x <= h*(L/D)max. Registry: lift_to_drag_max already in lean/constraints.json and tracks/research/lean/t4-glide-law__MaxLiftToDrag.lean (value there not compared). Falsifier: wind-tunnel polar in Park and Choi 2010 (JEB); test = measured L/D max of the fins-spread model exceeds the bound in use. VALIDATED: prediction x <= 13.2 m * 4.7 = 62.0 m; reported glide 45.4 m -> PASS (weak: same CFD paper, and the launch is powered, not a pure steady glide).",
+   "source": "https://doi.org/10.1088/1748-3190/ab23e6 (PubMed 31117061, abstract opened)",
+   "evidence_quote": "maximum lift-to-drag ratio of 4.7 is achieved",
+   "value": "L/D max 4.7; CL max 1.03; distance 45.4 m; height 13.2 m",
+   "confidence": "high for the reported numbers; they are simulation results, not field measurements"
+  },
+  {
+   "claim": "S7 Flying-fish polar shape. Formal: argmax over attack angle of L/D is near 0 degrees; argmax of lift coefficient is at 30-35 degrees; L/D rises near the sea surface (ground effect), i.e. L/D(h small) > L/D(h large). Registry: glide content exists in t4-glide agents; these specific angle statements not confirmed there. Falsifier: Park and Choi wind-tunnel tables; test = L/D peak outside about -5..5 degrees, or no L/D gain at small height.",
+   "source": "https://doi.org/10.1242/jeb.046052 (PubMed 20833919, abstract opened)",
+   "evidence_quote": "lift-to-drag ratio was maximum at attack angles of around 0 deg",
+   "value": "L/D max at about 0 deg; CL max at 30-35 deg",
+   "confidence": "high for the angles; the abstract gives no L/D number, so I did not quote one"
+  },
+  {
+   "claim": "S8 Swimming-number scaling. Formal: with Sw := f*A*L/nu and Re := U*L/nu, Re ~ Sw^(4/3) in the laminar regime and Re ~ Sw in the turbulent regime, which implies St roughly constant (about 0.3) at high Re. Registry: not found. Falsifier: the paper's supplementary table of swimmers (use only non-held-out rows); test = log-log slope of Re on Sw outside 1.0 +/- 0.1 for Re > 1e4.",
+   "source": "https://doi.org/10.1038/nphys3078 (NOT opened: Crossref returned HTTP 429)",
+   "value": "Re ~ Sw^(4/3) laminar; Re ~ Sw turbulent",
+   "confidence": "low: stated from memory, source not opened this session"
+  },
+  {
+   "claim": "S9 Speed proportional to tail-beat frequency. Formal: U/L = (3/4)*(f - 4/3) for f above about 5 Hz, i.e. U = (L/4)*(3f - 4) (dace, trout, goldfish). Registry: 'Bainbridge' hits only in tracks/research agent files. Falsifier: any open f-U-L table for a teleost (for example FishBase swimming-speed table); test = slope of U/L on f differs from 0.75 beyond its confidence interval.",
+   "source": "Bainbridge 1958, Journal of Experimental Biology 35:109-133 (NOT opened)",
+   "value": "U = (L/4)(3f - 4)",
+   "confidence": "low: from memory, source not opened, coefficients unverified"
+  },
+  {
+   "claim": "S10 Optimal Strouhal depends on drag. Formal: the efficiency-optimal St is a function of the drag coefficient and tail aspect, giving a predicted window wider than 0.2-0.4 across animals. Registry: not found. Falsifier: same per-species St tables; test = observed St not ordered by body drag coefficient as predicted.",
+   "source": "https://doi.org/10.1016/j.jfluidstructs.2012.02.008 (Crossref metadata opened; no abstract in the record)",
+   "value": "quantitative window not verified",
+   "confidence": "low: only title, author, journal and pages were confirmed; the numeric window is not quoted because I could not read it"
+  }
+ ],
+ "key_claims": [
+  "The narrow 0.25-0.35 Strouhal optimum fails on real cetacean data: only 55% of 248 values fall inside, and the mode is about 20% lower.",
+  "The broad 0.2-0.4 Strouhal band holds for species means but not for individual observations.",
+  "Amplitude and frequency windows alone only bound St to [0.15, 0.5]; the 0.2-0.4 band is an independent empirical claim.",
+  "Flying-fish L/D max of 4.7 gives a minimum steady glide angle of about 12 degrees and a 62 m ceiling from 13.2 m height; the reported 45.4 m is inside it.",
+  "The Lean file was written but NOT checked: both check runs failed reading Mathlib build files, so nothing is proved."
+ ],
+ "lay_summary": [
+  "A fish pushes itself forward by wagging its tail, and scientists divide how fast and how wide the tail wags by how fast the fish swims to get one number called the Strouhal number.",
+  "Many swimming animals keep that number between about 0.2 and 0.4, but when we checked real dolphin and whale measurements, the tighter 'best' range people predicted only fit about half the time.",
+  "For a fish to move forward, the wiggle travelling down its body has to go backward faster than the fish goes forward.",
+  "Each fin ray is like two thin strips stuck together; sliding one strip against the other makes the ray bend and can make it more than ten times stiffer.",
+  "A flying fish gliding in air travels at most about 4.7 metres forward for each metre it drops, and the numbers we found fit that limit. The computer proof file we wrote could not be checked because the proof library failed to load, so it does not count as proved."
+ ],
+ "glossary": {
+  "Strouhal number (St)": "Tail-beat frequency times tail sweep width, divided by swimming speed. A pure number with no units.",
+  "tail-beat frequency (f)": "How many full tail wags happen each second.",
+  "amplitude (A)": "How far the tail tip moves side to side in one wag, peak to peak.",
+  "propulsive (Froude) efficiency": "The share of the animal's effort that turns into forward motion instead of wasted water movement.",
+  "elongated-body theory": "Lighthill's mathematical model of a long thin fish that works out thrust from how the body wave moves.",
+  "body wave speed (V)": "How fast the wiggle travels backward along the fish's body.",
+  "added mass": "The water that has to be pushed aside and so acts like extra weight on the moving body.",
+  "thrust": "The forward push.",
+  "fin ray": "One of the thin bony rods that support a fish's fin.",
+  "hemitrich": "One of the two half-rods that together make up a fin ray.",
+  "bilayer": "Two layers joined together; sliding or stretching one against the other makes the pair bend.",
+  "bending stiffness": "How hard something is to bend.",
+  "lift-to-drag ratio (L/D)": "Upward force divided by slowing force; in a steady glide it equals metres forward per metre dropped.",
+  "glide ratio": "Distance travelled forward divided by height lost; equal to L/D in a steady glide.",
+  "glide angle": "The downward slope of a glide path.",
+  "angle of attack": "The tilt between the body or wing and the oncoming air.",
+  "lift coefficient (CL)": "A unitless measure of how much lift a wing shape makes.",
+  "ground effect": "Extra lift and less drag when gliding very close to a surface such as the sea.",
+  "Reynolds number (Re)": "Speed times length divided by the fluid's stickiness; tells whether flow is smooth or turbulent.",
+  "swimming number (Sw)": "Tail frequency times amplitude times body length, divided by the fluid's stickiness.",
+  "laminar / turbulent": "Smooth, orderly flow versus messy, swirling flow.",
+  "cetacean": "Whales and dolphins.",
+  "CFD": "Computational fluid dynamics: simulating air or water flow on a computer.",
+  "Lean / Mathlib": "A computer program that checks mathematical proofs, and its library of already-proved maths.",
+  "hypothesis (in a proof)": "An assumption written down by name so the reader can see exactly what the result depends on.",
+  "falsify": "To show a statement is wrong by finding data that contradicts it."
+ },
+ "citations": [
+  {
+   "title": "Flying and swimming animals cruise at a Strouhal number tuned for high power efficiency",
+   "authors": "Taylor GK, Nudds RL, Thomas ALR",
+   "year": 2003,
+   "venue": "Nature 425:707-711",
+   "doi_or_arxiv": "10.1038/nature02000",
+   "used_for": "S1 Strouhal band 0.2-0.4",
+   "verified": true,
+   "how_verified": "PubMed abstract opened (PMID 14562101)"
+  },
+  {
+   "title": "Strouhal numbers and optimization of swimming by odontocete cetaceans",
+   "authors": "Rohr JJ, Fish FE",
+   "year": 2004,
+   "venue": "Journal of Experimental Biology 207:1633-1642",
+   "doi_or_arxiv": "10.1242/jeb.00948",
+   "used_for": "S2, S3 and validations 1-2",
+   "verified": true,
+   "how_verified": "PubMed abstract opened (PMID 15073196)"
+  },
+  {
+   "title": "The mechanics of active fin-shape control in ray-finned fishes",
+   "authors": "Alben S, Madden PG, Lauder GV",
+   "year": 2007,
+   "venue": "Journal of the Royal Society Interface 4:243-256",
+   "doi_or_arxiv": "10.1098/rsif.2006.0181",
+   "used_for": "S5 fin-ray bilayer stiffness",
+   "verified": true,
+   "how_verified": "PubMed abstract opened (PMID 17251142)"
+  },
+  {
+   "title": "Aerodynamic characteristics of flying fish in gliding flight",
+   "authors": "Park H, Choi H",
+   "year": 2010,
+   "venue": "Journal of Experimental Biology 213:3269-3279",
+   "doi_or_arxiv": "10.1242/jeb.046052",
+   "used_for": "S7 polar shape",
+   "verified": true,
+   "how_verified": "PubMed abstract opened (PMID 20833919)"
+  },
+  {
+   "title": "Numerical prediction of aerodynamic performance for a flying fish during gliding flight",
+   "authors": "Deng J, Zhang L, Liu Z, Mao X",
+   "year": 2019,
+   "venue": "Bioinspiration and Biomimetics 14:046009",
+   "doi_or_arxiv": "10.1088/1748-3190/ab23e6",
+   "used_for": "S6 L/D max 4.7 and validation 3",
+   "verified": true,
+   "how_verified": "PubMed abstract opened (PMID 31117061)"
+  },
+  {
+   "title": "Note on the swimming of slender fish",
+   "authors": "Lighthill MJ",
+   "year": 1960,
+   "venue": "Journal of Fluid Mechanics 9:305-317",
+   "doi_or_arxiv": "10.1017/S0022112060001110",
+   "used_for": "S4 elongated-body theory",
+   "verified": true,
+   "how_verified": "Crossref record opened; abstract seen only as tool paraphrase"
+  },
+  {
+   "title": "Optimal Strouhal number for swimming animals",
+   "authors": "Eloy C",
+   "year": 2012,
+   "venue": "Journal of Fluids and Structures 30:205-218",
+   "doi_or_arxiv": "10.1016/j.jfluidstructs.2012.02.008",
+   "used_for": "S10",
+   "verified": true,
+   "how_verified": "Crossref metadata only; no abstract available, numeric content unverified"
+  },
+  {
+   "title": "Scaling macroscopic aquatic locomotion",
+   "authors": "Gazzola M, Argentina M, Mahadevan L",
+   "year": 2014,
+   "venue": "Nature Physics",
+   "doi_or_arxiv": "10.1038/nphys3078",
+   "used_for": "S8",
+   "verified": false,
+   "how_verified": "Not opened: Crossref returned HTTP 429; details from memory"
+  },
+  {
+   "title": "The speed of swimming of fish as related to size and to the frequency and amplitude of the tail beat",
+   "authors": "Bainbridge R",
+   "year": 1958,
+   "venue": "Journal of Experimental Biology 35:109-133",
+   "doi_or_arxiv": "",
+   "used_for": "S9",
+   "verified": false,
+   "how_verified": "Not opened; citation and formula from memory"
+  }
+ ],
+ "could_not_find": [
+  "Gazzola et al. 2014 (10.1038/nphys3078): Crossref returned HTTP 429, so the scaling exponents in S8 are from memory.",
+  "Bainbridge 1958: not opened; the formula in S9 and the volume/pages are from memory and unverified.",
+  "Triantafyllou et al. 1993 primary source for the 0.25-0.35 prediction: not opened; the range is taken from the Rohr and Fish abstract.",
+  "Eloy 2012: Crossref record has no abstract, so no numeric window is reported.",
+  "Lighthill 1960 abstract verbatim: the fetch tool returned only a paraphrase, so there is no evidence quote for S4.",
+  "Park and Choi 2010 numeric L/D max: not in the abstract; full text not opened.",
+  "The exact lift_to_drag_max value in lean/constraints.json and whether lean/LAWS.md lines 74, 76, 84, 96 cover Strouhal or Lighthill: lines matched a grep but were too long to display and were not read.",
+  "A working Lean check: both runs failed in the shared Mathlib cache, so no theorem is confirmed."
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents4/hv-morph-fin-locomotion/FinLocomotion.lean"
+ ],
+ "check_output": "RUN 1:\ntoolchain: leanprover/lean4:v4.35.0   mathlib: \nFinLocomotion.lean                                   errors=1 sorryAx=0 axiom-lines=0/4\nD:/Users/ashenoy00000/delphi-work/agents4/hv-morph-fin-locomotion/FinLocomotion.lean:1:0: error: failed to read file 'C:\\Temp\\delphi-lean-lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Ring\\Ext.olean.private'\nFAILED\n\nRUN 2 (the file named in run 1 was confirmed present, 1113216 bytes, dated Oct 31):\ntoolchain: leanprover/lean4:v4.35.0   mathlib: \nFinLocomotion.lean                                   errors=1 sorryAx=0 axiom-lines=0/4\nD:/Users/ashenoy00000/delphi-work/agents4/hv-morph-fin-locomotion/FinLocomotion.lean:1:0: error: failed to read file 'C:\\Temp\\delphi-lean-lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Coalgebra\\Equiv.olean.private'\nFAILED\n\nNot ALL CHECKED. Both failures are at 'import Mathlib' on different library files; the four theorems were never elaborated. Status: unproved.",
+ "reproduce": [
+  {
+   "what": "Re-run the Lean check when the shared Mathlib cache is not under load",
+   "command_or_url": "bash D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/lean/check.sh D:/Users/ashenoy00000/delphi-work/agents4/hv-morph-fin-locomotion/FinLocomotion.lean",
+   "expected": "ALL CHECKED with 4 axiom lines if the proofs are right; currently FAILED on reading Mathlib .olean.private files"
+  },
+  {
+   "what": "Strouhal validation numbers (55%, 74%, 44%, windows 1-2 and 0.15-0.25)",
+   "command_or_url": "https://pubmed.ncbi.nlm.nih.gov/15073196/",
+   "expected": "Abstract states 74% of 248 values in 0.20-0.30 and 55% in 0.25-0.35"
+  },
+  {
+   "what": "Glide validation: 13.2 * 4.7 = 62.0 m ceiling versus 45.4 m reported",
+   "command_or_url": "https://pubmed.ncbi.nlm.nih.gov/31117061/",
+   "expected": "Abstract gives L/D max 4.7, distance 45.4 m, height 13.2 m"
+  },
+  {
+   "what": "Strouhal band statement",
+   "command_or_url": "https://pubmed.ncbi.nlm.nih.gov/14562101/",
+   "expected": "Abstract gives 0.2 < St < 0.4"
+  }
+ ],
+ "recommendations": [
+  "Check the shared Mathlib cache at C:/Temp/delphi-lean-lake: two successive runs failed reading different .olean.private files, one of which exists on disk. Likely contention from parallel agents or memory pressure; rerun the file alone before judging the proofs.",
+  "Register the Strouhal law as two separate claims: the broad 0.2-0.4 band (passes at species-mean level) and the narrow 0.25-0.35 optimum (fails, 55%). Recording the failure is the more informative result.",
+  "Pull the per-species table from the full text of Rohr and Fish 2004 to replace the abstract-level shares with a proper per-observation test.",
+  "Compare the registry's lift_to_drag_max value with the 4.7 flying-fish figure, and get the wind-tunnel L/D from the Park and Choi full text so the glide test does not rest on one CFD paper.",
+  "Open the three unverified sources (Gazzola 2014, Bainbridge 1958, Triantafyllou 1993) before any of S8, S9 or the 0.25-0.35 attribution goes into a nanopublication."
+ ]
+}

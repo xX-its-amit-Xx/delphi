@@ -1,0 +1,38 @@
+{
+  "_note": "Proposed harvest-stage schema for DELPHI statement expansion. Sits IN FRONT of the existing registry schema (lean/registry/laws-registry.schema.json); an accepted statement is handed to lean/registry/propose.mjs, which never auto-accepts.",
+  "schema": {
+    "statement_id": "kebab-case, stable",
+    "statement_en": "one sentence, plain English",
+    "kind": "identity | inequality-bound | scaling-exponent | numeric-observation | ontology-axiom | qualitative",
+    "level": "genotype | population | physiology | phenotype | developmental | empirical observation (as in lean/laws.json)",
+    "source": {"type": "textbook | database | review | ontology | repo", "citation": "", "locator": "DOI, URL, BNID or repo path", "opened": "true only if an agent fetched it", "evidence_quote": "verbatim, under 15 words, or null"},
+    "quantities": [{"symbol": "", "meaning": "", "unit": "", "domain": "e.g. 0 < K"}],
+    "lean_pattern": "P1 algebraic identity | P2 inequality/bound | P3 uniqueness/optimum | P4 conditional on named hypothesis | P5 observation structure (no axiom) | P0 none",
+    "hypotheses": ["every assumption, named; a named hypothesis is not a proof"],
+    "triage": {"formalizable_now": "bool", "reason": "", "blocked_by": []},
+    "validation": {"dataset": "", "pass_criterion": "pre-registered, numeric", "fail_criterion": "", "min_n": "", "holdout_checked": "bool: holdout/check-leaks.mjs exit 0 on every file touched"},
+    "status": "harvested | triaged | lean-drafted | kernel-checked | data-validated | nanopub-draft-unsigned | rejected",
+    "gates_passed": ["source-opened", "quote-verbatim", "check.sh", "negative-control-fails", "non-vacuity-witness", "leak-scan", "stub-scan", "human-approval"],
+    "lean_ref": {"file": "", "theorem": "", "axioms_printed": ""}
+  },
+  "examples": [
+    {"statement_id": "hill-10-90-span", "statement_en": "For a Hill gate the 10%-to-90% input span is 81^(1/n), independent of the threshold K.", "kind": "identity", "level": "phenotype",
+     "source": {"type": "repo", "locator": "tracks/research/lean/t1-reporter-law__HillSeparability.lean", "opened": true, "evidence_quote": "the 10%-to-90% input span is 81^(1/n), independent of K"},
+     "lean_pattern": "P1", "hypotheses": ["0 < K", "0 < n"], "triage": {"formalizable_now": true, "reason": "closed-form real-analysis identity"},
+     "validation": {"dataset": "dose-response fits (track 1)", "pass_criterion": "fitted n unchanged across threshold variants (empirical claim, NOT proved)"},
+     "status": "lean-drafted", "lean_ref": {"theorem": "span_81", "axioms_printed": "not re-run by this agent"}},
+    {"statement_id": "kimura-substitution-rate", "statement_en": "For neutral mutations the long-run substitution rate equals the mutation rate, independent of population size.", "kind": "identity", "level": "genotype",
+     "source": {"type": "repo", "locator": "lean/laws.json (source: Evolutionary Rate at the Molecular Level, 1968)", "opened": true, "evidence_quote": "equals the mutation rate per generation, independent of population size"},
+     "lean_pattern": "P1", "hypotheses": ["strict neutrality", "constant population size, Wright-Fisher reproduction", "independent fates of mutants (by definition, not proved)"],
+     "triage": {"formalizable_now": true, "reason": "already proved"}, "status": "kernel-checked", "lean_ref": {"file": "lean/Delphi/Kimura.lean", "theorem": "Delphi.neutral_substitution_rate"}},
+    {"statement_id": "voigt-reuss-order", "statement_en": "The series (Reuss) stiffness of a two-phase composite never exceeds the parallel (Voigt) stiffness.", "kind": "inequality-bound", "level": "phenotype",
+     "source": {"type": "repo", "locator": "tracks/research/lean/bm-lean-materials-laws__VoigtReuss.lean and __NegativeControl.lean", "opened": true, "evidence_quote": "check.sh must FAIL on this file"},
+     "lean_pattern": "P2", "hypotheses": ["0 <= f <= 1", "0 < E1", "0 < E2"], "triage": {"formalizable_now": true, "reason": "convexity inequality; the reversed claim is the negative control"}, "status": "lean-drafted"},
+    {"statement_id": "e1-area-exponent", "statement_en": "Measured area scaling exponent E1 is 1.834 in the project's empirical layer.", "kind": "numeric-observation", "level": "empirical observation",
+     "source": {"type": "repo", "locator": "lean/empirical.json", "opened": true, "evidence_quote": "An observation is not a mathematical truth, so this layer declares NO axiom"},
+     "lean_pattern": "P5", "hypotheses": [], "triage": {"formalizable_now": true, "reason": "observation structure with fields and inequality obligations; number cross-checked file vs Lean module"}, "status": "kernel-checked", "lean_ref": {"file": "lean/Delphi/Empirical.lean"}},
+    {"statement_id": "bionumbers-candidate-template", "statement_en": "TEMPLATE ONLY: a BioNumbers entry (value, range, organism, conditions, primary reference) cited by its 6-digit BNID.", "kind": "numeric-observation", "level": "physiology",
+     "source": {"type": "database", "citation": "Milo et al. Nucl. Acids Res. (2010) 38 (suppl 1): D750-D753", "locator": "https://bionumbers.hms.harvard.edu/aboutus.aspx", "opened": true, "evidence_quote": "recommended that you also specify the BioNumbers 6 digit ID"},
+     "lean_pattern": "P5", "hypotheses": [], "triage": {"formalizable_now": false, "reason": "no BNID opened by this agent; value deliberately left null", "blocked_by": ["licence text not found on site", "primary reference must be opened, not just the BNID row"]}, "status": "harvested"}
+  ]
+}

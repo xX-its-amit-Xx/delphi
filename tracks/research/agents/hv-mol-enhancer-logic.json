@@ -1,0 +1,280 @@
+{
+ "label": "hv-mol-enhancer-logic",
+ "topic": "Enhancer-promoter statements: multiplicative vs. saturating models, rank-order preservation, contact-frequency models (ABC)",
+ "summary": "Harvested 12 statements from 11 primary sources (abstracts via Europe PMC; full text opened only for Fulco 2019 and Zuin 2022) and ran 5 validations against reported values: 3 fail, 2 pass.\n\nFAILS: (a) \"Transcription is proportional to enhancer-promoter contact\" (Hill exponent h = 1) is rejected by Zuin 2022: fitted h = 2.8, 95% CI 2.4-3.2. (b) The same linear model predicts at most a 2-fold expression change for a sub-2-fold contact change; Xiao 2021 cites about 10-fold. (c) A strict multiplicative model predicts no promoter selectivity; Martinez-Ara 2022 reports more than half of elements selective, and Bergman 2022 reports R2 = 0.82, not 1.\n\nPASSES: (d) The ABC product beats either factor alone (AUPRC 0.65 vs 0.22 and 0.29). (e) A distance^-1 contact proxy does as well as measured Hi-C (AUPRC 0.64 vs 0.65).\n\nRepo coverage: tracks/research/lean/q1-theory-lean__EnhancerPromoterRank.lean already defines Mult, SingleIndexMono, LogAdd, Thermo, General and TwoFactor and proves no rank reversal for monotone single-index models; q1-mechanisms__RankSaturation.lean also exists. A grep for \"enhancer\" / \"ABC score\" / \"activity-by-contact\" hit nothing under lean/ or tracks/lean, so the law registry has none of this. The Bergman and Martinez-Ara numbers are already in tracks/research/agents/q1-literature.json. I did not check whether tracks/research already states the ABC normalisation or the contact-Hill law; the Lean file I read does not.\n\nSuggested next formalisations: (1) ABC as a normalised product, with the lemma that scores for a gene sum to 1 and ranking within a gene is invariant to promoter-side scaling; (2) Hill contact-to-on-rate law, with the lemma that h > 1 amplifies a contact fold-change r to up to r^h (3^2.8 is about 21.7, my arithmetic).\n\nLimits: ran out of time before fetching any raw table, so all validations use numbers reported in the papers, not recomputed. Validations (a) and (b) test a linear contact-to-expression reading; ABC itself only claims a fraction of regulatory input, so they do not falsify ABC as a classifier. The holdout clade is not involved in this topic and no data about it was used.\n\nFiles (scripts and fetched text only): D:/Users/ashenoy00000/delphi-work/agents4/hv-mol-enhancer-logic/fetch_abs.py, pull.py, abstracts.json, PMC9021019.txt, PMC6886585.txt",
+ "findings": [
+  {
+   "claim": "S1 ABC definition. Formal: ABC(E,G) = A_E*C_EG / sum over e within 5 Mb of G of A_e*C_eG; A = geometric mean of DHS and H3K27ac reads, C = KR-normalised Hi-C at 5 kb. Assumption: effect of an element is a fraction of total regulatory input. In repo: not in the Lean file read; not in lean/ or tracks/lean. Falsifier: Fulco CRISPRi-FlowFISH table (>3,500 pairs, 30 genes) - within each gene, Spearman of ABC vs measured effect must be significantly non-zero.",
+   "source": "https://doi.org/10.1038/s41588-019-0538-0 (full text PMC6886585 opened)",
+   "evidence_quote": "the fraction of regulatory input to gene G contributed by element E",
+   "value": "ABC = A*C / sum(A*C), 5 Mb window",
+   "confidence": "high (formula read in full text)"
+  },
+  {
+   "claim": "S2 The product A*C predicts regulatory pairs better than A or C alone. Formal: AUPRC(A*C) > max(AUPRC(A), AUPRC(C)). VALIDATION PASS: predicted product wins; measured 0.65 vs 0.22 (Activity) and 0.29 (Contact); also 0.65 vs 0.39 for genomic distance. In repo: not found. Falsifier: ENCODE-rE2G CRISPR benchmark (10,411 element-gene pairs) - recompute the three AUPRCs; fail if product does not exceed both.",
+   "source": "https://doi.org/10.1038/s41588-019-0538-0 (PMC6886585)",
+   "evidence_quote": "AUPRC = 0.22 and 0.29, respectively",
+   "value": "0.65 vs 0.22, 0.29, 0.39",
+   "confidence": "high for reported values; not recomputed from raw table"
+  },
+  {
+   "claim": "S3 Contact can be replaced by a power law of distance. Formal: C_EG proportional to d(E,G)^-1 gives the same classifier performance as measured Hi-C. VALIDATION PASS: predicted difference about 0; measured AUPRC 0.65 (K562 Hi-C), 0.66 (average Hi-C of 10 cell types), 0.64 (distance^-1). In repo: not found. Falsifier: same CRISPR table; fail if AUPRC drops by more than bootstrap noise when Hi-C is swapped for d^-1.",
+   "source": "https://doi.org/10.1038/s41588-019-0538-0 (PMC6886585)",
+   "evidence_quote": "AUPRC = 0.65, 0.66, and 0.64 respectively",
+   "value": "0.65 / 0.66 / 0.64",
+   "confidence": "high for reported values; no confidence intervals read"
+  },
+  {
+   "claim": "S4 ABC score is quantitatively monotone with effect size. Formal: Spearman(ABC, % change in expression on CRISPRi) < 0 among regulatory pairs. Reported rho = -0.63 in K562, -0.30 across 5 other cell types (weaker out of sample). In repo: not found. Falsifier: Gasperini 2019 screen (5,920 candidate enhancers, 664 pairs) - rho not different from 0 would falsify.",
+   "source": "https://doi.org/10.1038/s41588-019-0538-0 (PMC6886585); dataset size from https://doi.org/10.1016/j.cell.2018.11.029 (abstract)",
+   "evidence_quote": "Spearman ρ for regulatory DE-G pairs = –0.63",
+   "value": "rho -0.63 (K562), -0.30 (other cell types)",
+   "confidence": "high for reported values"
+  },
+  {
+   "claim": "S5 Multiplicative model. Formal: f(p,e) = a(e)*b(p), b > 0 (equivalently log f additive). Reported R2 = 0.82 in a 1,000 x 1,000 reporter assay in K562. In repo: YES - class Mult in EnhancerPromoterRank.lean and the number in q1-literature.json. Falsifier: GEO GSE184426 (accession taken from the repo notes, not re-opened) - fit additive log model; residual variance beyond replicate noise falsifies exact multiplicativity.",
+   "source": "https://doi.org/10.1038/s41586-022-04877-w (abstract, PMC9262863)",
+   "evidence_quote": "multiplicatively combine to determine RNA output (R2 = 0.82)",
+   "value": "R2 = 0.82",
+   "confidence": "high (abstract)"
+  },
+  {
+   "claim": "S6 Rank-order preservation. Formal: if f(p,e) = h_p(a(e)) with every h_p monotone, no pair of promoters orders two enhancers in strictly opposite ways; Mult and promoter-specific saturation V_p*a/(K_p+a) are special cases. VALIDATION FAIL of the strict (noise-free multiplicative, zero selectivity) form: predicted 0% selective elements and R2 = 1; measured 'more than half' selective in mouse cells and R2 = 0.82 in K562. The approximate form survives. In repo: YES - theorem no_reversal_of_monotoneOn. Falsifier: GSE186265 (accession from repo notes) - count strict reversals exceeding replicate noise.",
+   "source": "https://doi.org/10.1016/j.molcel.2022.04.009 (abstract); https://doi.org/10.1038/s41586-022-04877-w (abstract)",
+   "evidence_quote": "More than half of the tested CREs exhibit significant promoter selectivity",
+   "value": "more than half selective; R2 0.82 < 1",
+   "confidence": "medium: abstract-level; selectivity beyond noise is not the same as strict rank reversal"
+  },
+  {
+   "claim": "S7 Promoter-side saturation. Formal: responsiveness d log f / d log a(e) is lower for promoters with built-in activating motifs (housekeeping class); consistent with f = V_p*a/(K_p+a) with small K_p. Qualitative in the source. In repo: YES - class Thermo and RankSaturation.lean. Falsifier: GSE184426 - regression slope of log output on log enhancer activity must be lower for housekeeping promoters.",
+   "source": "https://doi.org/10.1038/s41586-022-04877-w (abstract)",
+   "evidence_quote": "decrease the responsiveness of promoters to distal enhancers",
+   "value": "qualitative",
+   "confidence": "medium (no number read)"
+  },
+  {
+   "claim": "S8 Contact-to-transcription is sigmoidal, not linear. Formal: k_on(p_c) = k0 + (k1-k0) * p_c^h / (c^h + p_c^h), fitted h = 2.8 (95% CI 2.4-3.2). VALIDATION FAIL of the linear model: linear predicts h = 1; measured interval excludes 1. Consequence (my arithmetic): a 3-fold contact drop can cut on-rate up to 3^2.8 = about 21.7-fold. In repo: not in the Lean file read; not in lean/ or tracks/lean. Falsifier: the Zuin enhancer-mobilisation cell lines (eGFP level vs Capture-C contact probability, hundreds of lines) - refit and test h = 1.",
+   "source": "https://doi.org/10.1038/s41586-022-04570-y (full text PMC9021019 opened)",
+   "evidence_quote": "Hill coefficient ( h ) of 2.8 (95% confidence interval = 2.4–3.2",
+   "value": "h = 2.8, CI 2.4-3.2",
+   "confidence": "high for reported fit; one locus, one enhancer-promoter pair in mouse stem cells"
+  },
+  {
+   "claim": "S9 Hypersensitivity across domain boundaries. Formal: with r = contact ratio inside/outside a boundary and R = expression ratio, linear model predicts R <= r. VALIDATION FAIL: r < 2 but R about 10. Authors propose a futile-cycle model with bistability. In repo: not found. Falsifier: same Zuin dataset - compare expression ratio to contact ratio across the boundary.",
+   "source": "https://doi.org/10.7554/eLife.64320 (abstract)",
+   "evidence_quote": "usually less than 2-fold, even though disruptions of TAD borders can change gene expression by 10-fold",
+   "value": "contact < 2-fold; expression about 10-fold",
+   "confidence": "medium: a summary of other experiments stated in a modelling paper's abstract, not one dataset"
+  },
+  {
+   "claim": "S10 Transcription decreases monotonically with enhancer distance. Formal: d1 < d2 implies T(d1) >= T(d2) for the same enhancer-gene pair, other things equal; cohesin needed only for distant, not proximal, activation. In repo: not found. Falsifier: Zuin mobilisation lines - Spearman of expression vs genomic distance inside the domain must be negative.",
+   "source": "https://doi.org/10.1038/s41594-022-00787-7 (abstract)",
+   "evidence_quote": "gene transcription levels and activity over time reduce with increased enhancer distance",
+   "value": "qualitative",
+   "confidence": "medium (abstract only)"
+  },
+  {
+   "claim": "S11 Enhancer-promoter contacts and transcription are robust to acute (3 h) loss of loop-forming proteins. Formal: change in E-P contact and in nascent transcription is about 0 for most genes after depletion; so domain-level structure is not the contact term that matters. Tension with S8/S9, which say small contact changes can matter. In repo: not found. Falsifier: the paper's Micro-C and nascent-transcript data in mouse stem cells - fraction of genes with significant change.",
+   "source": "https://doi.org/10.1038/s41588-022-01223-8 (abstract)",
+   "evidence_quote": "E-P) interactions are largely insensitive to acute (3-h) depletion",
+   "value": "qualitative",
+   "confidence": "medium (abstract only; no fraction read)"
+  },
+  {
+   "claim": "S12 Activity and contact are not sufficient. Formal: adding promoter class and enhancer-enhancer synergy features improves prediction over A*C; benchmark of 10,411 CRISPR element-gene pairs, >13 million predicted interactions in 352 biosamples. Also the thermodynamic background assumption: expression proportional to equilibrium probability that polymerase is bound (Bintu 2005), which is the origin of the saturating form. In repo: Thermo class covers the saturating form; the feature claim not found. Falsifier: the ENCODE-rE2G benchmark - ablate the two features; no AUPRC drop would falsify.",
+   "source": "https://doi.org/10.1101/2023.11.09.563812 (preprint abstract); https://doi.org/10.1016/j.gde.2005.02.007 (abstract)",
+   "evidence_quote": "additional features guide enhancer-promoter communication including promoter class and enhancer-enhancer synergy",
+   "value": "10,411 pairs; >13 million interactions; 352 biosamples",
+   "confidence": "medium: preprint abstract only; no ablation numbers read"
+  }
+ ],
+ "key_claims": [
+  "Linear contact-to-transcription fails: fitted Hill exponent 2.8 (CI 2.4-3.2), not 1 (Zuin 2022)",
+  "Strict multiplicative / zero-selectivity fails: R2 0.82 and more than half of elements selective; approximate multiplicativity holds",
+  "ABC product beats either factor alone: AUPRC 0.65 vs 0.22 and 0.29 (Fulco 2019)",
+  "Distance^-1 is as good a contact proxy as Hi-C: AUPRC 0.64 vs 0.65",
+  "Repo already has the rank-order theorem and model classes in tracks/research; nothing on this topic in lean/ or tracks/lean; ABC normalisation and Hill contact law are the gaps"
+ ],
+ "lay_summary": [
+  "Genes have on-switches called promoters and far-away helper switches called enhancers that turn the gene up.",
+  "One simple idea says the gene's output is just the enhancer's strength times the promoter's strength; real measurements show that this is mostly right but not exactly.",
+  "Another idea says an enhancer matters in proportion to how strong it is times how often it touches the gene, and that rule does predict real experiments better than either part alone.",
+  "But touching does not work like a dimmer: one careful experiment shows it works more like a step, where a small drop in touching can switch the help almost off.",
+  "So we found two rules that passed their checks and three simple versions that failed, which tells us which maths to write down next."
+ ],
+ "glossary": {
+  "enhancer": "A stretch of DNA that raises the activity of a gene, often from far away.",
+  "promoter": "The stretch of DNA at the start of a gene where reading of the gene begins.",
+  "multiplicative model": "Output equals enhancer strength times promoter strength.",
+  "saturating model": "Output rises with input but levels off at a ceiling.",
+  "rank order": "The ordering of items from weakest to strongest.",
+  "rank reversal": "Two promoters disagreeing on which of two enhancers is stronger.",
+  "contact frequency / contact probability": "How often two pieces of DNA are physically close in the cell.",
+  "ABC (activity-by-contact)": "A score: enhancer activity times contact, divided by the total of that for all nearby elements of the gene.",
+  "Hi-C, Micro-C, Capture-C": "Lab methods that measure which pieces of DNA are near each other.",
+  "DHS and H3K27ac": "Two lab signals that mark open, active DNA.",
+  "CRISPRi": "A method that switches off a chosen piece of DNA to see what changes.",
+  "Hill function / Hill coefficient": "An S-shaped curve; the coefficient says how steep the step is (1 means no step).",
+  "AUPRC": "A 0-to-1 score of how well a predictor finds true cases without false alarms.",
+  "Spearman correlation": "A -1 to 1 measure of whether two lists are in the same order.",
+  "R2": "Fraction of the variation in the data that a model explains (1 is perfect).",
+  "TAD / domain boundary": "A neighbourhood of DNA that mostly touches itself, and its edge.",
+  "CTCF, cohesin": "Proteins that fold DNA into loops and neighbourhoods.",
+  "housekeeping gene": "A gene that is on in nearly all cells.",
+  "on rate (k_on)": "How often a gene switches from off to on.",
+  "reporter assay / STARR-seq": "A test where DNA pieces are put next to a readout gene to measure their strength.",
+  "thermodynamic model": "A model where gene output follows the chance that the reading machine is bound to the promoter.",
+  "K562": "A widely used human blood-cancer cell line.",
+  "fold change": "How many times bigger or smaller one value is than another."
+ },
+ "citations": [
+  {
+   "authors": "Fulco CP, Nasser J, Jones TR, et al.",
+   "title": "Activity-by-contact model of enhancer-promoter regulation from thousands of CRISPR perturbations",
+   "venue": "Nature Genetics",
+   "year": 2019,
+   "doi_or_arxiv": "10.1038/s41588-019-0538-0",
+   "verified": true,
+   "how_verified": "Europe PMC record and full text PMC6886585 fetched",
+   "used_for": "S1-S4, validations d and e"
+  },
+  {
+   "authors": "Zuin J, Roth G, Zhan Y, et al.",
+   "title": "Nonlinear control of transcription through enhancer-promoter interactions",
+   "venue": "Nature",
+   "year": 2022,
+   "doi_or_arxiv": "10.1038/s41586-022-04570-y",
+   "verified": true,
+   "how_verified": "Europe PMC record and full text PMC9021019 fetched",
+   "used_for": "S8, validation a"
+  },
+  {
+   "authors": "Bergman DT, Jones TR, Liu V, et al.",
+   "title": "Compatibility rules of human enhancer and promoter sequences",
+   "venue": "Nature",
+   "year": 2022,
+   "doi_or_arxiv": "10.1038/s41586-022-04877-w",
+   "verified": true,
+   "how_verified": "Europe PMC abstract fetched",
+   "used_for": "S5, S7, validation c"
+  },
+  {
+   "authors": "Martinez-Ara M, Comoglio F, van Arensbergen J, van Steensel B",
+   "title": "Systematic analysis of intrinsic enhancer-promoter compatibility in the mouse genome",
+   "venue": "Molecular Cell",
+   "year": 2022,
+   "doi_or_arxiv": "10.1016/j.molcel.2022.04.009",
+   "verified": true,
+   "how_verified": "Europe PMC abstract fetched",
+   "used_for": "S6, validation c"
+  },
+  {
+   "authors": "Xiao JY, Hafner A, Boettiger AN",
+   "title": "How subtle changes in 3D structure can create large changes in transcription",
+   "venue": "eLife",
+   "year": 2021,
+   "doi_or_arxiv": "10.7554/eLife.64320",
+   "verified": true,
+   "how_verified": "Europe PMC abstract fetched",
+   "used_for": "S9, validation b"
+  },
+  {
+   "authors": "Hsieh TS, Cattoglio C, Slobodyanyuk E, Hansen AS, Darzacq X, et al.",
+   "title": "Enhancer-promoter interactions and transcription are largely maintained upon acute loss of CTCF, cohesin, WAPL or YY1",
+   "venue": "Nature Genetics",
+   "year": 2022,
+   "doi_or_arxiv": "10.1038/s41588-022-01223-8",
+   "verified": true,
+   "how_verified": "Europe PMC abstract fetched",
+   "used_for": "S11"
+  },
+  {
+   "authors": "Rinzema NJ, Sofiadis K, Tjalsma SJD, et al.",
+   "title": "Building regulatory landscapes reveals that an enhancer can recruit cohesin to create contact domains, engage CTCF sites and activate distant genes",
+   "venue": "Nature Structural and Molecular Biology",
+   "year": 2022,
+   "doi_or_arxiv": "10.1038/s41594-022-00787-7",
+   "verified": true,
+   "how_verified": "Europe PMC abstract fetched",
+   "used_for": "S10"
+  },
+  {
+   "authors": "Gschwind AR, Mualim KS, Karbalayghareh A, et al.",
+   "title": "An encyclopedia of enhancer-gene regulatory interactions in the human genome",
+   "venue": "bioRxiv (preprint)",
+   "year": 2023,
+   "doi_or_arxiv": "10.1101/2023.11.09.563812",
+   "verified": true,
+   "how_verified": "Europe PMC abstract fetched",
+   "used_for": "S12, benchmark dataset"
+  },
+  {
+   "authors": "Gasperini M, Hill AJ, McFaline-Figueroa JL, et al.",
+   "title": "A Genome-wide Framework for Mapping Gene Regulation via Cellular Genetic Screens",
+   "venue": "Cell",
+   "year": 2019,
+   "doi_or_arxiv": "10.1016/j.cell.2018.11.029",
+   "verified": true,
+   "how_verified": "Europe PMC abstract fetched",
+   "used_for": "falsification dataset for S4"
+  },
+  {
+   "authors": "Bintu L, Buchler NE, Garcia HG, et al.",
+   "title": "Transcriptional regulation by the numbers: models",
+   "venue": "Current Opinion in Genetics and Development",
+   "year": 2005,
+   "doi_or_arxiv": "10.1016/j.gde.2005.02.007",
+   "verified": true,
+   "how_verified": "Europe PMC abstract fetched",
+   "used_for": "S12 thermodynamic assumption"
+  },
+  {
+   "authors": "Nasser J, Bergman DT, Fulco CP, et al.",
+   "title": "Genome-wide enhancer maps link risk variants to disease genes",
+   "venue": "Nature",
+   "year": 2021,
+   "doi_or_arxiv": "10.1038/s41586-021-03446-x",
+   "verified": true,
+   "how_verified": "Europe PMC abstract fetched",
+   "used_for": "context only (ABC in 131 biosamples); no finding rests on it"
+  }
+ ],
+ "could_not_find": [
+  "No raw data table was downloaded; every validation uses values reported in the papers, none recomputed",
+  "Dataset accessions for the Zuin 2022 cell lines, the Gasperini 2019 screen and the Hsieh 2022 Micro-C data were not opened, so none is given",
+  "GSE184426 and GSE186265 are quoted from the repo's q1-literature.json, not re-opened on GEO",
+  "Download location of the ENCODE-rE2G 10,411-pair benchmark table was not opened",
+  "Supplementary notes of Fulco 2019 (contact power-law exponent details) not read",
+  "Did not read the other tracks/research enhancer files (q1-mechanisms.json, explain*-leanbio-enhancers.json), so cannot say whether ABC normalisation or the Hill contact law is already stated there",
+  "Confidence intervals for the AUPRC comparisons were not found in the passages read"
+ ],
+ "recommendations": [
+  "Add an ABC definition to the Lean track: scores for a gene sum to 1; within-gene ranking unchanged by any positive promoter-side scale factor",
+  "Add a Hill contact law: for h > 1 a contact fold-change r gives on-rate fold-change up to r^h; for h = 1 at most r. Pair it with the Zuin h = 2.8 measurement as the data check",
+  "Record the tension between S8/S9 (small contact changes matter) and S11 (acute loop-protein loss changes little) as an open question rather than a law",
+  "Next data step, small download: the Fulco 2019 CRISPRi-FlowFISH supplementary table, to recompute per-gene Spearman and the three AUPRCs instead of quoting them",
+  "Keep the 'linear contact fails' result worded as a test of proportionality, not of ABC as a classifier"
+ ],
+ "reproduce": [
+  {
+   "what": "Fetch the 11 abstracts",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents4/hv-mol-enhancer-logic/fetch_abs.py (run from that folder; console prints may hit a cp1252 error but abstracts.json is still written)",
+   "expected": "abstracts.json with 11 DOIs; 10 have PMC ids, the preprint has none"
+  },
+  {
+   "what": "Pull the Hill coefficient and ABC numbers from full text",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents4/hv-mol-enhancer-logic/pull.py",
+   "expected": "Lines containing 'Hill coefficient ( h ) of 2.8 (95% confidence interval = 2.4-3.2' and 'AUPRC = 0.22 and 0.29' and 'AUPRC = 0.65, 0.66, and 0.64'"
+  },
+  {
+   "what": "Check repo coverage",
+   "command_or_url": "grep -ril enhancer D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks",
+   "expected": "Hits only under tracks/research and tracks/issues; none under lean/ or tracks/lean"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents4/hv-mol-enhancer-logic/fetch_abs.py",
+  "D:/Users/ashenoy00000/delphi-work/agents4/hv-mol-enhancer-logic/pull.py"
+ ],
+ "check_output": "Validation table (prediction | measured | result): (a) linear contact, h = 1 | h = 2.8, CI 2.4-3.2 | FAIL. (b) expression ratio <= contact ratio (<2) | about 10-fold | FAIL. (c) strict multiplicative: R2 = 1, 0% selective | R2 = 0.82, more than half selective | FAIL (approximate form holds). (d) AUPRC(A*C) > AUPRC(A), AUPRC(C) | 0.65 > 0.22, 0.29 | PASS. (e) distance^-1 contact matches Hi-C | 0.64 vs 0.65 | PASS."
+}

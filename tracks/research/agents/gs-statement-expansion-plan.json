@@ -1,0 +1,186 @@
+{
+ "label": "gs-statement-expansion-plan",
+ "topic": "Pipeline to expand DELPHI to many more biological statements: harvest, formalize in Lean 4, validate on data, publish as nanopublications",
+ "summary": "Design only; nothing in the repo was changed and no Lean was run by me. Schema and 5 filled examples are in D:/Users/ashenoy00000/delphi-work/agents4/gs-statement-expansion-plan/statement-schema.json.\n\nPIPELINE (four stages, each ends in a gate):\n1. HARVEST. One agent per source chunk emits records in the statement schema. Each record needs a locator the agent actually opened and a verbatim quote under 15 words. Sources: BioNumbers entries cited by BNID, the \"Cell Biology by the Numbers\" draft, D'Arcy Thompson (lean/Delphi/Thompson.lean already exists), reviews, ontologies.\n2. TRIAGE. Assign one Lean pattern: P1 algebraic identity, P2 inequality/bound, P3 uniqueness/optimum, P4 conditional on a named hypothesis, P5 observation structure (fields are measured numbers, obligations are inequalities, no axiom), P0 none.\n3. FORMALIZE. Agent writes a standalone .lean file outside lean/ (as tracks/research/lean does) with a `#print axioms` line per theorem and a paired negative-control file. Then `bash tracks/lean/check.sh`, then `node lean/registry/propose.mjs`, which never auto-accepts.\n4. VALIDATE and PUBLISH. Pre-registered pass/fail criterion and minimum sample size on training organisms only; leak scan; unsigned nanopub draft (.trig). Signing stays a human step with the key owner's approval.\n\nTRIAGE RULE, formalizable now only if all hold: (a) every quantity has a symbol, unit and domain; (b) the claim is a closed-form identity, inequality, optimum, or a single measured number with a range; (c) it needs only real analysis or finite combinatorics already in Mathlib; (d) every assumption can be written as a named hypothesis; (e) a non-vacuity witness exists (the registry schema requires `non_vacuity_witness`); (f) the source was opened. Otherwise park as \"not formalised\" (7 of 41 laws in lean/laws.json already carry that status) or as P4 with the hypothesis named.\n\nTHROUGHPUT, from repo counts. No per-agent wall-clock time is recorded anywhere I read, so these are per agent run, not per agent-hour.\n- Harvest: 2,621 findings across 80 agent files in tracks/research/agents, about 33 per run.\n- Verification yield: STATE.md reports 298 key claims re-checked, 185 supported (62%), 105 partly.\n- Formalization: 9 Lean-writing agents in the second fleet produced 12 files with 109 theorem/lemma declarations (one file is a negative control), about 12 declarations and 1.3 law-level files per run. I did not re-run check.sh on them; STATE.md confirms a pass only for FireCoatingCertificate and a fail for the negative controls.\n- Planning figure (my estimate, not measured): 1 kernel-checked law-level statement per formalizer run, 30 harvested candidates per harvester run, and expect about 60% of candidates to survive verification.\n\nFAILURE MODES SEEN AND THEIR GATES are listed in findings.\n\nBIONUMBERS: the site opens. Citation instructions are on the About page. The Resources page has a link labelled \"Download the BioNumbers database\" (I did not open its target). No licence or terms text was found on any of the three pages I opened, so reuse terms are unconfirmed. Recommendation: store only value, unit, BNID and primary reference, open the primary reference too, and ask the maintainers before bulk redistribution.\n\nNOTE ON THE RELAYED REQUEST (\"Fix all the issues\"): this step was scoped to a read-only plan, so no fixes were made.",
+ "findings": [
+  {
+   "claim": "Failure mode: a proof with an error compiles to a sorryAx placeholder and `#print axioms` prints without complaint. Gate: tracks/lean/check.sh fails on any 'error' line, any sorryAx, or a `#print axioms` line that did not print.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/lean/check.sh",
+   "evidence_quote": "turned the headline theorem into a placeholder in this repo",
+   "confidence": "high (file read; script not executed by me)"
+  },
+  {
+   "claim": "The checker itself is tested by a negative control that must fail: a `sorry` plus a wrong-direction Voigt/Reuss claim.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/research/lean/bm-lean-materials-laws__NegativeControl.lean",
+   "evidence_quote": "Negative control: check.sh must FAIL on this file",
+   "confidence": "high (file read); that it fails is STATE.md's statement, not re-run by me"
+  },
+  {
+   "claim": "Failure mode: stub outputs. Three agent files held only a pointer to their result and were recovered from the workflow journal. Gate: check every copied agent file for a `findings` key.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/STATE.md",
+   "evidence_quote": "Check for `findings` in every file after a copy",
+   "value": "3 stubs of 77; my own scan today found 0 of 80 files without findings",
+   "confidence": "high"
+  },
+  {
+   "claim": "Failure mode: holdout leaks. Agents wrote held-out common names and two claim ids. Gate: scrub-holdout.py, then holdout/check-leaks.mjs (strong: scientific name, slug, taxid, GBIF key; claim ids; weak: class-level words). Common names are NOT matched by the gate, so the scrub step is also needed.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/STATE.md ; holdout/check-leaks.mjs",
+   "evidence_quote": "the gate caught 20",
+   "value": "20 hits",
+   "confidence": "high"
+  },
+  {
+   "claim": "The leak gate skips .html files (its extension list has json, md, lean and others but no html); a separate scanner covers them.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/holdout/check-leaks.mjs ; STATE.md",
+   "evidence_quote": "for the .html/.json the gate skips",
+   "confidence": "medium (extension regex read; STATE says .json is also skipped in some paths, not reconciled)"
+  },
+  {
+   "claim": "Failure mode: a theorem conditional on a NAMED HYPOTHESIS is reported as proved. Gate: status vocabulary in lean/laws.json keeps 'proved FROM a named hypothesis' and 'stated-not-proved' apart; the schema's `hypotheses` field carries them.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/laws.json",
+   "evidence_quote": "proved FROM a named hypothesis (HaldaneCost is never proved here",
+   "value": "coverage: 23 proved, 1 from a named hypothesis, 2 stated-not-proved, 7 not formalised, 6 empirical, 1 convention, 1 other",
+   "confidence": "high"
+  },
+  {
+   "claim": "Failure mode: law-set version drift. Mapping agents read law set 1.6.0 while the repo is at 1.8.1, so six laws were missing from their maps. Gate: tracks/scripts/lawset-diff.py, and read laws through the single loader rather than a copied list.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/STATE.md ; lean/registry/AGENTS-RULE.md",
+   "evidence_quote": "Get Lean laws from the API, never from a list you copied",
+   "confidence": "high"
+  },
+  {
+   "claim": "Failure mode: unverified citations and agent-supplied quotes. Gate: tracks/scripts/verify-dois.py (Crossref, DataCite, arXiv) plus a separate verifier pass.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/STATE.md",
+   "evidence_quote": "529 of 1,021 resolved independently, 0 failed, 484 not yet checked",
+   "confidence": "high"
+  },
+  {
+   "claim": "Failure mode: placeholder numbers inside a passing Lean file (the fire-coating worked-example limits). Gate proposed: P5 observation structures must carry a source locator per number, cross-checked file against Lean module as lean/empirical.json does.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/STATE.md ; lean/empirical.json",
+   "evidence_quote": "Worked-example limits are PLACEHOLDERS",
+   "confidence": "high for the failure; the gate is my proposal"
+  },
+  {
+   "claim": "Observations are encoded without axioms: a Lean structure whose fields are measured numbers and whose obligations are inequalities. This is the pattern (P5) for BioNumbers-style statements.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/empirical.json",
+   "evidence_quote": "An observation is not a mathematical truth, so this layer declares NO axiom",
+   "confidence": "high"
+  },
+  {
+   "claim": "Existing scale: 41 laws in lean/laws.json; 253 theorem/lemma declarations in 16 files under lean/Delphi; 14 files and 129 declarations in tracks/research/lean; 55 unsigned nanopub drafts in lean/nanopubs/unsigned.",
+   "source": "counts by grep and python over the repo (read only)",
+   "value": "41 laws; 253 + 129 declarations; 55 drafts",
+   "confidence": "high for counts; a grep for lines starting with theorem or lemma, so indented declarations are missed"
+  },
+  {
+   "claim": "Fleet throughput: 2,621 findings in 80 agent files (about 33 per agent run); 9 Lean-writing agents gave 12 files and 109 declarations in the second fleet.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/research/agents ; tracks/research/lean",
+   "value": "about 33 findings per run; about 12 declarations per formalizer run",
+   "confidence": "medium: no wall-clock time per agent was found, so a per-hour rate is not established"
+  },
+  {
+   "claim": "Nanopublications in the Lean thread are unsigned drafts only; signing needs the key owner's approval each time. Registration via propose.mjs never auto-accepts.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/nanopubs/README.md ; lean/registry/AGENTS-RULE.md",
+   "evidence_quote": "An unsigned draft is not a publication",
+   "confidence": "high"
+  },
+  {
+   "claim": "BioNumbers asks to be cited as Milo et al. 2010 and for each entry's 6-digit BNID.",
+   "source": "https://bionumbers.hms.harvard.edu/aboutus.aspx",
+   "evidence_quote": "recommended that you also specify the BioNumbers 6 digit ID",
+   "confidence": "medium (read through a page summariser, not raw HTML)"
+  },
+  {
+   "claim": "BioNumbers offers a whole-database download link on its Resources page; no licence, terms or API text was found on the About, Resources or Search pages.",
+   "source": "https://bionumbers.hms.harvard.edu/resources.aspx",
+   "evidence_quote": "Download the BioNumbers database.",
+   "confidence": "medium: link target and file size not opened; absence of a licence on three pages is not proof none exists"
+  },
+  {
+   "claim": "The 'Cell Biology by the Numbers' site offers a July 2015 draft PDF and a purchase link to the publisher; no licence text on the page.",
+   "source": "http://book.bionumbers.org/",
+   "evidence_quote": "Draft Download",
+   "confidence": "medium (page summariser; PDF not opened)"
+  }
+ ],
+ "key_claims": [
+  "Every failure mode named in the task has an existing gate in the repo: check.sh (sorryAx), a `findings` check (stubs), scrub-holdout.py plus check-leaks.mjs (leaks).",
+  "The leak gate does not match common names and skips .html, so the scrub script and the html scanner are both required, not optional.",
+  "A per-agent-hour rate cannot be grounded: the repo records counts per agent run but no run durations.",
+  "BioNumbers reuse terms are unconfirmed: no licence text was found on the pages opened."
+ ],
+ "recommendations": [
+  "Record start and end time per agent in the workflow journal so the next throughput figure is per hour, not per run.",
+  "Run check.sh over all 14 files in tracks/research/lean and store the output; only FireCoatingCertificate has a recorded pass.",
+  "Require a paired negative-control file for every new formalizer run, and fail the run if the control passes.",
+  "Add the stub check (no `findings` key, or the phrase 'returned via StructuredOutput') and the leak scan as automatic post-copy steps in tracks/build.mjs rather than manual copy rules.",
+  "For BioNumbers, store value, unit, BNID and primary reference only; open the primary reference; ask the maintainers about bulk reuse before any redistribution.",
+  "Start the expansion with P1/P2 statements (identities and bounds) and P5 observations; park anything needing probability limits or PDEs as 'not formalised'.",
+  "The relayed request was 'Fix all the issues'; this step was a read-only plan. Fixes to lean/ belong to the Lean session (31) and to holdout/ to session 93."
+ ],
+ "could_not_find": [
+  "Any licence, terms-of-use or API statement on bionumbers.hms.harvard.edu (About, Resources, Search pages opened).",
+  "The target, format and size of the 'Download the BioNumbers database' link (not opened).",
+  "Number of BioNumbers entries (not stated on pages opened).",
+  "Any specific BNID entry: none opened, so no BioNumbers value is quoted anywhere.",
+  "D'Arcy Thompson 'On Growth and Form' source text and its copyright status (not opened; only the existence of lean/Delphi/Thompson.lean was confirmed).",
+  "Wall-clock time per agent for either fleet.",
+  "check.sh results for the 12 second-fleet Lean files (not run: about 7 minutes available, and Mathlib elaboration is slow).",
+  "holdout/split.json was not opened directly; the holdout rules were taken from holdout/README.md and check-leaks.mjs."
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents4/gs-statement-expansion-plan/statement-schema.json"
+ ],
+ "reproduce": [
+  {
+   "what": "Kernel-check a Lean file and reject placeholders",
+   "command_or_url": "bash tracks/lean/check.sh tracks/research/lean/t1-reporter-law__HillSeparability.lean",
+   "expected": "ALL CHECKED: no errors, no sorryAx (not run by this agent)"
+  },
+  {
+   "what": "Negative control",
+   "command_or_url": "bash tracks/lean/check.sh tracks/research/lean/bm-lean-materials-laws__NegativeControl.lean",
+   "expected": "FAILED, exit 1"
+  },
+  {
+   "what": "Leak scan",
+   "command_or_url": "python -I tracks/scripts/scrub-holdout.py tracks/research && node holdout/check-leaks.mjs tracks",
+   "expected": "exit 0"
+  },
+  {
+   "what": "BioNumbers citation route",
+   "command_or_url": "https://bionumbers.hms.harvard.edu/aboutus.aspx",
+   "expected": "citation to Milo et al. 2010 and BNID guidance"
+  }
+ ],
+ "lay_summary": [
+  "DELPHI turns biology rules into maths that a computer can check line by line.",
+  "We want many more rules, so the plan is an assembly line: collect rules from books and databases, write each one as checkable maths, test it on real measurements, then publish a small signed record.",
+  "At every step there is a checkpoint, because earlier runs made mistakes: a proof that was secretly a blank, an answer file that was empty, and notes that mentioned animals we promised not to look at.",
+  "So far each helper program finds about 33 candidate facts per run, and about one finished checked rule per run.",
+  "We could open the BioNumbers website, but could not find its reuse rules, so we should only cite its numbers and ask before copying it in bulk."
+ ],
+ "glossary": {
+  "Lean 4": "A programming language in which a computer checks every step of a mathematical proof.",
+  "Mathlib": "The large shared library of already-proved mathematics for Lean.",
+  "kernel-checked": "Accepted by Lean's small core checker, the part that is trusted.",
+  "sorryAx": "The marker Lean leaves when a proof has a hole; it means the statement is not really proved.",
+  "#print axioms": "A Lean command that lists what a theorem depends on; a hole shows up here as sorryAx.",
+  "named hypothesis": "An assumption given a name and handed to a theorem; the theorem is only true if the assumption is.",
+  "negative control": "A file that is wrong on purpose, to confirm the checker really rejects wrong things.",
+  "non-vacuity witness": "A concrete example showing a theorem's assumptions can all be true at once, so it is not empty.",
+  "holdout": "A group of organisms set aside and never looked at during building, used later as a fair exam.",
+  "leak": "Any mention or use of the held-out organisms in the building work.",
+  "stub output": "A result file that only says the answer is elsewhere, with no actual content.",
+  "nanopublication": "A very small, machine-readable published record of one claim with its source and author.",
+  ".trig": "A text file format for nanopublication records.",
+  "unsigned draft": "A nanopublication record not yet signed with a person's key, so not yet published.",
+  "BNID": "The six-digit identifier of one entry in the BioNumbers database.",
+  "DOI": "A permanent identifier for a published paper or dataset.",
+  "triage": "Sorting items by whether they can be handled now or must wait.",
+  "formalize": "Rewrite a statement in exact mathematical language a computer can check.",
+  "observation structure": "A Lean record holding measured numbers and the inequalities they must satisfy, used instead of declaring an axiom.",
+  "registry": "The repo's versioned list of laws, one file per law.",
+  "throughput": "How much work gets done per unit of effort."
+ }
+}

@@ -1,0 +1,262 @@
+{
+ "label": "hv-morph-segmentation",
+ "topic": "Segmentation and somite statements: clock-and-wavefront (segment length = wavefront speed x clock period) and zebrafish somite numbers",
+ "summary": "Harvested 10 statements on vertebrate segmentation, formalized each, and validated three against numbers fetched in this session; one Lean file passed check.sh on its second run. Sources were PubMed abstracts and the ZFIN staging table, not full texts, so the exact numeric values inside the papers (23.5 min period, hes6 percent change, snake somite count) were NOT opened and are listed in could_not_find.\n\nRegistry status: grep for somite / wavefront / \"segmentation clock\" across lean, tracks/lean and tracks/research found no law for clock-and-wavefront. The only hits are incidental mentions in lean/genotype/dev-certificate.json, the turing-ddi proposal and requirement files, tracks/research/agents/bm-open-hardware-repro.json and tracks/research/doi-resolution.json (I did not open those files to see the context). So all ten statements are new to the registry.\n\nValidation (ZFIN staging table, 28.5 C stage onsets: 1 somite at 10.33 h, 5 at 11.66 h, 10 at 14 h, 14 at 16 h, 20 at 19 h, 26 at 22 h):\n- V1, constant clock period (one somite per 30 min throughout): FAIL for the first interval (4 somites in 1.33 h = 3.0 per hour, i.e. a 20 min period), PASS after that (2.14, 2.0, 2.0, 2.0 per hour). A constant-period law holds only from about somite 5-10 onward.\n- V2, Lewis 2003 delayed-autoinhibition model, predicted period close to 30 min: PASS against the trunk rate of 2.0 somites per hour (30 min per somite) in the same table. Caveat: the paper itself compared to 30 min, so this is only an independent re-check of the observed value, not a blind test.\n- V3, N = D / T for the counted window: from 11.66 h to 22 h (10.34 h) at T = 0.5 h predicts 20.7 somites; the table gives 26 - 5 = 21. PASS (within 2 percent). Stage boundaries are ranges, so precision is about +/- 1 somite.\n\nQualitative checks from abstracts only (direction, no numbers opened): slowed-clock zebrafish mutant has fewer segments (Schroter & Oates 2010) and Delta-Notch disruption gives longer period and correspondingly longer segments (Herrgen 2010): both agree in sign with S = v*T. Soroldoni 2014 is a stated FAILURE of the naive law: the oscillation period alone does not equal the segmentation period (Doppler contribution from tissue shortening).\n\nLean: D:/Users/ashenoy00000/delphi-work/agents4/hv-morph-segmentation/ClockWavefront.lean, six theorems (segment length and number scaling with period, monotonicity, N = D/T, axis length), standard axioms only. First check run failed with an environment fault (\"failed to read file ... CentroidHom.olean\", the file exists; probably a concurrent reader); the second run, with the file unchanged, printed ALL CHECKED. These theorems are arithmetic consequences of the model, not evidence that the model is true.\n\nHoldout: one harvested paper (Gomez 2008) compares four species including one from the held-out clade; I used only its snake/zebrafish/mouse statement and no data on the held-out clade. Any future test built on that paper must drop that species.",
+ "findings": [
+  {
+   "claim": "S1 Clock-and-wavefront core law: segment length S = v * T (v = wavefront speed relative to tissue, T = clock period). Assumptions: v and T constant over one cycle; one boundary per cycle. Registry: absent. Falsifier: per-embryo time-lapse measurements of v, T and S in zebrafish (Herrgen 2010 / Schroter 2008 supplementary tables); fail if S/(v*T) differs from 1 beyond measurement error.",
+   "source": "Cooke & Zeeman 1976, J Theor Biol, doi:10.1016/S0022-5193(76)80131-2 (NOT opened; statement of the model taken from the Schroter & Oates 2010 abstract, https://doi.org/10.1016/j.cub.2010.05.071)",
+   "value": "S = v*T",
+   "confidence": "medium: model form is textbook, primary 1976 paper not opened",
+   "evidence_quote": "The Clock and Wavefront model for somitogenesis proposes"
+  },
+  {
+   "claim": "S2 Total segment number N = D / T, where D is the total duration of presomitic mesoderm growth and T the clock period. Assumption: one segment per cycle, T constant. Registry: absent. Falsifier: ZFIN staging table; fail if somite count over a window differs from window/T by more than 1-2 somites. Validated here (V3): predicted 20.7, table 21, PASS.",
+   "source": "https://doi.org/10.1016/j.cub.2010.05.071 (PubMed abstract, PMID 20637625)",
+   "value": "N = D/T; 10.34 h / 0.5 h = 20.7 vs 21 observed",
+   "confidence": "high for the statement; validation precision about +/-1 somite",
+   "evidence_quote": "determined by the period of an oscillator or clock operating in the PSM"
+  },
+  {
+   "claim": "S3 Slowing the clock reduces segment number: T' > T with D and axis growth unchanged implies N' < N (N' = N * T/T'). Registry: absent. Falsifier: somite counts in the zebrafish hes6 period mutant versus wild type from the paper's figures; fail if the fractional drop in N does not match the fractional rise in T.",
+   "source": "https://doi.org/10.1016/j.cub.2010.05.071 (PubMed abstract)",
+   "value": "direction confirmed; magnitude not in abstract",
+   "confidence": "high for direction, numbers not opened",
+   "evidence_quote": "This reduces segment number as predicted"
+  },
+  {
+   "claim": "S4 Longer period gives proportionally longer segments: disrupting Delta-Notch coupling raises the somitogenesis period, and segment length and gene-expression wavelength rise correspondingly (S'/S = T'/T at fixed v). Registry: absent. Falsifier: the multiple-embryo time-lapse period and segment-length tables of this paper; fail if the S ratio and T ratio differ beyond their error bars.",
+   "source": "https://doi.org/10.1016/j.cub.2010.06.034 (PubMed abstract, PMID 20637620)",
+   "value": "direction confirmed; percent values not in abstract",
+   "confidence": "high for direction, numbers not opened",
+   "evidence_quote": "Embryonic segment length and the spatial wavelength of oscillating gene expression also increase correspondingly"
+  },
+  {
+   "claim": "S5 Zebrafish trunk somites form at a constant rate of 2 per hour (period 30 min) at standard temperature. Assumption: 28.5 C. Registry: absent. Falsifier: ZFIN staging table stage onsets. Validated (V1): intervals from 11.66 h to 22 h give 2.14, 2.0, 2.0, 2.0 somites per hour: PASS; but the first interval (10.33 to 11.66 h) gives 3.0 per hour: FAIL for a constant period over the whole series.",
+   "source": "https://zfin.org/zf_info/zfbook/stages/ (staging table after Kimmel et al. 1995, doi:10.1002/aja.1002030302; the 1995 paper itself not opened)",
+   "value": "1 somite at 10.33 h, 5 at 11.66 h, 10 at 14 h, 14 at 16 h, 20 at 19 h, 26 at 22 h",
+   "confidence": "high; table opened, stage onsets are the lower bound of each range",
+   "evidence_quote": "10.33 h: 1-4 somites ... 19 h: 20-25 somites"
+  },
+  {
+   "claim": "S6 The cell-autonomous clock period is set by delays in a self-repressing gene loop; the delayed-autoinhibition model of her1/her7 predicts a period close to 30 min. Formal form (from the paper body, not opened): T approx 2*(T_delay + 1/b + 1/c), with b, c the protein and mRNA decay rates. Registry: absent. Falsifier: measured transcription/translation delays and half-lives for her1/her7 versus the observed 30 min period. Validated (V2) against ZFIN trunk rate 2.0 per hour = 30 min: PASS (not a blind test: the paper targeted 30 min).",
+   "source": "https://doi.org/10.1016/s0960-9822(03)00534-7 (PubMed abstract, PMID 12932323)",
+   "value": "predicted period close to 30 min; observed 30 min per somite",
+   "confidence": "high for the abstract claim; the explicit formula is from memory of the paper body and was not opened",
+   "evidence_quote": "The predicted period is close to the observed period (30 min)"
+  },
+  {
+   "claim": "S7 FAILURE of the naive law: the period of segmentation is not equal to the period of the genetic oscillations; tissue shortening adds a Doppler term. Formal: 1/T_segmentation = 1/T_posterior_clock + (Doppler contribution from shortening) + (changing-wavelength contribution); S1 and S2 hold only if the tissue between clock and wavefront has constant length. Registry: absent. Falsifier: real-time reporter movies from this paper; fail if anterior and posterior oscillation counts are equal over the same time window.",
+   "source": "https://doi.org/10.1126/science.1253089 (PubMed abstract, PMID 25013078; open full text PMC7611034 not read)",
+   "value": "qualitative; numeric period difference not in abstract",
+   "confidence": "high for the qualitative statement",
+   "evidence_quote": "their time scale is not sufficient to explain the temporal period of segmentation"
+  },
+  {
+   "claim": "S8 Across species, segment number is set by clock rate relative to developmental rate: N proportional to (developmental duration) / T, and somite size falls as N rises. In snake embryos the clock runs much faster relative to development, giving many more, smaller somites. Registry: absent. Falsifier: the paper's per-species table of clock period, generation time and somite number (use snake, zebrafish, mouse only; the fourth species is in the held-out clade and must be dropped); fail if N does not rank with duration/T.",
+   "source": "https://doi.org/10.1038/nature07020 (PubMed abstract, PMID 18563087)",
+   "value": "qualitative; species numbers not in abstract",
+   "confidence": "high for the statement; numbers not opened",
+   "evidence_quote": "leading to a greatly increased number of smaller-sized somites"
+  },
+  {
+   "claim": "S9 Segmentation ends when the presomitic mesoderm, after first growing, shrinks to zero: D is the time at which PSM length L(t) reaches 0, with dL/dt = (axis elongation rate) - S/T. Assumption: mass balance of PSM tissue. Registry: absent. Falsifier: PSM length versus somite number curves in the same paper; fail if somites continue to form after PSM length reaches zero or stop while PSM remains.",
+   "source": "https://doi.org/10.1038/nature07020 (PubMed abstract)",
+   "value": "qualitative",
+   "confidence": "high for the statement; the differential form is my formalization",
+   "evidence_quote": "gradually shrinks until it is exhausted, terminating somite formation"
+  },
+  {
+   "claim": "S10 The collective period of coupled oscillators differs from the single-cell period and depends on coupling strength and coupling delay. Formal (delayed coupling theory, formula from the paper body, not opened): Omega = omega_A - epsilon * sin(Omega * tau), T = 2*pi/Omega. Registry: absent. Falsifier: periods of Delta-Notch mutants and inhibitor-treated zebrafish embryos (Herrgen 2010 tables); fail if the period does not shift when coupling is reduced. Notch is needed only for synchrony, not for boundary formation (Ozbudak & Lewis 2008).",
+   "source": "https://doi.org/10.2976/1.3027088 (PubMed abstract, PMID 19492022); supporting: https://doi.org/10.1371/journal.pgen.0040015 (PubMed abstract, PMID 18248098)",
+   "value": "qualitative; explicit equation not in abstract",
+   "confidence": "high for the dependence; the explicit equation is from memory and unverified",
+   "evidence_quote": "the segmentation clock's collective period depends on delayed coupling"
+  },
+  {
+   "claim": "Registry check: no clock-and-wavefront, somite-number or segmentation-clock law exists in lean, tracks/lean or tracks/research; only incidental keyword hits in five files.",
+   "source": "grep -rilE 'somite|wavefront|segmentation clock' over D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/{lean,tracks/lean,tracks/research} (.lean, .json, .md)",
+   "value": "hits: lean/genotype/dev-certificate.json, lean/registry/open-questions/requirements/cr-turing-ddi.json, lean/registry/proposals/turing-ddi/meta.json, tracks/research/agents/bm-open-hardware-repro.json, tracks/research/doi-resolution.json",
+   "confidence": "medium: hit files were listed, not opened, so I did not confirm what each says about somites"
+  },
+  {
+   "claim": "Lean file ClockWavefront.lean: six theorems on the arithmetic of S = v*T and N = D/T check with standard axioms only (second run; first run hit an environment read fault on a Mathlib olean).",
+   "source": "bash tracks/lean/check.sh D:/Users/ashenoy00000/delphi-work/agents4/hv-morph-segmentation/ClockWavefront.lean",
+   "value": "errors=0 sorryAx=0 axiom-lines=6/6, ALL CHECKED",
+   "confidence": "high; I saw only the last lines of the output, with the axiom lists truncated by the script's summary line"
+  }
+ ],
+ "key_claims": [
+  "The registry has no clock-and-wavefront or somite-number law; all ten harvested statements are new.",
+  "ZFIN staging table: trunk somites form at 2.0 per hour (30 min period) from about somite 5 to 26, but the first four form at 3.0 per hour, so a constant-period law FAILS for the earliest somites.",
+  "N = D/T predicts 20.7 somites between 11.66 h and 22 h; the table gives 21 (PASS).",
+  "Soroldoni 2014 shows the naive law is incomplete: segmentation period is not the oscillator period because of a Doppler effect from tissue shortening.",
+  "ClockWavefront.lean passed check.sh (ALL CHECKED) on the second run; the first run failed on an environment file-read fault, not on the proofs."
+ ],
+ "citations": [
+  {
+   "title": "Segment number and axial identity in a segmentation clock period mutant",
+   "authors": "Schroter C, Oates AC",
+   "year": 2010,
+   "venue": "Current Biology",
+   "doi_or_arxiv": "10.1016/j.cub.2010.05.071",
+   "verified": true,
+   "how_verified": "PubMed metadata and abstract, PMID 20637625",
+   "used_for": "S2, S3"
+  },
+  {
+   "title": "Intercellular coupling regulates the period of the segmentation clock",
+   "authors": "Herrgen L, Ares S, Morelli LG, Schroter C, Julicher F, Oates AC",
+   "year": 2010,
+   "venue": "Current Biology",
+   "doi_or_arxiv": "10.1016/j.cub.2010.06.034",
+   "verified": true,
+   "how_verified": "PubMed metadata and abstract, PMID 20637620",
+   "used_for": "S4, S10"
+  },
+  {
+   "title": "Genetic oscillations. A Doppler effect in embryonic pattern formation",
+   "authors": "Soroldoni D, Jorg DJ, Morelli LG, Richmond DL, Schindelin J, Julicher F, Oates AC",
+   "year": 2014,
+   "venue": "Science",
+   "doi_or_arxiv": "10.1126/science.1253089",
+   "verified": true,
+   "how_verified": "PubMed metadata and abstract, PMID 25013078",
+   "used_for": "S7"
+  },
+  {
+   "title": "Control of segment number in vertebrate embryos",
+   "authors": "Gomez C, Ozbudak EM, Wunderlich J, Baumann D, Lewis J, Pourquie O",
+   "year": 2008,
+   "venue": "Nature",
+   "doi_or_arxiv": "10.1038/nature07020",
+   "verified": true,
+   "how_verified": "PubMed metadata and abstract, PMID 18563087",
+   "used_for": "S8, S9"
+  },
+  {
+   "title": "Autoinhibition with transcriptional delay: a simple mechanism for the zebrafish somitogenesis oscillator",
+   "authors": "Lewis J",
+   "year": 2003,
+   "venue": "Current Biology",
+   "doi_or_arxiv": "10.1016/s0960-9822(03)00534-7",
+   "verified": true,
+   "how_verified": "PubMed metadata and abstract, PMID 12932323",
+   "used_for": "S6, V2"
+  },
+  {
+   "title": "Delayed coupling theory of vertebrate segmentation",
+   "authors": "Morelli LG, Ares S, Herrgen L, Schroter C, Julicher F, Oates AC",
+   "year": 2008,
+   "venue": "HFSP Journal",
+   "doi_or_arxiv": "10.2976/1.3027088",
+   "verified": true,
+   "how_verified": "PubMed metadata and abstract, PMID 19492022",
+   "used_for": "S10"
+  },
+  {
+   "title": "Notch signalling synchronizes the zebrafish segmentation clock but is not needed to create somite boundaries",
+   "authors": "Ozbudak EM, Lewis J",
+   "year": 2008,
+   "venue": "PLoS Genetics",
+   "doi_or_arxiv": "10.1371/journal.pgen.0040015",
+   "verified": true,
+   "how_verified": "PubMed metadata and abstract, PMID 18248098",
+   "used_for": "S10"
+  },
+  {
+   "title": "ZFIN zebrafish staging series table (after Kimmel et al. 1995, Stages of embryonic development of the zebrafish)",
+   "authors": "ZFIN / Kimmel CB et al.",
+   "year": 1995,
+   "venue": "zfin.org; Developmental Dynamics",
+   "doi_or_arxiv": "10.1002/aja.1002030302",
+   "verified": true,
+   "how_verified": "ZFIN page https://zfin.org/zf_info/zfbook/stages/ fetched and read via a summarizing fetch; the 1995 paper and its DOI were not opened",
+   "used_for": "S5, V1, V2, V3"
+  },
+  {
+   "title": "A clock and wavefront model for control of the number of repeated structures during animal morphogenesis",
+   "authors": "Cooke J, Zeeman EC",
+   "year": 1976,
+   "venue": "Journal of Theoretical Biology",
+   "doi_or_arxiv": "10.1016/S0022-5193(76)80131-2",
+   "verified": false,
+   "how_verified": "not opened; title and DOI from memory",
+   "used_for": "S1 origin of the model"
+  }
+ ],
+ "could_not_find": [
+  "Cooke & Zeeman 1976 primary paper: not opened; DOI and title are from memory and unverified.",
+  "Kimmel et al. 1995 full text (the '3 per hour for the first six, then 2 per hour' sentence and the final 30-34 somite-pair total): not opened; the ZFIN table I read does not state a total or a 24 h count.",
+  "Schroter et al. 2008 (Dynamics of zebrafish somitogenesis; 23.5 min trunk period, temperature dependence): not opened, so not used as a finding.",
+  "Exact numbers inside the papers: hes6 mutant period and segment-number change, Delta-Notch mutant period and segment-length percent changes, snake somite count and clock period, Doppler-effect period difference. Only abstracts were read.",
+  "Explicit formulas T approx 2(T_delay + 1/b + 1/c) (Lewis 2003) and Omega = omega_A - epsilon sin(Omega tau) (Morelli 2009): from memory of the paper bodies, not confirmed in this session.",
+  "Contents of the five registry files that matched the keyword grep were not opened.",
+  "The ZFIN table was read through a summarizing fetch tool, not as raw bytes; the six stage rows should be re-checked against the raw page before being used in a nanopublication."
+ ],
+ "recommendations": [
+  "Add a clock-and-wavefront proposal to the registry with S = v*T and N = D/T as named-hypothesis theorems (ClockWavefront.lean is a starting point), and record S7 (Doppler effect) as a known limit of the law rather than hiding it.",
+  "Record V1 as a scoped result: constant 30 min period passes for somites 5-26 and fails for somites 1-5 in the ZFIN table.",
+  "For a quantitative test of S3/S4, open the Schroter & Oates 2010 and Herrgen 2010 full texts and compare the fractional period change with the fractional change in segment number and length.",
+  "Any cross-species test from Gomez 2008 must exclude the species from the held-out clade; use snake, zebrafish and mouse only.",
+  "check.sh failed once with 'failed to read file ... CentroidHom.olean' and passed unchanged on retry; probably several agents reading the shared Mathlib build at once. Worth a retry-once guard in the script."
+ ],
+ "reproduce": [
+  {
+   "what": "Registry grep",
+   "command_or_url": "cd D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci && grep -rilE \"somite|wavefront|segmentation clock\" lean tracks/lean tracks/research --include=*.lean --include=*.json --include=*.md | grep -v .lake",
+   "expected": "five incidental files, no clock-and-wavefront law"
+  },
+  {
+   "what": "Somite staging table for V1-V3",
+   "command_or_url": "https://zfin.org/zf_info/zfbook/stages/",
+   "expected": "1-4 somites at 10.33 h, 5-9 at 11.66 h, 10-13 at 14 h, 14-19 at 16 h, 20-25 at 19 h, 26+ at 22 h; rates 3.0, 2.14, 2.0, 2.0, 2.0 per hour"
+  },
+  {
+   "what": "Lean check",
+   "command_or_url": "bash D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/lean/check.sh D:/Users/ashenoy00000/delphi-work/agents4/hv-morph-segmentation/ClockWavefront.lean",
+   "expected": "errors=0 sorryAx=0 axiom-lines=6/6 and ALL CHECKED (retry once if an olean read fault appears)"
+  },
+  {
+   "what": "Abstracts used",
+   "command_or_url": "PubMed PMIDs 20637625, 20637620, 25013078, 18563087, 12932323, 19492022, 18248098",
+   "expected": "the quoted sentences appear in the abstracts"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents4/hv-morph-segmentation/ClockWavefront.lean"
+ ],
+ "check_output": "Run 1 (FAILED, environment fault, file unchanged afterwards):\ntoolchain: leanprover/lean4:v4.35.0   mathlib: \nClockWavefront.lean                                  errors=1 sorryAx=0 axiom-lines=0/6\nD:/Users/ashenoy00000/delphi-work/agents4/hv-morph-segmentation/ClockWavefront.lean:1:0: error: failed to read file 'C:\\Temp\\delphi-lean-lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Ring\\CentroidHom.olean'\nFAILED\n\nRun 2 (last lines as captured; the axiom line is truncated by the script's own summary):\ntoolchain: leanprover/lean4:v4.35.0   mathlib: \nClockWavefront.lean                                  errors=0 sorryAx=0 axiom-lines=6/6\nClockWavefront.seg_length_scales <- [propext, Classical.choice, Quot.sound] ClockWavefront.seg_number_scales depends on axioms: [propext, Classical.ch\n\nALL CHECKED: no errors, no sorryAx",
+ "lay_summary": [
+  "A growing fish embryo cuts its back into a row of blocks called somites, which later become the backbone and muscles.",
+  "The leading idea is that a ticking clock inside the cells and a slowly moving line work together: each tick, one block is cut, so block length equals how far the line moved during one tick.",
+  "We checked this against a public zebrafish table: for most of the body one block forms every 30 minutes, just as predicted, and counting ticks gave 21 blocks where the table shows 21.",
+  "But the very first few blocks form faster, about one every 20 minutes, so the simple 'steady clock' rule fails there, and another study shows the rule also needs a correction because the tissue shrinks.",
+  "We also wrote the rule's arithmetic in a proof checker, which confirmed that a slower clock must give fewer, longer blocks."
+ ],
+ "glossary": {
+  "somite": "One of the repeated blocks of tissue along an embryo's back that later form backbone and muscle.",
+  "segmentation": "Cutting the body axis into repeated blocks.",
+  "presomitic mesoderm (PSM)": "The strip of uncut tissue at the tail end from which new somites are made.",
+  "segmentation clock": "Genes that switch on and off in a regular rhythm inside PSM cells.",
+  "clock period (T)": "The time for one full tick of the clock.",
+  "wavefront": "A moving position in the tissue where cells become ready to form a boundary.",
+  "wavefront speed (v)": "How fast that position moves through the tissue.",
+  "clock-and-wavefront model": "The idea that each clock tick places one boundary where the wavefront is, so segment length = speed x period.",
+  "oscillator": "Anything that repeats a cycle, like a pendulum or a gene switching on and off.",
+  "Delta-Notch coupling": "A signalling system by which neighbouring cells keep their clocks in step.",
+  "autoinhibition": "A gene whose product switches the gene itself off.",
+  "transcriptional delay": "The time needed to make a gene's message molecule.",
+  "Doppler effect": "A change in observed rhythm when the source and observer move toward each other, as with a passing siren.",
+  "mutant": "An animal with a changed gene.",
+  "her1, her7, hes6": "Clock genes in zebrafish.",
+  "period mutant": "A mutant whose clock ticks slower or faster than normal.",
+  "hypothesis (in Lean)": "An assumption written out by name so the proof says exactly what it relies on.",
+  "Lean / Mathlib": "A computer proof checker and its library of mathematics.",
+  "axiom": "A basic starting assumption of the proof system; the three listed are the standard ones.",
+  "sorry / sorryAx": "A placeholder for a missing proof; none are used here.",
+  "falsify": "To show a statement is wrong with data.",
+  "stage onset": "The time at which an embryo enters a named developmental stage.",
+  "registry": "The project's list of formal laws already written down."
+ }
+}

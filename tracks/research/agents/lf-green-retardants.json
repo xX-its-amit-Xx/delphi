@@ -1,0 +1,427 @@
+{
+ "label": "lf-green-retardants",
+ "topic": "Bio-based flame-retardant coatings on wood, textiles and bio-composites: reported fire-test numbers, and what the FireCoatingCertificate.lean bounds can eliminate or keep",
+ "summary": "Harvested 16 papers with reported fire numbers; all 17 DOIs (16 papers plus one preprint) redirect at doi.org (HTTP 302). Every number comes from the Europe PMC abstract record, read through a summarising fetch tool, not from full texts, so the quotes are tool-extracted and need a spot check before reuse.\n\nCoverage is uneven. Peak-HRR reduction and LOI are well covered. Time to ignition appears in one paper only (32 to 69 s). Char yield appears in one paper only (23.80% to 38.10%). No paper with numbers was found for casein or DNA coatings, and the mineral/clay entry is an impregnation, not a surface coating.\n\nWhat the Lean bounds can do with these numbers:\n- **Nothing is eliminated outright.** No abstract gives coating thickness, conductivity, char thickness, heat flux or burn duration, which are the hypotheses the certificates need.\n- **LOI claims are out of scope.** The file has no oxygen or gas-phase theorem, so LOI values can be neither eliminated nor kept.\n- **Back-face insulation (sections 1-2):** thin layer-by-layer films would add almost no d/k, so `steady_eliminates` would rule them out as insulators unless a char term (`char_eliminates`, needs xmax and kcmin) rescues them. This is my reasoning from typical film thicknesses, not from a sourced thickness.\n- **Ignition (section 5):** the one time-to-ignition claim (hydrogel/MXene on wood, 32 to 69 s) is kept, not eliminated. A coating that is 90% water or more plausibly raises thermal inertia enough, and evaporation is outside the no-loss model anyway. For thin fabrics, `thin_ignition_eliminates` caps ignition delay by areal heat capacity, so a large delay claimed for a light coating on cotton would be eliminable; none of these abstracts makes such a claim.\n- **Peak HRR (section 6, `hrr_eliminates`):** this is the only bound I could apply numerically. For the chitosan/graphene oxide/APP coating on wood, THR divided by HRR gives a minimum burn window of about 597 s coated (34.31 MJ/m2 over 57.51 kW/m2) and 592 s uncoated (62.43 over 105.50). The claim survives only if the test burned at least about 10 minutes. For the cotton paper reporting pHRR down 87.7% and THR down 63.7%, the minimum burn window must grow about 2.95 times relative to untreated; this is checkable against the HRR curve.\n- **Reductions where THR falls at least as much as the peak** (44.1/55.4, 25/54, 77/75, 67/80) impose no extra burn-time demand and are kept trivially.\n\nThe only file I wrote is the DOI resolution log for the second batch, at D:/Users/ashenoy00000/delphi-work/agents4/lf-green-retardants/doi_resolution_batch2.txt. The time limit ran out before I wrote a findings data file.",
+ "findings": [
+  {
+   "claim": "Bio-based macromolecular network coating on cotton fabric (Li P, 2026, Int J Biol Macromol): LOI up to 42%; pHRR reduced 87.7% and THR reduced 63.7%",
+   "value": "LOI 42%; pHRR -87.7%; THR -63.7%",
+   "source": "https://doi.org/10.1016/j.ijbiomac.2026.152136",
+   "evidence_quote": "peak heat release rate and total heat release are reduced by 87.7% and 63.7%",
+   "confidence": "medium: abstract only, via Europe PMC record read through a summarising tool; DOI resolves"
+  },
+  {
+   "claim": "Chitosan/phytic acid self-assembly coating on cotton (Wang Y, 2024, Int J Biol Macromol): LOI 18.5% to 38.5%; pHRR about -44.1%, THR -55.4%",
+   "value": "LOI 18.5 -> 38.5%; pHRR -44.1%; THR -55.4%",
+   "source": "https://doi.org/10.1016/j.ijbiomac.2024.133355",
+   "evidence_quote": "limiting oxygen index (LOI) value increased from 18.5 % to 38.5 %",
+   "confidence": "medium: abstract only; DOI resolves"
+  },
+  {
+   "claim": "Fully bio-based bilayer treatment on paper, 20 bilayers (Sun Z, 2024, Front Chem): LOI 19.07% to 24.00%; residual char yield 23.80% to 38.10%; about 50% reduction in peak and total heat release",
+   "value": "LOI 19.07 -> 24.00%; char 23.80 -> 38.10%; pHRR about -50%",
+   "source": "https://doi.org/10.3389/fchem.2024.1503694",
+   "evidence_quote": "the residual char yield enhanced from 23.80% to 38.10%",
+   "confidence": "medium: abstract only; open-access paper, full text not read; the only char-yield number found"
+  },
+  {
+   "claim": "Chitosan/phytic acid with melamine-formaldehyde resin on thermochromic phase-change delignified wood (Jie Y, 2026, Int J Biol Macromol): LOI raised to 28.2% at 6 wt%",
+   "value": "LOI 28.2%",
+   "source": "https://doi.org/10.1016/j.ijbiomac.2026.150841",
+   "evidence_quote": "improved the limiting oxygen index (LOI) to 28.2%",
+   "confidence": "medium-low: abstract only; coating ingredients as reported by the fetch tool; no cone number in the abstract"
+  },
+  {
+   "claim": "Phosphorous-acid-modified chitosan coating on polyester/cotton fabric (Li P, 2026, Int J Biol Macromol): LOI 27.3%; pHRR down 20%",
+   "value": "LOI 27.3%; pHRR -20%",
+   "source": "https://doi.org/10.1016/j.ijbiomac.2026.150573",
+   "evidence_quote": "the peak heat release rate of T/C-PCS4 decreased by 20%",
+   "confidence": "medium: abstract only; DOI resolves"
+  },
+  {
+   "claim": "Protein/phosphorus layer-by-layer coating on cotton (Yang X, 2025, Polymers): pHRR, THR and total smoke reduced 25, 54 and 72%",
+   "value": "pHRR -25%; THR -54%; TSP -72%",
+   "source": "https://doi.org/10.3390/polym17070945",
+   "evidence_quote": "demonstrated 25, 54, and 72% reduction, respectively",
+   "confidence": "medium: abstract only; which protein was used was not captured"
+  },
+  {
+   "claim": "Lignin-derived resin plus surface-modified montmorillonite impregnated into poplar wood (Wang Y, 2023, Materials): peak HRR 231.33 kW/m2 against 271.71 kW/m2 control, a 17.5% decrease. This is an impregnation, not a surface coating.",
+   "value": "pHRR 271.71 -> 231.33 kW/m2 (-17.5%)",
+   "source": "https://doi.org/10.3390/ma16206718",
+   "evidence_quote": "a decrease of 17.5% compared to the control (271.71 kW/m2)",
+   "confidence": "medium: abstract only; the abstract's stated percentage does not match its own two values (231.33/271.71 is about -14.9%), unresolved without the full text"
+  },
+  {
+   "claim": "Chitosan/graphene oxide/ammonium polyphosphate layer-by-layer coating on wood, 15 bilayers (Yan Y, 2022, ACS Omega): LOI 22 to 42; HRR 105.50 to 57.51 kW/m2; THR 62.43 to 34.31 MJ/m2",
+   "value": "LOI 22 -> 42; HRR 105.50 -> 57.51 kW/m2; THR 62.43 -> 34.31 MJ/m2",
+   "source": "https://doi.org/10.1021/acsomega.2c03624",
+   "evidence_quote": "the LOI was increased from pristine 22 to 42",
+   "confidence": "medium: abstract only; the abstract says 'heat release rate' without stating whether it is the peak"
+  },
+  {
+   "claim": "Ammonium polyphosphate/branched polyethyleneimine coating on cotton (Yang JC, 2016, Carbohydr Polym): cone pHRR down 51%. Included as a non-bio-based layer-by-layer style comparator.",
+   "value": "pHRR -51%",
+   "source": "https://doi.org/10.1016/j.carbpol.2016.05.087",
+   "evidence_quote": "peak heat release rate (pHRR) in cone calorimeter test decreased by 51%",
+   "confidence": "medium: abstract only; not a bio-based coating"
+  },
+  {
+   "claim": "Polyvinyl alcohol/phytic acid/MXene hydrogel coating on wood (Zhao X, 2023, Sci Rep): time to ignition 32 to 69 s; HRR down 41.6%, THR down 36.14%; UL-94 V0; water content at least 90 wt%",
+   "value": "TTI 32 -> 69 s; HRR -41.6%; THR -36.14%",
+   "source": "https://doi.org/10.1038/s41598-023-28228-5",
+   "evidence_quote": "increasing time to ignition (TTI, from 32 to 69 s)",
+   "confidence": "medium: abstract only; open-access paper, full text not read; the only time-to-ignition number found; preprint 10.21203/rs.3.rs-2234506/v1 reports the same figures"
+  },
+  {
+   "claim": "Sodium alginate/chitosan/calcium chloride fully bio-based layer-by-layer coating on cotton (Gu L, 2026, Int J Biol Macromol): LOI 35.0%; pHRR down 85%; damaged length 8.6 cm",
+   "value": "LOI 35.0%; pHRR -85%",
+   "source": "https://doi.org/10.1016/j.ijbiomac.2026.151471",
+   "evidence_quote": "Cone calorimetry revealed an 85% reduction in peak heat release rate",
+   "confidence": "medium: abstract only; DOI resolves"
+  },
+  {
+   "claim": "Phosphorylated sodium alginate filling delignified balsa in a transparent wood composite (Guo M, 2025, Carbohydr Polym): pHRR down 67%, THR down 80% versus delignified wood. This is a filled composite, not a surface coating.",
+   "value": "pHRR -67%; THR -80%",
+   "source": "https://doi.org/10.1016/j.carbpol.2025.124021",
+   "evidence_quote": "reducing peak heat release rate (pHRR) by 67 % and total heat release (THR) by 80 %",
+   "confidence": "medium: abstract only; baseline is delignified wood, not native wood"
+  },
+  {
+   "claim": "Urea-formaldehyde-blended guanidinium azole/phytic acid/copper resin coating on wood, with tannic acid as curing agent (Lu X, 2024, Polymers): LOI 32.0%; HRR down 87.7%, THR down 83.66%",
+   "value": "LOI 32.0%; HRR -87.7%; THR -83.66%",
+   "source": "https://doi.org/10.3390/polym16233366",
+   "evidence_quote": "with a limiting oxygen index of 32.0%",
+   "confidence": "medium-low: abstract only; abstract wording on what the reductions refer to is unclear; mostly synthetic resin with bio-based components"
+  },
+  {
+   "claim": "Lignin-derived (vanillin) epoxy Schiff-base coating on wood (Liang Y, 2025, Int J Biol Macromol): LOI 29.3%; pHRR down 38%",
+   "value": "LOI 29.3%; pHRR -38%",
+   "source": "https://doi.org/10.1016/j.ijbiomac.2024.138393",
+   "evidence_quote": "the peak heat release rate (pHRR) decreased by 38 %",
+   "confidence": "medium: abstract only; DOI resolves"
+  },
+  {
+   "claim": "Alkylammonium silsesquioxane/phosphorylated sodium alginate layer-by-layer coating on cotton, 15 bilayers (Shi H, 2024, Int J Biol Macromol): LOI 20.0% to 35.0%; two cone quantities down 89.3% and 49.3%",
+   "value": "LOI 20.0 -> 35.0%; -89.3% and -49.3% (quantities not captured)",
+   "source": "https://doi.org/10.1016/j.ijbiomac.2024.132345",
+   "evidence_quote": "significantly increased to 35.0% from 20.0% of pure cotton fabric",
+   "confidence": "medium-low: abstract only; the extracted fragment does not name which quantities fell by 89.3% and 49.3% (likely pHRR and THR, unconfirmed)"
+  },
+  {
+   "claim": "Phytic-acid-based flame retardant (AMPA) in a delignified wood composite (Zhang M, 2023, Biomacromolecules): LOI 52.5% at 5.6 wt%; pHRR down 81% versus delignified wood. A composite, not a surface coating.",
+   "value": "LOI 52.5%; pHRR -81%",
+   "source": "https://doi.org/10.1021/acs.biomac.2c01397",
+   "evidence_quote": "limiting oxygen index of wood has been improved to 52.5%",
+   "confidence": "medium: abstract only; baseline is delignified wood"
+  },
+  {
+   "claim": "Oxidized sodium alginate layer-by-layer polyelectrolyte coating, hypophosphorous-acid cross-linked, on polyester-cotton (Pan Y, 2018, Carbohydr Polym): pHRR down 77%, THR down 75%",
+   "value": "pHRR -77%; THR -75%",
+   "source": "https://doi.org/10.1016/j.carbpol.2018.08.044",
+   "evidence_quote": "77% and 75% reduction in the peak heat release rate and total heat release",
+   "confidence": "medium: abstract only; DOI resolves"
+  },
+  {
+   "claim": "Applying hrr_eliminates (peak >= energy / burn time) to the Yan 2022 wood numbers: the coated sample needs a burn window of at least about 597 s and the uncoated at least about 592 s. The claim is consistent only if the cone test burned for about 10 minutes or more; a shorter reported burn would eliminate it.",
+   "value": "34.31 MJ/m2 / 57.51 kW/m2 = 596.6 s; 62.43 / 105.50 = 591.8 s",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/research/lean/FireCoatingCertificate.lean (section 6) with numbers from https://doi.org/10.1021/acsomega.2c03624",
+   "confidence": "medium: arithmetic checked; assumes the abstract's 'heat release rate' is the peak and that all fuel energy is in THR; burn duration not in the abstract"
+  },
+  {
+   "claim": "Applying the same bound to Li P 2026 (pHRR -87.7%, THR -63.7%): the minimum burn window (THR/pHRR) must be about 2.95 times that of untreated cotton. This is a testable consequence against the published HRR curve, not an elimination.",
+   "value": "(1-0.637)/(1-0.877) = 2.95",
+   "source": "FireCoatingCertificate.lean section 6 with numbers from https://doi.org/10.1016/j.ijbiomac.2026.152136",
+   "confidence": "medium: arithmetic checked; needs the HRR curve from the full text to decide"
+  },
+  {
+   "claim": "No candidate can be formally eliminated from abstract-level data. The certificates need coating thickness and conductivity envelopes (steady_eliminates), char thickness and conductivity (char_eliminates), thermal inertia and imposed flux (thick/thin_ignition_eliminates) or fuel mass and burn time (hrr_eliminates), none of which the abstracts report. LOI claims are outside the file's scope entirely.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/research/lean/FireCoatingCertificate.lean",
+   "confidence": "high for the scope statement (file read in full to line 299); the hypotheses needed are those in the theorem statements"
+  },
+  {
+   "claim": "The single time-to-ignition claim (hydrogel coating, 32 to 69 s) is kept rather than eliminated: tigThick scales linearly with thermal inertia, and a coating that is mostly water plausibly more than doubles surface inertia; evaporation is also outside the no-loss model, which only makes ignition later.",
+   "source": "FireCoatingCertificate.lean section 5 with https://doi.org/10.1038/s41598-023-28228-5",
+   "evidence_quote": "water content ≥ 90 wt%",
+   "confidence": "low-medium: qualitative argument from general material properties, no sourced kρc values and no heat flux in the abstract"
+  }
+ ],
+ "key_claims": [
+  "16 papers harvested with reported fire numbers; all 17 DOIs (including one preprint) redirect at doi.org.",
+  "All numbers are abstract-level, read from Europe PMC records through a summarising tool; no full text was opened.",
+  "Time to ignition was found in one paper (32 to 69 s) and char yield in one paper (23.80% to 38.10%).",
+  "No abstract supplies the inputs needed for a formal elimination under FireCoatingCertificate.lean; LOI is outside its scope.",
+  "The fuel-load bound gives two checkable consequences: a burn window of about 10 minutes for the Yan 2022 wood coating, and a 2.95-fold longer minimum burn window for the Li 2026 cotton coating.",
+  "Thin layer-by-layer films would fail any back-face insulation criterion unless their char layer supplies the resistance; this is reasoning, not a sourced result."
+ ],
+ "could_not_find": [
+  "Any paper with quantitative fire numbers for a casein coating (search returned none)",
+  "Any paper with quantitative fire numbers for a DNA coating (search returned none)",
+  "A mineral/clay surface nanocoating with numbers; the only clay entry is a montmorillonite impregnation of poplar",
+  "Tannin as the main flame retardant; tannic acid appears only as a curing agent in one resin coating",
+  "Time-to-ignition numbers beyond one paper; char-yield numbers beyond one paper",
+  "Coating thickness, thermal conductivity, char thickness, cone heat flux or burn duration for any paper (not in abstracts)",
+  "Full texts: none were opened, so no number was checked against a table or figure",
+  "Carosio et al. 2012 (Carbohydrate Polymers) appeared in the search but its abstract gives time to ignition only qualitatively; not used",
+  "Which two quantities fell by 89.3% and 49.3% in Shi H 2024"
+ ],
+ "recommendations": [
+  "Open the full texts of the three open-access papers (Sci Rep 10.1038/s41598-023-28228-5, ACS Omega 10.1021/acsomega.2c03624, Front Chem 10.3389/fchem.2024.1503694) to get heat flux, burn duration and coating thickness, then instantiate hrr_eliminates and thick_ignition_eliminates with real numbers.",
+  "Check the Yan 2022 HRR curve: if flaming ended well before about 590 s, the reported HRR/THR pair is inconsistent with the energy bound.",
+  "Check the Li P 2026 HRR curve for the roughly threefold longer burn the bound requires.",
+  "Resolve the Wang Y 2023 percentage (17.5% stated, about 14.9% from the two values) against the full text before quoting it.",
+  "Run separate searches for casein, DNA and clay nanocoatings in a database with better coverage of Polymer Degradation and Stability and ACS Nano; Europe PMC abstract search returned nothing for them.",
+  "Spot-check each quote against the publisher abstract before any nanopublication, since the quotes were extracted by a summarising tool."
+ ],
+ "lay_summary": [
+  "Scientists are making fire-protecting coatings for wood and cloth out of natural things like plant acids, shellfish shells and seaweed.",
+  "I collected 16 studies and wrote down how much each coating cut the fire's strongest heat, usually by a fifth up to almost nine tenths.",
+  "I only read the short summaries of the studies, not the whole papers, so the numbers still need a second check.",
+  "The project's maths rules can throw out a coating only when they know how thick it is and how long the fire test burned, and the summaries do not say that.",
+  "So nothing was thrown out yet, but the maths did give two simple checks, such as 'this wood test must have burned for about ten minutes'."
+ ],
+ "glossary": {
+  "cone calorimeter": "A lab machine that heats a small sample with a cone-shaped heater and measures how much heat it gives off as it burns.",
+  "HRR (heat release rate)": "How fast a burning sample gives off heat, in kilowatts per square metre.",
+  "pHRR (peak heat release rate)": "The highest heat release rate reached during the test.",
+  "THR (total heat release)": "All the heat given off over the whole test, in megajoules per square metre.",
+  "TSP (total smoke production)": "All the smoke given off over the whole test.",
+  "LOI (limiting oxygen index)": "The smallest percentage of oxygen in the surrounding gas that keeps the sample burning; higher means harder to burn.",
+  "time to ignition (TTI)": "How many seconds the heated sample takes to catch fire.",
+  "char yield / char residue": "The share of the sample left as black carbon crust after burning.",
+  "UL-94 V0": "The best grade in a standard small-flame test; the sample stops burning quickly without dripping flames.",
+  "layer-by-layer (LbL) assembly": "Building a coating by dipping the material alternately in two solutions that stick to each other, one thin layer at a time.",
+  "bilayer (BL)": "One pair of layers in a layer-by-layer coating.",
+  "phytic acid": "A phosphorus-rich acid found in seeds and grains.",
+  "chitosan": "A substance made from the shells of shrimp and crabs.",
+  "alginate": "A gel-forming substance from seaweed.",
+  "lignin": "The stiff natural glue in wood.",
+  "tannic acid": "A plant substance found in bark and tea.",
+  "montmorillonite": "A kind of clay made of very thin plates.",
+  "MXene": "A man-made material of very thin metal-carbide sheets.",
+  "graphene oxide": "Very thin sheets of carbon with oxygen attached.",
+  "ammonium polyphosphate (APP)": "A common phosphorus-based fire-retardant salt.",
+  "hydrogel": "A soft solid that is mostly water held in a network.",
+  "impregnation": "Soaking a treatment into the body of the wood instead of painting it on the surface.",
+  "delignified wood": "Wood with its lignin removed, leaving a porous cellulose frame.",
+  "intumescent": "Swelling into a thick foam-like char when heated.",
+  "thermal conductivity (k)": "How easily heat flows through a material.",
+  "thermal resistance (d/k)": "How strongly a layer of thickness d blocks heat flow.",
+  "thermal inertia (kρc)": "How slowly a surface heats up; the product of conductivity, density and heat capacity.",
+  "back-face temperature rise": "How much hotter the side away from the fire becomes.",
+  "thermally thin / thick": "Thin means the whole sample heats evenly; thick means the far side has not yet felt the heat.",
+  "heat flux": "Heat energy arriving per square metre per second.",
+  "fuel load": "The amount of burnable material per unit area.",
+  "elimination certificate": "A proof that a candidate must fail a stated test under stated assumptions; it can rule out but never approve.",
+  "DOI": "A permanent identifier for a published paper.",
+  "Europe PMC": "A free online index of research paper records and abstracts."
+ },
+ "citations": [
+  {
+   "title": "Construction of a bio-based macromolecular network for durable flame-retardant, superhydrophobic, and antibacterial cotton fabrics",
+   "authors": "Li P et al.",
+   "year": 2026,
+   "venue": "Int J Biol Macromol",
+   "doi_or_arxiv": "10.1016/j.ijbiomac.2026.152136",
+   "verified": true,
+   "how_verified": "Europe PMC abstract record; doi.org 302",
+   "used_for": "cotton LOI, pHRR, THR"
+  },
+  {
+   "title": "Construction of composite self-assembly coating based on chitosan for enhancing the flame-retardant and antibacterial performances of cotton fabric",
+   "authors": "Wang Y et al.",
+   "year": 2024,
+   "venue": "Int J Biol Macromol",
+   "doi_or_arxiv": "10.1016/j.ijbiomac.2024.133355",
+   "verified": true,
+   "how_verified": "Europe PMC abstract record; doi.org 302",
+   "used_for": "chitosan/phytic acid on cotton"
+  },
+  {
+   "title": "The fully bio-based bilayered flame retardant treatment for paper via natural bio-materials",
+   "authors": "Sun Z et al.",
+   "year": 2024,
+   "venue": "Frontiers in Chemistry",
+   "doi_or_arxiv": "10.3389/fchem.2024.1503694",
+   "verified": true,
+   "how_verified": "Europe PMC abstract record; doi.org 302",
+   "used_for": "char yield, LOI on paper"
+  },
+  {
+   "title": "Water-based melamine-formaldehyde resin and acidic chitosan solution composite for thermochromic phase-change wood...",
+   "authors": "Jie Y et al.",
+   "year": 2026,
+   "venue": "Int J Biol Macromol",
+   "doi_or_arxiv": "10.1016/j.ijbiomac.2026.150841",
+   "verified": true,
+   "how_verified": "Europe PMC abstract record; doi.org 302",
+   "used_for": "LOI on wood"
+  },
+  {
+   "title": "Chitosan coating modified with H3PO3 for polyester-cotton fabric (title as summarised by tool)",
+   "authors": "Li P et al.",
+   "year": 2026,
+   "venue": "Int J Biol Macromol",
+   "doi_or_arxiv": "10.1016/j.ijbiomac.2026.150573",
+   "verified": true,
+   "how_verified": "Europe PMC abstract record; doi.org 302; exact title not captured",
+   "used_for": "LOI, pHRR on polyester/cotton"
+  },
+  {
+   "title": "Protein-phosphorus layer-by-layer coating for cotton fabric (title as summarised by tool)",
+   "authors": "Yang X et al.",
+   "year": 2025,
+   "venue": "Polymers (Basel)",
+   "doi_or_arxiv": "10.3390/polym17070945",
+   "verified": true,
+   "how_verified": "Europe PMC abstract record; doi.org 302; exact title not captured",
+   "used_for": "pHRR, THR, smoke on cotton"
+  },
+  {
+   "title": "Lignin-derived resin and surface-modified montmorillonite impregnation of poplar wood (title as summarised by tool)",
+   "authors": "Wang Y et al.",
+   "year": 2023,
+   "venue": "Materials (Basel)",
+   "doi_or_arxiv": "10.3390/ma16206718",
+   "verified": true,
+   "how_verified": "Europe PMC abstract record; doi.org 302; exact title not captured",
+   "used_for": "lignin/clay on wood, absolute pHRR"
+  },
+  {
+   "title": "Chitosan, graphene oxide and ammonium polyphosphate layer-by-layer coating on wood (title as summarised by tool)",
+   "authors": "Yan Y et al.",
+   "year": 2022,
+   "venue": "ACS Omega",
+   "doi_or_arxiv": "10.1021/acsomega.2c03624",
+   "verified": true,
+   "how_verified": "Europe PMC abstract record; doi.org 302; exact title not captured",
+   "used_for": "absolute HRR and THR for the energy-bound check"
+  },
+  {
+   "title": "Ammonium polyphosphate and branched polyethyleneimine coating for cotton fabric (title as summarised by tool)",
+   "authors": "Yang JC et al.",
+   "year": 2016,
+   "venue": "Carbohydrate Polymers",
+   "doi_or_arxiv": "10.1016/j.carbpol.2016.05.087",
+   "verified": true,
+   "how_verified": "Europe PMC abstract record; doi.org 302; exact title not captured",
+   "used_for": "non-bio comparator"
+  },
+  {
+   "title": "Facile fabrication of a novel self-healing and flame-retardant hydrogel/MXene coating for wood",
+   "authors": "Zhao X et al.",
+   "year": 2023,
+   "venue": "Scientific Reports",
+   "doi_or_arxiv": "10.1038/s41598-023-28228-5",
+   "verified": true,
+   "how_verified": "Europe PMC abstract record; doi.org 302",
+   "used_for": "time to ignition"
+  },
+  {
+   "title": "Fully biobased materials for flame-retardant modification of cotton fabric through layer-by-layer strategy",
+   "authors": "Gu L et al.",
+   "year": 2026,
+   "venue": "Int J Biol Macromol",
+   "doi_or_arxiv": "10.1016/j.ijbiomac.2026.151471",
+   "verified": true,
+   "how_verified": "Europe PMC abstract record; doi.org 302",
+   "used_for": "alginate/chitosan on cotton"
+  },
+  {
+   "title": "Phosphorylated sodium alginate-filled delignified wood-reinforced transparent wood: Crafting flame-retardant composites",
+   "authors": "Guo M et al.",
+   "year": 2025,
+   "venue": "Carbohydrate Polymers",
+   "doi_or_arxiv": "10.1016/j.carbpol.2025.124021",
+   "verified": true,
+   "how_verified": "Europe PMC abstract record; doi.org 302",
+   "used_for": "alginate wood composite"
+  },
+  {
+   "title": "Preparation and Application of a Urea-Formaldehyde-Blended Guanidinium Azole-Phytic Acid-Copper Flame-Retardant Resin Coating",
+   "authors": "Lu X et al.",
+   "year": 2024,
+   "venue": "Polymers (Basel)",
+   "doi_or_arxiv": "10.3390/polym16233366",
+   "verified": true,
+   "how_verified": "Europe PMC abstract record; doi.org 302",
+   "used_for": "phytic acid/tannic acid resin on wood"
+  },
+  {
+   "title": "Self-healing, flame retardant and UV resistant lignin-derived epoxy wood coating with a Schiff base structure",
+   "authors": "Liang Y et al.",
+   "year": 2025,
+   "venue": "Int J Biol Macromol",
+   "doi_or_arxiv": "10.1016/j.ijbiomac.2024.138393",
+   "verified": true,
+   "how_verified": "Europe PMC abstract record; doi.org 302",
+   "used_for": "lignin-derived coating on wood"
+  },
+  {
+   "title": "Construction of efficient and environmentally friendly bio-based flame retardant cotton fabric through layer by layer self-assembly of alkylammonium functional silsesquioxane/phosphorylated sodium alginate",
+   "authors": "Shi H et al.",
+   "year": 2024,
+   "venue": "Int J Biol Macromol",
+   "doi_or_arxiv": "10.1016/j.ijbiomac.2024.132345",
+   "verified": true,
+   "how_verified": "Europe PMC abstract record; doi.org 302",
+   "used_for": "alginate LbL on cotton"
+  },
+  {
+   "title": "Multifunctional Flame-Retardant, Thermal Insulation, and Antimicrobial Wood-Based Composites",
+   "authors": "Zhang M et al.",
+   "year": 2023,
+   "venue": "Biomacromolecules",
+   "doi_or_arxiv": "10.1021/acs.biomac.2c01397",
+   "verified": true,
+   "how_verified": "Europe PMC abstract record; doi.org 302",
+   "used_for": "phytic-acid-based wood composite"
+  },
+  {
+   "title": "Hypophosphorous acid cross-linked layer-by-layer assembly of green polyelectrolytes on polyester-cotton blend fabrics for durable flame-retardant treatment",
+   "authors": "Pan Y et al.",
+   "year": 2018,
+   "venue": "Carbohydrate Polymers",
+   "doi_or_arxiv": "10.1016/j.carbpol.2018.08.044",
+   "verified": true,
+   "how_verified": "Europe PMC abstract record; doi.org 302",
+   "used_for": "alginate LbL on polyester-cotton"
+  }
+ ],
+ "reproduce": [
+  {
+   "what": "Europe PMC search: phytic acid, cone calorimeter, cotton or wood",
+   "command_or_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=ABSTRACT%3A%22cone%20calorimeter%22%20AND%20ABSTRACT%3A%22phytic%20acid%22%20AND%20(ABSTRACT%3Acotton%20OR%20ABSTRACT%3Awood)&format=json&resultType=core&pageSize=20",
+   "expected": "4 hits with numbers (Li P 2026, Jie Y 2026, Wang Y 2024, Sun Z 2024)"
+  },
+  {
+   "what": "Europe PMC search: layer-by-layer / montmorillonite / chitosan / clay with cone calorimeter and heat release",
+   "command_or_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=ABSTRACT%3A%22cone%20calorimeter%22%20AND%20(ABSTRACT%3A%22layer-by-layer%22%20OR%20ABSTRACT%3Amontmorillonite%20OR%20ABSTRACT%3Achitosan%20OR%20ABSTRACT%3Aclay)%20AND%20(ABSTRACT%3Acotton%20OR%20ABSTRACT%3Awood%20OR%20ABSTRACT%3Aflax)%20AND%20ABSTRACT%3A%22heat%20release%22&format=json&resultType=core&pageSize=25",
+   "expected": "9 hits, 7 with numbers"
+  },
+  {
+   "what": "Europe PMC search: time to ignition, wood, coating",
+   "command_or_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=ABSTRACT%3A%22time%20to%20ignition%22%20AND%20ABSTRACT%3Awood%20AND%20ABSTRACT%3Acoating%20AND%20(ABSTRACT%3A%22bio-based%22%20OR%20ABSTRACT%3Achitosan%20OR%20ABSTRACT%3A%22phytic%20acid%22%20OR%20ABSTRACT%3Alignin%20OR%20ABSTRACT%3Aclay%20OR%20ABSTRACT%3Atannin)&format=json&resultType=core&pageSize=20",
+   "expected": "Zhao X 2023 Sci Rep and its preprint"
+  },
+  {
+   "what": "Europe PMC search: lignin / tannic acid / casein / alginate / DNA coatings with heat release rate",
+   "command_or_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=ABSTRACT%3A%22heat%20release%20rate%22%20AND%20(ABSTRACT%3Alignin%20OR%20ABSTRACT%3A%22tannic%20acid%22%20OR%20ABSTRACT%3Acasein%20OR%20ABSTRACT%3Aalginate%20OR%20ABSTRACT%3ADNA)%20AND%20ABSTRACT%3Acoating%20AND%20(ABSTRACT%3Awood%20OR%20ABSTRACT%3Acotton%20OR%20ABSTRACT%3Aflax)%20AND%20ABSTRACT%3A%22flame%20retardant%22&format=json&resultType=core&pageSize=25",
+   "expected": "7 distinct papers with numbers; none for casein or DNA"
+  },
+  {
+   "what": "DOI resolution check",
+   "command_or_url": "curl -s -o /dev/null -w \"%{http_code} %{redirect_url}\\n\" https://doi.org/<DOI>",
+   "expected": "302 to the publisher for all 17 DOIs"
+  },
+  {
+   "what": "Energy-bound arithmetic",
+   "command_or_url": "python -c \"print(34310/57.51, 62430/105.5, (1-0.637)/(1-0.877))\"",
+   "expected": "596.59, 591.75, 2.95"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents4/lf-green-retardants/doi_resolution_batch2.txt (log of 7 DOI redirects, not a script)"
+ ],
+ "check_output": "doi.org returned HTTP 302 to the publisher for all 17 DOIs (10 in the first batch, 7 in the second; the second batch is logged in doi_resolution_batch2.txt). Arithmetic: 34310/57.51 = 596.59 s; 62430/105.5 = 591.75 s; (1-0.637)/(1-0.877) = 2.951. Wildcard phrase queries on Europe PMC returned 0 hits and were rerun without wildcards. No Lean was compiled or run."
+}

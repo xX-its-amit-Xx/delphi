@@ -1,0 +1,275 @@
+{
+ "label": "hv-morph-lumen-epithelia",
+ "topic": "Lumen, tube and epithelial geometry statements (Laplace law, hydraulic lumen coarsening, Kupffer's vesicle, cell packing / Euler rules): harvest, formalize, validate",
+ "summary": "Harvested 10 statements; 8 rest on sources I opened (PubMed abstracts or PMC full text) and 2 (Lewis's law, Aboav-Weaire law) are from memory only and are marked unverified. Three checks were run on fetched numbers.\n\nValidation results:\n- Euler mean-six rule: PASS. Fly wing disc counts (N=2172) give a mean of 5.931 sides; a cucumber epidermis sample (N=1000) gives 5.996. Both are within 0.1 of 6.\n- Proliferation equilibrium polygon mix: PASS for the fly wing disc (27.9% / 45.7% / 20.1% pentagons / hexagons / heptagons against the quoted approximate 25 / 45 / 20). The pentagon share is about 3 points high, and an onion sample has 41.2% hexagons (marginal). The prediction used is the approximate one quoted in a secondary paper; the exact Markov-model figures in Gibson 2006 were not opened.\n- Thin-wall Laplace applicability in the zebrafish inner-ear vesicle: FAIL early, PASS late. Wall thickness over radius is 0.52 at the small stage (20 um wall, 38 um equivalent radius) and 0.069 at the large stage (4 um wall, 58 um radius). The thin-wall formula sigma = PR/2h is therefore not valid early; it gives about 96 Pa early and about 2.2 kPa late. The radii are my equivalent-sphere conversion of reported volumes, and the wall thicknesses are regional values.\n- Kupffer's vesicle threshold: consistency only. Wild-type mean lumen area 3127 um^2 is 2.4 times the 1300 um^2 threshold. This is not an independent test.\n\nRegistry status: only the Laplace wall-stress law is in the accepted registry (physiology-laplace, lean/Delphi/Physiology.lean). tracks/research holds a proposed lumen-area-ceiling law (t3-lumen-law) and lumen data (t3-lumen-data). Kupffer, Lewis, coarsening and hydraulic terms appear only in tracks/research agent notes, not in lean/ or tracks/lean. Aboav and scutoid appear nowhere.\n\nFiles written: D:/Users/ashenoy00000/delphi-work/agents4/hv-morph-lumen-epithelia/validate.py and D:/Users/ashenoy00000/delphi-work/agents4/hv-morph-lumen-epithelia/results.json. Nothing in the repo was touched. Literature metadata is from PubMed, with DOI links in the citations.",
+ "findings": [
+  {
+   "claim": "S1 Euler mean-six rule. Formal: for a planar polygonal tiling with all vertices trivalent, Euler's V-E+F=2 gives mean sides <n> = 6 - 12/F -> 6 as F grows (assumptions: planar sheet, three-cell vertices only, boundary effects negligible). Registry: NOT present in lean/ or tracks/lean (hexagon hits are in tracks/research notes only). Falsifier: any segmented epithelium dataset (e.g. EpiTools wing-disc segmentations, doi 10.1016/j.devcel.2015.12.012); test |mean neighbours - 6| > 0.1 with N > 1000 interior cells and under 1% four-way vertices.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4048254/ (doi 10.1186/1742-4682-11-26)",
+   "value": "VALIDATED: fly wing disc counts 4:64, 5:606, 6:993, 7:437, 8:69, 9:3 (N=2172) -> mean 5.931; cucumber epidermis N=1000 -> mean 5.996. Prediction 6. PASS (tolerance 0.1).",
+   "evidence_quote": "the average polygonal cell must have exactly six sides in a planar tissue",
+   "confidence": "high for the arithmetic; counts are as quoted in an opened secondary paper, not re-derived from raw images"
+  },
+  {
+   "claim": "S2 Proliferation equilibrium polygon distribution (Gibson et al. 2006). Formal: under a Markov chain on side-number driven by cell division, the side-number distribution converges to a fixed vector p* with roughly 25-29% pentagons, 45-46% hexagons, 20-21% heptagons, independent of the initial condition (assumptions: all cells divide, cleavage plane splits neighbours roughly evenly, no rearrangement or cell loss). Registry: NOT present. Falsifier: polygon histograms from EpiTools or similar; chi-square of observed against p*, reject if hexagon fraction is outside 40-50% in a proliferating simple epithelium with N > 1000.",
+   "source": "PubMed 16900102, https://doi.org/10.1038/nature05014 (abstract only); numbers from https://pmc.ncbi.nlm.nih.gov/articles/PMC4048254/",
+   "value": "VALIDATED: prediction approx 25/45/20% (5/6/7 sides); measured fly wing disc 27.9/45.7/20.1% (N=2172). PASS on hexagons and heptagons; pentagons about 3 points above the approximate figure. Onion sample 41.2% hexagons (n=500) is marginal (about 1.7 SE below 45%).",
+   "evidence_quote": "approximately 25% pentagons, 45% hexagons, and 20% heptagons",
+   "confidence": "medium: the exact Markov-model values in the Nature paper were not opened (paywalled); the approximate prediction is quoted from a secondary source"
+  },
+  {
+   "claim": "S3 Laplace law for a pressurised epithelial dome (Latorre et al. 2018). Formal: for a spherical-cap monolayer with radius of curvature R and transmural pressure dP, surface tension sigma = R*dP/2 (assumptions: membrane-like sheet, uniform isotropic tension, static equilibrium). Registry: PRESENT as physiology-laplace (lean/Delphi/Physiology.lean, theorem laplace_pressure_limit) in wall-stress form P r/(2t); the surface-tension form for monolayers is not separately registered. Falsifier: the paper's dome source data (pressure from traction microscopy, R from confocal stacks); test whether sigma computed from 2*sigma = R*dP stays flat (within 30%) between 100% and 300% areal strain.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6520229/ (doi 10.1038/s41586-018-0671-4)",
+   "value": "Reported tension about 1 mN/m at small strain, plateau about 2 mN/m up to 300% areal strain. Not numerically validated: no pressure or radius values in the text.",
+   "evidence_quote": "obeyed Laplace's law 2σ = R Δ P, where Δ P is the transmural pressure",
+   "confidence": "high for the statement; numeric pressures and radii are only in figures"
+  },
+  {
+   "claim": "S4 Thin-shell wall stress in the zebrafish inner-ear (otic) vesicle (Mosaliganti et al. 2019). Formal: sigma = P R / (2 h) for a spherical shell of radius R and wall thickness h (assumption: thin wall, h/R << 1; uniform pressure). Registry: same form as physiology-laplace, PRESENT. Falsifier: the paper's otic vesicle volume, thickness and pressure time series (eLife source data); test whether h/R < 0.1 holds at each stage; where it does not, the thin-wall law must not be applied.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6773445/ (doi 10.7554/eLife.39596)",
+   "value": "VALIDATED (applicability): volume 235 -> 807 pl gives equivalent-sphere R = 38.3 -> 57.8 um; wall 20 -> 4 um; h/R = 0.52 early (FAIL thin-wall), 0.069 late (PASS). sigma = PR/2h gives about 96 Pa at 100 Pa early (not trustworthy) and about 2170 Pa at 300 Pa late.",
+   "evidence_quote": "the pressure level gradually increases from 100 Pa to upwards of 300 Pa",
+   "confidence": "medium: R is my equivalent-sphere conversion of reported volume; the 20->4 um thinning is regional (lateral/medial wall), and pairing volumes, thicknesses and pressures by stage is my approximation"
+  },
+  {
+   "claim": "S5 Hydraulic negative feedback on lumen growth (Mosaliganti et al. 2019). Formal: dV/dt = J(P) with dJ/dP < 0, and P increasing with wall strain, so a volume perturbation decays back toward the growth trajectory (assumptions: single lumen, flux depends on pressure only). Registry: NOT present in lean/ or tracks/lean. Falsifier: the paper's puncture experiments (source data in eLife); test whether post-puncture growth rate exceeds the unpunctured control rate; no catch-up falsifies it.",
+   "source": "PubMed 31571582, https://doi.org/10.7554/eLife.39596",
+   "evidence_quote": "Pressure, in turn, inhibits fluid transport into the lumen",
+   "confidence": "high for the statement; no numeric test run"
+  },
+  {
+   "claim": "S6 Kupffer's vesicle size threshold (Gokey et al. 2016). Formal: P(normal left-right patterning | lumen cross-section area A) is high for A >= A* and falls for A < A*, with A* about 1300 um^2 (bracketed 1300-1700 um^2) at the 8-somite stage; above A* the outcome does not depend on A (assumptions: zebrafish, area measured at the vesicle mid-plane). Registry: NOT present in lean/ or tracks/lean; Kupffer appears in 2 tracks/research files only. Falsifier: the paper's per-embryo table (n=84, lumen area against laterality marker); logistic or step fit; a monotone dose-response with no plateau above 1300 um^2 falsifies the threshold form.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5434515/ (doi 10.1002/dvdy.24355)",
+   "value": "Consistency check only: wild-type mean area 3127 um^2 at 8 somites = 2.4 x threshold; cilia mean 52, range 31-88; n=30 (size survey), n=84 (threshold analysis).",
+   "evidence_quote": "KV must exceed a size threshold of approximately 1300 μm2 for robust LR patterning",
+   "confidence": "high for the quoted values; the per-embryo table was not fetched"
+  },
+  {
+   "claim": "S7 Hydraulic lumen coarsening (Dumortier et al. 2019). Formal: N microlumens connected through the intercellular space, each with Laplace pressure P_i = 2*gamma_i/R_i; fluid flows from high to low P, so small or high-tension lumens shrink and the count N(t) falls monotonically to 1 (Ostwald-ripening analogue); the winner sits where contractility gamma is lowest (assumptions: connected fluid network, conserved or slowly pumped volume). Registry: NOT present in lean/ or tracks/lean (coarsening hits are tracks/research notes). Falsifier: time-lapse of mouse blastocysts from the paper (image data; open deposit not located); test that N(t) is non-increasing and the final lumen sits by the lower-contractility cells in chimeras.",
+   "source": "PubMed 31371608, https://doi.org/10.1126/science.aaw7709 (abstract only)",
+   "evidence_quote": "a process akin to Ostwald ripening, underlying the coarsening of foams",
+   "confidence": "medium: abstract only; the formal pressure-difference form is the standard model, not checked against the paper's equations"
+  },
+  {
+   "claim": "S8 Lumen pressure and cortical tension rise together in the mouse blastocyst (Chan et al. 2019). Formal: by Laplace, T = P R / 2 for the enclosing cell layer, so a twofold rise in P at similar R predicts about a twofold rise in tension; rupture occurs when T exceeds a critical T_c (assumptions: spherical thin shell, quasi-static). Registry: only the generic Laplace law is present. Falsifier: the paper's micropressure-probe and micropipette-aspiration source data; test the tension/pressure ratio against R/2 at each stage.",
+   "source": "PubMed 31189957, https://doi.org/10.1038/s41586-019-1309-x (abstract only)",
+   "evidence_quote": "there is a twofold increase in lumenal pressure during blastocyst development",
+   "confidence": "medium: abstract only; absolute pressure values not opened"
+  },
+  {
+   "claim": "S9 Hydraulically gated size oscillations (Ruiz-Herrero et al. 2017). Formal: a fluid-permeable shell inflates until wall stress reaches a rupture threshold, leaks, shrinks, reseals and regrows, giving sawtooth R(t) with slow growth and fast collapse; mean size is set by the rupture threshold (assumptions: spherical shell, constant inward pumping). Registry: NOT present in lean/ or tracks/lean. Falsifier: R(t) traces of hollow tissue spheroids or blastocysts; test for asymmetric sawtooth (collapse time much shorter than inflation time); symmetric oscillation or no collapse falsifies.",
+   "source": "PubMed 29183945, https://doi.org/10.1242/dev.153056 (abstract only)",
+   "evidence_quote": "shells can relieve internal pressure by bursting intermittently, shrinking and re-growing",
+   "confidence": "medium: abstract only, no numbers extracted"
+  },
+  {
+   "claim": "S10 Scutoids in curved epithelia (Gomez-Galvez et al. 2018). Formal: in a tubular epithelium with basal/apical radius ratio > 1, some cells have different neighbour sets on apical and basal faces (apico-basal intercalation), so the cell is not a prism or frustum; the fraction of such cells rises with the radius ratio (assumption: Voronoi-like packing on both surfaces). Registry: NOT present anywhere in the repo (0 hits). Falsifier: 3D segmentations of fly salivary gland from the paper; test whether the fraction of cells with apical neighbour set different from basal is greater than 0 and increases with curvature.",
+   "source": "PubMed 30054479, https://doi.org/10.1038/s41467-018-05376-1 (abstract only; PMC6063940)",
+   "evidence_quote": "forces cells to have different neighbours in their basal and apical surfaces",
+   "confidence": "medium: abstract only; the monotone dependence on radius ratio is my reading of the model, not a quoted result"
+  },
+  {
+   "claim": "S11 (UNVERIFIED, from memory) Lewis's law: mean apical area of n-sided cells is linear in n, A_n/A_mean = (n-2)/4. Aboav-Weaire law: mean side-number of neighbours of an n-sided cell m(n) = 5 + (6+mu2)/n, where mu2 is the variance of n. Registry: Aboav 0 hits; Lewis appears in tracks/research notes only. Falsifier: per-cell area and neighbour tables from EpiTools segmentations; linear regression of A_n on n (Lewis) and of n*m(n) on n (Aboav-Weaire, slope 5).",
+   "source": "No source opened. Candidate: Kokic et al. 2019, 'Minimisation of surface energy drives apical epithelial organisation and gives rise to Lewis' law' (not found in PubMed search)",
+   "value": "For a future Aboav-Weaire test, mu2 computed here from the fly counts is 0.738 and from the cucumber counts 0.684.",
+   "confidence": "low: formulas recalled, not checked against any opened source"
+  },
+  {
+   "claim": "Existing repo coverage on this topic: accepted registry has physiology-laplace only; tracks/research has a proposed (not accepted) lumen-area-ceiling law, a = AL/A0 <= (N*la)^2/(4*pi) under the isoperimetric inequality, plus cyst/lumen sphericity data.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/laws/physiology-laplace.json; D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/research/agent-scripts/t3-lumen-law/LumenAreaCeiling.lean",
+   "evidence_quote": "Proposed law `lumen-area-ceiling` (NOT in law set 1.8.1",
+   "confidence": "high (files read directly); grep was case-insensitive over lean, tracks/lean, tracks/research excluding .lake"
+  }
+ ],
+ "key_claims": [
+  "Euler mean-six rule passes on real counts: 5.931 (fly wing disc, N=2172) and 5.996 (cucumber, N=1000) against a prediction of 6.",
+  "Hexagon share in fly wing disc is 45.7% against an approximate prediction of 45%; pentagons 27.9% against about 25%; heptagons 20.1% against about 20%.",
+  "Thin-wall Laplace stress formula is not applicable to the early zebrafish inner-ear vesicle (wall/radius about 0.52) but is at the later stage (about 0.069).",
+  "Of the harvested statements only the Laplace wall-stress law is in the accepted law registry; mean-six, polygon equilibrium, Kupffer threshold, coarsening, hydraulic feedback, gated oscillations and scutoids are all absent from lean/ and tracks/lean.",
+  "Lewis's law and Aboav-Weaire law are listed but unverified (no source opened)."
+ ],
+ "lay_summary": [
+  "Many body parts start as tiny water-filled balloons made of a single layer of cells, and simple physics rules say how tight the balloon skin gets as the water pressure rises.",
+  "We collected ten such rules from published papers, for example that cells in a flat sheet have six neighbours on average, and that a small fluid-filled organ in a fish embryo must be bigger than a certain size to tell left from right.",
+  "We checked the six-neighbour rule with real cell counts from a fly wing and a cucumber skin, and it held: the averages were 5.93 and 6.00.",
+  "We also checked whether the simple balloon formula can be used for the growing fish ear; it works when the wall is thin but not early on, when the wall is about half as thick as the balloon's radius.",
+  "Only one of these rules is already in the project's official list of proven laws, so most of them are new candidates."
+ ],
+ "glossary": {
+  "lumen": "The fluid-filled space inside a hollow organ or ball of cells.",
+  "epithelium": "A sheet of cells stuck side by side, like tiles, that lines or covers organs.",
+  "Laplace law": "The rule linking pressure inside a balloon-like shell to the tension in its wall and its radius: bigger radius or pressure means more wall tension.",
+  "thin-wall assumption": "Treating the wall as very thin compared with the radius (usually under one tenth); the simple Laplace formula needs this.",
+  "transmural pressure": "The pressure difference between the inside and the outside of a wall.",
+  "wall stress": "Force per unit area carried inside the wall material.",
+  "surface tension (of a cell sheet)": "Pulling force per unit length within the sheet, measured in millinewtons per metre.",
+  "Euler's formula": "A counting rule for any network drawn on a surface: corners minus edges plus faces equals 2; it forces the six-neighbour average.",
+  "trivalent vertex": "A corner where exactly three cells meet.",
+  "polygon distribution": "The share of cells with 4, 5, 6, 7 or more sides.",
+  "Markov model": "A step-by-step chance model where the next state depends only on the current one.",
+  "Kupffer's vesicle": "A small, short-lived fluid-filled ball in the zebrafish embryo whose beating hairs set up left versus right.",
+  "cilia": "Tiny hair-like structures on cells that can beat and move fluid.",
+  "left-right patterning": "How an embryo decides which organs go on the left and which on the right.",
+  "otic vesicle": "The hollow fluid-filled ball that becomes the inner ear.",
+  "blastocyst": "An early mammal embryo that is a hollow ball of cells with a fluid cavity.",
+  "microlumen": "A very small fluid pocket between two cells.",
+  "coarsening / Ostwald ripening": "Many small bubbles or pockets merging into fewer big ones because small ones have higher pressure and drain into large ones.",
+  "hydraulic feedback": "Pressure in the fluid slowing down the pumping that created it, which steadies the size.",
+  "hydraulically gated oscillation": "Repeated cycle of slow inflation, sudden leak and collapse, then regrowth.",
+  "cortical tension": "The tightness of the thin contractile layer just under a cell's surface.",
+  "scutoid": "A cell shape whose top and bottom faces touch different sets of neighbours, found in curved cell sheets.",
+  "apical / basal": "The two faces of an epithelial cell: apical faces the lumen, basal faces the outside.",
+  "Lewis's law": "A rule of thumb that cells with more sides have proportionally larger area.",
+  "Aboav-Weaire law": "A rule of thumb that many-sided cells tend to be surrounded by few-sided neighbours.",
+  "isoperimetric inequality": "For a given perimeter, a circle encloses the most area.",
+  "mu2": "The variance (spread) of the number of sides per cell around six.",
+  "equivalent-sphere radius": "The radius a perfect ball would have if it held the same volume.",
+  "falsify": "To show a statement is wrong by a test it could have failed.",
+  "law registry": "The project's list of accepted, machine-checked laws."
+ },
+ "citations": [
+  {
+   "title": "The emergence of geometric order in proliferating metazoan epithelia",
+   "authors": "Gibson MC, Patel AB, Nagpal R, Perrimon N",
+   "year": 2006,
+   "venue": "Nature 442:1038-41",
+   "doi_or_arxiv": "https://doi.org/10.1038/nature05014",
+   "verified": true,
+   "how_verified": "PubMed metadata and abstract (PMID 16900102); full text not opened",
+   "used_for": "S2 polygon equilibrium"
+  },
+  {
+   "title": "On the origins of the mitotic shift in proliferating cell layers",
+   "authors": "not recorded (opened by PMCID only)",
+   "year": 2014,
+   "venue": "Theoretical Biology and Medical Modelling",
+   "doi_or_arxiv": "https://doi.org/10.1186/1742-4682-11-26",
+   "verified": true,
+   "how_verified": "PMC4048254 full text fetched; polygon counts quoted from it",
+   "used_for": "S1, S2 validation numbers"
+  },
+  {
+   "title": "Active superelasticity in three-dimensional epithelia of controlled shape",
+   "authors": "Latorre E, Kale S, Casares L, et al., Arroyo M, Trepat X",
+   "year": 2018,
+   "venue": "Nature 563:203-208",
+   "doi_or_arxiv": "https://doi.org/10.1038/s41586-018-0671-4",
+   "verified": true,
+   "how_verified": "PubMed metadata plus PMC6520229 full text fetched",
+   "used_for": "S3 Laplace law for domes"
+  },
+  {
+   "title": "Size control of the inner ear via hydraulic feedback",
+   "authors": "Mosaliganti KR, Swinburne IA, Chan CU, Obholzer ND, Green AA, Tanksale S, Mahadevan L, Megason SG",
+   "year": 2019,
+   "venue": "eLife 8",
+   "doi_or_arxiv": "https://doi.org/10.7554/eLife.39596",
+   "verified": true,
+   "how_verified": "PubMed metadata plus PMC6773445 full text fetched (first 100k characters)",
+   "used_for": "S4, S5 and Laplace applicability check"
+  },
+  {
+   "title": "Kupffer's vesicle size threshold for robust left-right patterning of the zebrafish embryo",
+   "authors": "Gokey JJ, Ji Y, Tay HG, Litts B, Amack JD",
+   "year": 2016,
+   "venue": "Developmental Dynamics 245:22-33",
+   "doi_or_arxiv": "https://doi.org/10.1002/dvdy.24355",
+   "verified": true,
+   "how_verified": "PubMed metadata plus PMC5434515 full text fetched",
+   "used_for": "S6 threshold"
+  },
+  {
+   "title": "Hydraulic fracturing and active coarsening position the lumen of the mouse blastocyst",
+   "authors": "Dumortier JG, Le Verge-Serandour M, Tortorelli AF, Mielke A, de Plater L, Turlier H, Maitre JL",
+   "year": 2019,
+   "venue": "Science 365:465-468",
+   "doi_or_arxiv": "https://doi.org/10.1126/science.aaw7709",
+   "verified": true,
+   "how_verified": "PubMed metadata and abstract only",
+   "used_for": "S7 coarsening"
+  },
+  {
+   "title": "Hydraulic control of mammalian embryo size and cell fate",
+   "authors": "Chan CJ, Costanzo M, Ruiz-Herrero T, Monke G, Petrie RJ, Bergert M, Diz-Munoz A, Mahadevan L, Hiiragi T",
+   "year": 2019,
+   "venue": "Nature 571:112-116",
+   "doi_or_arxiv": "https://doi.org/10.1038/s41586-019-1309-x",
+   "verified": true,
+   "how_verified": "PubMed metadata and abstract only",
+   "used_for": "S8 pressure-tension"
+  },
+  {
+   "title": "Organ size control via hydraulically gated oscillations",
+   "authors": "Ruiz-Herrero T, Alessandri K, Gurchenkov BV, Nassoy P, Mahadevan L",
+   "year": 2017,
+   "venue": "Development 144:4422-4427",
+   "doi_or_arxiv": "https://doi.org/10.1242/dev.153056",
+   "verified": true,
+   "how_verified": "PubMed metadata and abstract only",
+   "used_for": "S9 oscillations"
+  },
+  {
+   "title": "Scutoids are a geometrical solution to three-dimensional packing of epithelia",
+   "authors": "Gomez-Galvez P, Vicente-Munuera P, Tagua A, et al., Buceta J, Escudero LM",
+   "year": 2018,
+   "venue": "Nature Communications 9:2960",
+   "doi_or_arxiv": "https://doi.org/10.1038/s41467-018-05376-1",
+   "verified": true,
+   "how_verified": "PubMed metadata and abstract only",
+   "used_for": "S10 scutoids"
+  },
+  {
+   "title": "EpiTools: An Open-Source Image Analysis Toolkit for Quantifying Epithelial Growth Dynamics",
+   "authors": "not recorded",
+   "year": 2016,
+   "venue": "Developmental Cell",
+   "doi_or_arxiv": "https://doi.org/10.1016/j.devcel.2015.12.012",
+   "verified": false,
+   "how_verified": "Appeared in a Europe PMC search result (PMC4712040); paper itself not opened, so dataset availability is unconfirmed",
+   "used_for": "Proposed open dataset for S1, S2, S11 tests"
+  }
+ ],
+ "could_not_find": [
+  "Exact Markov-model predicted polygon percentages in Gibson et al. 2006 (paywalled; only the approximate 25/45/20 quoted in a secondary paper was opened)",
+  "A primary source for Lewis's law and the Aboav-Weaire law formulas (Kokic et al. 2019 did not come up in the PubMed title search; formulas are from memory)",
+  "Numeric luminal pressure and dome radius in Latorre et al. 2018 (figures only), so no numeric Laplace check on domes",
+  "Absolute blastocyst pressure and tension values in Chan et al. 2019 and the equations in Dumortier et al. 2019 (abstracts only)",
+  "Per-embryo Kupffer's vesicle area table from Gokey et al. (n=84) for a real threshold test",
+  "Confirmation that an open, downloadable segmentation dataset exists for EpiTools or the scutoid paper (not opened)",
+  "Second half of the Mosaliganti eLife full text (methods beyond 100k characters), including whether the 235/807 pl volumes are lumen or whole-vesicle volumes"
+ ],
+ "recommendations": [
+  "Add the Euler mean-six rule as a Lean theorem (pure combinatorics from V-E+F=2 with trivalent vertices); it is absent from the registry and already passes on two real count tables.",
+  "Add an explicit thin-wall hypothesis (h/R below a stated bound) to physiology-laplace uses; the early inner-ear vesicle violates it at h/R about 0.52.",
+  "Before registering the polygon-equilibrium law, open Gibson 2006 to get the exact predicted vector and rerun the chi-square on the counts in results.json.",
+  "Fetch the Gokey per-embryo table to test the Kupffer threshold as a step function rather than the consistency check done here.",
+  "Treat Lewis and Aboav-Weaire as unverified until a primary source is opened."
+ ],
+ "reproduce": [
+  {
+   "what": "Recompute mean sides, polygon fractions, mu2, otic vesicle h/R and Laplace stress, Kupffer ratio",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents4/hv-morph-lumen-epithelia/validate.py",
+   "expected": "Fly mean 5.9309, cucumber 5.996, otic h/R 0.522 early and 0.069 late, sigma 96 and 2166 Pa, KV ratio 2.41; writes results.json beside the script"
+  },
+  {
+   "what": "Polygon count source",
+   "command_or_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4048254/",
+   "expected": "Counts (4, 64; 5, 606; 6, 993; 7, 437; 8, 69; 9, 3) for the fly wing disc"
+  },
+  {
+   "what": "Otic vesicle pressure, volume, thickness",
+   "command_or_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6773445/",
+   "expected": "100 to 300 Pa; 235 to 807 pl; 20 to 4 um"
+  },
+  {
+   "what": "Kupffer's vesicle threshold",
+   "command_or_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5434515/",
+   "expected": "Threshold about 1300 um^2; wild-type mean 3127 um^2"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents4/hv-morph-lumen-epithelia/validate.py",
+  "D:/Users/ashenoy00000/delphi-work/agents4/hv-morph-lumen-epithelia/results.json"
+ ],
+ "check_output": "validate.py ran once: Drosophila_wing_disc N=2172 mean_sides=5.9309 (pass), frac 5:0.279 6:0.4572 7:0.2012, mu2=0.7376; Cucumis N=1000 mean_sides=5.996 (pass), mu2=0.684; otic_early R=38.3um h/R=0.522 thin_wall_ok=false sigma=96 Pa; otic_late R=57.8um h/R=0.069 thin_wall_ok=true sigma=2166 Pa; KV ratio 2.41."
+}

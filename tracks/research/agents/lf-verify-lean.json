@@ -1,0 +1,182 @@
+{
+ "label": "lf-verify-lean",
+ "topic": "Independent re-check of lf-lean-fire.json and FireCoatingCertificate.lean: are the heat formulas right, and does each theorem say what its docstring claims?",
+ "summary": "The formulas are the standard ones, but three of the elimination theorems are unsafe as physical certificates. The two ignition eliminations use no-loss ignition times, which are lower bounds on the real ignition time, so \"formula time < treq\" does not show the material ignites before treq. The finite-time elimination has no hypothesis linking the one-node curve to the real back face, although its docstring says it does. I did not run Lean (7-minute budget), so this is a read of the statements, not a re-check of the proofs. I wrote no files and changed nothing in the repo; the fixes are listed as recommendations.\n\nSources: I opened one page (Wikipedia, Lumped-element model), which confirms series resistance, the lumped transient and its time constant. The thick-ignition formula and the penetration depth are not confirmed from an opened text: the SFPE guide page and a UCL paper both returned HTTP 403.\n\nVerdict per claim:\n- CONFIRMED: series resistance R = d/k + Rs + Ra and the steady back-face rise algebra (backRise_le_ΔT, backRise_antitone_thickness, backRise_lower, steady_eliminates, char_lowers_rise, char_eliminates). Caveat: there is no fire-side film resistance, so ΔT must be the coating-surface temperature minus ambient; using gas temperature overstates the rise.\n- CONFIRMED: lumped transient Tss(1 - exp(-t/τ)) with τ = C/h, and relax_ode. The Biot-number validity condition (< 0.1) appears nowhere in the file.\n- CONFIRMED (algebra only): thick_iff_time matches its docstring exactly. The sqrt(αt) depth itself was not found in an opened source.\n- CONFIRMED: thin solid with loss (thinTemp, thin_never_ignites, critical flux h(Tig - T0)).\n- WEAKER: thin_reaches_Tig shows the temperature equals Tig at t*, but not that t* is positive or the first such time.\n- UNVERIFIED-SOURCE: tigThick = (π/4)·kρc·ΔT²/q². It agrees with the semi-infinite constant-flux solution as I recall it, but I opened no text containing it.\n- WEAKER and UNSAFE: thick_ignition_eliminates and thin_ignition_eliminates. Docstring: \"prove ignition happens before the required non-ignition time\". Statement: only that the no-loss formula value is below treq. Inside the file's own lossy thin model, t* = -(C/h)·ln(1 - x) ≥ C·ΔT/q, so real ignition is later than tigThin. Neither theorem requires the thick or thin regime (no link to thick_iff_time), and ΔTig ≥ 0 is not required in the thick one.\n- DIFFERENT: transient_eliminates. Docstring calls the one-node response a \"hypothesis, not axiom\"; in fact the conclusion is about relax(backRise…) itself. A one-node curve starts rising at once, while a real slab's back face lags, so the bound can overstate early-time rise.\n- OVERSTATED: worked_example docstring says \"eliminated before any test\", but it is steady-state only, which section 1 itself says proves nothing at a finite test time. The arithmetic is right (447.6 K bound, 490.8 K actual).\n- CONFIRMED: peak_ge_mean and hrr_eliminates match their docstrings; hχ, hm, hH are unused.\n- MINOR (JSON): it says \"16 theorems\"; the file has 19, with 16 #print axioms lines. Its finding 4 says \"passed check.sh\" for physics that check.sh cannot test. The section 5 title mentions critical flux, but no critical flux appears in that section.",
+ "findings": [
+  {
+   "claim": "CONFIRMED: series thermal resistance. Slab resistance is L/(kA), film resistance 1/(hA), and layers in series add; totalR = d/k + Rs + Ra is the per-unit-area form.",
+   "value": "totalR, backRise = ΔT*Ra/totalR",
+   "source": "https://en.wikipedia.org/wiki/Lumped-element_model (opened 2026-11-13)",
+   "evidence_quote": "the equivalent resistance is the sum of the resistances of the components",
+   "confidence": "high. Caveat: the model has no fire-side film resistance, so ΔT must be coating-surface minus ambient; if gas temperature is used the rise is overstated and an elimination is not conservative."
+  },
+  {
+   "claim": "CONFIRMED: lumped transient. The first-order solution is exponential with time constant C/(hA); relax and thinTemp (τ = C/h per unit area) match, and relax_ode states the ODE identity for every t.",
+   "value": "relax = Tss(1-exp(-t/τ)); thinTemp = T0 + (q/h)(1-exp(-ht/C))",
+   "source": "https://en.wikipedia.org/wiki/Lumped-element_model (opened 2026-11-13)",
+   "evidence_quote": "Thus, in thermal systems, t0=C/hA.",
+   "confidence": "high for the formula. The file never states the validity condition; the same page says the Biot number must generally be less than 0.1."
+  },
+  {
+   "claim": "DIFFERENT from docstring: transient_eliminates. The docstring says the one-node response is a 'hypothesis, not axiom', but no hypothesis ties any physical temperature to relax; the conclusion is literally about relax (backRise ...) τ t.",
+   "value": "conclusion: limit < relax (backRise ΔT d k Rs Ra) τ t",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/research/lean/FireCoatingCertificate.lean lines 171-193",
+   "evidence_quote": "Model assumption (hypothesis, not axiom): the back-face rise follows the one-node response",
+   "confidence": "high for the statement mismatch. Medium for the physical concern (a one-node curve rises immediately while a slab's back face lags, so the bound can overstate early rise); that is my own reasoning, with no source opened."
+  },
+  {
+   "claim": "WEAKER and physically UNSAFE: thin_ignition_eliminates and thick_ignition_eliminates. They prove only that the no-loss formula value is below treq, not that ignition happens before treq. In the file's own lossy thin model t* = -(C/h) ln(1-x) with x = h(Tig-T0)/q, and -ln(1-x) >= x gives t* >= C(Tig-T0)/q = tigThin, so real ignition is later than the formula.",
+   "value": "tigThin is a lower bound on the lossy ignition time; the eliminations need the opposite direction",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/research/lean/FireCoatingCertificate.lean lines 207-252 (own derivation from thin_reaches_Tig)",
+   "evidence_quote": "enough to prove ignition happens before the required non-ignition time",
+   "confidence": "high for the thin case (algebra from the file's own definitions). Medium for the thick case (same direction expected by standard reasoning, not derived or sourced here)."
+  },
+  {
+   "claim": "UNVERIFIED-SOURCE: thick ignition time t = (π/4)·kρc·(Tig-T0)²/q². It matches the semi-infinite constant-flux surface solution Ts-T0 = 2q·sqrt(t/(π kρc)) as I recall it, but I opened no text containing the formula.",
+   "value": "tigThick = π/4 * I * ΔTig^2 / q^2",
+   "source": "https://www.globalspec.com/reference/76862/203279/thermally-thick (HTTP 403, NOT opened); web-search result summary only",
+   "evidence_quote": "",
+   "confidence": "medium: from memory plus a search summary saying the thick exponent on flux is 2 and the thin is 1. The original report's own 'medium' was fair."
+  },
+  {
+   "claim": "CONFIRMED (algebra only): thick_iff_time states exactly what its docstring says, pdepth c α t <= d iff t <= d²/(c²α), for any c > 0.",
+   "value": "pdepth = c*sqrt(α t)",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/research/lean/FireCoatingCertificate.lean lines 114-138",
+   "evidence_quote": "exactly while `t ≤ d² / (c² α)`",
+   "confidence": "high for statement vs docstring. The sqrt(αt) depth was not found in an opened source (Wikipedia Thermal diffusivity and Thermal effusivity do not state it cleanly). The thick/thin test is never used as a hypothesis by the ignition theorems."
+  },
+  {
+   "claim": "CONFIRMED: thin solid with loss. Critical flux h(Tig-T0) and thin_never_ignites match their docstrings. WEAKER: thin_reaches_Tig shows the temperature equals Tig at t* but does not prove t* > 0 or that it is the first crossing (both true, just unstated).",
+   "value": "t* = -(C/h) ln(1 - h(Tig-T0)/q)",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/research/lean/FireCoatingCertificate.lean lines 195-221; time constant per https://en.wikipedia.org/wiki/Lumped-element_model",
+   "evidence_quote": "T(t)=Tenv+(T(0)−Tenv) e−rt",
+   "confidence": "high. The linear loss h(T-T0) is a linearisation; real surface loss includes radiation."
+  },
+  {
+   "claim": "OVERSTATED docstring: worked_example says the candidate is 'eliminated before any test', but it applies steady_eliminates only, which the file itself says proves nothing at a finite test time. The arithmetic is right.",
+   "value": "bound 800*(1/9)/(0.0375+0.05+1/9) = 447.6 K; actual 490.8 K; both > 400",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/research/lean/FireCoatingCertificate.lean lines 68-73 and 282-290 (hand arithmetic)",
+   "evidence_quote": "Says nothing about a finite test time: see section 5.",
+   "confidence": "high. That pointer is also wrong: the finite-time material is in section 4, not section 5."
+  },
+  {
+   "claim": "CONFIRMED: steady and char theorems (backRise_le_ΔT, backRise_antitone_thickness, backRise_lower, steady_eliminates, char_lowers_rise, char_eliminates) and the energy theorems (peak_ge_mean, hrr_eliminates) state what their docstrings say.",
+   "value": "hχ, hm, hH unused in hrr_eliminates; ht, hC unused in thin_never_ignites",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/research/lean/FireCoatingCertificate.lean",
+   "evidence_quote": "A char layer (thickness `xc ≥ 0`, conductivity `kc > 0`) can only lower the steady rise.",
+   "confidence": "high by reading; Lean was not re-run. Keeping the full virgin thickness d plus the char overstates resistance, which is the safe direction for elimination."
+  },
+  {
+   "claim": "MINOR, JSON vs file: the report says '16 theorems', but the file has 19 theorem declarations and 16 #print axioms lines (totalR_pos, backRise_lower, relax_lower are not printed, though they are dependencies of printed ones). Section 5's title mentions critical flux but no critical flux appears there. The report's Wikipedia Thermal_resistance quote was not re-opened by me.",
+   "value": "19 theorems, 16 axiom lines",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/research/agents/lf-lean-fire.json and the Lean file",
+   "evidence_quote": "check.sh: errors=0 sorryAx=0 axiom-lines=16/16",
+   "confidence": "high (counted by reading)"
+  }
+ ],
+ "key_claims": [
+  "The formulas for series resistance, lumped transient, thin solid with loss and critical flux are stated correctly; one opened source supports the first two.",
+  "thin_ignition_eliminates and thick_ignition_eliminates point the wrong way for a physical elimination: no-loss ignition times are lower bounds on the real ignition time (shown for the thin case from the file's own lossy model).",
+  "transient_eliminates has no hypothesis linking a real temperature to the one-node curve, although its docstring says it does.",
+  "The worked-example docstring overstates: it is a steady-state result, not an elimination 'before any test'.",
+  "The thick-ignition formula and the penetration depth are not confirmed from an opened text; Lean was not re-run."
+ ],
+ "recommendations": [
+  "Restate the ignition eliminations with a model that includes loss: the thin case can use thinTemp and thin_reaches_Tig directly; for the thick case add an explicit hypothesis that losses are negligible, or use net flux q - q_cr.",
+  "Add the regime as a hypothesis: thick_ignition_eliminates should require pdepth <= d at the ignition time, thin_ignition_eliminates the opposite or a Biot-number bound.",
+  "Rewrite transient_eliminates to take a real temperature function Tb with hypothesis Tb t >= relax (...) τ t, so the model assumption is visibly a hypothesis; or change the docstring to say the theorem is about the model curve only.",
+  "Add a fire-side film resistance to totalR, or state in the docstring that ΔT is coating-surface temperature minus ambient.",
+  "Change the worked_example docstring to 'steady-state rise exceeds the limit', drop 'eliminated before any test', and fix the 'see section 5' pointer to section 4.",
+  "Add the two small lemmas missing from thin_reaches_Tig: t* > 0, and thinTemp < Tig for t < t*.",
+  "Correct the JSON count to 19 theorems (16 axiom checks) and keep the thick-ignition formula marked unverified until a text is opened (Quintiere 2006 ch. 7 or the SFPE guide, via library access)."
+ ],
+ "lay_summary": [
+  "Another agent wrote maths rules about how heat moves through a painted board and had a computer check the maths.",
+  "I checked whether those rules match the physics pages I could open, and whether each rule really says what its label says.",
+  "The basic heat rules are right.",
+  "But two rules about when something catches fire ignore heat escaping, so they say fire starts sooner than it really would, which makes them unsafe for ruling out a paint.",
+  "One rule about how fast the back of the board warms up is labelled as resting on an assumption that is not actually written into it."
+ ],
+ "glossary": {
+  "thermal resistance": "how strongly a layer holds back heat flow; thickness divided by conductivity",
+  "series resistance": "layers stacked one after another, whose resistances add up",
+  "film resistance": "the resistance of the thin air layer at a surface, equal to 1/h",
+  "back-face rise": "how much hotter the unheated side of the board gets than the room",
+  "steady state": "the final condition after temperatures stop changing",
+  "lumped (one-node) model": "treating a whole object as one temperature with a single time constant",
+  "time constant": "the time for a warming object to cover about 63% of the way to its final temperature",
+  "Biot number": "a ratio that says whether an object is uniform enough inside for the lumped model to hold",
+  "penetration depth": "how far into a solid a heating pulse has reached, growing like the square root of time",
+  "thermal diffusivity": "how fast temperature changes spread through a material (α)",
+  "thermally thick": "the heat pulse has not yet reached the back of the layer",
+  "thermally thin": "the layer is so thin that it has nearly one temperature throughout",
+  "thermal inertia": "the product kρc; high values mean the surface heats slowly",
+  "heat flux": "heating power per unit area hitting the surface",
+  "critical flux": "the heating level below which the surface never gets hot enough to ignite",
+  "ignition time": "how long heating takes for the surface to reach its ignition temperature",
+  "lower bound": "a value the true answer cannot be below",
+  "elimination certificate": "a proof that a candidate must fail a stated limit under stated assumptions",
+  "docstring": "the plain-language comment written above a theorem",
+  "hypothesis": "an assumption written into a theorem that must hold for it to apply",
+  "HRR": "heat release rate, the power a burning material gives off",
+  "char": "the burnt carbon layer that forms on a heated coating and insulates it"
+ },
+ "could_not_find": [
+  "An opened text containing the thick ignition formula t = (π/4) kρc (Tig-T0)²/q²: the SFPE guide page on globalspec.com and the UCL paper (discovery-pp.ucl.ac.uk/10141480) both returned HTTP 403. Quintiere, Drysdale and the SFPE handbook were not opened.",
+  "An opened source stating the thermal penetration depth sqrt(αt): the Wikipedia Thermal diffusivity page does not state it, and the Thermal effusivity page renders it without the square root.",
+  "I did not re-run check.sh or Lean, so I did not re-verify that the proofs compile or the axiom lists.",
+  "I did not re-open the Wikipedia Thermal_resistance page or re-check any DOI in the original report's citations.",
+  "The 282.9 K transient figure was checked only as 447.6 × (1 - 1/e) by hand; arithmetic.py was not run.",
+  "holdout/split.json was too large to read in one call and was not opened; nothing in this task touches the held-out clade.",
+  "Publication years for the SFPE engineering guide and the UCL paper were not seen; the citations list omits the year for both."
+ ],
+ "citations": [
+  {
+   "authors": "Wikipedia contributors",
+   "year": 2026,
+   "title": "Lumped-element model",
+   "venue": "Wikipedia",
+   "doi_or_arxiv": "https://en.wikipedia.org/wiki/Lumped-element_model",
+   "verified": true,
+   "how_verified": "opened via WebFetch 2026-11-13; quotes are from the tool's extraction, with math markup flattened",
+   "used_for": "series resistance, lumped transient, time constant, Biot condition"
+  },
+  {
+   "authors": "SFPE",
+   "title": "Engineering Guide: Piloted Ignition of Solid Materials Under Radiant Exposure (thermally thick section)",
+   "venue": "globalspec.com reference",
+   "doi_or_arxiv": "https://www.globalspec.com/reference/76862/203279/thermally-thick",
+   "verified": false,
+   "how_verified": "HTTP 403; seen only as a web-search result summary; year not seen",
+   "used_for": "thick ignition formula (unverified)"
+  },
+  {
+   "authors": "Parot et al.",
+   "title": "(UCL Discovery preprint on ignition correlations; title not seen)",
+   "venue": "UCL Discovery",
+   "doi_or_arxiv": "https://discovery-pp.ucl.ac.uk/10141480/1/Parot%20et%20al_Final.pdf",
+   "verified": false,
+   "how_verified": "HTTP 403; search summary only (flux exponent 1 for thin, 2 for thick); year not seen",
+   "used_for": "thin/thick flux scaling (unverified)"
+  }
+ ],
+ "reproduce": [
+  {
+   "what": "Thin no-loss time is a lower bound on the lossy time",
+   "command_or_url": "python -c \"import math;C,h,q,dT=2000.,10.,20000.,300.;x=h*dT/q;print(C*dT/q, -(C/h)*math.log(1-x))\"",
+   "expected": "30.0 and about 32.5: the lossy ignition time is later than tigThin"
+  },
+  {
+   "what": "Worked-example arithmetic",
+   "command_or_url": "python -c \"print(800/9/(0.003/0.08+0.05+1/9), 800/9/(0.002/0.1+0.05+1/9))\"",
+   "expected": "about 447.6 and 490.8"
+  },
+  {
+   "what": "Source for series resistance and the lumped time constant",
+   "command_or_url": "https://en.wikipedia.org/wiki/Lumped-element_model",
+   "expected": "series resistances add; t0 = C/hA; Biot number below 0.1"
+  }
+ ],
+ "scripts_written": [],
+ "check_output": "Lean was not run in this check (7-minute budget, read-only). Theorem statements were read against their docstrings by hand. No files were written."
+}

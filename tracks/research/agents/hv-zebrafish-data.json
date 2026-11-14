@@ -1,0 +1,230 @@
+{
+ "label": "hv-zebrafish-data",
+ "topic": "Open zebrafish datasets (ZFIN, Zebrahub, DANIO-CODE, single-cell atlases, FishBase) that can validate morphological and molecular statements: access, size, licence, what each can test",
+ "summary": "Ten statements harvested and three checked against live data. Two passed and one failed its strict form.\n\n- FAIL (strict): Howe 2013 says 71.4% of human genes have a zebrafish orthologue. The ZFIN curated orthology table downloaded today gives 13,749 distinct human genes, which is 67.1% of Howe's 20,479. It passes only the abstract's looser \"approximately 70%\". ZFIN's curated orthology and Howe's Ensembl-based method differ, so this is a method gap, not a refutation.\n- PASS: somites form at 2 per hour at 28.5 C. The ZFIN stage table gives 14 somites at 16 h, 20 at 19 h and 26 at 22 h, exactly 2.0 per hour. The first few form at 3.0 per hour.\n- PASS: body growth is isometric (b = 3). FishBase gives b = 3.04 (2.84 - 3.24).\n\nRegistry check: a grep of lean/laws.json for somite, ortholog, cis-regulatory and cell atlas found only the flying-fish length-weight entry, so none of the ten statements appears there as a zebrafish law. Zebrafish terms do occur across 112 files under lean/, tracks/lean and tracks/research (551 hits, mostly lean/genotype and FinDevelopment), but I did not open those files, so statement-level overlap is unchecked.\n\nLicences are unconfirmed for every dataset: the FishBase and Zebrahub pages I opened state none, and I did not open the ZFIN or DANIO-CODE terms. The Zebrahub data page rendered without its dataset lists, so its cell counts come from the Zebrahub-Multiome preprint only.\n\nFiles are in D:/Users/ashenoy00000/delphi-work/agents4/hv-zebrafish-data/:\n- validation.md\n- epmc.txt\n- dl/human_orthos.txt",
+ "findings": [
+  {
+   "claim": "S1. About 71.4% of human protein-coding genes have at least one zebrafish orthologue. Formal: |{h in H : exists z, orth(h,z)}| / |H| = 0.714, with |H| = 20,479. Assumption: orthology as called by Ensembl Compara. In registry: not found in lean/laws.json. Falsifying test: count distinct human genes in ZFIN human_orthos.txt; reject if the fraction is outside 0.714 +/- 0.01.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3703927/ (doi 10.1038/nature12111)",
+   "evidence_quote": "71.4% of human genes have at least one zebrafish orthologue",
+   "value": "VALIDATED TODAY: predicted 14,622 human genes; measured 13,749 (67.1%) in ZFIN table. Strict FAIL; passes only the abstract's 'approximately 70%' at +/-5 points.",
+   "confidence": "high for the measured count; medium for the comparison, because ZFIN curated orthology and Ensembl Compara use different methods and denominators"
+  },
+  {
+   "claim": "S2. About 69% of zebrafish protein-coding genes (26,206) have at least one human orthologue. Formal: |{z in Z : exists h, orth(z,h)}| / |Z| = 0.69. In registry: not found. Falsifying test: distinct ZFIN gene IDs in human_orthos.txt divided by 26,206.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3703927/ ; data https://zfin.org/downloads/human_orthos.txt",
+   "evidence_quote": "69% of zebrafish genes have at least one human orthologue",
+   "value": "VALIDATED TODAY: predicted 18,082; measured 17,180 (65.6%). Strict FAIL, loose pass.",
+   "confidence": "medium; the ZFIN gene set today is not the 2013 Zv9 gene set"
+  },
+  {
+   "claim": "S3. After the first few somites, zebrafish somites form at a constant 2 per hour at 28.5 C (period 30 min). Formal: N(t) = N0 + 2(t - t0) for t in [16 h, 22 h]. Assumption: standard temperature 28.5 C. In registry: 'somite' not found in lean/laws.json. Falsifying test: ZFIN staging table, slope of somite number against hours; reject if slope is outside 2.0 +/- 0.25.",
+   "source": "https://zfin.org/zf_info/zfbook/stages/index.html (Kimmel et al. 1995 staging series, doi 10.1002/aja.1002030302)",
+   "evidence_quote": "h = hours of development at 28.5°C",
+   "value": "VALIDATED TODAY: 14 somites at 16 h, 20 at 19 h, 26 at 22 h gives slope 2.0 per hour. PASS. Early somites: 1 at 10.33 h to 5 at 11.66 h gives 3.0 per hour.",
+   "confidence": "high for the table values; the rate sentence in Kimmel 1995 itself was not opened (segment page returned 404), so the 2-per-hour wording is from memory and the table"
+  },
+  {
+   "claim": "S4. Zebrafish grow isometrically: weight W = a L^b with b = 3. Formal: b in the 95% interval of the fitted exponent. In registry: lean/laws.json has a length-weight entry, but for flying-fish species only (line 1001-1009), not zebrafish. Falsifying test: FishBase Bayesian length-weight estimate for Danio rerio; reject if the interval excludes 3.",
+   "source": "https://www.fishbase.se/summary/Danio-rerio.html",
+   "evidence_quote": "a=0.00977 (0.00422 - 0.02262), b=3.04 (2.84 - 3.24)",
+   "value": "VALIDATED TODAY: interval 2.84-3.24 contains 3. PASS (not falsified). Note this is a Bayesian estimate from related species, not a field fit.",
+   "confidence": "medium; a weak test because the interval is wide"
+  },
+  {
+   "claim": "S5. Adult vertebral count is 31-32 and maximum standard length is 3.8 cm. Formal: V in {31, 32}; SL_max = 3.8 cm. In registry: not found. Falsifying test: count vertebrae in an open micro-CT or cleared-and-stained zebrafish series; reject if the modal count is outside 31-32.",
+   "source": "https://www.fishbase.se/summary/Danio-rerio.html",
+   "evidence_quote": "Vertebrae 31-32.",
+   "value": "FishBase: vertebrae 31-32; max length 3.8 cm SL; branched anal fin rays 10-12",
+   "confidence": "high that FishBase states this; not independently tested"
+  },
+  {
+   "claim": "S6. The zebrafish genome has over 140,000 developmental cis-regulatory elements, drawn from 1,802 genomic data sets. Formal: |CRE| >= 140,000 across the profiled stages. In registry: 'cis-regulatory' not found in lean/laws.json. Falsifying test: count rows in the DANIO-CODE consensus regulatory-element track at danio-code.zfin.org; reject if below 140,000.",
+   "source": "doi 10.1038/s41588-022-01089-w (abstract read via Europe PMC)",
+   "evidence_quote": "We identified over 140,000 cis-regulatory elements throughout development",
+   "value": "1,802 data sets; >140,000 elements; access route https://danio-code.zfin.org",
+   "confidence": "high for the quoted abstract; portal itself not opened, size and licence not checked"
+  },
+  {
+   "claim": "S7. A single-cell multiome atlas of 94,562 cells over six stages (10-24 hours post-fertilization) yields 640,000 regulatory elements in 402 modules. Formal: |CRE_multiome| = 640,000. This is 4.6 times the DANIO-CODE count, so the two element definitions cannot both be 'the' regulatory set. In registry: not found. Falsifying test: overlap the Zebrahub-Multiome peak set with DANIO-CODE elements; reject 'DANIO-CODE is complete' if under half of the multiome peaks overlap.",
+   "source": "doi 10.1101/2024.10.18.618987 (preprint, abstract read via Europe PMC)",
+   "evidence_quote": "94,562 cells across six stages of zebrafish embryogenesis",
+   "value": "94,562 cells; 6 stages; 640,000 elements; 402 modules; portal zebrahub.org/epigenomics",
+   "confidence": "medium; preprint, not peer reviewed"
+  },
+  {
+   "claim": "S8. Over 92,000 cells from the first day of development form a single connected cell-state landscape, and clonally related cells stay restricted within it. Formal: for clone pairs (c1, c2), graph distance d(c1, c2) is smaller than for random pairs. In registry: 'cell atlas' not found. Falsifying test: Wagner 2018 TracerSeq data (GEO); permutation test of clone-pair state distance against random pairs.",
+   "source": "doi 10.1126/science.aar4362 (abstract read via Europe PMC)",
+   "evidence_quote": "single-cell RNA sequencing to >92,000 cells from zebrafish embryos",
+   "value": ">92,000 cells, first 24 h",
+   "confidence": "high for the abstract; GEO accession not opened"
+  },
+  {
+   "claim": "S9. 38,731 cells resolve into trajectories of 25 cell types through early somitogenesis. Formal: the trajectory tree has 25 leaves. In registry: not found. Falsifying test: recluster the Farrell 2018 expression matrix; reject if a stable clustering gives far fewer or more than 25 terminal types at the same stage.",
+   "source": "doi 10.1126/science.aar3131 (abstract read via Europe PMC)",
+   "evidence_quote": "identified the trajectories of 25 cell types through early somitogenesis",
+   "value": "38,731 cells; 25 cell types",
+   "confidence": "high for the abstract; data portal not opened"
+  },
+  {
+   "claim": "S10. 82% of human disease (OMIM morbid) genes, 2,601 genes, have at least one zebrafish orthologue; 47% of human genes have a one-to-one zebrafish orthologue. Formal: |M with orthologue| / |M| = 0.82. In registry: not found. Falsifying test: join ZFIN human_orthos.txt column 6 (OMIM id) against the OMIM morbid list; reject if outside 0.82 +/- 0.03.",
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3703927/",
+   "evidence_quote": "2,601 (82%) can be related to at least one zebrafish orthologue",
+   "value": "82% (2,601 genes); 47% one-to-one",
+   "confidence": "high for the quote; not tested (needs the OMIM morbid list, which requires registration)"
+  },
+  {
+   "claim": "Dataset access: ZFIN bulk downloads are open flat files with no login; the human orthology table is 9.7 MB and 44,346 rows.",
+   "source": "https://zfin.org/downloads/human_orthos.txt",
+   "value": "9,739,225 bytes; 44,346 rows; 17,180 distinct zebrafish genes; 13,749 distinct human genes",
+   "confidence": "high (downloaded and counted); ZFIN licence page not opened"
+  },
+  {
+   "claim": "Dataset access: Zebrahub imaging is in OME-Zarr over HTTP, with copies on Google Drive and figshare, and raw reads at NIH SRA under BioProject PRJNA940501. The data page states no licence and its dataset lists rendered empty.",
+   "source": "https://zebrahub.sf.czbiohub.org/data",
+   "evidence_quote": "The image datasets are in OME-Zarr format and carry their own specific metadata.",
+   "confidence": "medium; page content was only partly rendered"
+  }
+ ],
+ "key_claims": [
+  "ZFIN curated orthology gives 67.1% of human genes with a zebrafish orthologue, below Howe 2013's 71.4% (strict fail, loose pass)",
+  "ZFIN staging table gives exactly 2.0 somites per hour between 16 h and 22 h at 28.5 C (pass)",
+  "FishBase length-weight exponent for zebrafish is 3.04 (2.84-3.24), consistent with isometry (pass, weak test)",
+  "DANIO-CODE reports >140,000 regulatory elements while Zebrahub-Multiome reports 640,000; the definitions differ 4.6-fold",
+  "None of the ten statements was found as a zebrafish law in lean/laws.json; tracks/research and tracks/lean were not inspected file by file"
+ ],
+ "could_not_find": [
+  "Kimmel 1995 sentence on somite rate and total somite pairs: https://zfin.org/zf_info/zfbook/stages/segment.html returned 404",
+  "Licence for FishBase (the summary page showed none), ZFIN, DANIO-CODE and Zebrahub: not confirmed on any page I opened",
+  "Zebrahub scRNA-seq cell counts, timepoints and light-sheet lineage dataset sizes: data page lists rendered empty; the Zebrahub Cell 2024 paper was not opened",
+  "PubMed page for DANIO-CODE (cookie wall); used Europe PMC instead",
+  "Light-sheet lineage sets other than Zebrahub: not searched in the time available",
+  "Whether tracks/research or tracks/lean already hold any of these statements: only a hit count and a laws.json grep were done"
+ ],
+ "citations": [
+  {
+   "title": "The zebrafish reference genome sequence and its relationship to the human genome",
+   "authors": "Howe K, Clark MD, Torroja CF, et al.",
+   "year": 2013,
+   "venue": "Nature",
+   "doi_or_arxiv": "10.1038/nature12111",
+   "verified": true,
+   "how_verified": "PMC full text opened (first 100,000 characters) and Europe PMC abstract",
+   "used_for": "S1, S2, S10"
+  },
+  {
+   "title": "Stages of embryonic development of the zebrafish",
+   "authors": "Kimmel CB, Ballard WW, Kimmel SR, Ullmann B, Schilling TF",
+   "year": 1995,
+   "venue": "Developmental Dynamics",
+   "doi_or_arxiv": "10.1002/aja.1002030302",
+   "verified": true,
+   "how_verified": "Europe PMC abstract and ZFIN staging table opened; full text not opened",
+   "used_for": "S3"
+  },
+  {
+   "title": "Multiomic atlas with functional stratification and developmental dynamics of zebrafish cis-regulatory elements",
+   "authors": "Baranasic D, Hortenhuber M, Balwierz PJ, et al.",
+   "year": 2022,
+   "venue": "Nature Genetics",
+   "doi_or_arxiv": "10.1038/s41588-022-01089-w",
+   "verified": true,
+   "how_verified": "Europe PMC abstract",
+   "used_for": "S6"
+  },
+  {
+   "title": "Zebrahub-Multiome: Uncovering Gene Regulatory Network Dynamics During Zebrafish Embryogenesis",
+   "authors": "Kim YJ, Vijay Kumar S, Iovino B, et al.",
+   "year": 2024,
+   "venue": "bioRxiv preprint",
+   "doi_or_arxiv": "10.1101/2024.10.18.618987",
+   "verified": true,
+   "how_verified": "Europe PMC abstract",
+   "used_for": "S7"
+  },
+  {
+   "title": "Single-cell mapping of gene expression landscapes and lineage in the zebrafish embryo",
+   "authors": "Wagner DE, Weinreb C, Collins ZM, et al.",
+   "year": 2018,
+   "venue": "Science",
+   "doi_or_arxiv": "10.1126/science.aar4362",
+   "verified": true,
+   "how_verified": "Europe PMC abstract",
+   "used_for": "S8"
+  },
+  {
+   "title": "Single-cell reconstruction of developmental trajectories during zebrafish embryogenesis",
+   "authors": "Farrell JA, Wang Y, Riesenfeld SJ, et al.",
+   "year": 2018,
+   "venue": "Science",
+   "doi_or_arxiv": "10.1126/science.aar3131",
+   "verified": true,
+   "how_verified": "Europe PMC abstract",
+   "used_for": "S9"
+  }
+ ],
+ "reproduce": [
+  {
+   "what": "Orthologue fraction (S1, S2)",
+   "command_or_url": "curl -sL -o human_orthos.txt https://zfin.org/downloads/human_orthos.txt; cut -f4 human_orthos.txt | sort -u | wc -l; cut -f1 human_orthos.txt | sort -u | wc -l",
+   "expected": "13,749 human genes and 17,180 zebrafish genes (as of 2026-11-13); divide by 20,479 and 26,206"
+  },
+  {
+   "what": "Somite rate (S3)",
+   "command_or_url": "https://zfin.org/zf_info/zfbook/stages/index.html",
+   "expected": "14-19 somites at 16 h, 20-25 at 19 h, 26+ at 22 h; slope 2.0 per hour"
+  },
+  {
+   "what": "Length-weight exponent (S4)",
+   "command_or_url": "https://www.fishbase.se/summary/Danio-rerio.html",
+   "expected": "b=3.04 (2.84 - 3.24)"
+  },
+  {
+   "what": "Paper abstracts",
+   "command_or_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=TITLE:\"<title>\"&format=json&resultType=core",
+   "expected": "Abstract text as saved in D:/Users/ashenoy00000/delphi-work/agents4/hv-zebrafish-data/epmc.txt"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents4/hv-zebrafish-data/validation.md",
+  "D:/Users/ashenoy00000/delphi-work/agents4/hv-zebrafish-data/epmc.txt",
+  "D:/Users/ashenoy00000/delphi-work/agents4/hv-zebrafish-data/dl/human_orthos.txt"
+ ],
+ "check_output": "V1 predicted 14,622 human genes (71.4% of 20,479); measured 13,749 (67.1%): strict FAIL, loose pass. V1b predicted 18,082 zebrafish genes (69% of 26,206); measured 17,180 (65.6%): strict FAIL, loose pass. V2 predicted 2 somites per hour; measured 2.0 (16-22 h): PASS. V3 predicted b = 3; measured 3.04 (2.84-3.24): PASS.",
+ "recommendations": [
+  "Register S3 (somite rate) first: it is exact, cheap to test and passed against the ZFIN table.",
+  "For S1, pre-register which orthology source counts (Ensembl Compara or ZFIN curated) before calling it pass or fail; the 4-point gap is a method gap.",
+  "Confirm licences for ZFIN, DANIO-CODE, Zebrahub and FishBase before any nanopublication cites data from them; none was confirmed in this pass.",
+  "Open the Zebrahub /downloads page and the Zebrahub Cell paper to get atlas sizes and light-sheet lineage set details, which this pass could not retrieve.",
+  "Grep tracks/research and lean/genotype for the ten statements before formalizing, since only laws.json was checked."
+ ],
+ "lay_summary": [
+  "Zebrafish are small fish that scientists study a lot, and much of the data about them is free to download.",
+  "We collected ten exact claims about zebrafish, such as how fast the body segments form and how many of their genes match human genes.",
+  "We checked three of them against real numbers today.",
+  "The body segments really do form at two per hour, and the fish's weight grows with the cube of its length, as claimed.",
+  "The gene-matching claim came out a bit lower than the famous paper says (67 in 100 instead of 71 in 100), probably because the two lists were made in different ways."
+ ],
+ "glossary": {
+  "orthologue": "A gene in one species that matches a gene in another species because both came from the same ancestor gene.",
+  "somite": "One of the repeated blocks of tissue along an embryo's back that later become backbone and muscle.",
+  "hours post-fertilization (hpf)": "How many hours have passed since the egg was fertilized.",
+  "cis-regulatory element": "A stretch of DNA near a gene that acts like a switch, turning the gene on or off.",
+  "isometric growth": "Growing while keeping the same shape, so weight goes up with length cubed.",
+  "length-weight exponent (b)": "The power in the formula weight = a x length^b; b = 3 means the shape stays the same.",
+  "standard length (SL)": "A fish's length from snout tip to the base of the tail fin.",
+  "single-cell RNA sequencing": "A method that reads which genes are switched on in each individual cell.",
+  "multiome": "Measuring two things from the same cell at once, here gene activity and which DNA is open.",
+  "cell atlas": "A catalogue of all the cell types in an animal, built from single-cell measurements.",
+  "OME-Zarr": "A file format for very large microscope images that can be read in pieces over the internet.",
+  "light-sheet microscopy": "A microscope that lights a thin slice of a living embryo at a time, so whole embryos can be filmed.",
+  "lineage": "The family tree of cells: which cell divided to make which.",
+  "Ensembl Compara": "A computer pipeline that works out which genes match across species.",
+  "curated": "Checked and entered by human experts rather than only by a computer.",
+  "OMIM morbid gene": "A human gene listed in the OMIM catalogue as causing a disease.",
+  "Bayesian estimate": "An estimate that combines data with prior knowledge, here from related species.",
+  "nanopublication": "A tiny, machine-readable published statement with its source attached.",
+  "preprint": "A paper posted online before other scientists have formally reviewed it.",
+  "falsify": "To show a claim is wrong by a test it could have failed."
+ }
+}

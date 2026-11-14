@@ -1,0 +1,235 @@
+{
+ "label": "hv-morph-turing",
+ "topic": "Reaction-diffusion (Turing) pattern statements: onset wavelength, activator/inhibitor diffusivity, stripe insertion with growth, digit number vs. wavelength and domain size",
+ "summary": "Harvested 11 statements; 2 validated against fetched numbers (both pass); the Lean file was written but NOT checked (both allowed check runs failed on a missing Mathlib build file, an environment error, not a reported proof error), so nothing here counts as proved.\n\nRegistry status: `turing-ddi` and `turing-wavelength` (both v1.1.0, status candidate) already cover the instability condition and the onset wavenumber on an unbounded domain. `turing-wavelength` explicitly lists finite-domain mode quantisation as NOT established; that gap is what the new statements (S8-S10) and the unchecked Lean file target. Grep of lean/ and tracks/lean showed no other law ids on this topic; tracks/research has hits in phase2/verify-t2-patterns-*.json which I did not open.\n\nValidations (article details according to PubMed; numbers read from the PMC full texts):\n- V1 PASS. Prediction (turing-ddi: inhibitor must diffuse faster than activator). Measured in zebrafish embryo (Muller 2012, https://doi.org/10.1126/science.1221920): Cyclops 0.7 +/- 0.2, Squint 3.2 +/- 0.5 (activators); Lefty1 11.1 +/- 0.6, Lefty2 18.9 +/- 3.0 um^2/s (inhibitors). All four inhibitor/activator ratios exceed 1 (3.5, 5.9, 15.9, 27.0, my arithmetic). Caveat: this tests only the necessary inequality, not the full Turing inequality, which needs the kinetic Jacobian.\n- V2 PASS (ordinal only). Prediction (S9: at fixed handplate width, shorter wavelength gives at least as many digits, so digit count is non-decreasing as distal Hox dose falls). Measured (Sheth 2012, https://doi.org/10.1126/science.1226804): 7-9, then 8-9, then 9-11, then at least 12-14 digits; authors state the increase did not rely on larger handplate size. Monotone, as predicted. Caveat: digit period values are only in figures (1C, 4B, 4C), so the quantitative form (period x count = width) is untested; the Hoxa13-null class (7-8 condensations, count \"could not be precisely determined\") was left out of the ordering.\n\nNot verified today: Turing 1952 itself (cited via the registry files only), the marine angelfish stripe-insertion paper and the Kondo-Miura 2010 review (my PMIDs for both were wrong and returned unrelated papers), and any measured stripe spacing in zebrafish. S4, S6, S7, S10, S11 are untested.\n\nFiles: D:/Users/ashenoy00000/delphi-work/agents4/hv-morph-turing/TuringFiniteDomain.lean (unchecked). The folder also has src/PMC3525670.xml and src/PMC4486416.xml, two 150-byte failed downloads that can be deleted.",
+ "findings": [
+  {
+   "claim": "S1 Diffusion-driven instability. Formal: for u_t=f+Du*lap u, v_t=g+Dv*lap v with fu+gv<0, det J>0, a spatial mode is unstable iff Dv*fu+Du*gv > 2*sqrt(Du*Dv*det J); this forces Du != Dv. Assumptions: two species, linearisation, fixed domain. ALREADY IN REGISTRY as turing-ddi v1.1.0 (candidate). Falsifying test: measured D of an identified activator/inhibitor pair with inhibitor not faster (see S3).",
+   "source": "doi:10.1098/rstb.1952.0012 (not opened today; taken from D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/laws/turing-ddi.json)",
+   "evidence_quote": "the two diffusivities are necessarily unequal",
+   "value": "Dv*fu+Du*gv > 2*sqrt(Du*Dv*detJ)",
+   "confidence": "high for registry status; primary paper not opened in this run"
+  },
+  {
+   "claim": "S2 Onset wavelength. Formal: k_c^2 = sqrt(det J/(Du*Dv)), lambda_c = 2*pi/k_c; scaling both D by m multiplies lambda_c by sqrt(m); tissue size does not appear. Assumptions: onset, unbounded domain. ALREADY IN REGISTRY as turing-wavelength v1.1.0 (candidate, constraint TURINGLAMBDA1). Falsifying test: pattern spacing vs. measured sqrt(D) across perturbations in a system with measured D and kinetics; no single open dataset with all inputs found.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/laws/turing-wavelength.json and proposals/turing-wavelength/law.lean",
+   "evidence_quote": "the critical wavelength grows as the square root of the diffusivity scale",
+   "value": "q^2*Du*Dv = det J, q = k_c^2",
+   "confidence": "high for registry status"
+  },
+  {
+   "claim": "S3 (VALIDATED, PASS) In the zebrafish Nodal/Lefty activator/inhibitor pair the inhibitor has the higher effective diffusion coefficient. Formal: D_Lefty > D_Nodal. Not in registry as a data row (turing-ddi has empty observations). Dataset: FRAP values in Muller et al. 2012 (PMC3525670). Test: any inhibitor/activator ratio <= 1 within error falsifies. Result: ratios 3.5 to 27, all > 1.",
+   "source": "https://doi.org/10.1126/science.1221920 (PMC3525670, opened)",
+   "evidence_quote": "11.1 ± 0.6 μm2/s for Lefty1-GFP, and 18.9 ± 3.0 μm2/s for Lefty2-GFP",
+   "value": "Cyclops 0.7 +/- 0.2; Squint 3.2 +/- 0.5; Lefty1 11.1 +/- 0.6; Lefty2 18.9 +/- 3.0 um^2/s",
+   "confidence": "high (numbers read from full text via fetch tool; ratios are my arithmetic)"
+  },
+  {
+   "claim": "S4 Signalling range follows diffusivity when clearance is similar. Formal: gradient length = sqrt(D/k); with equal k, range_Lefty/range_Nodal = sqrt(D_L/D_N), e.g. sqrt(18.9/3.2) = 2.43 for Lefty2 vs Squint. Assumption: steady-state exponential gradient, uniform clearance. Not in registry. Dataset: gradient profiles and half-lives in the same paper's supplement. Test: measured range ratio outside the predicted ratio's error band. UNTESTED: I did not fetch the measured ranges or half-lives.",
+   "source": "https://doi.org/10.1126/science.1221920 (abstract via PubMed)",
+   "evidence_quote": "Nodals and Leftys have similar clearance kinetics",
+   "value": "predicted range ratio 2.43 (Lefty2/Squint), not compared",
+   "confidence": "medium; prediction computed, measurement not fetched"
+  },
+  {
+   "claim": "S5 (VALIDATED, PASS, ordinal) Digit number rises as distal Hox dose falls in the Gli3-null mouse limb, without a larger handplate: read as Hox dose setting the Turing wavelength. Formal: N(dose) non-increasing in dose at fixed width L; with N = floor(L/lambda), lambda falls with dose. Not in registry (the Sheth DOI is only a see_also of turing-wavelength). Dataset: genotype digit counts and Fig 1C digit periods in Sheth et al. 2012. Test: a lower-dose genotype with fewer digits at equal width falsifies. Result: 7-9 -> 8-9 -> 9-11 -> at least 12-14, monotone.",
+   "source": "https://doi.org/10.1126/science.1226804 (PMC4486416, opened)",
+   "evidence_quote": "to at least 12 to 14 digits when only one copy of Hoxa13 remained",
+   "value": "digits per genotype: 7-9; 8-9; 9-11; >=12-14",
+   "confidence": "medium-high; counts read from text; wavelength values are in figures only and were not extracted; Hoxa13-null class excluded (count not precisely determinable)"
+  },
+  {
+   "claim": "S6 Digit patterning is driven by a three-component Bmp-Sox9-Wnt Turing network modulated by morphogen gradients. Formal: periodic Sox9(x) along the anterior-posterior axis with period set by network parameters; gradients modulate wavelength along the proximo-distal axis. Not in registry (DOI is a see_also only). Dataset: Sox9 limb-bud expression images from the paper / eMouseAtlas (not opened). Test: Bmp or Wnt inhibition failing to change Sox9 stripe period in the predicted direction. UNTESTED.",
+   "source": "https://doi.org/10.1126/science.1252960 (abstract via PubMed)",
+   "evidence_quote": "a Turing network implemented by Bmp, Sox9, and Wnt drives digit specification",
+   "value": "qualitative",
+   "confidence": "medium; abstract only, no numbers extracted"
+  },
+  {
+   "claim": "S7 Zebrafish stripe cells satisfy the Turing sign structure: short-range mutual exclusion of melanophores and xanthophores, long-range support of melanophores by xanthophores. Formal: interaction kernel w(r) < 0 for r < r1 and > 0 for r1 < r < r2 (local inhibition, lateral activation of the other type), equivalent to short-range activation with long-range inhibition. Not in registry. Dataset: laser-ablation outcomes in Nakamasu et al. 2009 (PMC2689028, not opened in full). Test: ablating distant xanthophores not reducing melanophore survival falsifies. UNTESTED; no stripe spacing number obtained.",
+   "source": "https://doi.org/10.1073/pnas.0808622106 (abstract via PubMed)",
+   "evidence_quote": "the local effect of these cells is opposite to that of their effects long range",
+   "value": "qualitative sign condition",
+   "confidence": "medium; abstract only"
+  },
+  {
+   "claim": "S8 Stripe insertion with growth: new palate ridges (Shh stripes) appear where the gap between existing ridges has widened; FGF and Shh act as activator and inhibitor. Formal: at fixed lambda, stripe count n with n*lambda <= L < (n+1)*lambda is non-decreasing in L (theorem count_mono_in_size in my Lean file, UNCHECKED). Not in registry (finite-domain behaviour is listed as not established). Dataset: ruga-spacing time series in Economou et al. 2012 (PMC3303118, not opened in full). Test: gap at insertion not near twice the baseline spacing, or count decreasing with growth.",
+   "source": "https://doi.org/10.1038/ng.1090 (abstract via PubMed)",
+   "evidence_quote": "appear at two growth zones where the space between previously laid rugae increases",
+   "value": "qualitative",
+   "confidence": "medium; abstract only; Lean statement not machine-checked"
+  },
+  {
+   "claim": "S9 Fixed domain, shorter wavelength, at least as many repeats. Formal: if n*lam <= L < (m+1)*lam' with 0 < lam and lam' <= lam then n <= m (theorem count_mono_in_wavelength, UNCHECKED). This is the arithmetic behind S5. Not in registry. Dataset and test: as S5, plus the quantitative version period x count = handplate width using Fig 1C values.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents4/hv-morph-turing/TuringFiniteDomain.lean; biology from https://doi.org/10.1126/science.1226804",
+   "evidence_quote": "the dose of distal Hox genes modulates the digit period or wavelength",
+   "value": "n <= m",
+   "confidence": "low as a proved result (file failed to check); the mathematics is elementary"
+  },
+  {
+   "claim": "S10 Minimum domain size. Formal: with no-flux boundaries the admissible wavenumbers are n*pi/L; if the unstable band ends at k_hi and L*k_hi < pi, no mode n >= 1 is unstable, so no pattern forms below L_min = pi/k_hi (theorem no_mode_below_critical_size, UNCHECKED). Standard textbook consequence of S1; I did not open a primary source for it. Not in registry. Dataset: none identified; a test needs pattern onset size in a growing tissue plus an independent wavelength estimate. UNTESTED.",
+   "source": "Derived by me from S1; D:/Users/ashenoy00000/delphi-work/agents4/hv-morph-turing/TuringFiniteDomain.lean",
+   "value": "L_min = pi/k_hi",
+   "confidence": "low: no primary source opened, Lean file not checked"
+  },
+  {
+   "claim": "S11 Inhibitor dose sets spacing in mouse skin: overexpressing the inhibitor DKK lowers hair follicle density, and moderate WNT suppression clusters follicles. Formal: follicle density is non-increasing in inhibitor production rate. Not in registry. Dataset: follicle density counts in Sick et al. 2006 (full text not opened). Test: DKK overexpression line with unchanged or higher follicle density. UNTESTED.",
+   "source": "https://doi.org/10.1126/science.1130088 (abstract via PubMed)",
+   "evidence_quote": "Transgenic DKK overexpression reduces overall appendage density",
+   "value": "qualitative direction",
+   "confidence": "medium; abstract only"
+  }
+ ],
+ "key_claims": [
+  "Registry already holds turing-ddi and turing-wavelength (both candidate); finite-domain mode quantisation is explicitly not covered and is the gap worth filling.",
+  "V1 pass: measured inhibitor (Lefty) diffusion coefficients exceed activator (Nodal) ones by 3.5x to 27x, as the instability condition requires.",
+  "V2 pass (ordinal): digit count rises monotonically 7-9, 8-9, 9-11, >=12-14 as distal Hox dose falls with no larger handplate.",
+  "The Lean file TuringFiniteDomain.lean did NOT check: both runs failed reading a Mathlib .olean.private file (a different file each run), so no theorem in it is proved."
+ ],
+ "check_output": "Run 1:\ntoolchain: leanprover/lean4:v4.35.0   mathlib: \nTuringFiniteDomain.lean                              errors=1 sorryAx=0 axiom-lines=0/3\nD:/Users/ashenoy00000/delphi-work/agents4/hv-morph-turing/TuringFiniteDomain.lean:1:0: error: failed to read file 'C:\\Temp\\delphi-lean-lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Ring\\CentroidHom.olean.private'\nFAILED\n\nRun 2:\ntoolchain: leanprover/lean4:v4.35.0   mathlib: \nTuringFiniteDomain.lean                              errors=1 sorryAx=0 axiom-lines=0/3\nD:/Users/ashenoy00000/delphi-work/agents4/hv-morph-turing/TuringFiniteDomain.lean:1:0: error: failed to read file 'C:\\Temp\\delphi-lean-lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Analysis\\Normed\\Affine\\AddTorsor.olean.private'\nFAILED\n\nNot \"ALL CHECKED\". The error is at line 1 (import Mathlib), before any of my proofs were elaborated, so the proofs are neither confirmed nor refuted.",
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents4/hv-morph-turing/TuringFiniteDomain.lean"
+ ],
+ "could_not_find": [
+  "Turing 1952 (doi:10.1098/rstb.1952.0012): not opened in this run; cited only through the registry files.",
+  "Marine angelfish stripe-insertion paper (Kondo and Asai, Nature 1995): the PMID I tried (7630423) returned an unrelated recoverin paper; not verified, no DOI asserted.",
+  "Kondo and Miura 2010 Science review: the PMID I tried (20929726) returned an unrelated CXCR4 structure paper; not verified.",
+  "Any measured zebrafish stripe spacing or wavelength in micrometres: none fetched.",
+  "Digit period values in Sheth 2012: present only in figures 1C, 4B, 4C; not extracted.",
+  "Measured Nodal/Lefty gradient ranges and half-lives (needed to test S4): not fetched.",
+  "Europe PMC fullTextXML for PMC3525670 and PMC4486416 returned HTTP 500 / 150-byte error bodies; full text was read from pmc.ncbi.nlm.nih.gov instead.",
+  "tracks/research/phase2/verify-t2-patterns-*.json: matched the grep but were not opened, so overlap with that track is unassessed.",
+  "A working Mathlib build: C:\\Temp\\delphi-lean-lake is missing .olean.private files, so no Lean check could pass."
+ ],
+ "citations": [
+  {
+   "title": "Differential diffusivity of Nodal and Lefty underlies a reaction-diffusion patterning system",
+   "authors": "Muller P, Rogers KW, Jordan BM, Lee JS, Robson D, Ramanathan S, Schier AF",
+   "venue": "Science 336:721-4",
+   "year": 2012,
+   "doi_or_arxiv": "https://doi.org/10.1126/science.1221920",
+   "verified": true,
+   "how_verified": "PubMed metadata plus PMC3525670 full text fetched",
+   "used_for": "S3, S4, validation V1"
+  },
+  {
+   "title": "Hox genes regulate digit patterning by controlling the wavelength of a Turing-type mechanism",
+   "authors": "Sheth R, Marcon L, Bastida MF, Junco M, Quintana L, Dahn R, Kmita M, Sharpe J, Ros MA",
+   "venue": "Science 338:1476-80",
+   "year": 2012,
+   "doi_or_arxiv": "https://doi.org/10.1126/science.1226804",
+   "verified": true,
+   "how_verified": "PubMed metadata plus PMC4486416 full text fetched",
+   "used_for": "S5, S9, validation V2"
+  },
+  {
+   "title": "Digit patterning is controlled by a Bmp-Sox9-Wnt Turing network modulated by morphogen gradients",
+   "authors": "Raspopovic J, Marcon L, Russo L, Sharpe J",
+   "venue": "Science 345:566-70",
+   "year": 2014,
+   "doi_or_arxiv": "https://doi.org/10.1126/science.1252960",
+   "verified": true,
+   "how_verified": "PubMed abstract only",
+   "used_for": "S6"
+  },
+  {
+   "title": "Interactions between zebrafish pigment cells responsible for the generation of Turing patterns",
+   "authors": "Nakamasu A, Takahashi G, Kanbe A, Kondo S",
+   "venue": "PNAS 106:8429-34",
+   "year": 2009,
+   "doi_or_arxiv": "https://doi.org/10.1073/pnas.0808622106",
+   "verified": true,
+   "how_verified": "PubMed abstract only",
+   "used_for": "S7"
+  },
+  {
+   "title": "Periodic stripe formation by a Turing mechanism operating at growth zones in the mammalian palate",
+   "authors": "Economou AD, Ohazama A, Porntaveetus T, Sharpe PT, Kondo S, Basson MA, Gritli-Linde A, Cobourne MT, Green JB",
+   "venue": "Nature Genetics 44:348-51",
+   "year": 2012,
+   "doi_or_arxiv": "https://doi.org/10.1038/ng.1090",
+   "verified": true,
+   "how_verified": "PubMed abstract only",
+   "used_for": "S8"
+  },
+  {
+   "title": "WNT and DKK determine hair follicle spacing through a reaction-diffusion mechanism",
+   "authors": "Sick S, Reinker S, Timmer J, Schlake T",
+   "venue": "Science 314:1447-50",
+   "year": 2006,
+   "doi_or_arxiv": "https://doi.org/10.1126/science.1130088",
+   "verified": true,
+   "how_verified": "PubMed abstract only",
+   "used_for": "S11"
+  },
+  {
+   "title": "The chemical basis of morphogenesis",
+   "authors": "Turing AM",
+   "venue": "Phil Trans R Soc Lond B 237:37-72",
+   "year": 1952,
+   "doi_or_arxiv": "doi:10.1098/rstb.1952.0012",
+   "verified": false,
+   "how_verified": "Not opened; DOI and citation copied from the registry law files",
+   "used_for": "S1, S2"
+  }
+ ],
+ "reproduce": [
+  {
+   "what": "V1 diffusion coefficients",
+   "command_or_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3525670/",
+   "expected": "Cyclops 0.7, Squint 3.2, Lefty1 11.1, Lefty2 18.9 um^2/s; every Lefty/Nodal ratio > 1"
+  },
+  {
+   "what": "V2 digit counts by genotype",
+   "command_or_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4486416/",
+   "expected": "7-9, 8-9, 9-11, at least 12-14 digits as distal Hox dose falls"
+  },
+  {
+   "what": "Lean check (currently fails on the Mathlib cache)",
+   "command_or_url": "bash D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/lean/check.sh D:/Users/ashenoy00000/delphi-work/agents4/hv-morph-turing/TuringFiniteDomain.lean",
+   "expected": "ALL CHECKED once the Mathlib build under C:\\Temp\\delphi-lean-lake is restored; today it prints FAILED at line 1"
+  },
+  {
+   "what": "Registry status",
+   "command_or_url": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/lean/registry/laws/turing-wavelength.json and turing-ddi.json",
+   "expected": "both v1.1.0, status candidate, observations empty"
+  }
+ ],
+ "recommendations": [
+  "Repair the Mathlib cache at C:\\Temp\\delphi-lean-lake (missing .olean.private files, a different one on each run, which suggests a concurrent rebuild or partial cache) and re-run the check on TuringFiniteDomain.lean before using any of its three theorems.",
+  "Attach the Muller 2012 diffusion coefficients as the first observation row for turing-ddi (it currently has none), scoped as a test of the necessary inequality only.",
+  "Extract digit periods from Sheth 2012 Fig 1C to test the quantitative form period x count = handplate width; the ordinal test passed but is weak.",
+  "Open tracks/research/phase2/verify-t2-patterns-*.json before proposing S8-S10, to avoid duplicating that track.",
+  "Delete the two 150-byte failed downloads in D:/Users/ashenoy00000/delphi-work/agents4/hv-morph-turing/src/."
+ ],
+ "lay_summary": [
+  "Some animal patterns, like stripes and the row of fingers, may form because two chemicals spread through tissue at different speeds: one switches things on nearby, the other switches things off farther away.",
+  "The maths says the 'off' chemical must spread faster, and a zebrafish experiment we looked up found exactly that: it spreads about 3 to 27 times faster.",
+  "The maths also says that if the repeat distance gets shorter while the space stays the same, more repeats fit; mice with fewer copies of certain genes grew more and thinner digits, from about 8 up to 12-14, which matches.",
+  "We wrote a computer-checked proof of the 'more repeats fit' idea, but the proof checker on this machine was broken, so it has not been confirmed yet.",
+  "Several other statements were collected but not yet tested against numbers."
+ ],
+ "glossary": {
+  "reaction-diffusion (Turing) system": "Two or more chemicals that react with each other and spread through tissue, which can make repeating patterns by themselves.",
+  "activator": "A chemical that increases its own production and that of the inhibitor nearby.",
+  "inhibitor": "A chemical that shuts the activator down and spreads farther.",
+  "diffusion coefficient (D)": "How fast a substance spreads, in square micrometres per second.",
+  "wavelength / period": "The distance from one stripe or digit to the next.",
+  "wavenumber (k)": "2*pi divided by the wavelength; a bigger k means tighter stripes.",
+  "Jacobian (J), det J": "The table of how each chemical's rate changes with each chemical's amount; det J is one number computed from it.",
+  "onset": "The point where the even, pattern-free state just becomes unstable.",
+  "no-flux boundary": "An edge that chemicals cannot cross.",
+  "mode": "One allowed wave shape that fits in the tissue.",
+  "Nodal, Lefty": "A signalling protein (activator) and its blocker (inhibitor) in early fish embryos; Cyclops and Squint are two Nodal proteins.",
+  "Hox genes, Gli3": "Genes that control body and limb layout; removing them here changes digit number.",
+  "handplate": "The flat paddle at the end of an embryonic limb where digits form.",
+  "Sox9, Bmp, Wnt, Shh, FGF, DKK": "Signalling molecules or markers used by cells in developing tissue; DKK blocks Wnt.",
+  "melanophore, xanthophore": "Black and yellow pigment cells in fish skin.",
+  "rugae": "Ridges on the roof of the mouth.",
+  "FRAP": "A microscope method that bleaches a glowing spot and times how fast glow returns, to measure spreading speed.",
+  "clearance": "How quickly a molecule is removed.",
+  "Lean / Mathlib": "A program that checks mathematical proofs, and its library of known mathematics.",
+  "named hypothesis": "An assumption written out explicitly in a proof instead of being hidden.",
+  "ordinal test": "A test of order only (more or fewer), not of exact amounts."
+ }
+}

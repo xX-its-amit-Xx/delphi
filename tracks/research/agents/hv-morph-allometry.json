@@ -1,0 +1,234 @@
+{
+ "label": "hv-morph-allometry",
+ "topic": "Scaling and allometry statements: Kleiber, surface-area/volume, Murray's law for vessels, limb scaling",
+ "summary": "Harvested 11 scaling statements, validated 4 against the AnAge mammal table, and wrote one Lean file that did NOT check.\n\n**Validation (AnAge, mammals only, n=422, 2.4 g to 3.67 t, plain least squares on log10 values):**\n\n| Statement | Prediction | Measured | Result |\n|---|---|---|---|\n| Kleiber 3/4 law | slope 0.75 | 0.709, 95% CI [0.694, 0.725] | FAIL |\n| Surface law 2/3 | slope 0.667 | same fit | FAIL |\n| Curvature (not a pure power law) | upper-half slope > lower-half | 0.791 (se 0.015) vs 0.607 (se 0.027) | PASS |\n| Mass-specific rate | slope -0.25 | -0.291 | FAIL (same data as row 1) |\n\nThe fit has no body-temperature or phylogeny correction, so the two failures are for the naive pooled form only. White & Seymour reached 2/3 only after those corrections.\n\n**Lean:** `AllometryScaling.lean` has three theorems (Kleiber mass-specific form, cube surface-to-volume, Murray cube law from flow = k r^3 plus conservation), no sorry, no axioms. Both allowed check runs FAILED at `import Mathlib` with \"failed to read file ... .olean.private\" in the shared Mathlib cache, a different file each time. The first file named exists on disk, so this looks environmental (possibly memory or concurrent use), but that is not confirmed. Nothing is proved.\n\n**Registry coverage:**\n- **Kleiber:** no hit for \"kleiber\" in `lean/registry/laws`, `lean/laws.json`, `lean/LAWS.md`, `tracks/lean` or `tracks/research`.\n- **Murray:** found only in `tracks/research` (`t3-lumen-law.json` and two bm-* agents), not in the Lean law registry.\n- **Present by filename only (contents not opened):** `elastic-similarity`, `scaling-area-law`, `scaling-strength-law`, `scaling-bending-law`, `flight-allometry-law`, `disc-pectoral-length-allometry`.\n\n**Sources not opened:** Kleiber 1932, Alexander 1979 and Savage 2004 were not found on Europe PMC; Murray 1926 and Stahl 1967 returned a title but no abstract. Findings resting on these are marked low confidence.\n\nFiles are in D:/Users/ashenoy00000/delphi-work/agents4/hv-morph-allometry/:\n- AllometryScaling.lean\n- scripts/fit_anage.py\n- dl/anage_data.txt",
+ "findings": [
+  {
+   "claim": "S1 Kleiber's law: basal metabolic rate B = a*M^(3/4). Formal: exists a>0 such that for all species, log B = log a + 0.75 log M + error, error mean zero. Assumptions: basal conditions, single pooled power law. Registry: NOT present (no 'kleiber' hit in lean registry or tracks). Falsifier: AnAge mammal rows, OLS slope of log10(W) on log10(g); reject if 95% CI excludes 0.75. VALIDATED: FAIL.",
+   "source": "https://doi.org/10.1126/science.276.5309.122 (statement of the law, abstract opened via Europe PMC); data https://genomics.senescence.info/species/dataset.zip",
+   "value": "predicted slope 0.75; measured 0.7091 (se 0.0079, 95% CI 0.6936-0.7246, n=422 mammals)",
+   "evidence_quote": "including the 3/4 power law for metabolic rates",
+   "confidence": "medium: the fit is my own naive OLS with no temperature or phylogeny correction; Kleiber's 1932 original was not opened"
+  },
+  {
+   "claim": "S2 Surface (geometric) law: mammalian BMR proportional to M^(2/3). Formal: slope b = 2/3 in log B = log a + b log M after correcting for body temperature, digestive state and phylogeny. Registry: not present as a metabolic law. Falsifier: same AnAge fit; reject if CI excludes 0.667. VALIDATED on uncorrected data: FAIL (measured slope lies between 2/3 and 3/4).",
+   "source": "https://doi.org/10.1073/pnas.0436428100",
+   "value": "predicted 0.667; measured 0.7091, CI 0.6936-0.7246",
+   "evidence_quote": "finds no support for a metabolic scaling exponent of 3/4",
+   "confidence": "medium: my test omits the corrections the paper says are needed, so this fails only the uncorrected form"
+  },
+  {
+   "claim": "S3 Curvature: log metabolic rate vs log mass is convex, so no single exponent holds. Formal: d^2(log B)/d(log M)^2 > 0; testable as slope(upper mass half) > slope(lower mass half). Registry: not present. Falsifier: AnAge mammals split at median mass; reject if upper slope <= lower slope. VALIDATED: PASS.",
+   "source": "https://doi.org/10.1038/nature08920",
+   "value": "lower-half slope 0.6065 (se 0.0267, n=211); upper-half slope 0.7909 (se 0.0151, n=211)",
+   "evidence_quote": "has convex curvature on a logarithmic scale, and is therefore not a pure power law",
+   "confidence": "medium-high: difference is about 6 standard errors, but a median split is a crude curvature test"
+  },
+  {
+   "claim": "S4 Mass-specific metabolic rate B/M = a*M^(-1/4) (algebraic consequence of S1; M>0). Registry: not present. Falsifier: slope of log(B/M) on log M in AnAge mammals; reject if CI excludes -0.25. VALIDATED: FAIL, same data as S1 so not independent.",
+   "source": "https://genomics.senescence.info/species/dataset.zip (data); statement derived from S1",
+   "value": "predicted -0.25; measured -0.2909",
+   "confidence": "medium: the algebra is written in Lean but the Lean file did not check"
+  },
+  {
+   "claim": "S5 Murray's law: at a vessel branch, r0^3 = r1^3 + r2^3. Formal: if flow Q_i = k*r_i^3 with common k != 0 (minimum-work condition) and Q0 = Q1 + Q2, then r0^3 = r1^3 + r2^3. Registry: not in lean registry; 'murray' appears only in tracks/research (t3-lumen-law.json, bm-bioinspired-generative-design, bm-diffusion-kinetics). Falsifier: fit exponent x in r0^x = r1^x + r2^x on measured bifurcation radii; reject if CI excludes 3. Candidate dataset: published coronary arterial tree morphometry tables (not opened, not confirmed open).",
+   "source": "https://doi.org/10.1085/jgp.78.4.431",
+   "evidence_quote": "cube of the radius of a parent vessel equals the sum of the cubes",
+   "confidence": "high for the statement; no dataset opened, so not validated. Murray 1926 (doi 10.1073/pnas.12.3.207) record found, title only, no abstract available"
+  },
+  {
+   "claim": "S6 West-Brown-Enquist model: 3/4 scaling follows from a space-filling fractal branching network, minimised energy dissipation and size-invariant terminal tubes. Formal: (space-filling) AND (dissipation minimised) AND (terminal tube size independent of M) implies B proportional to M^(3/4). Registry: not present. Falsifier: capillary dimensions vs body mass across mammals; reject the premise if terminal vessel radius scales with exponent significantly different from 0. Also indirectly failed by the curvature result S3.",
+   "source": "https://doi.org/10.1126/science.276.5309.122",
+   "evidence_quote": "the terminal tubes do not vary with body size",
+   "confidence": "high for the statement; no dataset opened for the premise test. Kolokotrones 2010 abstract says a vascular-architecture model fails the curvature test"
+  },
+  {
+   "claim": "S7 Elastic similarity: length scales as diameter^(2/3) in limbs and trunks. Formal: l = c*d^(2/3); with M proportional to l*d^2 this gives l proportional to M^(1/4), d proportional to M^(3/8). Registry: PRESENT by filename (lean/registry/laws/elastic-similarity.json; contents not opened). Falsifier: regress log bone length on log body mass; reject if CI excludes 0.25.",
+   "source": "https://doi.org/10.1126/science.179.4079.1201",
+   "evidence_quote": "lengths increase as the (2/3) power of diameter",
+   "confidence": "high for the statement; the M^(1/4), M^(3/8) forms are my derivation from it"
+  },
+  {
+   "claim": "S8 Biological frequencies (heart rate, breathing rate) scale as M^(-1/4). Formal: f = c*M^(-1/4). Registry: not found. Falsifier: resting heart rate vs body mass across mammal species; reject if slope CI excludes -0.25. No open heart-rate table was opened in the time available.",
+   "source": "https://doi.org/10.1126/science.179.4079.1201",
+   "evidence_quote": "biological frequencies are predicted to go inversely as body weight to the (1/4) power",
+   "confidence": "high for the statement; no dataset identified. Stahl 1967 (doi 10.1152/jappl.1967.22.3.453) record found, title only"
+  },
+  {
+   "claim": "S9 Body surface area scales as M^(5/8) under elastic similarity, versus M^(2/3) under geometric similarity. Formal: A = c*M^(0.625). Registry: scaling-area-law.json exists by filename (contents not opened; may be the 2/3 form). Falsifier: measured skin area vs mass; the two predictions differ by 0.042 in slope, so the test needs a standard error below about 0.02.",
+   "source": "https://doi.org/10.1126/science.179.4079.1201",
+   "evidence_quote": "total body surface areas should correlate with body weight to the (5/8) power",
+   "confidence": "high for the statement; no dataset opened"
+  },
+  {
+   "claim": "S10 Geometric surface-to-volume law: for similar shapes, area proportional to L^2, volume to L^3, so S/V proportional to 1/L and S proportional to V^(2/3); for a cube S/V = 6/L. Registry: PRESENT by filename (scaling-area-law.json, thompson1917-ch02-* entries; contents not opened). Falsifier: pure geometry given the similarity assumption; the biological test is whether organisms are geometrically similar (see S7, S11).",
+   "source": "Elementary geometry; the registry attributes related entries to Thompson 1917 (not opened by me)",
+   "confidence": "high for the mathematics; primary source not opened"
+  },
+  {
+   "claim": "S11 Limb bone scaling across land mammals: reported exponents are close to geometric similarity (length about M^0.35) and not elastic similarity (M^0.25). Registry: scaling-bending-law.json and scaling-strength-law.json exist by filename (not opened). Falsifier: regress log limb bone length on log mass; elastic similarity rejected if CI excludes 0.25.",
+   "source": "Alexander et al. 1979, J. Zool. (doi 10.1111/j.1469-7998.1979.tb03964.x) - NOT OPENED, not found on Europe PMC",
+   "confidence": "low: the 0.35 figure is from memory and unverified; treat as a lead, not a finding"
+  }
+ ],
+ "key_claims": [
+  "In AnAge mammals (n=422) the pooled metabolic slope is 0.709, 95% CI 0.694-0.725: both 3/4 and 2/3 fall outside the interval on uncorrected data.",
+  "The slope rises from 0.61 in the lighter half of species to 0.79 in the heavier half, consistent with the published curvature finding.",
+  "Kleiber's law is absent from the Lean law registry and from tracks/lean and tracks/research; Murray's law appears only in tracks/research.",
+  "The Lean file did not check: both runs failed reading Mathlib cache files, so nothing is proved."
+ ],
+ "check_output": "Run 1:\ntoolchain: leanprover/lean4:v4.35.0   mathlib: \nAllometryScaling.lean                                errors=1 sorryAx=0 axiom-lines=0/3\nD:/Users/ashenoy00000/delphi-work/agents4/hv-morph-allometry/AllometryScaling.lean:1:0: error: failed to read file 'C:\\Temp\\delphi-lean-lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Ring\\CentroidHom.olean.private'\nFAILED\n\nRun 2:\ntoolchain: leanprover/lean4:v4.35.0   mathlib: \nAllometryScaling.lean                                errors=1 sorryAx=0 axiom-lines=0/3\nD:/Users/ashenoy00000/delphi-work/agents4/hv-morph-allometry/AllometryScaling.lean:1:0: error: failed to read file 'C:\\Temp\\delphi-lean-lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Analysis\\Normed\\Affine\\AddTorsor.olean.private'\nFAILED\n\nNOT \"ALL CHECKED\". The failure is at import Mathlib, before any theorem was elaborated; CentroidHom.olean.private exists on disk (419760 bytes), and the failing file differed between runs. The proofs themselves are untested.",
+ "citations": [
+  {
+   "title": "Mammalian basal metabolic rate is proportional to body mass2/3",
+   "authors": "White CR, Seymour RS",
+   "year": 2003,
+   "venue": "PNAS",
+   "doi_or_arxiv": "10.1073/pnas.0436428100",
+   "verified": true,
+   "how_verified": "Europe PMC record and abstract fetched",
+   "used_for": "S2"
+  },
+  {
+   "title": "A general model for the origin of allometric scaling laws in biology",
+   "authors": "West GB, Brown JH, Enquist BJ",
+   "year": 1997,
+   "venue": "Science",
+   "doi_or_arxiv": "10.1126/science.276.5309.122",
+   "verified": true,
+   "how_verified": "Europe PMC record and abstract fetched",
+   "used_for": "S1, S6"
+  },
+  {
+   "title": "Curvature in metabolic scaling",
+   "authors": "Kolokotrones T, Savage V, Deeds EJ, Fontana W",
+   "year": 2010,
+   "venue": "Nature",
+   "doi_or_arxiv": "10.1038/nature08920",
+   "verified": true,
+   "how_verified": "Europe PMC record and abstract fetched",
+   "used_for": "S3"
+  },
+  {
+   "title": "On connecting large vessels to small. The meaning of Murray's law",
+   "authors": "Sherman TF",
+   "year": 1981,
+   "venue": "Journal of General Physiology",
+   "doi_or_arxiv": "10.1085/jgp.78.4.431",
+   "verified": true,
+   "how_verified": "Europe PMC record and abstract fetched",
+   "used_for": "S5"
+  },
+  {
+   "title": "Size and shape in biology",
+   "authors": "McMahon T",
+   "year": 1973,
+   "venue": "Science",
+   "doi_or_arxiv": "10.1126/science.179.4079.1201",
+   "verified": true,
+   "how_verified": "Europe PMC record and abstract fetched",
+   "used_for": "S7, S8, S9"
+  },
+  {
+   "title": "The Physiological Principle of Minimum Work: I. The Vascular System and the Cost of Blood Volume",
+   "authors": "Murray CD",
+   "year": 1926,
+   "venue": "PNAS",
+   "doi_or_arxiv": "10.1073/pnas.12.3.207",
+   "verified": false,
+   "how_verified": "Europe PMC record found (title, author, year) but no abstract; text not read",
+   "used_for": "S5 primary source"
+  },
+  {
+   "title": "Scaling of respiratory variables in mammals",
+   "authors": "Stahl WR",
+   "year": 1967,
+   "venue": "Journal of Applied Physiology",
+   "doi_or_arxiv": "10.1152/jappl.1967.22.3.453",
+   "verified": false,
+   "how_verified": "Europe PMC record found, title only, no abstract",
+   "used_for": "S8 lead"
+  },
+  {
+   "title": "AnAge database of animal ageing and longevity (dataset.zip, anage_data.txt)",
+   "authors": "Human Ageing Genomic Resources",
+   "venue": "genomics.senescence.info",
+   "doi_or_arxiv": "https://genomics.senescence.info/species/dataset.zip",
+   "verified": true,
+   "how_verified": "Downloaded (169 KB) and fitted; build/release number not read",
+   "used_for": "Validation of S1-S4"
+  }
+ ],
+ "could_not_find": [
+  "Kleiber 1932, Hilgardia (doi 10.3733/hilg.v06n11p315): not found on Europe PMC, not opened",
+  "Alexander et al. 1979 limb bone allometry (doi 10.1111/j.1469-7998.1979.tb03964.x): not found on Europe PMC; the 0.35 exponent in S11 is unverified",
+  "Savage et al. 2004, Functional Ecology (doi 10.1111/j.0269-8463.2004.00856.x): not found on Europe PMC",
+  "Murray 1926 and Stahl 1967 full text or abstract: record only",
+  "An open vessel-bifurcation radius table for testing Murray's exponent: none opened",
+  "An open cross-species heart-rate or skin-area table for S8 and S9: none opened",
+  "Contents of the registry law files (elastic-similarity, scaling-*-law): matched by filename only; the title field read back empty",
+  "Fin scaling statements: none harvested in the time available",
+  "A passing Lean check: both runs failed on Mathlib cache reads"
+ ],
+ "lay_summary": [
+  "Bigger animals burn more energy, but not in step with their weight: an animal ten times heavier uses only about five times the energy.",
+  "Scientists have argued for a century about the exact rule, with one camp saying the power is three quarters and another saying two thirds.",
+  "We checked a public table of 422 mammal species and got a number in between (about 0.71), so on raw data neither tidy rule fits exactly.",
+  "The line also bends: small mammals follow a shallower rule than large ones, which matches what a 2010 study reported.",
+  "We also wrote three small maths proofs about these rules, but the proof checker could not load its library, so they do not count yet."
+ ],
+ "glossary": {
+  "allometry": "How a body feature changes as overall body size changes.",
+  "basal metabolic rate (BMR)": "The energy an animal uses per second while resting and not digesting.",
+  "exponent / power law": "A rule of the form y = a times x raised to a fixed power; the power is the exponent.",
+  "slope (on a log-log plot)": "The exponent of a power law, read off as the steepness of a straight line after taking logarithms.",
+  "OLS (ordinary least squares)": "The standard way of fitting a straight line through scattered points.",
+  "95% confidence interval (CI)": "The range in which the true value plausibly lies given the data.",
+  "standard error (se)": "A measure of how uncertain a fitted number is.",
+  "Kleiber's law": "The claim that metabolic rate goes as body mass to the 3/4 power.",
+  "surface law": "The claim that metabolic rate goes as body mass to the 2/3 power, like skin area.",
+  "mass-specific rate": "Energy use per gram of body.",
+  "convex curvature": "The line bends upward instead of staying straight.",
+  "Murray's law": "At a fork in a blood vessel, the parent radius cubed equals the sum of the branch radii cubed.",
+  "geometric similarity": "Big and small animals having the same shape, just scaled up.",
+  "elastic similarity": "The idea that bones and trunks get relatively thicker with size so they bend equally under their own weight.",
+  "space-filling fractal network": "A branching system of tubes that repeats the same pattern at smaller sizes and reaches every part of the body.",
+  "phylogeny": "The family tree of species; related species are not independent data points.",
+  "Lean / Mathlib": "A computer program that checks mathematical proofs, and its standard library.",
+  "olean": "A compiled library file that Lean must load before checking a proof.",
+  "falsifier": "A test whose outcome could show the statement is wrong."
+ },
+ "recommendations": [
+  "Add Kleiber's law, the 2/3 surface law and the curvature statement to the registry as three competing entries with the AnAge mammal test attached; the naive fit already separates them.",
+  "Repeat the fit with body-temperature and phylogenetic correction before recording any final verdict on 2/3 versus 3/4.",
+  "Rerun check.sh on AllometryScaling.lean when the machine is quiet; if the 'failed to read file' error persists, inspect the shared Mathlib cache at C:\\Temp\\delphi-lean-lake.",
+  "Promote Murray's law from tracks/research into the Lean registry once a bifurcation radius table is located for the exponent test.",
+  "Open Alexander 1979 before using the limb-bone exponent; it is unverified here."
+ ],
+ "reproduce": [
+  {
+   "what": "Download AnAge table (169 KB)",
+   "command_or_url": "curl -L -o anage.zip https://genomics.senescence.info/species/dataset.zip && unzip anage.zip",
+   "expected": "anage_data.txt"
+  },
+  {
+   "what": "Fit mammal metabolic slope, half-split slopes and mass-specific slope",
+   "command_or_url": "python -I D:/Users/ashenoy00000/delphi-work/agents4/hv-morph-allometry/scripts/fit_anage.py D:/Users/ashenoy00000/delphi-work/agents4/hv-morph-allometry/dl/anage_data.txt",
+   "expected": "mammals n=422 slope=0.7091 se=0.0079 95%CI=[0.6936,0.7246]; lower-half 0.6065; upper-half 0.7909; mass-specific -0.2909"
+  },
+  {
+   "what": "Source abstracts",
+   "command_or_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:%2210.1038/nature08920%22&resultType=core&format=json (swap the DOI)",
+   "expected": "Title and abstract text as quoted"
+  },
+  {
+   "what": "Lean check",
+   "command_or_url": "bash D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/lean/check.sh D:/Users/ashenoy00000/delphi-work/agents4/hv-morph-allometry/AllometryScaling.lean",
+   "expected": "Should print ALL CHECKED; on 2026-11-13 it printed FAILED twice on Mathlib cache read errors"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents4/hv-morph-allometry/scripts/fit_anage.py",
+  "D:/Users/ashenoy00000/delphi-work/agents4/hv-morph-allometry/AllometryScaling.lean"
+ ]
+}

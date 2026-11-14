@@ -1,0 +1,178 @@
+{
+ "label": "hv-nanopub-format",
+ "topic": "How a harvested biological statement should be written as an unsigned nanopublication (assertion / provenance / pubinfo), with a template and three filled examples",
+ "summary": "Wrote one unsigned template and three filled example .trig files, but none has been parsed by an RDF parser (rdflib is not installed), and the harvest is short of the 8-12 asked for. The only check on the files was a count of four graph blocks each and a search confirming no ORCID.\n\n**What was harvested.** Four format rules from the nanopub guidelines and three base-count statements, seven in total. No Kleiber, Hardy-Weinberg or other laws were harvested, because I did not open a primary source for them in the time available.\n\n**Validation 1: Chargaff's second parity rule (one strand has A about equal to T and G about equal to C).** I fetched three genomes from NCBI and counted bases. The 5% tolerance is my own choice, not from a source.\n\n| Genome | Accession | A/T | G/C | Result |\n|---|---|---|---|---|\n| Phage lambda | NC_001416.1 | 1.029 | 1.128 | Fail (A/T passes, G/C does not) |\n| Phage phiX174 | NC_001422.1 | 0.767 | 1.084 | Fail (single-stranded virion, so out of the rule's scope) |\n| Human mitochondrion | NC_012920.1 | 1.252 | 0.419 | Fail |\n\nThese are three small genomes; they say nothing about large chromosomes.\n\n**Validation 2: format rules against the existing drafts.** The 10 files in `holdout/nanopubs/unsigned` each have the four named graphs and no ORCID line: pass. The 21 files in `math-bio-theorems/nanopubs/unsigned` did not match my graph-name pattern and each has 2 ORCID lines. I did not open them, so whether that is a real problem or just different graph naming is unknown.\n\n**Registry check.** Grep for \"chargaff\" or \"parity rule\" in `lean`, `tracks/lean` and `tracks/research` returned no files, so the rule is not in the law registry or research track.\n\n**Known gaps in the files.**\n- The template is example 1 with the claim id, slug and accession swapped for placeholders; it still carries the lambda numbers and label.\n- `delphi:formalStatement`, `delphi:Hypothesis` and `delphi:Evidence` are my guesses at ontology terms; I did not check them against the Delphi ontology.\n- `dct:created` is date-only precision (midnight placeholder).\n- The claim's primary paper (Rudner, Karkas and Chargaff, 1968) was not opened, so the .trig files cite only the NCBI records.\n\nThe repo was not edited; nothing was signed, published or sent.\n\nFiles are in D:/Users/ashenoy00000/delphi-work/agents4/hv-nanopub-format:\n- template-unsigned.trig\n- example-1-lambda.trig\n- example-2-phix174.trig\n- example-3-human-mito.trig\n- gen.sh",
+ "findings": [
+  {
+   "claim": "Format rule: a nanopublication head contains exactly one typing quad and one link each to assertion, provenance and publication info. Formal: |{q in H : q = (N, rdf:type, np:Nanopublication)}| = 1, likewise for np:hasAssertion, np:hasProvenance, np:hasPublicationInfo. Falsifying test: count those four predicates in the Head graph of every draft; any count != 1 fails.",
+   "source": "https://nanopub.net/guidelines/working_draft/",
+   "evidence_quote": "There is exactly one quad of the form '[N] rdf:type np:Nanopublication [H]'.",
+   "value": "The 10 drafts in holdout/nanopubs/unsigned each show the 4 named graphs (grep count only): pass. The 21 math-bio-theorems drafts did not match my grep pattern: not assessed.",
+   "confidence": "high for the rule (page opened via WebFetch summary); medium for the check (regex, not an RDF parser)"
+  },
+  {
+   "claim": "Format rule: the provenance graph must refer to the assertion graph. Formal: exists a triple in P whose subject or object is the assertion IRI A. Test: parse each draft and check P mentions A.",
+   "source": "https://nanopub.net/guidelines/working_draft/",
+   "evidence_quote": "Triples in [P] have at least one reference to [A].",
+   "value": "My four files each have 'sub:assertion prov:wasAttributedTo ...' in sub:provenance (by construction, not parser-checked).",
+   "confidence": "high for the rule"
+  },
+  {
+   "claim": "Format rule: the publication-info graph must refer to the nanopublication IRI; attribution and timestamp are SHOULD, not MUST. Formal: exists a triple in I mentioning N. Test: parse and check; also flag drafts lacking dct:created or dct:creator.",
+   "source": "https://nanopub.net/guidelines/working_draft/",
+   "evidence_quote": "MUST be the nanopublication URI and SHOULD contain attribution and timestamp",
+   "value": "My files carry dct:created and dct:creator (a software agent, no human ORCID).",
+   "confidence": "high for the rule; the quote is as relayed by the fetch tool's summary"
+  },
+  {
+   "claim": "Format rule: trusty URIs are recommended, not part of well-formedness, so an unsigned draft with a temp URI is still a well-formed nanopublication.",
+   "source": "https://nanopub.net/guidelines/working_draft/",
+   "evidence_quote": "are the recommended way of assigning integrity keys to nanopublications",
+   "value": "All four files use http://purl.org/nanopub/temp/... URIs, with no hash and no signature.",
+   "confidence": "medium (quote is a fragment relayed by the fetch summary)"
+  },
+  {
+   "claim": "Chargaff's second parity rule on phage lambda. Formal: on the deposited strand, |nA/nT - 1| <= 0.05 and |nG/nC - 1| <= 0.05 (assumptions: double-stranded genome; the 0.05 tolerance is mine). Prediction: both ratios within 5% of 1. Measured: A 12334, C 11362, G 12820, T 11986; A/T = 1.029, G/C = 1.128. FAIL (A/T passes, G/C does not). Not in the repo: grep for 'chargaff|parity rule' in lean, tracks/lean, tracks/research returned no files. Open dataset: NCBI RefSeq genomes; test: per-genome single-strand base counts against the tolerance.",
+   "source": "https://www.ncbi.nlm.nih.gov/nuccore/NC_001416.1 (fetched via NCBI efetch FASTA)",
+   "evidence_quote": "NC_001416.1 Enterobacteria phage lambda, complete genome",
+   "value": "A/T 1.029 (pass); G/C 1.128 (fail)",
+   "confidence": "high for the counts; the tolerance is an arbitrary choice"
+  },
+  {
+   "claim": "Chargaff's second parity rule on phage phiX174. Same formal statement. Prediction: both ratios within 5% of 1. Measured: A 1291, C 1157, G 1254, T 1684; A/T = 0.767, G/C = 1.084. FAIL on both. The virion DNA is single-stranded, so the rule's double-strand assumption is not met; recorded as out of scope rather than a refutation.",
+   "source": "https://www.ncbi.nlm.nih.gov/nuccore/NC_001422.1 (fetched via NCBI efetch FASTA)",
+   "evidence_quote": "NC_001422.1 Escherichia phage phiX174, complete genome",
+   "value": "A/T 0.767 (fail); G/C 1.084 (fail)",
+   "confidence": "high for the counts; the single-stranded scope note is from my own knowledge, not a source opened in this run"
+  },
+  {
+   "claim": "Chargaff's second parity rule on the human mitochondrial genome. Same formal statement. Prediction: both ratios within 5% of 1. Measured: A 5124, C 5181, G 2169, T 4094, plus one N excluded; A/T = 1.252, G/C = 0.419. FAIL on both. Says nothing about nuclear chromosomes.",
+   "source": "https://www.ncbi.nlm.nih.gov/nuccore/NC_012920.1 (fetched via NCBI efetch FASTA)",
+   "evidence_quote": "NC_012920.1 Homo sapiens mitochondrion, complete genome",
+   "value": "A/T 1.252 (fail); G/C 0.419 (fail)",
+   "confidence": "high for the counts"
+  },
+  {
+   "claim": "Existing drafts: the 21 files under math-bio-theorems/nanopubs/unsigned each contain 2 lines matching 'orcid.org/0' and none of my four graph-name patterns; the 10 holdout drafts contain 4 graph blocks and 0 ORCID lines.",
+   "source": "D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/math-bio-theorems/nanopubs/unsigned and holdout/nanopubs/unsigned (grep counts only)",
+   "value": "21 files: 0 graph-pattern matches, 2 ORCID lines each. 10 files: 4 graph blocks, 0 ORCID lines.",
+   "confidence": "low on what it means: I did not open any math-bio-theorems draft, so the ORCID lines could be legitimate citations and the graphs may simply be named differently"
+  }
+ ],
+ "key_claims": [
+  "Four unsigned .trig files were written (one template, three examples); none was parsed by an RDF parser.",
+  "Chargaff's second parity rule fails a 5% tolerance on all three small genomes tested; phiX174 is out of the rule's scope because it is single-stranded.",
+  "The 10 holdout drafts match the four-graph structure and carry no ORCID; the 21 math-bio-theorems drafts were not assessed beyond a grep.",
+  "Chargaff's rule is not in lean, tracks/lean or tracks/research.",
+  "Only 7 statements were harvested, not the 8-12 asked for."
+ ],
+ "lay_summary": [
+  "A nanopublication is a tiny digital note with three parts: what is claimed, where it came from, and who wrote the note and when.",
+  "I wrote a blank form for such notes and filled it in three times, without signing or publishing anything.",
+  "To have something real to write down, I tested an old rule that says one strand of DNA has about as many A letters as T letters, and as many G as C.",
+  "I counted the letters in three small genomes and the rule did not hold within 5 percent in any of them, which is a useful thing to record honestly.",
+  "My files have not yet been checked by a proper reading program, so they might still contain typing mistakes."
+ ],
+ "glossary": {
+  "nanopublication": "A very small machine-readable record of one claim, with its source and its author information attached.",
+  "assertion": "The part of the record that states the claim itself.",
+  "provenance": "The part that says where the claim came from and how it was made.",
+  "pubinfo": "The part that says who made the record, when, and under what licence.",
+  "head": "The part that ties the other three parts together into one record.",
+  "TriG / .trig": "A text file format for writing linked data split into named groups.",
+  "RDF": "A standard way to write facts as subject-verb-object triples that computers can read.",
+  "quad": "A triple plus the name of the group (graph) it belongs to.",
+  "graph": "A named group of triples inside the file.",
+  "IRI / URI": "A web-style address used as a unique name for a thing.",
+  "trusty URI": "An address that includes a fingerprint of the content, so changes can be detected.",
+  "unsigned": "Not stamped with anyone's digital key, so nobody has vouched for it.",
+  "ORCID": "A personal ID number for researchers.",
+  "software agent": "A program, not a person, named as the maker of a record.",
+  "Chargaff's second parity rule": "The observation that within a single DNA strand, A and T counts are roughly equal, and G and C counts are roughly equal.",
+  "genome": "The full DNA sequence of an organism or virus.",
+  "phage": "A virus that infects bacteria.",
+  "mitochondrion": "A small part of a cell with its own short DNA.",
+  "single-stranded": "DNA made of one strand instead of the usual paired two.",
+  "tolerance": "How far a measured number may be from the predicted one and still count as a pass.",
+  "accession": "The catalogue number of a sequence in a public database.",
+  "FASTA": "A plain text format for DNA sequences.",
+  "RefSeq": "NCBI's curated collection of reference sequences.",
+  "grep": "A tool that searches text for a pattern.",
+  "Lean": "A program that checks mathematical proofs.",
+  "ontology": "An agreed list of terms and how they relate."
+ },
+ "could_not_find": [
+  "RDF parser validation of the four .trig files: rdflib is not installed, so syntax is unverified.",
+  "The primary paper for Chargaff's second parity rule (Rudner, Karkas and Chargaff, 1968, PNAS): not opened, DOI not confirmed, so not cited in the files.",
+  "Whether delphi:formalStatement, delphi:Hypothesis and delphi:Evidence exist in the Delphi ontology: not checked.",
+  "The content of the 21 math-bio-theorems drafts: only grep counts were taken, none was read.",
+  "Harvest items 8-12: only 7 statements were harvested; no Kleiber, Hardy-Weinberg or other laws, because no primary source was opened for them.",
+  "The nanopub guideline quotes come through the fetch tool's summary, not the raw page; the wording should be rechecked against the page."
+ ],
+ "recommendations": [
+  "Parse the four .trig files with a real RDF parser (the np jar or rdflib) before anyone builds on them.",
+  "Strip the lambda-specific numbers and label out of template-unsigned.trig and replace them with placeholders.",
+  "Check the three delphi: terms I guessed against the ontology, or swap them for the terms the holdout drafts already use.",
+  "Open one math-bio-theorems draft to see whether its two ORCID lines are a signer identity or a citation, and how its graphs are named.",
+  "If Chargaff's rule is wanted as a law, test it on large bacterial chromosomes, where it is usually claimed to hold, with the tolerance fixed in advance."
+ ],
+ "reproduce": [
+  {
+   "what": "Fetch a genome and count its bases (repeat for NC_001422.1 and NC_012920.1)",
+   "command_or_url": "curl -s \"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=NC_001416.1&rettype=fasta&retmode=text\" | grep -v '>' | tr -d '\\n' | fold -w1 | sort | uniq -c",
+   "expected": "12334 A, 11362 C, 12820 G, 11986 T"
+  },
+  {
+   "what": "Regenerate the three example files",
+   "command_or_url": "cd D:/Users/ashenoy00000/delphi-work/agents4/hv-nanopub-format && sh gen.sh",
+   "expected": "example-1-lambda.trig, example-2-phix174.trig, example-3-human-mito.trig rewritten"
+  },
+  {
+   "what": "Nanopub well-formedness rules",
+   "command_or_url": "https://nanopub.net/guidelines/working_draft/",
+   "expected": "Head, assertion, provenance and pubinfo rules as quoted in the findings"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents4/hv-nanopub-format/gen.sh"
+ ],
+ "citations": [
+  {
+   "title": "Nanopublication Guidelines (working draft)",
+   "authors": "nanopub.net community",
+   "venue": "nanopub.net",
+   "doi_or_arxiv": "https://nanopub.net/guidelines/working_draft/",
+   "verified": true,
+   "how_verified": "Opened with WebFetch; quotes are from the tool's summary of the page",
+   "used_for": "Format rules for head, provenance, pubinfo and trusty URIs"
+  },
+  {
+   "title": "Enterobacteria phage lambda, complete genome (NC_001416.1)",
+   "authors": "NCBI RefSeq",
+   "venue": "NCBI Nucleotide",
+   "doi_or_arxiv": "https://www.ncbi.nlm.nih.gov/nuccore/NC_001416.1",
+   "verified": true,
+   "how_verified": "FASTA fetched via efetch and counted",
+   "used_for": "Validation of the parity rule"
+  },
+  {
+   "title": "Escherichia phage phiX174, complete genome (NC_001422.1)",
+   "authors": "NCBI RefSeq",
+   "venue": "NCBI Nucleotide",
+   "doi_or_arxiv": "https://www.ncbi.nlm.nih.gov/nuccore/NC_001422.1",
+   "verified": true,
+   "how_verified": "FASTA fetched via efetch and counted",
+   "used_for": "Validation of the parity rule"
+  },
+  {
+   "title": "Homo sapiens mitochondrion, complete genome (NC_012920.1)",
+   "authors": "NCBI RefSeq",
+   "venue": "NCBI Nucleotide",
+   "doi_or_arxiv": "https://www.ncbi.nlm.nih.gov/nuccore/NC_012920.1",
+   "verified": true,
+   "how_verified": "FASTA fetched via efetch and counted",
+   "used_for": "Validation of the parity rule"
+  }
+ ],
+ "check_output": "Base counts: NC_001416.1 A 12334 C 11362 G 12820 T 11986; NC_001422.1 A 1291 C 1157 G 1254 T 1684; NC_012920.1 A 5124 C 5181 G 2169 N 1 T 4094. Each of my four .trig files has 4 '{' blocks and no orcid.org string. rdflib import failed (ModuleNotFoundError), so no parser check ran. Draft survey: 10 files with 4 graph-pattern matches and 0 ORCID lines; 21 files with 0 matches and 2 ORCID lines. Repo grep for chargaff|parity rule: no files."
+}

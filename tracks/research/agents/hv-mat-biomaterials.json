@@ -1,0 +1,253 @@
+{
+ "label": "hv-mat-biomaterials",
+ "topic": "Biomaterial mixing, foam, water-uptake and bilayer laws for bio-based printable materials: harvest, formal statements, registry overlap, falsifying tests, two validations, one Lean file",
+ "summary": "Ten statements harvested and formalised; three checks run against one open paper (Islam et al. 2017, fungal mycelium, full text opened via Europe PMC); one Lean file passes check.sh with ALL CHECKED on the first run.\n\nValidation results (all from Islam 2017, densities 30-50 kg/m3):\n- Stiffness exponent: PASS, loosely. Gibson-Ashby predicts 2; the paper's reported end-point ranges (600-2000 kPa) imply about 2.36. This is my arithmetic on rounded ranges, not a refit of their data; the authors themselves report square scaling.\n- Absolute stiffness with prefactor C = 1: FAIL. Using the paper's chitin wall values (2.5 GPa, 1430 kg/m3) the law predicts 1100 and 3056 kPa at 30 and 50 kg/m3; measured is about 600 and 2000 kPa (ratio 0.55-0.65). Using the hyphal wall modulus the paper also quotes (110-140 MPa) it predicts 48-62 kPa at 30 kg/m3, roughly 10 times too low. The scaling holds; the prefactor and the choice of solid modulus do not transfer.\n- Yield strength, exponent 1.5: PASS. Predicted 41 and 88 kPa; measured 40-80 kPa. The 0.3 prefactor is the Gibson-Ashby textbook value from memory, not from a source I opened.\n\nLean: D:/Users/ashenoy00000/delphi-work/agents4/hv-mat-biomaterials/HalpinTsaiBounds.lean proves five theorems with standard axioms only. The new content is that the Halpin-Tsai closed form lies between the Reuss and Voigt bounds for any shape factor xi >= 0, and equals Reuss at xi = 0. This is algebra on the closed forms, not a derivation from elasticity. The fifth theorem (doubling density quadruples stiffness) is a trivial identity.\n\nRegistry overlap: Voigt-Reuss ordering and equality case already exist (tracks/research/lean/bm-lean-materials-laws__VoigtReuss.lean); the Timoshenko bilayer ceiling already exists (tracks/lean/HygromorphCeiling.lean). Halpin-Tsai has no hit anywhere in lean, tracks/lean or tracks/research. Fickian uptake and Gibson-Ashby are mentioned in tracks/research but I found no Lean theorem for them (file-name grep only; I did not read those files).\n\nLimits: of the primary sources, only Islam 2017 was opened in full text. Voigt 1889, Reuss 1929, Timoshenko 1925, Gibson-Ashby 1982 and Hashin-Shtrikman 1963 were confirmed as Crossref records only; the Halpin-Kardos DOI was confirmed from the Wikipedia reference list; the Hill 1952 and Shen-Springer 1976 Crossref lookups failed. The quantitative forms for those are the standard textbook ones, written from memory. No fibre-composite or water-uptake dataset was fetched, so statements 1-4, 6 and 8-10 are untested here. The \"open dataset\" named for each of those is a class of data, not a located file.",
+ "findings": [
+  {
+   "claim": "S1 Voigt upper bound (rule of mixtures, equal strain). Formal: for a two-phase composite with phase moduli E1,E2 > 0 and volume fraction 0 <= f <= 1, E_eff <= f E1 + (1-f) E2. Assumptions: linear elastic, perfectly bonded phases, no porosity. Registry: ALREADY PRESENT as closed-form ordering (reuss_le_voigt in tracks/research/lean/bm-lean-materials-laws__VoigtReuss.lean). Falsifying test: any open table of flax/PLA or wood-flour/PLA printed-filament tensile moduli with fibre volume fraction; fail if a measured modulus exceeds f Ef + (1-f) Em beyond measurement error.",
+   "source": "https://en.wikipedia.org/wiki/Rule_of_mixtures (opened); primary Voigt 1889 doi:10.1002/andp.18892741206 (Crossref record only)",
+   "value": "E_V = f E1 + (1-f) E2",
+   "evidence_quote": "E_V = fE1 + (1-f)E2 (as extracted from the page)",
+   "confidence": "high for the form; primary paper not opened; no dataset located or tested"
+  },
+  {
+   "claim": "S2 Reuss lower bound (equal stress). Formal: 1/E_R = f/E1 + (1-f)/E2 and E_eff >= E_R. Same assumptions as S1; porosity breaks it. Registry: ALREADY PRESENT (same VoigtReuss.lean, including the equality case reuss_eq_voigt_iff). Falsifying test: same composite tables; a measured modulus below E_R falsifies the no-porosity, perfect-bond assumptions rather than the algebra.",
+   "source": "https://en.wikipedia.org/wiki/Rule_of_mixtures (opened; formula text garbled in extraction); primary Reuss 1929 doi:10.1002/zamm.19290090104 (Crossref record only)",
+   "value": "E_R = (f/E1 + (1-f)/E2)^-1",
+   "confidence": "high for the form; primary not opened; not tested"
+  },
+  {
+   "claim": "S3 Halpin-Tsai. Formal: E/Em = (1 + xi eta phi)/(1 - eta phi), eta = (Ef/Em - 1)/(Ef/Em + xi), xi >= 0 a shape factor (commonly 2 L/d for longitudinal modulus of short fibres). Assumptions: aligned fibres, perfect bond, xi fitted or set by geometry. Registry: ABSENT (no grep hit for Halpin in lean, tracks/lean or tracks/research). Falsifying test: short-fibre biocomposite modulus versus fibre aspect ratio at fixed phi; fail if the xi needed to fit the data is negative, i.e. the measured modulus falls outside the Reuss-Voigt interval.",
+   "source": "Halpin and Kardos 1976, doi:10.1002/pen.760160512 (not opened; citation confirmed on https://en.wikipedia.org/wiki/Halpin-Tsai_model, which gives no equations)",
+   "value": "E/Em = (1+xi*eta*phi)/(1-eta*phi)",
+   "confidence": "medium: equation written from memory, the opened page describes the model in words only; the xi = 2L/d convention is also from memory"
+  },
+  {
+   "claim": "S4 (new, Lean-checked) Halpin-Tsai is bracketed by the mixture bounds: for Em, Ef > 0, 0 <= phi <= 1, xi >= 0, Reuss <= HT(xi) <= Voigt, and HT(0) = Reuss exactly. Uses the closed form HT = Em (Ef + xi V)/(D + xi Em), V = phi Ef + (1-phi) Em, D = (1-phi) Ef + phi Em. Registry: ABSENT before this file. Falsifying test: none for the algebra; it means a Halpin-Tsai fit can never explain a measurement outside the bounds.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents4/hv-mat-biomaterials/HalpinTsaiBounds.lean (check.sh output: ALL CHECKED)",
+   "value": "theorems halpinTsai_le_voigt, reuss_le_halpinTsai, halpinTsai_zero",
+   "evidence_quote": "ALL CHECKED: no errors, no sorryAx",
+   "confidence": "high for the algebra; the equivalence of the closed form to the eta form was done by hand in a comment, not proved in Lean"
+  },
+  {
+   "claim": "S5 Gibson-Ashby open-cell stiffness scaling. Formal: E/Es = C (rho/rho_s)^2 with C about 1, for bending-dominated open cells at low relative density. Registry: mentioned in tracks/research (bm-lean-materials-laws, bm-mycelium-living-materials); no Lean theorem found. Falsifying test: log-log regression of modulus on density for mycelium foams; fail if the slope's confidence interval excludes 2.",
+   "source": "Islam et al. 2017, Sci Rep, doi:10.1038/s41598-017-13295-2 (full text opened via Europe PMC PMC5638950); primary Gibson and Ashby 1982 doi:10.1098/rspa.1982.0088 (Crossref record only)",
+   "value": "exponent 2 for modulus",
+   "evidence_quote": "For open cell foams, the exponents are 2 for the elastic modulus",
+   "confidence": "high for the form as quoted by Islam; C about 1 is from memory; primary not opened"
+  },
+  {
+   "claim": "VALIDATION A (exponent): PASS, loosely. Prediction: slope 2. Measured: modulus 600 to 2000 kPa over 30 to 50 kg/m3 gives ln(3.33)/ln(1.667) = 2.36. Authors state square scaling from their own fit.",
+   "source": "doi:10.1038/s41598-017-13295-2 (PMC5638950, opened)",
+   "value": "predicted 2; implied from reported ranges about 2.36",
+   "evidence_quote": "the modulus varies with the square of mycelium density",
+   "confidence": "medium: my figure uses rounded end-point ranges, assuming the low modulus pairs with the low density; not a refit of the raw points"
+  },
+  {
+   "claim": "VALIDATION B (absolute stiffness, C = 1): FAIL. With chitin wall Es = 2.5 GPa and rho_s = 1430 kg/m3 the law predicts 1100 kPa at 30 kg/m3 and 3056 kPa at 50 kg/m3; measured about 600 and 2000 kPa (ratio 0.55 to 0.65). With the hyphal wall modulus 110-140 MPa also quoted in the paper it predicts 48-62 kPa at 30 kg/m3, about 10 times below measurement.",
+   "source": "doi:10.1038/s41598-017-13295-2 (PMC5638950, opened)",
+   "value": "predicted 1100 / 3056 kPa; measured about 600 / 2000 kPa",
+   "evidence_quote": "varies from 600 to 2000 kPa for the given range of density",
+   "confidence": "medium: solid-phase values are the paper's literature values for chitin, not measured on these samples; a fibre network is not a true cellular foam"
+  },
+  {
+   "claim": "S6 / VALIDATION C Gibson-Ashby open-cell strength. Formal: sigma_y = C2 sigma_ys (rho/rho_s)^(3/2), C2 about 0.3. Prediction with sigma_ys = 45 MPa, rho_s = 1430 kg/m3: 41 kPa at 30 kg/m3, 88 kPa at 50 kg/m3. Measured yield 40-80 kPa. PASS. Registry: no Lean theorem found. Falsifying test: same mycelium density series; fail if the strength slope's interval excludes 1.5.",
+   "source": "doi:10.1038/s41598-017-13295-2 (PMC5638950, opened)",
+   "value": "predicted 41 to 88 kPa; measured 40 to 80 kPa",
+   "evidence_quote": "strength varies with an exponent 3/2",
+   "confidence": "medium: exponent and measured range are quoted; the 0.3 prefactor is from memory, not from an opened source"
+  },
+  {
+   "claim": "S7 Timoshenko bilayer curvature. Formal: kappa = 6 (1+m)^2 d_eps / ( h [ 3(1+m)^2 + (1+mn)(m^2 + 1/(mn)) ] ), m = thickness ratio, n = modulus ratio, h = total thickness, d_eps = differential (hygro)expansion strain; maximum 3 d_eps/(2h) when m^2 n = 1. Assumptions: Euler-Bernoulli beam, uniform strain per layer, perfect bond. Registry: ALREADY PRESENT (tracks/lean/HygromorphCeiling.lean: timoshenkoCoefficient_le, bilayerCurvature_optimal, bilayer_rules_out). Falsifying test: printed wood-fibre/PLA hygromorph curvature tables; fail if measured curvature exceeds 3 d_eps/(2h).",
+   "source": "Timoshenko 1925, doi:10.1364/JOSA.11.000233 (Crossref record only)",
+   "value": "kappa_max = 3 d_eps / (2 h)",
+   "confidence": "medium: formula from memory, consistent with theorem names in the repo; primary not opened; not tested here"
+  },
+  {
+   "claim": "S8 Fickian water uptake, short time. Formal: for a plate of thickness h exposed on both faces, M_t/M_inf = (4/h) sqrt(D t/pi) while M_t/M_inf < about 0.6. Assumptions: constant D, no swelling, one-dimensional diffusion. Registry: Fickian is mentioned in tracks/research (bm-bilayer-theory-verified, bm-building-physics-standards); no Lean theorem found. Falsifying test: mass gain versus sqrt(t) for immersed natural-fibre/PLA coupons; fail if the early curve is not linear in sqrt(t) or D differs across thicknesses.",
+   "source": "Shen and Springer 1976, J Compos Mater, doi:10.1177/002199767601000101 (Crossref lookup failed; not opened)",
+   "value": "M_t/M_inf = (4/h) sqrt(D t/pi)",
+   "confidence": "low on the citation (DOI unverified); the formula is the standard one from memory; not tested"
+  },
+  {
+   "claim": "S9 Fickian thickness scaling. Formal: time to reach a fixed fractional uptake scales as h^2 (t_half is about 0.049 h^2/D for a plate). Registry: no Lean theorem found. Falsifying test: uptake curves for printed coupons at two thicknesses; fail if the half-time ratio differs from the thickness ratio squared. Natural-fibre composites often swell, so failure is plausible.",
+   "source": "Standard result of the plate diffusion solution; no source opened",
+   "value": "t_half ~ 0.049 h^2 / D",
+   "confidence": "low: from memory, no source opened, not tested"
+  },
+  {
+   "claim": "S10 Hashin-Shtrikman bounds are tighter than Voigt-Reuss for isotropic two-phase composites. Formal (bulk modulus, K2 > K1, G1 the softer shear modulus): K_lower = K1 + f2 / ( 1/(K2-K1) + 3 f1/(3K1 + 4G1) ), with Reuss <= HS_lower <= HS_upper <= Voigt. Assumptions: statistically isotropic, well-ordered phases. Registry: ABSENT (not in VoigtReuss.lean theorem list). Falsifying test: isotropic particulate biocomposite (e.g. wood-flour filled) moduli; fail if a measurement lies outside the HS interval.",
+   "source": "Hashin and Shtrikman 1963, doi:10.1016/0022-5096(63)90060-7 (Crossref record only)",
+   "value": "K_HS- = K1 + f2/(1/(K2-K1) + 3 f1/(3K1+4G1))",
+   "confidence": "medium: formula from memory; primary not opened; not tested"
+  }
+ ],
+ "check_output": "toolchain: leanprover/lean4:v4.35.0   mathlib: \nHalpinTsaiBounds.lean                                errors=0 sorryAx=0 axiom-lines=5/5\nHvMat.series_den_pos <- [propext, Classical.choice, Quot.sound] HvMat.halpinTsai_le_voigt depends on axioms: [propext, Classical.choice, Quot.sound] H\n\nALL CHECKED: no errors, no sorryAx\n\n(One run only. The per-theorem axiom line is truncated as shown in the script's own output; the script reports 5 of 5 axiom lines printed.)",
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents4/hv-mat-biomaterials/HalpinTsaiBounds.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents4/hv-mat-biomaterials/check1.log"
+ ],
+ "citations": [
+  {
+   "authors": "Islam MR, Tudryn G, Bucinell R, Schadler L, Picu RC",
+   "title": "Morphology and mechanics of fungal mycelium",
+   "venue": "Scientific Reports",
+   "year": 2017,
+   "doi_or_arxiv": "10.1038/s41598-017-13295-2",
+   "verified": true,
+   "how_verified": "Crossref record plus full text XML opened via Europe PMC (PMC5638950)",
+   "used_for": "Gibson-Ashby exponents, measured modulus and strength ranges, solid-phase values"
+  },
+  {
+   "authors": "Gibson LJ, Ashby MF",
+   "title": "The mechanics of three-dimensional cellular materials",
+   "venue": "Proceedings of the Royal Society of London A",
+   "year": 1982,
+   "doi_or_arxiv": "10.1098/rspa.1982.0088",
+   "verified": true,
+   "how_verified": "Crossref metadata only; paper not opened",
+   "used_for": "primary source for foam scaling"
+  },
+  {
+   "authors": "Voigt W",
+   "title": "Ueber die Beziehung zwischen den beiden Elasticitaetsconstanten isotroper Koerper",
+   "venue": "Annalen der Physik",
+   "year": 1889,
+   "doi_or_arxiv": "10.1002/andp.18892741206",
+   "verified": true,
+   "how_verified": "Crossref metadata only; paper not opened",
+   "used_for": "upper mixture bound"
+  },
+  {
+   "authors": "Reuss A",
+   "title": "Berechnung der Fliessgrenze von Mischkristallen auf Grund der Plastizitaetsbedingung fuer Einkristalle",
+   "venue": "ZAMM",
+   "year": 1929,
+   "doi_or_arxiv": "10.1002/zamm.19290090104",
+   "verified": true,
+   "how_verified": "Crossref metadata only (title truncated in my output); paper not opened",
+   "used_for": "lower mixture bound"
+  },
+  {
+   "authors": "Timoshenko S",
+   "title": "Analysis of Bi-Metal Thermostats",
+   "venue": "Journal of the Optical Society of America",
+   "year": 1925,
+   "doi_or_arxiv": "10.1364/JOSA.11.000233",
+   "verified": true,
+   "how_verified": "Crossref metadata only; paper not opened",
+   "used_for": "bilayer curvature"
+  },
+  {
+   "authors": "Hashin Z, Shtrikman S",
+   "title": "A variational approach to the theory of the elastic behaviour of multiphase materials",
+   "venue": "Journal of the Mechanics and Physics of Solids",
+   "year": 1963,
+   "doi_or_arxiv": "10.1016/0022-5096(63)90060-7",
+   "verified": true,
+   "how_verified": "Crossref metadata only; paper not opened",
+   "used_for": "tighter bounds"
+  },
+  {
+   "authors": "Halpin JC, Kardos JL",
+   "title": "The Halpin-Tsai equations: A review",
+   "venue": "Polymer Engineering and Science",
+   "year": 1976,
+   "doi_or_arxiv": "10.1002/pen.760160512",
+   "verified": false,
+   "how_verified": "Crossref call returned a record but my parser crashed on a character; citation and DOI seen in the Wikipedia reference list; paper not opened",
+   "used_for": "Halpin-Tsai form"
+  },
+  {
+   "authors": "Shen CH, Springer GS",
+   "title": "Moisture absorption and desorption of composite materials",
+   "venue": "Journal of Composite Materials",
+   "year": 1976,
+   "doi_or_arxiv": "10.1177/002199767601000101",
+   "verified": false,
+   "how_verified": "Crossref lookup failed; DOI and title from memory",
+   "used_for": "Fickian uptake form"
+  }
+ ],
+ "could_not_find": [
+  "Nature.com full text of Islam 2017 (redirected to a login page); used the Europe PMC copy instead",
+  "Halpin-Tsai equations in any opened source: the Wikipedia page gives none, the 1976 review was not opened",
+  "Crossref records for Shen and Springer 1976 (10.1177/002199767601000101) and Hill 1952 (10.1088/0370-1298/65/5/307): both lookups returned no JSON",
+  "Any open fibre-fraction versus modulus table for flax/PLA or wood/PLA printed composites: not searched for lack of time, so the mixture bounds and Halpin-Tsai are untested against data",
+  "Any open water-uptake time series: not searched, Fickian statements untested",
+  "The Gibson-Ashby prefactors (C about 1 for stiffness, 0.3 for strength) in an opened source",
+  "The raw density-modulus points behind Islam 2017 Figure 4; only the reported ranges were used",
+  "Mathlib revision: check.sh printed an empty mathlib field"
+ ],
+ "key_claims": [
+  "Halpin-Tsai is provably between the Reuss and Voigt bounds for every shape factor xi >= 0 and equals Reuss at xi = 0 (Lean, ALL CHECKED)",
+  "Mycelium stiffness follows the open-cell exponent roughly (implied 2.36 versus 2) but the absolute Gibson-Ashby prediction with C = 1 fails: 1100-3056 kPa predicted versus 600-2000 kPa measured",
+  "Gibson-Ashby strength scaling with exponent 1.5 predicts 41-88 kPa against 40-80 kPa measured",
+  "Halpin-Tsai and Hashin-Shtrikman are absent from the repo's Lean files; Voigt-Reuss and the Timoshenko ceiling are already there"
+ ],
+ "lay_summary": [
+  "Engineers have simple rules for guessing how stiff a material made of two ingredients will be, how stiff a sponge-like material is, how fast it soaks up water, and how much a two-layer strip curls.",
+  "We wrote ten of these rules down precisely and checked which ones the project already has.",
+  "We tested the sponge rule on a real mushroom-root material: the rule gets the trend right (denser means much stiffer) but guesses the actual stiffness almost twice too high.",
+  "The matching rule for strength landed almost exactly on the measured numbers.",
+  "We also got a computer proof checker to confirm that one popular fibre formula can never give an answer outside the two simplest limits."
+ ],
+ "glossary": {
+  "Young's modulus (E)": "How stiff a material is: the force per area needed to stretch it by a given fraction.",
+  "Rule of mixtures": "Estimating a blend's property as a weighted average of its ingredients.",
+  "Voigt bound": "The highest stiffness a two-ingredient material can have, as if both ingredients stretch equally side by side.",
+  "Reuss bound": "The lowest stiffness, as if the ingredients are stacked in series and carry the same load.",
+  "Volume fraction (f, phi)": "The share of the material's volume taken up by one ingredient.",
+  "Halpin-Tsai": "A formula for the stiffness of a plastic filled with short fibres, with a knob for fibre shape.",
+  "Shape factor (xi)": "The knob in Halpin-Tsai; bigger for longer, thinner fibres.",
+  "Hashin-Shtrikman bounds": "Tighter upper and lower stiffness limits for a blend that looks the same in every direction.",
+  "Gibson-Ashby scaling": "A rule saying a foam's stiffness goes as its density squared, and its strength as density to the power 1.5.",
+  "Open-cell foam": "A sponge-like solid whose pores connect to each other.",
+  "Relative density": "Foam density divided by the density of the solid it is made of.",
+  "Prefactor (C)": "The constant multiplier in front of a scaling rule.",
+  "Yield strength": "The stress at which a material stops springing back and deforms permanently.",
+  "Mycelium": "The thread-like root network of a fungus.",
+  "Hypha": "One thread of that network.",
+  "Chitin": "The stiff natural polymer in fungal cell walls.",
+  "Fickian diffusion": "Spreading of a substance (here water) driven only by concentration differences, at a constant rate coefficient.",
+  "Diffusion coefficient (D)": "How fast the substance spreads.",
+  "Timoshenko bilayer": "A formula for how much a two-layer strip curls when one layer expands more than the other.",
+  "Curvature (kappa)": "How sharply something bends; one over the bend radius.",
+  "Hygromorph": "A part that changes shape when it takes up moisture.",
+  "Lean / Mathlib": "A computer proof checker and its maths library.",
+  "Axiom": "A starting assumption a proof is allowed to rest on.",
+  "sorry": "A Lean placeholder meaning 'not actually proved'.",
+  "Crossref": "A public index of published papers and their DOIs.",
+  "DOI": "A permanent identifier for a published paper.",
+  "kPa, MPa, GPa": "Units of stress or stiffness: thousand, million and billion pascals."
+ },
+ "recommendations": [
+  "Add Halpin-Tsai bracketing to the law registry from HalpinTsaiBounds.lean, and add a Lean proof that the closed form equals the eta form (currently only a hand derivation in a comment).",
+  "Record Validation B as a negative result: Gibson-Ashby with C = 1 and a literature solid modulus over-predicts mycelium stiffness by about 1.5-1.8 times; the test is sensitive to which solid modulus is chosen.",
+  "Digitise Islam 2017 Figure 4c/d and refit the exponents with confidence intervals instead of using end-point ranges.",
+  "Find one open flax/PLA or wood/PLA table (fibre fraction, modulus) and one water-uptake time series so statements S1-S4 and S8-S9 get a real test.",
+  "Open the primary Halpin-Kardos, Gibson-Ashby and Shen-Springer papers to confirm the quantitative forms and prefactors before any nanopublication cites them."
+ ],
+ "reproduce": [
+  {
+   "what": "Lean check of the Halpin-Tsai bounds file",
+   "command_or_url": "bash D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/lean/check.sh D:/Users/ashenoy00000/delphi-work/agents4/hv-mat-biomaterials/HalpinTsaiBounds.lean",
+   "expected": "errors=0 sorryAx=0 axiom-lines=5/5 and ALL CHECKED"
+  },
+  {
+   "what": "Source text for the mycelium numbers",
+   "command_or_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC5638950/fullTextXML",
+   "expected": "Contains '600 to 2000 kPa', '30 kg/m 3 to 50 kg/m 3', '2.5 GPa, 0.3 and 45 MPa', '1430 kg/m 3'"
+  },
+  {
+   "what": "Validation B arithmetic",
+   "command_or_url": "python -c \"print(2.5e6*(30/1430)**2, 2.5e6*(50/1430)**2)\"",
+   "expected": "about 1100 and 3056 (kPa)"
+  },
+  {
+   "what": "Validation C arithmetic",
+   "command_or_url": "python -c \"print(0.3*45000*(30/1430)**1.5, 0.3*45000*(50/1430)**1.5)\"",
+   "expected": "about 41 and 88 (kPa)"
+  }
+ ]
+}

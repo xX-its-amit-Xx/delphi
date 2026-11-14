@@ -1,0 +1,293 @@
+{
+ "label": "hv-mol-binding-thermo",
+ "topic": "Binding thermodynamics statements (Kd-deltaG, Hill/occupancy bounds, detailed balance, enthalpy-entropy compensation, Cheng-Prusoff)",
+ "summary": "Ten binding-thermodynamics statements harvested and formalized; three validated against published numbers (all pass, with caveats); the Lean file is NOT checked. Both permitted check runs failed at line 1 on reading Mathlib .olean.private files (a different file each time; the first one named exists on disk), so no proof was evaluated and nothing here counts as proved.\n\nRegistry status: grep of lean/, tracks/lean/ and tracks/research/ found no law on Kd-deltaG, occupancy, Hill, Cheng-Prusoff, detailed balance or compensation. The files that matched the term grep (Altitude.lean, altitude-coupling.json, bm-diffusion-kinetics scripts) were not opened, so whether they touch binding is unconfirmed.\n\nValidations:\n- Kd = koff/kon: 4 abstracts, predicted vs reported 9.03 vs 9.02 nM, 584 vs 580 nM, 3.0 vs ~3.0 uM, 5.31 vs 5.3 nM. Pass, but these Kd values are probably computed from the same rate constants, so the test is weak. The one independent comparison (enzyme-inhibition Ki 18.9 +/- 1.2 nM vs SPR Kd 9.02 +/- 2.3 nM, same protein pair) differs 2.1-fold, outside the quoted errors.\n- deltaG = RT ln Kd: KD 197 uM predicts -5.06 kcal/mol at 25 C; reported -5.14. Pass within 0.1 kcal/mol; exact match needs about 30 C, and the abstract does not state the temperature.\n- Hill coefficient <= number of sites: haemoglobin nH 1.7-3.2 vs 4 sites. Pass; the site count of 4 is from memory, not from the opened page.\n- Residence time: koff 1.2e-3 s^-1 predicts tau 13.9 min and t1/2 9.63 min; reported 13.9 and 9.63. Pass (arithmetic identity).\n\nCitation caveat: four PMIDs I recalled from memory resolved to unrelated papers (Hill-equation review, Sharp compensation paper, Colquhoun microscopic reversibility, Hulme and Trevethick ligand depletion). Those sources are unverified and listed in could_not_find. Cheng and Prusoff 1973 was confirmed by title and DOI only; PubMed has no abstract, so the formula is from memory.\n\nEach statement's formal form, registry status, dataset and falsifying test are in the findings. Open datasets named: BindingDB, PDBbind, ChEMBL, SKEMPI 2.0.\n\nFiles are in D:/Users/ashenoy00000/delphi-work/agents4/hv-mol-binding-thermo/\n- BindingThermo.lean\n- check1.txt\n- check2.txt",
+ "findings": [
+  {
+   "claim": "S1 Kd-deltaG law. Formal: deltaG0 = RT ln(Kd/c0), c0 = 1 M; assumptions: equilibrium, 1:1 binding, activities = concentrations. Corollary: Kd < 1 M implies deltaG0 < 0; deltaG monotone increasing in Kd. Registry: not found. Dataset/test: BindingDB or PDBbind ITC entries reporting both Kd and deltaG with temperature; falsified if |deltaG_reported - RT ln Kd| > 0.1 kcal/mol at the stated T. VALIDATED: KD = 197 uM predicts -5.06 kcal/mol at 298.15 K; reported -5.14. PASS within 0.1 kcal/mol; exact agreement needs T about 303 K; abstract does not state T.",
+   "source": "https://doi.org/10.1021/acs.molpharmaceut.6c00390 (Europe PMC abstract, PMID 42906161)",
+   "value": "predicted -5.06 kcal/mol (25 C); reported -5.14 kcal/mol; diff 0.08",
+   "evidence_quote": "ΔG = -5.14 kcal/mol; -TΔS = -3.78 kcal/mol; N ≈ 1:1; KD = 197 μM",
+   "confidence": "medium: abstract only, temperature not stated; small-molecule acid-base pair, not a protein-ligand system"
+  },
+  {
+   "claim": "S2 Detailed balance at a single site: Kd = koff/kon. Assumptions: single-step reversible 1:1 binding at equilibrium, no mass-transport limit. Registry: not found. Dataset/test: SKEMPI 2.0 or BindingDB kinetic entries where Kd is measured by steady-state/equilibrium titration independently of kon and koff; falsified if log10(Kd_eq) - log10(koff/kon) is outside combined error. VALIDATED on 4 abstracts: 8.4e-4/9.3e4 = 9.03 nM vs 9.02 nM; 4.5e-3/7.7e3 = 584 nM vs 580 nM; 0.3/1e5 = 3.0 uM vs ~3.0 uM; 1.7e-4/3.2e4 = 5.31 nM vs 5.3 nM. PASS, but reported Kd values are probably derived from the same rate constants, so the test is weak.",
+   "source": "https://doi.org/10.1021/acs.biochem.5b01135 ; https://doi.org/10.1021/nn506993s ; https://doi.org/10.1074/jbc.273.46.30443 ; https://doi.org/10.1074/jbc.273.9.5300 (Europe PMC abstracts)",
+   "value": "4/4 agree within rounding (max deviation 0.7%)",
+   "evidence_quote": "kon = 3.2 x 10(4) M-1 s-1 ... koff = 1.7 x 10(-4) s-1 ... KD = 5.3 x 10(-9) M",
+   "confidence": "high for the arithmetic; low as an independent test (likely circular)"
+  },
+  {
+   "claim": "S2b Independent cross-method check of the same pair: enzyme-inhibition Ki and SPR Kd for full-length histone H3 binding KDM1A should agree if both measure the same equilibrium. Measured: Ki 18.9 +/- 1.2 nM vs Kd 9.02 +/- 2.3 nM, a 2.1-fold gap outside the quoted errors. Marginal FAIL of strict equality; pass at the usual 3-fold cross-assay tolerance.",
+   "source": "https://doi.org/10.1021/acs.biochem.5b01135 (Europe PMC abstract, PMID 26673564)",
+   "value": "Ki/Kd = 2.1",
+   "evidence_quote": "competitive inhibitor of KDM1A demethylation activity with a Ki of 18.9 ± 1.2 nM",
+   "confidence": "medium: abstract only; assay conditions (surface immobilisation vs solution) differ"
+  },
+  {
+   "claim": "S3 Residence time: tau = 1/koff and t1/2 = ln2/koff. Assumption: first-order dissociation. Registry: not found. Dataset/test: BindingDB/ChEMBL kinetic records reporting koff and half-life; falsified if t1/2*koff differs from 0.693 beyond rounding. VALIDATED: koff 1.2e-3 s^-1 predicts tau 13.9 min, t1/2 9.63 min; reported 13.9 and 9.63. PASS (arithmetic identity, so only checks reporting consistency).",
+   "source": "https://doi.org/10.1021/acs.biochem.5b01135 ; concept: Copeland, Pompliano, Meek 2006 https://doi.org/10.1038/nrd2082 (PubMed abstract)",
+   "value": "predicted 13.89 min / 9.63 min; reported 13.9 / 9.63",
+   "evidence_quote": "half-life (t1/2) of 9.63 min, and a residence time (τ) of 13.9 min",
+   "confidence": "high"
+  },
+  {
+   "claim": "S4 Hill coefficient bound: for a macromolecule with n ligand sites, the Hill coefficient at any saturation satisfies nH <= n (for equilibrium binding). Registry: not found. Dataset/test: oxygen equilibrium curves of tetrameric haemoglobins (literature nH tables); falsified by any equilibrium nH > number of sites. VALIDATED: haemoglobin-oxygen nH range 1.7-3.2, sites = 4 (site count from general knowledge, not on the opened page). PASS. The opened page also warns nH is not a reliable site count.",
+   "source": "https://en.wikipedia.org/wiki/Hill_equation_(biochemistry)",
+   "value": "nH max 3.2 <= 4",
+   "evidence_quote": "falls within the range of 1.7–3.2",
+   "confidence": "medium: secondary source; the bound itself was not stated on the page and its primary source was not opened"
+  },
+  {
+   "claim": "S5 Langmuir/hyperbolic occupancy bound: theta = L/(Kd+L), so 0 <= theta < 1 and theta = 1/2 exactly at L = Kd. Assumptions: one site class, free ligand L not depleted. Registry: not found. Dataset/test: saturation-binding curves (e.g. BindingDB ITC/radioligand raw isotherms); falsified if fitted fractional occupancy at L = Kd is not 0.5 within error, or if specific binding exceeds Bmax. Not validated numerically here. One opened abstract states the single-site saturable form.",
+   "source": "https://doi.org/10.1074/jbc.273.49.32506 (Europe PMC abstract)",
+   "evidence_quote": "bound saturably to a single class of sites on PSGL-1 with a dissociation constant",
+   "confidence": "medium: formula from textbook knowledge; Langmuir/Hill primary papers not opened"
+  },
+  {
+   "claim": "S6 Cheng-Prusoff: for a competitive inhibitor, Ki = IC50/(1 + [S]/Km) (enzyme) or Ki = IC50/(1 + [L]/Kd) (binding), hence Ki <= IC50 with equality as [S] -> 0. Assumptions: competitive, single site, Michaelis-Menten, no ligand depletion or tight binding. Registry: not found. Dataset/test: ChEMBL records giving both IC50 and Ki for the same compound, target and document with stated substrate concentration; falsified by Ki > IC50 beyond assay error for a declared competitive inhibitor. Not validated numerically here.",
+   "source": "Cheng and Prusoff 1973, https://doi.org/10.1016/0006-2952(73)90196-2 (PubMed record opened; no abstract available)",
+   "evidence_quote": "Relationship between the inhibition constant (K1) and the concentration of inhibitor which causes 50 per cent inhibition",
+   "confidence": "medium: only title/metadata opened; the formula is from memory, not read from the paper"
+  },
+  {
+   "claim": "S7 Enthalpy-entropy compensation. Exact part: at fixed deltaG, d(deltaH) = d(T deltaS) (identity from deltaG = deltaH - T deltaS). Empirical part: across ligand series deltaH and T deltaS vary strongly and oppositely while deltaG varies little; the review judges evidence for severe compensation weak because measurement errors in deltaH and T deltaS are large and correlated. Registry: not found. Dataset/test: BindingDB ITC set or PDBbind ITC subset; regress T deltaS on deltaH and compare the slope with a null built from correlated ITC errors; the strong claim is falsified if the slope is indistinguishable from the error-only null. Not validated numerically; one data point (deltaG -5.14, -T deltaS -3.78, implied deltaH -1.36 kcal/mol) is internally consistent.",
+   "source": "Chodera and Mobley 2013, https://doi.org/10.1146/annurev-biophys-083012-130318 (PubMed abstract)",
+   "evidence_quote": "We find the evidence for severe compensation to be weak",
+   "confidence": "high for what the review says (abstract only)"
+  },
+  {
+   "claim": "S8 Maximal affinity of ligands: binding free energy grows with heavy-atom count at about -1.5 kcal/mol per atom initially, then plateaus above about 15 non-hydrogen atoms. Formal: deltaG >= -1.5*N kcal/mol for N heavy atoms (non-covalent, non-metal ligands), with little gain beyond N = 15. Registry: not found. Dataset/test: PDBbind or ChEMBL Kd/Ki with heavy-atom counts; falsified by non-covalent, non-metal ligands with ligand efficiency well beyond 1.5 kcal/mol per atom. Known outliers named by the authors: metal ions, covalent ligands, biotin-avidin. Not validated numerically here.",
+   "source": "Kuntz, Chen, Sharp, Kollman 1999, https://doi.org/10.1073/pnas.96.18.9997 (PubMed abstract)",
+   "value": "-1.5 kcal/mol per non-hydrogen atom; plateau above 15 atoms",
+   "evidence_quote": "initial slope of approximately -1.5 kcal/mol (1 cal = 4.18 J) per atom",
+   "confidence": "high (abstract)"
+  },
+  {
+   "claim": "S9 Thermodynamic-cycle closure (detailed balance for linked equilibria): for a closed cycle of binding/conformational steps at equilibrium, the product of equilibrium constants around the cycle is 1, i.e. K1*K2 = K3*K4 for the two paths between the same end states. Assumption: no energy input (no ATP hydrolysis or other driven step). Registry: not found. Dataset/test: SKEMPI 2.0 double-mutant cycles or ternary-complex (cooperativity) data where all four Kd values are measured independently; falsified if log(K1*K2/(K3*K4)) differs from 0 beyond propagated error in an undriven system. Not validated numerically here; formal statement from textbook knowledge.",
+   "source": "No primary source opened (intended Colquhoun et al. 2004, Biophys J, on microscopic reversibility; my recalled PMID was wrong)",
+   "confidence": "low on sourcing: statement is standard but no source was opened"
+  },
+  {
+   "claim": "S10 Ligand-depletion / tight-binding limit: when receptor concentration is not much smaller than Kd, apparent IC50 >= Rt/2 and the hyperbolic occupancy law and Cheng-Prusoff underestimate affinity. Formal: IC50_app = Ki*(1+L/Kd) + Rt/2 (competitive, tight-binding form). Registry: not found. Dataset/test: ChEMBL IC50 values against stated enzyme concentration; falsified by IC50 < Et/2 for a 1:1 stoichiometric inhibitor. Not validated; formula from memory.",
+   "source": "No primary source opened (intended Hulme and Trevethick 2010, Br J Pharmacol; my recalled PMID was wrong). One opened abstract uses the term: https://doi.org/10.1021/acs.biochem.5b01135",
+   "evidence_quote": "is a tight-binding, competitive inhibitor of KDM1A demethylation activity",
+   "confidence": "low: formula from memory, no source opened for it"
+  },
+  {
+   "claim": "Lean file BindingThermo.lean (8 theorems: occupancy_bounds, half_occupancy_at_Kd, dG_neg_of_Kd_lt_one, dG_mono, cheng_prusoff_le, cheng_prusoff_binding, cycle_closure, compensation_exact; no sorry, no new axioms in source) is NOT CHECKED. Both check.sh runs failed at line 1 on reading a Mathlib .olean.private file (Algebra/Ring/Ext on run 1, Data/Sym/Sym2 on run 2); the first file exists on disk at 1.1 MB. No proof was evaluated, so the proofs may still contain errors.",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents4/hv-mol-binding-thermo/check1.txt and check2.txt",
+   "value": "errors=1 sorryAx=0 axiom-lines=0/8, FAILED (both runs)",
+   "confidence": "high that it is unchecked; the cause (memory or file contention from parallel runs) is a guess"
+  },
+  {
+   "claim": "Registry coverage: no binding-thermodynamics law found in lean/, tracks/lean/ or tracks/research/. A grep for Cheng-Prusoff, detailed balance, dissociation constant, Hill coefficient/equation, enthalpy-entropy, binding energy and IC50 matched only Altitude.lean, laws.json, altitude-coupling files, report.mjs and the bm-diffusion-kinetics and bm-formlabs agent scripts; those matches were not opened.",
+   "source": "grep over D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/{lean,tracks/lean,tracks/research}",
+   "confidence": "medium: file-name level only, matched files not read; grep output was capped at 10 files"
+  }
+ ],
+ "key_claims": [
+  "No binding-thermodynamics law appears to exist yet in the DELPHI registry (file-level grep only).",
+  "Kd = koff/kon reproduces reported Kd in 4 of 4 abstracts to within 1%, but the test is probably circular.",
+  "Independent Ki (18.9 nM) and SPR Kd (9.02 nM) for the same protein pair differ 2.1-fold, outside quoted errors.",
+  "deltaG = RT ln Kd reproduces a reported ITC deltaG to 0.08 kcal/mol at 25 C (temperature unstated).",
+  "Haemoglobin Hill coefficient range 1.7-3.2 respects the bound nH <= 4 sites.",
+  "The Lean file was not checked: both runs failed on reading Mathlib olean files before any proof ran."
+ ],
+ "check_output": "RUN 1:\ntoolchain: leanprover/lean4:v4.35.0   mathlib: \nBindingThermo.lean                                   errors=1 sorryAx=0 axiom-lines=0/8\nD:/Users/ashenoy00000/delphi-work/agents4/hv-mol-binding-thermo/BindingThermo.lean:1:0: error: failed to read file 'C:\\Temp\\delphi-lean-lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Ring\\Ext.olean.private'\nFAILED\nexit=1\n\nRUN 2:\ntoolchain: leanprover/lean4:v4.35.0   mathlib: \nBindingThermo.lean                                   errors=1 sorryAx=0 axiom-lines=0/8\nD:/Users/ashenoy00000/delphi-work/agents4/hv-mol-binding-thermo/BindingThermo.lean:1:0: error: failed to read file 'C:\\Temp\\delphi-lean-lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\Sym\\Sym2.olean.private'\nFAILED\nexit=1\n\nNot \"ALL CHECKED\". Nothing is proved.",
+ "citations": [
+  {
+   "title": "Relationship between the inhibition constant (K1) and the concentration of inhibitor which causes 50 per cent inhibition (I50) of an enzymatic reaction",
+   "authors": "Cheng Y, Prusoff WH",
+   "year": 1973,
+   "venue": "Biochem Pharmacol 22(23):3099-108",
+   "doi_or_arxiv": "10.1016/0006-2952(73)90196-2",
+   "verified": true,
+   "how_verified": "PubMed record PMID 4202581 opened; title, authors, DOI confirmed; no abstract available, formula not read from source",
+   "used_for": "S6 Cheng-Prusoff"
+  },
+  {
+   "title": "Entropy-enthalpy compensation: role and ramifications in biomolecular ligand recognition and design",
+   "authors": "Chodera JD, Mobley DL",
+   "year": 2013,
+   "venue": "Annu Rev Biophys 42:121-42",
+   "doi_or_arxiv": "10.1146/annurev-biophys-083012-130318",
+   "verified": true,
+   "how_verified": "PubMed abstract PMID 23654303",
+   "used_for": "S7 compensation"
+  },
+  {
+   "title": "The maximal affinity of ligands",
+   "authors": "Kuntz ID, Chen K, Sharp KA, Kollman PA",
+   "year": 1999,
+   "venue": "PNAS 96(18):9997-10002",
+   "doi_or_arxiv": "10.1073/pnas.96.18.9997",
+   "verified": true,
+   "how_verified": "PubMed abstract PMID 10468550",
+   "used_for": "S8 maximal affinity"
+  },
+  {
+   "title": "Drug-target residence time and its implications for lead optimization",
+   "authors": "Copeland RA, Pompliano DL, Meek TD",
+   "year": 2006,
+   "venue": "Nat Rev Drug Discov 5(9):730-9",
+   "doi_or_arxiv": "10.1038/nrd2082",
+   "verified": true,
+   "how_verified": "PubMed abstract PMID 16888652",
+   "used_for": "S3 residence time"
+  },
+  {
+   "title": "Lysine-Specific Demethylase 1A (KDM1A/LSD1): Product Recognition and Kinetic Ana... (title truncated in my fetch)",
+   "year": 2015,
+   "venue": "Biochemistry",
+   "doi_or_arxiv": "10.1021/acs.biochem.5b01135",
+   "verified": true,
+   "how_verified": "Europe PMC abstract PMID 26673564; authors not retrieved; year inferred from DOI",
+   "used_for": "S2, S2b, S3 validation numbers"
+  },
+  {
+   "title": "Multi-Ligand-Binding Flavoprotein Dodecin as a Key Element for Reversible Surfac... (title truncated)",
+   "venue": "ACS Nano",
+   "doi_or_arxiv": "10.1021/nn506993s",
+   "verified": true,
+   "how_verified": "Europe PMC abstract PMID 25738566; authors and year not retrieved",
+   "used_for": "S2 validation"
+  },
+  {
+   "title": "Determination of the affinity and kinetic constants for the interaction between ... (title truncated; echovirus 11 and CD55)",
+   "year": 1998,
+   "venue": "J Biol Chem 273(46):30443",
+   "doi_or_arxiv": "10.1074/jbc.273.46.30443",
+   "verified": true,
+   "how_verified": "Europe PMC abstract PMID 9804811; authors not retrieved",
+   "used_for": "S2 validation"
+  },
+  {
+   "title": "Lysenin, a novel sphingomyelin-specific binding protein",
+   "year": 1998,
+   "venue": "J Biol Chem 273(9):5300",
+   "doi_or_arxiv": "10.1074/jbc.273.9.5300",
+   "verified": true,
+   "how_verified": "Europe PMC abstract PMID 9478988; authors not retrieved",
+   "used_for": "S2 validation"
+  },
+  {
+   "title": "Affinity and kinetic analysis of P-selectin binding to P-selectin glycoprotein l... (title truncated)",
+   "year": 1998,
+   "venue": "J Biol Chem 273(49):32506",
+   "doi_or_arxiv": "10.1074/jbc.273.49.32506",
+   "verified": true,
+   "how_verified": "Europe PMC abstract PMID 9829984; authors not retrieved",
+   "used_for": "S5 single-site saturable binding; kon calculated from Kd and koff"
+  },
+  {
+   "title": "Sequential Molecular Events in the Solid-State Acid-Base Incompatibility of Amlo... (title truncated)",
+   "year": 2026,
+   "venue": "Mol Pharmaceutics",
+   "doi_or_arxiv": "10.1021/acs.molpharmaceut.6c00390",
+   "verified": true,
+   "how_verified": "Europe PMC abstract PMID 42906161; authors not retrieved; year inferred from DOI",
+   "used_for": "S1 validation"
+  },
+  {
+   "title": "Hill equation (biochemistry)",
+   "venue": "Wikipedia",
+   "doi_or_arxiv": "https://en.wikipedia.org/wiki/Hill_equation_(biochemistry)",
+   "verified": true,
+   "how_verified": "page fetched; summarised by the fetch tool",
+   "used_for": "S4 Hill coefficient range"
+  }
+ ],
+ "could_not_find": [
+  "Hill-equation review (Weiss 1997, FASEB J): the PMID I recalled (9278963) is an unrelated paper; source not opened.",
+  "Sharp 2001 'Entropy-enthalpy compensation: fact or artifact?' (Protein Sci): recalled PMID 11266606 is an unrelated paper; not opened.",
+  "Colquhoun et al. 2004 on microscopic reversibility (Biophys J): recalled PMID 15175318 is an unrelated paper; not opened, so S9 has no opened source.",
+  "Hulme and Trevethick 2010 on ligand binding assays/depletion (Br J Pharmacol): recalled PMID 20880409 is an unrelated paper; not opened, so S10 has no opened source.",
+  "Full text of Cheng and Prusoff 1973: only the PubMed record (no abstract) was opened.",
+  "Hill 1910 and Langmuir 1918 primary papers: not attempted.",
+  "A primary source stating the bound nH <= number of sites, and the count of 4 oxygen sites on haemoglobin: neither was on the opened page.",
+  "An abstract with Kd from equilibrium titration measured independently of kon and koff; the ones found appear to derive Kd from the rates.",
+  "Assay temperature for the 197 uM ITC measurement.",
+  "Contents of the registry files that matched the term grep (Altitude.lean, altitude-coupling.json, bm-diffusion-kinetics): not opened.",
+  "BindingDB, PDBbind, SKEMPI and ChEMBL tables themselves: named as test datasets from memory, not opened in this run.",
+  "A working Lean check: both runs failed on reading Mathlib olean files."
+ ],
+ "lay_summary": [
+  "When a small molecule sticks to a protein, how tightly it sticks can be written as one number, and that number tells you how much energy is released.",
+  "We collected ten textbook rules about this sticking, such as 'the fraction of protein that is occupied can never go above 100%' and 'how fast things come apart divided by how fast they join gives the tightness'.",
+  "We checked three of the rules against numbers printed in published papers, and the numbers agreed, although some of those checks were easy because the papers probably used the same rule to get their numbers.",
+  "One harder check, comparing two different lab methods on the same pair of proteins, gave answers that were twice as far apart as the stated error bars allow.",
+  "We also wrote the rules as computer-checkable maths, but the checking program could not load its library on this machine, so those proofs are not confirmed yet."
+ ],
+ "glossary": {
+  "Kd (dissociation constant)": "The ligand concentration at which half the binding sites are filled; smaller means tighter binding.",
+  "Ki (inhibition constant)": "The Kd of an inhibitor for its target.",
+  "IC50": "The inhibitor concentration that cuts a measured signal in half under one particular set of assay conditions.",
+  "Km": "The substrate concentration at which an enzyme works at half its top speed.",
+  "deltaG (binding free energy)": "The energy released on binding that decides how tight it is; more negative means tighter.",
+  "deltaH (enthalpy)": "The heat given off or taken up on binding.",
+  "T deltaS (entropy term)": "The part of the binding energy that comes from changes in disorder, multiplied by temperature.",
+  "RT": "The gas constant times temperature; about 0.59 kcal/mol at room temperature.",
+  "kon": "How fast two molecules join, per unit concentration.",
+  "koff": "How fast a bound pair falls apart.",
+  "Residence time": "The average time a ligand stays bound; equal to 1/koff.",
+  "Half-life (t1/2)": "The time for half of the bound pairs to fall apart.",
+  "Occupancy": "The fraction of binding sites that have a ligand on them.",
+  "Langmuir / hyperbolic binding": "The simplest binding curve, for one kind of site that does not interact with others.",
+  "Hill coefficient (nH)": "A number describing how steep a binding curve is; above 1 means sites help each other bind.",
+  "Cooperativity": "When binding at one site makes binding at another site easier or harder.",
+  "Detailed balance": "At equilibrium each step runs forwards and backwards at equal rates, so no net flow goes around a loop.",
+  "Thermodynamic cycle": "A closed loop of steps between states; without an energy source the energy changes around it add up to zero.",
+  "Cheng-Prusoff equation": "A formula that converts an IC50 into a Ki by correcting for the competing substrate or labelled ligand.",
+  "Competitive inhibitor": "A molecule that blocks a target by occupying the same site as the natural partner.",
+  "Enthalpy-entropy compensation": "The observation that a gain in heat released is often cancelled by a loss in disorder, leaving tightness almost unchanged.",
+  "ITC (isothermal titration calorimetry)": "A method that measures the heat of binding directly to get Kd and deltaH.",
+  "SPR (surface plasmon resonance)": "A method that watches molecules bind to a surface in real time to get kon and koff.",
+  "Ligand": "The molecule that binds to a protein or other target.",
+  "Ligand depletion / tight binding": "The situation where so much ligand is bound that the free concentration drops, which breaks the simple formulas.",
+  "Ligand efficiency": "Binding energy divided by the number of non-hydrogen atoms in the ligand.",
+  "Heavy atom": "Any atom in a molecule other than hydrogen.",
+  "Standard state (1 M)": "The reference concentration used so that Kd can be put inside a logarithm.",
+  "Lean / Mathlib": "A computer proof checker and its mathematics library.",
+  "olean file": "A compiled library file that Lean must load before it can check anything."
+ },
+ "recommendations": [
+  "Re-run check.sh on BindingThermo.lean when no other Lean checks are running; the proofs have never been evaluated, so expect possible tactic fixes in cheng_prusoff_binding and half_occupancy_at_Kd.",
+  "For a real test of Kd = koff/kon, use only records where Kd comes from steady-state or solution titration, independent of the kinetic fit (SKEMPI 2.0 method column).",
+  "For Cheng-Prusoff, pull ChEMBL pairs of IC50 and Ki from the same document and target, and count Ki > IC50 violations.",
+  "For compensation, compare the deltaH vs T deltaS slope in BindingDB ITC data against an error-only null, as the 2013 review argues.",
+  "Open the four sources whose PMIDs I got wrong before citing S4, S7 (Sharp), S9 or S10 in any nanopublication."
+ ],
+ "reproduce": [
+  {
+   "what": "Lean check (failed twice here on olean read)",
+   "command_or_url": "bash D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci/tracks/lean/check.sh D:/Users/ashenoy00000/delphi-work/agents4/hv-mol-binding-thermo/BindingThermo.lean",
+   "expected": "ALL CHECKED if the Mathlib cache loads; this run got FAILED, errors=1, axiom-lines=0/8"
+  },
+  {
+   "what": "Kinetic abstracts used for Kd = koff/kon",
+   "command_or_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=ABSTRACT:%22kon%22%20AND%20ABSTRACT:%22koff%22%20AND%20ABSTRACT:%22M-1%20s-1%22%20AND%20ABSTRACT:%22KD%22%20AND%20ABSTRACT:%22surface%20plasmon%20resonance%22&format=json&pageSize=6&resultType=core",
+   "expected": "PMIDs 26673564, 25738566, 9804811, 9829984, 9368077, 9478988 with kon, koff and Kd in the abstracts"
+  },
+  {
+   "what": "ITC abstract used for deltaG = RT ln Kd",
+   "command_or_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=ABSTRACT:%22isothermal%20titration%20calorimetry%22%20AND%20ABSTRACT:%22kcal%2Fmol%22%20AND%20ABSTRACT:%22T%CE%94S%22%20AND%20ABSTRACT:%22%CE%94G%22%20AND%20ABSTRACT:%22Kd%22&format=json&pageSize=6&resultType=core",
+   "expected": "PMID 42906161: deltaG -5.14 kcal/mol, KD 197 uM"
+  },
+  {
+   "what": "Arithmetic",
+   "command_or_url": "python -c \"import math; print(8.4e-4/9.3e4, 4.5e-3/7.7e3, 0.3/1e5, 1.7e-4/3.2e4, 1/1.2e-3/60, math.log(2)/1.2e-3/60, 0.0019872*298.15*math.log(197e-6))\"",
+   "expected": "9.03e-09 5.84e-07 3e-06 5.31e-09 13.89 9.63 -5.055"
+  },
+  {
+   "what": "Hill coefficient range for haemoglobin",
+   "command_or_url": "https://en.wikipedia.org/wiki/Hill_equation_(biochemistry)",
+   "expected": "range 1.7-3.2"
+  }
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents4/hv-mol-binding-thermo/BindingThermo.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents4/hv-mol-binding-thermo/check1.txt",
+  "D:/Users/ashenoy00000/delphi-work/agents4/hv-mol-binding-thermo/check2.txt"
+ ]
+}
