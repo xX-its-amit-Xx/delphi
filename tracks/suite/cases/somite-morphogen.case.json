@@ -1,0 +1,162 @@
+{
+ "schema_version": "1.0.0",
+ "case_id": "cs-somite-morphogen",
+ "title": "Somite clock-and-wavefront and morphogen decay length, zebrafish",
+ "owner_thread": "tracks (session b0ad0789)",
+ "toy": false,
+ "converted_by": "tracks/suite/make-cases.mjs; numbers are the agent's own, times are file times, see the header of that script",
+ "stages": {
+  "statement": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agents/cs-somite-morphogen.json",
+    "sha256": "0a157bb06bcd486f6539b8295ee76677af71285b58b28a1f9a36fd0a5b44cb7a"
+   },
+   "text": "A: somite (segment) length S = wavefront/growth speed v x clock period T. It is stated as model arithmetic in tracks/research/lean/hv-morph-segmentation__ClockWavefront.lean (PASS in CHECKED.txt: seg_length_scales, seg_longer, axis_length); that file proves nothing about temperature. B: steady-state morphogen decay length lambda = sqrt(D/k). tracks/research/lean/hv-mol-morphogen__MorphogenGradient.lean (PASS) only has lifetime_from_length, which assumes lam^2 = D*tau as a hypothesis, plus the exponential profile; it does not derive the law. A new draft, SomiteMorphogenCase.lean in my folder, a",
+   "source": "tracks/research/agents/cs-somite-morphogen.json"
+  },
+  "lean": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/lean/CHECKED.txt",
+    "sha256": "a8a67be9cd85c4e38cd1c6f623d093e2c86ee2500d9211c9da847a91f9ebe412"
+   },
+   "lean_file": {
+    "path": "../../research/lean/cs-somite-morphogen__SomiteMorphogenCase.lean",
+    "sha256": "8697592b3420f5220550a2c512e5930a25f0c563f2cd96a4d7de28187f93ec8f"
+   },
+   "theorems": [
+    "SomiteMorphogenCase.somite_length_temperature_free",
+    "SomiteMorphogenCase.fixed_speed_not_compensated",
+    "SomiteMorphogenCase.steady_state_balance",
+    "SomiteMorphogenCase.fold_error_squares"
+   ],
+   "axioms_allowed": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "named_hypotheses": [],
+   "negative_control": {
+    "description": "a deliberately false numeric instance of the first theorem; rejection is re-checked by tracks/reproduce.mjs",
+    "expected": "fail",
+    "observed": "fail",
+    "evidence": {
+     "path": "../../research/lean/cs-somite-morphogen__SomiteNegativeControl.lean",
+     "sha256": "2493914b3bcc97382299151c8be6a829df9b3e04b04e74aa6b588bd6ebd16558"
+    }
+   }
+  },
+  "prereg": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agent-scripts/cs-somite-morphogen/prereg.md",
+    "sha256": "f7402e1159dcc74df8eba946aaa7f26d745aacd5a408876605ffc1170bc8d577"
+   },
+   "hashed_utc": "2026-11-14T04:22:07Z",
+   "dated_by": "self-attested",
+   "hashed_utc_source": "last-modified time of the original prereg file (includes any amendment appended to it)",
+   "written_utc_claimed_in_file": "2026-11-14T04:17:29Z"
+  },
+  "holdout": {
+   "status": "done",
+   "evidence": {
+    "path": "evidence/leak-gate.log",
+    "sha256": "f1068c7937c69d2cc9bc9f32ceb049c7392bc10bf5b14add7f03bf976b62fd6c"
+   },
+   "holdout_set": "prereg.md was written at 2026-11-14T04:17:29Z (shell UTC) before any paper was opened. Rule: a record is held out iff int(sha256(id)[:8],16) % 3 == 0, with the smallest-hash record as fallback. An amendment, timestamped before any fit, replaced the planned temperature hold-out because the Schroter table could not be obtained. A: whole embryos from the Zhang 2022 WT-growth sheet; 5 of 8 embryos held out (65 of 104 points), 3 for development (39 points). B: whole morphogen records; 3 of 5 held out",
+   "frozen_before_utc": "2026-11-14T04:17:29Z",
+   "frozen_source": "time written in the prereg header by the agent (self-attested); the split rule is a hash of the unit id, so it cannot be tuned",
+   "n_holdout": 5,
+   "n_unit": "embryos",
+   "min_n_for_verdict": 10,
+   "min_n_source": "convention of make-cases.mjs, set after the runs",
+   "leak_gate_exit": 0
+  },
+  "validation": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agent-scripts/cs-somite-morphogen/results.json",
+    "sha256": "59a5d19fc73c7ea77dc08a9fd96410e378c7488891e3992d363a82aee706ae34"
+   },
+   "command": "see tracks/research/agent-scripts/cs-somite-morphogen/",
+   "data_used": [
+    "Zhang et al. 2022 Commun Biol source data xlsx (sheet WT-growth: cumulative tail growth for 8 embryos at somite stages 8 to 20, 27 C) plus the fits quoted in its text. Muller et al. 2012 Science (D by FRAP, clearance k for Squint and Cyclops). Wang et al. 2016 eLife (measured Nodal gradient lengths)"
+   ]
+  },
+  "performance": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agent-scripts/cs-somite-morphogen/results.json",
+    "sha256": "59a5d19fc73c7ea77dc08a9fd96410e378c7488891e3992d363a82aee706ae34"
+   },
+   "metric": "mean absolute log10 error of somite size on held-out embryos, nothing fitted",
+   "value": 0.126,
+   "lower_is_better": true,
+   "computed_utc": "2026-11-14T04:22:32Z",
+   "computed_utc_source": "last-modified time of the original final results file",
+   "evaluated_on": "holdout",
+   "verdict": "underpowered",
+   "verdict_basis": "Five embryos from one sheet at one temperature. The morphogen half of the case has 3 held-out records and is not a test.",
+   "baseline": {
+    "name": "constant development mean",
+    "value": 0.201,
+    "evidence": {
+     "path": "../../research/agent-scripts/cs-somite-morphogen/results.json",
+     "sha256": "59a5d19fc73c7ea77dc08a9fd96410e378c7488891e3992d363a82aee706ae34"
+    }
+   },
+   "broken_input_control": {
+    "description": "labels shuffled: error rose to 0.333",
+    "expected": "fail",
+    "observed": "fail",
+    "evidence": {
+     "path": "../../research/agent-scripts/cs-somite-morphogen/results.json",
+     "sha256": "59a5d19fc73c7ea77dc08a9fd96410e378c7488891e3992d363a82aee706ae34"
+    }
+   }
+  },
+  "what_was_wrong": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agents/cs-somite-morphogen.json",
+    "sha256": "0a157bb06bcd486f6539b8295ee76677af71285b58b28a1f9a36fd0a5b44cb7a"
+   },
+   "kind_assigned_by": "keyword rule in make-cases.mjs",
+   "items": [
+    {
+     "what": "Data: the Schroter 2008 per-temperature period and length table was not obtainable (Wiley returned 403, the paper is not in PMC), and Kicheva 2007 and Yu 2009 are not open. The task's planned temperature hold-out for A and the Dpp/Wg/Fgf8-2009 records for B were therefore not done. Soroldoni 2014 and mouse, snake and frog data were not reached in the time.",
+     "kind": "data-gap"
+    },
+    {
+     "what": "Law A: S = v*T is only non-trivial if v and T are measured independently. At 27 C the published fits give 25.5 um per somite, while raw tail growth is 27.5 to 32.7 um per somite in held-out embryos. The same paper quotes PSM shrinkage of 24 um per somite, so 'v' is ambiguous (tail growth vs PSM shrinkage vs wavefront), and the checked Lean file does not say which.",
+     "kind": "assumption-mismatch"
+    },
+    {
+     "what": "Law A across temperature: the temperature cancellation is true by construction of the two published fits (both proportional to T - 14.4). I did not test it on raw per-temperature data, so it is not a held-out result.",
+     "kind": "assumption-mismatch"
+    },
+    {
+     "what": "Law B: with FRAP D and measured k, the law over-predicts the Nodal gradient length 4 to 6 times; with FCS D of about 60 um2/s it would be over 20 times. The single-D, single-k formula ignores binding to receptors and uses whichever D the assay gives. For Fgf8, sqrt(D) scaling predicted a 27% shortening where 11% was measured.",
+     "kind": "assumption-mismatch"
+    },
+    {
+     "what": "Earlier agent work: I did NOT read hv-morph-segmentation.json or hv-mol-morphogen.json in tracks/research/agents (only their sizes were checked), so I cannot report errors in them. That stage of the task is not done.",
+     "kind": "assumption-mismatch"
+    },
+    {
+     "what": "Earlier Lean: MorphogenGradient.lean takes lam^2 = D*tau as a hypothesis and never derives it; ClockWavefront.lean has no temperature statement.",
+     "kind": "assumption-mismatch"
+    },
+    {
+     "what": "My run: (a) I fetched the wrong PMC id once (an unrelated mussel paper) and discarded it. (b) The pooled mean of the WT-growth sheet (about 29.5 um per somite) and the Nodal values were visible before the amendment; this is disclosed in prereg.md. (c) The combined held_all block for B was added after seeing the first results. (d) The B hold-out has n=3 and its shuffle control is inconclusive. (e) Nodal D and k come from Muller 2012 and lambda from Wang 2016, different labs and constructs. (f) Th",
+     "kind": "underpowered"
+    }
+   ]
+  },
+  "nanopub_draft": {
+   "status": "not_done",
+   "reason": "No nanopublication draft is written until a case passes the gate."
+  }
+ }
+}

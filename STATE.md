@@ -1,6 +1,6 @@
 # STATE — DELPHI atlas + six tracks (antigravity session b0ad0789)
 
-Read this first. Updated 2026-11-13 (late).
+Read this first. Updated 2026-11-15.
 
 ## What this session owns
 - `sim-engine/scales/atlas/`, `sim-engine/scales/micro/division.mjs`, `sim-engine/scales/molecular/`
@@ -26,6 +26,7 @@ Read this first. Updated 2026-11-13 (late).
 - Bundle: `node tracks/build.mjs`. Render check: `node sim-engine/scales/atlas/shoot.mjs --page tracks/`
 - Everything: `node tracks/reproduce.mjs [--online] [--only lean,print,suite]`
 - Lean: `bash tracks/lean/check.sh <file>` (v2, strict) and `bash tracks/lean/check.sh --probes`
+- Cases: `node tracks/suite/make-cases.mjs [--expect|--record]` (cs-* runs -> `tracks/suite/cases/*.case.json` -> gate); `node tracks/suite/rerun-cases.mjs` (re-executes six case scripts in a scratch copy)
 - Print files: `python -I tracks/print/make_poc.py && python -I tracks/print/test_poc.py [--fail-once]`
 - Holdout: `node holdout/check-leaks.mjs tracks`; `node sim-engine/scales/atlas/holdout-html-scan.mjs`
 - Deploy: `node dashboard/predeploy.mjs` then `cd dashboard && npx wrangler deploy`. Live: https://delphi-mission-control.ashenoy000.workers.dev/blueprint3d/studio-live/tracks/
@@ -33,18 +34,19 @@ Read this first. Updated 2026-11-13 (late).
 ## Deliverables of 2026-11-13 (dashboard section "Deliverables")
 1. PRINT: `tracks/print/make_poc.py` -> `studio-live/tracks/print/{single-print-plate,active-plate,passive-plate,bonding-jig}.stl` + manifest. Thicknesses doubled to meet Formlabs' 0.4 mm supported-wall minimum. NOT met: Form Now's 1.5 mm rule for Flexible 80A. Nothing printed.
 2. PROPOSAL: `tracks/proposals/mamou-mani-biomaterial.md` (soybean-oil resin + polysaccharide, one face dipped in citric/tannic acid; three-stage contract). Hypothesis; nobody contacted; partner name unconfirmed.
-3. SUITE: `check.sh` v2 closes four holes (no toolchain, sorry without audit line, hand-written axiom, empty file); probes in `tracks/lean/probes/`. `tracks/suite/suite-gate.mjs` + schema (self-test 29/29) is NOT yet run on real cases. Eight `cs-*` cases have validation / holdout / performance / what-was-wrong (bundle `deliverables.cases`).
+3. SUITE: `check.sh` v2 closes four holes (no toolchain, sorry without audit line, hand-written axiom, empty file); probes in `tracks/lean/probes/`. `tracks/suite/suite-gate.mjs` + schema (self-test 29/29) now runs on the eight real cases: 4 earned (enhancer, binding, crosslink, somite), 4 not (fish, fire, hygromorph: prereg file last changed at or after the result; xenobots: broken-input control did not fail). Verdicts pinned in `cases/expected.json`. Times are file mtimes of the agents' originals (self-attested); min n = 10 units is a convention set after the runs. Eight `cs-*` cases have validation / holdout / performance / what-was-wrong (bundle `deliverables.cases`).
 
-## Case results worth remembering (each is the agent's own run; no second re-run yet)
+## Case results worth remembering (six re-executed 2026-11-15, all numbers identical; enhancer and binding not re-run; no independent replication)
 - Enhancer rank: multiplicative model held-out R2 0.835; exact no-reversal law FALSIFIED (1,051 significant flips, about 25 expected) but the violation is 0.039% of comparisons.
 - Binding affinity: ligand-only model on held-out targets r 0.164, worse than a constant in RMSE; noise ceiling is too unstable to diagnose leakage.
 - Fire ignition: bound direction holds 108/108 held-out, but as a predictor the law is WORSE than both baselines.
 - Xenobots: energy-store lifetime bound FAILED out of sample (0/4; held-out bots are fed in medium, so the closed-store hypothesis is false).
-- Hygromorph: 2 held-out records only; 9 of 12 development records sit ABOVE the 3/2 ceiling (inferred strain, wide strips). Unresolved; settle on our own coupons.
+- Hygromorph: 2 held-out records only; 9 of 12 development records sit ABOVE the 3/2 ceiling (inferred strain, wide strips). All 14 records are under the proved wide-plate ceiling 9/4 (max 2.06; post-hoc consistency check, `tracks/scripts/check-hygromorph-plate-ceiling.py`). Quote 9/4 until our own narrow coupons are measured.
 - Crosslink swelling: 9/11 held-out series right sign, effective n about 3-4. Fish: Strouhal band holds 80% held-out; larval zebrafish sit at 0.72-2.5.
 - Lean added and passing: crosslinker window (14 thm), xenobot laws (13), print structure (21), fire certificate V2 (11; v1's three eliminations were wrong-way), binding thermo fixed (9).
 
 ## Known gaps
+- Public bundle is scrubbed of machine paths at write time (build.mjs); committed agent JSONs still contain them.
 - Fire v1 file `FireCoatingCertificate.lean` is still in the folder; quote V2 only.
 - 29 theorems in four older files have no axiom line of their own (check.sh prints a NOTE).
 - Pre-registration times in `design-validation/` and `validation/` are self-attested (not ours to change; reported).
@@ -52,7 +54,7 @@ Read this first. Updated 2026-11-13 (late).
 - Issues #17-#42: 1 resolved (#27), 12 partly, 11 need Amit, 2 blocked. Drafts in `tracks/research/agent-scripts/is-fix-*/`; no comments posted.
 
 ## What is running
-- Nothing after this turn's Lean re-run finishes. No cluster jobs, no GPUs. Explorer/Discovery still decline the SSH key.
+- Nothing. No cluster jobs, no GPUs. Explorer/Discovery still decline the SSH key.
 
 ## Standing constraints
 - Frozen holdout: nothing from the held-out clade (roster in holdout/split.json) in any file, mesh, manifest or log. Never add allowlist entries. Agents may download tables that contain it: keep raw downloads out of the repo.

@@ -1,0 +1,126 @@
+{
+ "schema_version": "1.0.0",
+ "case_id": "cs-fire-ignition",
+ "title": "Green fire-retardant coatings: thermally-thick time to ignition",
+ "owner_thread": "tracks (session b0ad0789)",
+ "toy": false,
+ "converted_by": "tracks/suite/make-cases.mjs; numbers are the agent's own, times are file times, see the header of that script",
+ "stages": {
+  "statement": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agents/cs-fire-ignition.json",
+    "sha256": "d88e465add298f56eeceb4553b1082864ae2c9895eb7563878bd3e8aeebbfc2d"
+   },
+   "text": "Law under test: t_ig = (pi/4) * k*rho*c * ((T_ig - T0)/q)^2 for a thermally thick solid under constant heat flux q with no surface loss. It implies (a) real t_ig is at or above this value, (b) t_ig scales as q^-2 so 1/sqrt(t_ig) is linear in q, and (c) t_ig is proportional to k*rho*c. The checked Lean file tracks/research/lean/FireCoatingCertificate.lean defines it as tigThick and proves tigThick_antitone_flux and thick_ignition_eliminates. The latter only shows the formula value is below a required time, which is not the safe direction.",
+   "source": "tracks/research/agents/cs-fire-ignition.json"
+  },
+  "lean": {
+   "status": "not_done",
+   "reason": "No Lean file was written for this case in the run; the law is checked against data only."
+  },
+  "prereg": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agent-scripts/cs-fire-ignition/prereg.md",
+    "sha256": "b9e20ed682e941c1c0ee70061055d60f056c0cdc08e36868d6ef3d37d5a7edf2"
+   },
+   "hashed_utc": "2026-11-14T04:21:48Z",
+   "dated_by": "self-attested",
+   "hashed_utc_source": "last-modified time of the original prereg file (includes any amendment appended to it)",
+   "written_utc_claimed_in_file": "2026-11-14T04:20:29Z"
+  },
+  "holdout": {
+   "status": "done",
+   "evidence": {
+    "path": "evidence/leak-gate.log",
+    "sha256": "f1068c7937c69d2cc9bc9f32ceb049c7392bc10bf5b14add7f03bf976b62fd6c"
+   },
+   "holdout_set": "Rule written to prereg.md at 2026-11-14T04:20:29Z (shell clock, UTC), before any analysis: a whole material is held out if sha256(material directory name) mod 4 == 0. That gave 13 held-out materials of 56 eligible; 12 of them had ignited records, 108 records in all, plus 17 held-out records with no ignition recorded. The development part was 43 materials and 393 records. Held-out cone outcomes were read once, in the final run. Before the rule was written I had seen one outcome value (ABS, 25 kW/",
+   "frozen_before_utc": "2026-11-14T04:20:29Z",
+   "frozen_source": "time written in the prereg header by the agent (self-attested); the split rule is a hash of the unit id, so it cannot be tuned",
+   "n_holdout": 12,
+   "n_unit": "materials",
+   "min_n_for_verdict": 10,
+   "min_n_source": "convention of make-cases.mjs, set after the runs",
+   "leak_gate_exit": 0
+  },
+  "validation": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agent-scripts/cs-fire-ignition/results_dev.json",
+    "sha256": "2be5eb7e34df493ad5b6692a16016078dc009496c8e1bb4f1a9a51948faa5f51"
+   },
+   "command": "see tracks/research/agent-scripts/cs-fire-ignition/",
+   "data_used": [
+    "FSRI Materials and Products Database (GitHub ulfsri/fsri_materials_database, branch main), fetched during this run: 1588 small files, 12 MB. Cone-calorimeter scalar files give heat flux and time to ignition; heat-flow-meter files give conductivity and volumetric heat capacity of unconditioned sample"
+   ]
+  },
+  "performance": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agent-scripts/cs-fire-ignition/results_final.json",
+    "sha256": "efb931ba71611ffb1b6af169d144fd72d4fe8be6d0024f93cfda2395cebb9dcd"
+   },
+   "metric": "RMSE of log10 time to ignition on held-out materials",
+   "value": 0.655,
+   "lower_is_better": true,
+   "computed_utc": "2026-11-14T04:21:48Z",
+   "computed_utc_source": "last-modified time of the original final results file",
+   "evaluated_on": "holdout",
+   "verdict": "fail",
+   "verdict_basis": "As a predictor the law is worse than both baselines. As a one-sided bound it held in 108 of 108 records.",
+   "baseline": {
+    "name": "flux-scaling-only fit, RMSE",
+    "value": 0.414,
+    "evidence": {
+     "path": "../../research/agent-scripts/cs-fire-ignition/results_final.json",
+     "sha256": "efb931ba71611ffb1b6af169d144fd72d4fe8be6d0024f93cfda2395cebb9dcd"
+    }
+   },
+   "broken_input_control": {
+    "description": "thermal inertia shuffled across materials: RMSE rose to 0.839, worse in 98% of 200 permutations",
+    "expected": "fail",
+    "observed": "fail",
+    "evidence": {
+     "path": "../../research/agent-scripts/cs-fire-ignition/results_final.json",
+     "sha256": "efb931ba71611ffb1b6af169d144fd72d4fe8be6d0024f93cfda2395cebb9dcd"
+    }
+   }
+  },
+  "what_was_wrong": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agents/cs-fire-ignition.json",
+    "sha256": "d88e465add298f56eeceb4553b1082864ae2c9895eb7563878bd3e8aeebbfc2d"
+   },
+   "kind_assigned_by": "keyword rule in make-cases.mjs",
+   "items": [
+    {
+     "what": "The law as an absolute predictor: with room-temperature properties it underpredicts ignition time by a large factor (implied T_ig about 940 C), and t_ig scales with k*rho*c to the power of about 0.5, not",
+     "kind": "assumption-mismatch"
+    },
+    {
+     "what": "It is usable only as a lower bound.",
+     "kind": "assumption-mismatch"
+    },
+    {
+     "what": "The Lean file: thick_ignition_eliminates and thin_ignition_eliminates claim to prove ignition before a required time, but the formula is a lower bound on real ignition time, so they certify nothing physical; the earlier critique in lf-verify-lean.json was right, and it had not been checked against data or run through Lean. That critique also could not open a source for the formula; I did not open one either.",
+     "kind": "data-gap"
+    },
+    {
+     "what": "The data: no ignition temperatures (the files named Ignition_Temp_Properties hold only k, c and density), so the bound was tested with an assumed 250 C floor taken from memory. Only three flux levels per material, so thick and thin forms cannot be separated. Properties are measured near 20 to 45 C, not at ignition temperature. Many materials are foams, fabrics and thin sheets where the thick assumption is doubtful; I did not filter by thickness.",
+     "kind": "assumption-mismatch"
+    },
+    {
+     "what": "My run: 20 records with time to ignition of 0 (3 dev, 17 held-out) were dropped as non-ignition without checking whether 0 means no ignition or not recorded. One of the 13 held-out materials had no ignited record. The pre-registered label-swap control for the linearity test was vacuous (a midpoint interpolation is unchanged by it) and was replaced before the final run by the geometric-mean baseline. The planned test with measured ignition temperature was dropped. Replicates of one material are n",
+     "kind": "underpowered"
+    }
+   ]
+  },
+  "nanopub_draft": {
+   "status": "not_done",
+   "reason": "No nanopublication draft is written until a case passes the gate."
+  }
+ }
+}

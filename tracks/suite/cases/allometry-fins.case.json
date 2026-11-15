@@ -1,0 +1,138 @@
+{
+ "schema_version": "1.0.0",
+ "case_id": "cs-allometry-fins",
+ "title": "Fin locomotion: Strouhal band and Bainbridge line, whole species held out",
+ "owner_thread": "tracks (session b0ad0789)",
+ "toy": false,
+ "converted_by": "tracks/suite/make-cases.mjs; numbers are the agent's own, times are file times, see the header of that script",
+ "stages": {
+  "statement": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agents/cs-allometry-fins.json",
+    "sha256": "01aae5f8d94909c2f496abe9f314abd30a5328fc268457387a6829e68980e8bf"
+   },
+   "text": "A: cruising swimmers have St = f*A/U in [0.2, 0.4], with A the peak-to-peak tail amplitude. B: tail-beat frequency is linear in length-specific speed, f = a + b*(U/L), with the Bainbridge form f = 4/3 + (4/3)*U/L. The checked repo file tracks/research/lean/hv-morph-fin-locomotion__FinLocomotion.lean (PASS in CHECKED.txt) states St = a*k and only bounds St to [0.15, 0.5] from the kinematic windows; it does not state the 0.2-0.4 band or statement B. My new file StrouhalBainbridge.lean (checked, PASS, with a rejected false variant) proves that B plus a fixed amplitude fraction alpha gives St = al",
+   "source": "tracks/research/agents/cs-allometry-fins.json"
+  },
+  "lean": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/lean/CHECKED.txt",
+    "sha256": "a8a67be9cd85c4e38cd1c6f623d093e2c86ee2500d9211c9da847a91f9ebe412"
+   },
+   "lean_file": {
+    "path": "../../research/lean/cs-allometry-fins__StrouhalBainbridge.lean",
+    "sha256": "4676ba76cf4b0dee5eedb62d3417dbb4f0196dbd4a58020fa2774be6aee39ecd"
+   },
+   "theorems": [
+    "StrouhalBainbridge.strouhal_of_bainbridge",
+    "StrouhalBainbridge.strouhal_decreasing",
+    "StrouhalBainbridge.strouhal_floor",
+    "StrouhalBainbridge.band_upper_iff"
+   ],
+   "axioms_allowed": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "named_hypotheses": [],
+   "negative_control": {
+    "description": "a deliberately false numeric instance of the first theorem; rejection is re-checked by tracks/reproduce.mjs",
+    "expected": "fail",
+    "observed": "fail",
+    "evidence": {
+     "path": "../../research/lean/cs-allometry-fins__StrouhalNegativeControl.lean",
+     "sha256": "5295d3d640ce12a4ae1e539aff26a66a4b23e5bcd3b202739df05bd33e7a334b"
+    }
+   }
+  },
+  "prereg": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agent-scripts/cs-allometry-fins/prereg.md",
+    "sha256": "24d71c169155efc5cc7769a33efd298225180b681fab3a0532229a5351b4060e"
+   },
+   "hashed_utc": "2026-11-14T04:20:32Z",
+   "dated_by": "self-attested",
+   "hashed_utc_source": "last-modified time of the original prereg file (includes any amendment appended to it)",
+   "written_utc_claimed_in_file": "2026-11-14T04:17:22Z"
+  },
+  "holdout": {
+   "status": "done",
+   "evidence": {
+    "path": "evidence/leak-gate.log",
+    "sha256": "f1068c7937c69d2cc9bc9f32ceb049c7392bc10bf5b14add7f03bf976b62fd6c"
+   },
+   "holdout_set": "Rule written to prereg.md at 2026-11-14T04:17:22Z (shell clock), before any kinematics file was downloaded: a species is held out iff sha256(lower-cased binomial) mod 5 == 0. Result: 13 of 77 species held out, 230 of 1208 records. For statement A, which needs amplitude, 45 held-out records from 9 species. The frozen clade and anything not on the class allow-list were dropped unread. The held-out part was evaluated once.",
+   "frozen_before_utc": "2026-11-14T04:17:22Z",
+   "frozen_source": "time written in the prereg header by the agent (self-attested); the split rule is a hash of the unit id, so it cannot be tuned",
+   "n_holdout": 13,
+   "n_unit": "species",
+   "min_n_for_verdict": 10,
+   "min_n_source": "convention of make-cases.mjs, set after the runs",
+   "leak_gate_exit": 0
+  },
+  "validation": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agent-scripts/cs-allometry-fins/results_dev.json",
+    "sha256": "0ac67f16d96852e93f674adc9af00c20adf32bae5c6fe3bc62d7618a04084ba7"
+   },
+   "command": "see tracks/research/agent-scripts/cs-allometry-fins/",
+   "data_used": [
+    "Di Santo et al. 2021 Megakine.csv (151 clips, 46 species, with TBF, tail amplitude, speed and St; Zenodo record 5646507). Sanchez-Rodriguez et al. 2023 Nat Commun supplementary sheet 'L f U' (1217 rows; 1060 kept after the allow-list and completeness filter; fetched from Europe PMC PMC10492801). Lar"
+   ]
+  },
+  "performance": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agent-scripts/cs-allometry-fins/results_final.json",
+    "sha256": "8daf4e5a6432e350593ed14eeca6f1bce247f4407b80f6b3128152f1aff260b1"
+   },
+   "metric": "fraction of held-out records with Strouhal number inside 0.2 to 0.4",
+   "value": 0.8,
+   "lower_is_better": false,
+   "computed_utc": "2026-11-14T04:20:32Z",
+   "computed_utc_source": "last-modified time of the original final results file",
+   "evaluated_on": "holdout",
+   "verdict": "pass",
+   "verdict_basis": "36 of 45 records, 9 species with amplitude data, all 9 species means inside. Larval zebrafish, a separate stratum, sit far outside.",
+   "baseline": {
+    "name": "band re-tuned on development data (0.216 to 0.432)",
+    "value": 0.71,
+    "evidence": {
+     "path": "../../research/agent-scripts/cs-allometry-fins/results_final.json",
+     "sha256": "8daf4e5a6432e350593ed14eeca6f1bce247f4407b80f6b3128152f1aff260b1"
+    }
+   },
+   "broken_input_control": {
+    "description": "tail-beat frequencies shuffled: fraction fell to 0.26",
+    "expected": "fail",
+    "observed": "fail",
+    "evidence": {
+     "path": "../../research/agent-scripts/cs-allometry-fins/results_final.json",
+     "sha256": "8daf4e5a6432e350593ed14eeca6f1bce247f4407b80f6b3128152f1aff260b1"
+    }
+   }
+  },
+  "what_was_wrong": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agents/cs-allometry-fins.json",
+    "sha256": "01aae5f8d94909c2f496abe9f314abd30a5328fc268457387a6829e68980e8bf"
+   },
+   "kind_assigned_by": "keyword rule in make-cases.mjs",
+   "items": [
+    {
+     "what": "The law: the 0.2-0.4 band is not universal. About 1 in 5 adult cruising records fall outside; carangiform swimmers in the development set are inside only 47% of the time; larval zebrafish sit at 0.72-2.5; the one adult zebrafish clip is at 0.71. St also falls with speed (Spearman -0.40 development, -0.33 held-out), so a fixed band ignores a real trend. For B, the 4/3 slope holds within 3%, but the intercept is 0.53 Hz across all swimmers, not 4/3, and fitting gives almost no gain over the 1958 l",
+     "kind": "underpowered"
+    }
+   ]
+  },
+  "nanopub_draft": {
+   "status": "not_done",
+   "reason": "No nanopublication draft is written until a case passes the gate."
+  }
+ }
+}

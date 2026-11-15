@@ -233,6 +233,10 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     print: readJson(path.join(OUT_DASH, 'print', 'manifest.json')),
     proposal_md: txt(path.join(HERE, 'proposals', 'mamou-mani-biomaterial.md')),
     cases: fleet.filter((a) => a.slug.startsWith('cs-') && a.suite && a.suite.performance).map((a) => ({ slug: a.slug, topic: a.topic, ...a.suite })),
+    // the suite gate's verdict on each real case (tracks/suite/make-cases.mjs); "pass" means the claim was earned, not that the law held
+    gate: (() => { const g = readJson(path.join(HERE, 'suite', 'cases', 'gate-result.json')); if (!g?.result?.results) return null;
+      return Object.fromEntries(g.result.results.map((r) => { const c = readJson(path.join(HERE, 'suite', 'cases', r.file)); const pf = c?.stages?.performance ?? {}, h = c?.stages?.holdout ?? {};
+        return [r.id, { errors: r.errors, verdict: pf.verdict ?? null, basis: pf.verdict_basis ?? null, n: h.n_holdout ?? null, unit: h.n_unit ?? null, min_n: h.min_n_for_verdict ?? null }]; })); })(),
     // a Lean file counts only if tracks/lean/check.sh said ALL CHECKED when the lead session ran it
     lean_checked: leanChecked,
   };
@@ -263,7 +267,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     ],
   };
   if (!corpus.error) fs.writeFileSync(path.join(OUT_REPO, 'buehler-corpus.json'), JSON.stringify(corpus, null, 1));
-  fs.writeFileSync(path.join(OUT_DASH, 'tracks.json'), JSON.stringify(bundle));
+  // the public bundle carries no machine paths (agents quote their working folders; the account name is in them)
+  fs.writeFileSync(path.join(OUT_DASH, 'tracks.json'), JSON.stringify(bundle).replace(/[A-Z]:(\/|\\\\)Users(\/|\\\\)[^/\\"\s]+/g, '<home>'));
   console.log(`corpus: ${corpus.error ?? `${corpus.relevant} relevant of ${corpus.works_read_by_agents} read, ${corpus.rejected} rejected, quotes ${corpus.quotes_checked - corpus.quotes_failed}/${corpus.quotes_checked} verified`}`);
   if (!corpus.error) console.log(`  per track: ${Object.entries(corpus.per_track).map(([k, v]) => `T${k}=${v}`).join(' ')}`);
   for (const t of tracks) console.log(`track ${t.n} ${t.slug.padEnd(12)} ${t.status}`);

@@ -1,0 +1,142 @@
+{
+ "schema_version": "1.0.0",
+ "case_id": "cs-enhancer-rank",
+ "title": "Enhancer x promoter multiplicativity and rank-order flips (Bergman 2022 ExP STARR-seq, K562)",
+ "owner_thread": "tracks (session b0ad0789)",
+ "toy": false,
+ "converted_by": "tracks/suite/make-cases.mjs; numbers are the agent's own, times are file times, see the header of that script",
+ "stages": {
+  "statement": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agents/cs-enhancer-rank.json",
+    "sha256": "f31f96d6ebb62de515a638a623739bd087f3c6677cd663b50c3e75f8de7b0cf6"
+   },
+   "text": "Law: log2 activity(p,e) = mu + a_e + b_p, i.e. activity = enhancer strength x promoter strength. Bound: tracks/research/lean/q1-theory-lean__EnhancerPromoterRank.lean (EPSpec.no_reversal_of_monotone) and q1-mechanisms__RankSaturation.lean (Q1.no_reversal) state that any model f(p,e) = h_p(a_e) with monotone h_p (multiplicative, log-additive, promoter-specific saturation) permits zero true strict rank reversals, so reversals beyond measurement noise falsify the whole class. I read both files but did not re-compile them in this run.",
+   "source": "tracks/research/agents/cs-enhancer-rank.json"
+  },
+  "lean": {
+   "status": "not_done",
+   "reason": "No Lean file was written for this case in the run; the law is checked against data only."
+  },
+  "prereg": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agent-scripts/cs-enhancer-rank/prereg.md",
+    "sha256": "26e40367dbba60e3fcefdcfed9df3e57f843df213a6d8067b6a55de1bee77d93"
+   },
+   "hashed_utc": "2026-11-14T04:19:44Z",
+   "dated_by": "self-attested",
+   "hashed_utc_source": "last-modified time of the original prereg file (includes any amendment appended to it)",
+   "written_utc_claimed_in_file": "2026-11-14T04:18:00Z"
+  },
+  "holdout": {
+   "status": "done",
+   "evidence": {
+    "path": "evidence/leak-gate.log",
+    "sha256": "f1068c7937c69d2cc9bc9f32ceb049c7392bc10bf5b14add7f03bf976b62fd6c"
+   },
+   "holdout_set": "Rule written to prereg.md at 2026-11-14T04:18:00Z (shell date -u), before any activity value was aggregated. (1) Whole enhancers with int(sha256(enhancer_id)[:8],16) % 5 == 0 are held out: 207 of 1014 enhancer ids, 169,655 cells. (2) Among the other enhancers, cells with sha256(promoter|enhancer) % 5 == 0 are held out: 130,641 cells (113,011 after the frozen quality filter). Development: 525,709 cells. Held-out cells were written to a separate file that only the final stage reads; the final stag",
+   "frozen_before_utc": "2026-11-14T04:18:00Z",
+   "frozen_source": "time written in the prereg header by the agent (self-attested); the split rule is a hash of the unit id, so it cannot be tuned",
+   "n_holdout": 207,
+   "n_unit": "enhancers",
+   "min_n_for_verdict": 10,
+   "min_n_source": "convention of make-cases.mjs, set after the runs",
+   "leak_gate_exit": 0
+  },
+  "validation": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agent-scripts/cs-enhancer-rank/dev_results.json",
+    "sha256": "a6a36ecfbf54e7d4d0afbffe51a4a1e1751a9611dfe115317269c17e6b899c9a"
+   },
+   "command": "see tracks/research/agent-scripts/cs-enhancer-rank/",
+   "data_used": [
+    ""
+   ]
+  },
+  "performance": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agent-scripts/cs-enhancer-rank/final_results.json",
+    "sha256": "ba762653180480c9025edacd992c4399cd5735a3ee28ccbb0d7b879a5a3a4706"
+   },
+   "metric": "held-out R2 of the multiplicative enhancer x promoter model",
+   "value": 0.835,
+   "lower_is_better": false,
+   "computed_utc": "2026-11-14T04:20:26Z",
+   "computed_utc_source": "last-modified time of the original final results file",
+   "evaluated_on": "holdout",
+   "verdict": "fail",
+   "verdict_basis": "The law as stated allows zero rank reversals. 1,051 significant reversals were seen against about 25 expected from noise. The approximate model still explains 83.5% of held-out variance.",
+   "baseline": {
+    "name": "promoter-only model, held-out R2",
+    "value": 0.567,
+    "evidence": {
+     "path": "../../research/agent-scripts/cs-enhancer-rank/final_results.json",
+     "sha256": "ba762653180480c9025edacd992c4399cd5735a3ee28ccbb0d7b879a5a3a4706"
+    }
+   },
+   "broken_input_control": {
+    "description": "enhancer labels shuffled before fitting: R2 fell to 0.565",
+    "expected": "fail",
+    "observed": "fail",
+    "evidence": {
+     "path": "../../research/agent-scripts/cs-enhancer-rank/final_results.json",
+     "sha256": "ba762653180480c9025edacd992c4399cd5735a3ee28ccbb0d7b879a5a3a4706"
+    }
+   }
+  },
+  "what_was_wrong": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agents/cs-enhancer-rank.json",
+    "sha256": "f31f96d6ebb62de515a638a623739bd087f3c6677cd663b50c3e75f8de7b0cf6"
+   },
+   "kind_assigned_by": "keyword rule in make-cases.mjs",
+   "items": [
+    {
+     "what": "In the law: exact multiplicativity, and the whole monotone single-strength class, is falsified, since 1,051 significant reversals were seen where 0 are allowed and about 25 are expected from noise. The violation is small: 0.039% of well-measured comparisons, with 83.5% of held-out variance explained.",
+     "kind": "assumption-mismatch"
+    },
+    {
+     "what": "In my own run: the first noise model (SD across the 4 RNA replicates) was wrong because the replicates share the same barcodes; it gave a spurious 7.7% flip rate in the development rehearsal. It was fixed by a timestamped amendment before the held-out data were read.",
+     "kind": "bug"
+    },
+    {
+     "what": "The amended barcode noise is slightly too large: the null predicts 19.5% raw discordance vs 17.9% observed, and the additive residual SD of 0.85 is below the median SE of 0.97. The z>3 test is therefore conservative and the true flip rate may be somewhat higher.",
+     "kind": "post-hoc"
+    },
+    {
+     "what": "The null assumes Gaussian noise, and heavy-tailed barcode outliers could produce part of the 42-fold excess; I did not test this.",
+     "kind": "assumption-mismatch"
+    },
+    {
+     "what": "Earlier agent work: q1-data reported 26.5% reversals among doubly-significant pairs on the mouse GSE186265 data using 'pooled replicate SD' as noise. That is the same class of noise model that failed here, so that figure may be inflated; I did not re-test it.",
+     "kind": "assumption-mismatch"
+    },
+    {
+     "what": "Earlier agent work: q1-critic's arccos(rho)/pi null was only simulated, and q1-literature relayed R^2 = 0.82 without a held-out re-computation; this run is the first held-out check and it agrees (0.835).",
+     "kind": "assumption-mismatch"
+    },
+    {
+     "what": "In the Lean files: the theorem is about noise-free values, and Q1.no_reversal is over natural numbers, so it gives no quantitative noise allowance; the comparison to data needs the simulated null, which is outside Lean.",
+     "kind": "assumption-mismatch"
+    },
+    {
+     "what": "In the data and pipeline: about 6 barcodes per cell on average and many low-count cells; I used raw reads with pseudocount 1, not the authors' weighted reads or Poisson model; scrambled control sequences were kept as ordinary enhancers and promoters; 1014 enhancer ids, not 1000; flips were tested only on the 50 promoters with most DNA input, so promoter-class effects among weak promoters are not covered.",
+     "kind": "assumption-mismatch"
+    },
+    {
+     "what": "The null used only 10 simulations. No simulated data were used for any performance number.",
+     "kind": "assumption-mismatch"
+    }
+   ]
+  },
+  "nanopub_draft": {
+   "status": "not_done",
+   "reason": "No nanopublication draft is written until a case passes the gate."
+  }
+ }
+}

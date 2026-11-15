@@ -1,0 +1,163 @@
+{
+ "schema_version": "1.0.0",
+ "case_id": "cs-hygromorph-bilayer",
+ "title": "Biomaterial track: Timoshenko hygromorph bilayer curvature and the 3/2 ceiling",
+ "owner_thread": "tracks (session b0ad0789)",
+ "toy": false,
+ "converted_by": "tracks/suite/make-cases.mjs; numbers are the agent's own, times are file times, see the header of that script",
+ "stages": {
+  "statement": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agents/cs-hygromorph-bilayer.json",
+    "sha256": "64236afd6b3f88b415412e884a3e35089aa30a742465445a8f67f2df1a09547e"
+   },
+   "text": "Law: kappa = f(m,n) * delta_eps / h with f(m,n) = 6(1+m)^2 / [3(1+m)^2 + (1+mn)(m^2 + 1/(mn))], where m is the thickness ratio, n the modulus ratio, h the total thickness and delta_eps the differential free strain. Ceiling: kappa*h/delta_eps <= 3/2 for all positive m, n. The ceiling is proved in tracks/lean/HygromorphCeilingCheck.lean (timoshenkoCoefficient_le); tracks/research/lean/bm-lean-materials-laws__TimoshenkoCeilingUnique.lean adds that it is reached only at m^2 n = 1. This run adds HygromorphFalsifier.lean (checked, exit 0): a measured kappa*h/delta_eps above 3/2 is incompatible with ",
+   "source": "tracks/research/agents/cs-hygromorph-bilayer.json"
+  },
+  "lean": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/lean/CHECKED.txt",
+    "sha256": "a8a67be9cd85c4e38cd1c6f623d093e2c86ee2500d9211c9da847a91f9ebe412"
+   },
+   "lean_file": {
+    "path": "../../research/lean/cs-hygromorph-bilayer__HygromorphFalsifier.lean",
+    "sha256": "8d0e82636780763489bdb86d16ef9a2fb962b1f056c053af1a71ec0a9b5a7495"
+   },
+   "theorems": [
+    "ThompsonLaws.Hygromorphs.amgm_step",
+    "ThompsonLaws.Hygromorphs.timoshenkoCoefficient_le",
+    "ThompsonLaws.Hygromorphs.bilayerCurvature_le",
+    "ThompsonLaws.Hygromorphs.exceeds_ceiling_refutes",
+    "ThompsonLaws.Hygromorphs.plateCurvature_le"
+   ],
+   "axioms_allowed": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "named_hypotheses": [],
+   "negative_control": {
+    "description": "a deliberately false numeric instance of the first theorem; rejection is re-checked by tracks/reproduce.mjs",
+    "expected": "fail",
+    "observed": "fail",
+    "evidence": {
+     "path": "../../research/lean/cs-hygromorph-bilayer__HygromorphNegativeControl.lean",
+     "sha256": "9b45e76afc61db3601a8c17d91ba1f14e7a37046d9aa899d86a108ae4db81bfe"
+    }
+   }
+  },
+  "prereg": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agent-scripts/cs-hygromorph-bilayer/prereg.md",
+    "sha256": "ca61ac206a74c239f337765d84997d9077efad7315faef4ff7490a8b37978b67"
+   },
+   "hashed_utc": "2026-11-14T04:22:20Z",
+   "dated_by": "self-attested",
+   "hashed_utc_source": "last-modified time of the original prereg file (includes any amendment appended to it)",
+   "written_utc_claimed_in_file": "2026-11-14T04:17:26Z"
+  },
+  "holdout": {
+   "status": "done",
+   "evidence": {
+    "path": "evidence/leak-gate.log",
+    "sha256": "f1068c7937c69d2cc9bc9f32ceb049c7392bc10bf5b14add7f03bf976b62fd6c"
+   },
+   "holdout_set": "Whole papers. Rule written to prereg.md at 2026-11-14T04:17Z, before any paper was fetched: a paper is held out iff int(sha256(lowercase DOI)) mod 3 == 0. Of the 11 pre-registered DOIs, 1 was held out (10.1371/journal.pone.0205607). Ten more DOIs were added later by the same rule, 3 of them held out (10.1089/3dp.2022.0061, 10.3390/biomimetics6040058, 10.3390/molecules28196752). Held-out total is 4 papers, but only one prints usable curvature numbers in its text, so the scored held-out set is 2 r",
+   "frozen_before_utc": "2026-11-14T04:17:26Z",
+   "frozen_source": "time written in the prereg header by the agent (self-attested); the split rule is a hash of the unit id, so it cannot be tuned",
+   "n_holdout": 1,
+   "n_unit": "papers",
+   "min_n_for_verdict": 10,
+   "min_n_source": "convention of make-cases.mjs, set after the runs",
+   "leak_gate_exit": 0
+  },
+  "validation": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agent-scripts/cs-hygromorph-bilayer/results_table.csv",
+    "sha256": "ec7e72b0f7cf16b71c4647797d15a550c5868e5591bd4705c904fce11f54412e"
+   },
+   "command": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/",
+   "data_used": [
+    ""
+   ]
+  },
+  "performance": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agent-scripts/cs-hygromorph-bilayer/results.json",
+    "sha256": "1f8321dc2203f2984f251201f450fbc0e3d92f28b774255423181c62ebcd2515"
+   },
+   "metric": "RMSE of log10(measured / predicted curvature) on held-out records",
+   "value": 0.085,
+   "lower_is_better": true,
+   "computed_utc": "2026-11-14T04:20:06Z",
+   "computed_utc_source": "last-modified time of the original final results file",
+   "evaluated_on": "holdout",
+   "verdict": "underpowered",
+   "verdict_basis": "Two held-out records from one paper. 9 of 12 development records sit above the strip ceiling of 1.5; all 14 records are under the wide-sheet ceiling of 2.25 (checked after the fact).",
+   "baseline": {
+    "name": "ceiling only, 1.5 x strain difference / thickness, RMSE",
+    "value": 0.181,
+    "evidence": {
+     "path": "../../research/agent-scripts/cs-hygromorph-bilayer/results.json",
+     "sha256": "1f8321dc2203f2984f251201f450fbc0e3d92f28b774255423181c62ebcd2515"
+    }
+   },
+   "broken_input_control": {
+    "description": "the two labels swapped: RMSE rose to 0.407 (one permutation only)",
+    "expected": "fail",
+    "observed": "fail",
+    "evidence": {
+     "path": "../../research/agent-scripts/cs-hygromorph-bilayer/results.json",
+     "sha256": "1f8321dc2203f2984f251201f450fbc0e3d92f28b774255423181c62ebcd2515"
+    }
+   }
+  },
+  "what_was_wrong": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agents/cs-hygromorph-bilayer.json",
+    "sha256": "64236afd6b3f88b415412e884a3e35089aa30a742465445a8f67f2df1a09547e"
+   },
+   "kind_assigned_by": "keyword rule in make-cases.mjs",
+   "items": [
+    {
+     "what": "The law as used: the 3/2 ceiling holds only if delta_eps is the true uniform differential strain and the sample is a narrow strip. In Rueggeberg's cyclic data delta_eps is inferred from bulk moisture change times a coefficient measured in a separate step test, and the strips are 20 mm wide at 4-6 mm thick. Under those inputs 9 of 12 records sit above 3/2, up to 2.06. Either the inferred strain is too small, or the strip assumption fails, or both; this run cannot separate them.",
+     "kind": "underpowered"
+    },
+    {
+     "what": "Earlier agent work (bm-wood-cellulose-hygromorphs.json) repeated the paper's '+11%, +13%, under 5%' cyclic error without recomputing from Table",
+     "kind": "assumption-mismatch"
+    },
+    {
+     "what": "Recomputed here, the excess is 7-66% and the dimensionless curvature breaks the ceiling. That file did note 1.53 in the ETH beech data and called it within uncertainty, which matches my held-out result.",
+     "kind": "assumption-mismatch"
+    },
+    {
+     "what": "Earlier work treated the ceiling as a design rule (delta_eps >= (2/3) kappa h) for sizing new materials. For thick wood under cycling, the bulk-moisture strain estimate under-predicts curvature by up to 66%, so that rule gives a strain floor that such data would appear to violate.",
+     "kind": "assumption-mismatch"
+    },
+    {
+     "what": "Data: most target papers could not be used. Reyssat & Mahadevan 2009, Holstov 2015, Correa 2015 and 2020, Gladman 2016 and the Le Duigou flax paper gave no open machine-readable text. Le Duigou & Castro 2016 reports force, not curvature. No classical bimetal measurements and no hydrogel bilayer with full inputs were found. The ETH dataset DOI returned HTTP",
+     "kind": "data-gap"
+    },
+    {
+     "what": "My own run: (a) the hash rule put only 1 of the 11 pre-registered papers in the holdout, so the held-out test has n =",
+     "kind": "underpowered"
+    },
+    {
+     "what": "(b) I broke my own entry rule for the held-out paper: its moduli are shown only in a figure, so I inferred n = 8.72 from its printed optimum r = 0.253 via m^2 n = 1; predictions over n = 5-15 are in results_table.csv. (c) The measured held-out curvatures are the paper's rounded 'approximately' values. (d) All 12 development records come from one paper and one geometry family, so they are not independent. (e) No figure digitisation was done, which is where most published curvature data sit. (f) T",
+     "kind": "underpowered"
+    }
+   ]
+  },
+  "nanopub_draft": {
+   "status": "not_done",
+   "reason": "No nanopublication draft is written until a case passes the gate."
+  }
+ }
+}

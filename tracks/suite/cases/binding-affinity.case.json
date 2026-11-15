@@ -1,0 +1,110 @@
+{
+ "schema_version": "1.0.0",
+ "case_id": "cs-binding-affinity",
+ "title": "Binding-affinity prediction: experimental noise floor, attenuation ceiling, and whole-target holdout on ChEMBL Ki",
+ "owner_thread": "tracks (session b0ad0789)",
+ "toy": false,
+ "converted_by": "tracks/suite/make-cases.mjs; numbers are the agent's own, times are file times, see the header of that script",
+ "stages": {
+  "statement": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agents/cs-binding-affinity.json",
+    "sha256": "9c1173f4f3df468f2c44e3658bd7c15ee284e5986451767d7091833c16f0c812"
+   },
+   "text": "The law under test is the attenuation bound: for any predictor whose errors are uncorrelated with assay noise, Pearson r against a single noisy measurement satisfies r <= sqrt(vy/(vy+s^2)), where s is the SD of one measurement; and a predictor that knows only the target attains r^2 = the between-target share of variance. Both are stated and proved in the checked Lean file <home>/.antigravity-ide/ScienceClaw/delphisci/tracks/research/lean/q2-theory-lean__Q2Theory.lean as Q2.pearson_attenuation (with Q2.attenuation_tight for attainment) and Q2.r2_target_only / Q2.target_only_floor",
+   "source": "tracks/research/agents/cs-binding-affinity.json"
+  },
+  "lean": {
+   "status": "not_done",
+   "reason": "No Lean file was written for this case in the run; the law is checked against data only."
+  },
+  "prereg": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agent-scripts/cs-binding-affinity/prereg.md",
+    "sha256": "ea821d1e5b651eb8d9cc8e37071727df256eae98faaaa7218f816320255a3a1e"
+   },
+   "hashed_utc": "2026-11-14T04:17:57Z",
+   "dated_by": "self-attested",
+   "hashed_utc_source": "last-modified time of the original prereg file (includes any amendment appended to it)",
+   "written_utc_claimed_in_file": "2026-11-14T04:17:57Z"
+  },
+  "holdout": {
+   "status": "done",
+   "evidence": {
+    "path": "evidence/leak-gate.log",
+    "sha256": "f1068c7937c69d2cc9bc9f32ceb049c7392bc10bf5b14add7f03bf976b62fd6c"
+   },
+   "holdout_set": "Whole TARGETS held out by an untunable rule: a target is held out iff int(sha256(target_chembl_id),16) mod 4 == 0. The rule, the 40-target roster (copied unchanged from the earlier q2-data agent), the fingerprint settings, k=5 and six predictions were written to <home>/delphi-work/agents5/cs-binding-affinity/prereg.md at 2026-11-14T04:17:57Z from the shell, before any activity row was downloaded in this run. That gives 15 held-out ids and 25 development ids; of the 15, one returne",
+   "frozen_before_utc": "2026-11-14T04:17:57Z",
+   "frozen_source": "time written in the prereg header by the agent (self-attested); the split rule is a hash of the unit id, so it cannot be tuned",
+   "n_holdout": 14,
+   "n_unit": "targets",
+   "min_n_for_verdict": 10,
+   "min_n_source": "convention of make-cases.mjs, set after the runs",
+   "leak_gate_exit": 0
+  },
+  "validation": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agent-scripts/cs-binding-affinity/dev_results.json",
+    "sha256": "662ee25be2c3c05ce4dcfc5f23c1c94ffdf74c0095262dcbdb8a52f77131aeec"
+   },
+   "command": "see tracks/research/agent-scripts/cs-binding-affinity/",
+   "data_used": [
+    "ChEMBL REST API (public, no key), activity.json, standard_type=Ki, standard_relation '=', pchembl_value present, assay_type=B, 40 target ids, at most 4,000 rows each (14 targets were capped, so those targets are a non-random first page of their data). Fetched 2026-11-14, 6.9 MB, stored under C:/Temp"
+   ]
+  },
+  "performance": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agent-scripts/cs-binding-affinity/final_results.json",
+    "sha256": "71a8cfb001866cc122fa4f1a0ea6ef9100715f818946c6411a1cb772aed9e30f"
+   },
+   "metric": "pooled Pearson r on held-out targets, ligand-only nearest-neighbour model",
+   "value": 0.164,
+   "lower_is_better": false,
+   "computed_utc": "2026-11-14T04:22:20Z",
+   "computed_utc_source": "last-modified time of the original final results file",
+   "evaluated_on": "holdout",
+   "verdict": "fail",
+   "verdict_basis": "On targets it has not seen the model is worse than a constant in RMSE and below the target-mean baseline. The same model scores r 0.824 on a random split, which is the leak the case set out to show.",
+   "baseline": {
+    "name": "leave-one-out target mean (knows the target, not the compound), r",
+    "value": 0.193,
+    "evidence": {
+     "path": "../../research/agent-scripts/cs-binding-affinity/final_results.json",
+     "sha256": "71a8cfb001866cc122fa4f1a0ea6ef9100715f818946c6411a1cb772aed9e30f"
+    }
+   },
+   "broken_input_control": {
+    "description": "training labels shuffled: r fell from 0.164 to 0.004",
+    "expected": "fail",
+    "observed": "fail",
+    "evidence": {
+     "path": "../../research/agent-scripts/cs-binding-affinity/final_results.json",
+     "sha256": "71a8cfb001866cc122fa4f1a0ea6ef9100715f818946c6411a1cb772aed9e30f"
+    }
+   }
+  },
+  "what_was_wrong": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agents/cs-binding-affinity.json",
+    "sha256": "9c1173f4f3df468f2c44e3658bd7c15ee284e5986451767d7091833c16f0c812"
+   },
+   "kind_assigned_by": "keyword rule in make-cases.mjs",
+   "items": [
+    {
+     "what": "In the law: nothing was falsified, but the ceiling is close to useless as a diagnostic. Its own estimate is unstable - 0.882 from squared replicate differences versus 0.977 from the replicate correlation (r = 0.954, n = 2,132) on the SAME held-out data - and the leaky score (0.824) already sits inside that gap, so 'the model is near the noise ceiling' can be true of a purely memorising model. The bound also assumes predictor error is uncorrelated with assay noise, which fails exactly under leaka",
+     "kind": "underpowered"
+    }
+   ]
+  },
+  "nanopub_draft": {
+   "status": "not_done",
+   "reason": "No nanopublication draft is written until a case passes the gate."
+  }
+ }
+}

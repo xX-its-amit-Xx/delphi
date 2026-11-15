@@ -30,6 +30,7 @@ Nobody has shown this exact combination. It is the most credible first recipe fr
 | Rule | What it rules out | File |
 |---|---|---|
 | Curvature ceiling | No two-layer strip can curl tighter than 1.5 × (swelling difference) ÷ thickness, whatever the layer ratio | `tracks/lean/HygromorphCeilingCheck.lean` |
+| Wide-sheet ceiling | A wide sheet cannot curl tighter than 2.25 × (swelling difference) ÷ thickness, for any Poisson ratio up to 0.5 | `cs-hygromorph-bilayer__HygromorphFalsifier.lean` (`plateCurvature_le`) |
 | Crosslink window | If stiffness rises and swelling falls with crosslink density, every density above one threshold misses the target curl and every density below another is too soft. If the thresholds cross, no recipe in that family works | `lb-crosslinker-laws__CrosslinkerWindow.lean` (14 theorems) |
 | Droop | A horizontal blade longer than a computable length sags past the limit, whatever its thickness | `lb-print-structure-laws__PrintStructureLaws.lean` (21 theorems) |
 | Speed | A layer of thickness h cannot respond faster than h² ÷ (π² × diffusivity) | same file |
@@ -42,6 +43,8 @@ The physics formulas are assumptions written into each theorem by name. The proo
 
 - **Curvature law on real bilayers.** On 12 wood bilayer records the law predicted curvature with nothing fitted, median measured ÷ predicted 1.17. On the 2 records set aside in advance it was within 7% and 24%. That is only two held-out records from one paper.
 - **A warning from the same data.** 9 of those 12 records sit above the ceiling, up to 2.06 against 1.5. The strips were wide and thick, and the swelling difference was inferred, not measured. Either the inferred swelling is too small or the narrow-strip assumption fails. This must be settled on our own coupons before the ceiling is quoted to a client.
+- **A looser ceiling that the data do not break.** A wide sheet that rolls into a cylinder can curl up to (1 + Poisson ratio) times tighter than a narrow strip. That raises the ceiling from 1.5 to at most 2.25, which is also proved. All 14 records sit under 2.25 (largest 2.06). This comparison was made after seeing the data, so it is a consistency check and not a test. Until the coupons are measured, quote 2.25 for any blade and 1.5 only for narrow strips.
+- **Did the runs earn their numbers?** A separate gate script ruled on each case. It refused the hygromorph case: its plan file was edited after the result was written, and it has only one held-out paper. Re-running the committed script gives the same 40 numbers.
 - **Crosslinking trend.** In material systems set aside in advance, 9 of 11 dose series moved the way the rule says (stiffer, less swelling). Ten of the 11 come from one paper, so the real evidence is nearer 3 or 4 independent series.
 - **Where the rule did not fit.** For genipin and chitosan the simple swelling formula does not apply (the paper's own numbers put it outside the formula's range), and film strength fell with more genipin. "Stiffer with more crosslinker" is a thing to measure, not assume.
 - **In liquid water the ceiling barely constrains anything.** Gels swell so much that almost any curl is allowed. The ceiling matters in humid air, where swelling is a few percent. That is the regime a building element lives in, and it is the one with the least data.

@@ -36,7 +36,11 @@ function run(group, name, cmd, args, { skipIf = null, expect = null, timeout = 1
   const last = out.trim().split('\n').filter(Boolean).slice(-1)[0] ?? '';
   rows.push({ group, name, status: ok ? 'PASSED' : 'FAILED', secs: (Date.now() - t0) / 1000, detail: last.slice(0, 110) });
   console.log(`  ${ok ? 'PASSED ' : 'FAILED '} ${group.padEnd(9)} ${name.padEnd(46)} ${((Date.now() - t0) / 1000).toFixed(1).padStart(6)}s  ${last.slice(0, 70)}`);
-  if (!ok) console.log(out.split('\n').slice(-12).map((l) => '      | ' + l).join('\n'));
+  if (!ok) {
+    // show the lines that say WHY first (a rejection can sit far above the tail), then the tail
+    const lines = out.split('\n'), why = lines.filter((l) => /REJECTED|SURVIVOR|^FAIL\b|FAILED|Error|error:|Traceback|MISMATCH/.test(l)).slice(0, 30);
+    console.log([...why, ...(why.length ? ['...'] : []), ...lines.slice(-12)].map((l) => '      | ' + l).join('\n'));
+  }
 }
 
 const have = (p) => fs.existsSync(path.join(ROOT, p));
@@ -57,6 +61,12 @@ run('print', 'print files: closed surfaces, volumes, build volume, minimum wall'
   { skipIf: !bash || !py ? 'bash or python not found' : null, expect: /0 survived/ });
 // the suite gate (a case may not claim performance without a dated pre-registration, a baseline and a broken-input control)
 run('suite', 'suite gate self-test: 29 injected faults must all be caught', 'node', ['tracks/suite/suite-gate.mjs', '--fail-once'], { expect: /0 survivor/ });
+// the eight real cases, converted and gated. The gate is EXPECTED to fail some; what must hold is that the
+// converter runs and the gate's verdicts are the recorded ones (a silent change in either direction fails).
+run('suite', 'real cases through the suite gate: verdicts as recorded', 'node', ['tracks/suite/make-cases.mjs', '--expect'], { expect: /verdicts match/ });
+// the case scripts, re-executed in a scratch copy: every committed number must come back
+run('suite', 'case scripts re-run: numbers identical to the committed results', 'node', ['tracks/suite/rerun-cases.mjs'], { skipIf: py ? null : 'python not found', expect: /0 differ or error/ });
+run('numeric', 'wood bilayer records against the wide-plate ceiling 9/4', 'python', ['-I', 'tracks/scripts/check-hygromorph-plate-ceiling.py'], { skipIf: py ? null : 'python not found', expect: /plate ceiling not contradicted/ });
 // every checkable file the research agents produced and the build kept
 const allLean = fs.existsSync(path.join(ROOT, 'tracks/research/lean'))
   ? fs.readdirSync(path.join(ROOT, 'tracks/research/lean')).filter((f) => f.endsWith('.lean')).map((f) => `tracks/research/lean/${f}`) : [];

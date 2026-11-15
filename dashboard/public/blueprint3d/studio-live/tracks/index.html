@@ -286,6 +286,11 @@ function md(t){ // small Markdown reader: headings, lists, tables, bold, paragra
     else { const ps=[]; while(i<L.length&&L[i].trim()&&!/^(#{1,4} |\||[-*] |\d+\. )/.test(L[i])){ ps.push(L[i]); i++; } o.push(`<p>${inl(ps.join(' '))}</p>`); }
   } return o.join('');
 }
+const GATE_RULE={P1:'the pre-registration file was last changed at or after the moment the result was written',P4:'the broken-input control did not fail, so the scorer cannot tell good input from bad',L1:'the Lean file has no negative control that the checker rejected',P5:'too few held-out units for a verdict',P3:'no baseline'};
+function gateCell(g){ if(!g) return '<span class="chip mute">not gated</span>';
+  const ok=!g.errors.length, v=g.verdict;
+  return `<span class="chip ${ok?'ok':'bad'}">${ok?'claim earned':'claim not earned'}</span> <span class="chip ${v==='pass'?'ok':v==='fail'?'bad':'warn'}">law: ${esc(v==='pass'?'held':v==='fail'?'failed':v??'?')}</span>
+    <div class="q">${g.n} held-out ${esc(g.unit??'units')}${g.n<g.min_n?` (under ${g.min_n})`:''}. ${esc(g.basis??'')}</div>${g.errors.map(e=>`<div class="q"><b>${esc(e.rule)}</b>: ${esc(GATE_RULE[e.rule]??e.msg)}</div>`).join('')}`; }
 function renderDeliv(){
   const X=D.deliverables; if(!X){ $('#deliv').innerHTML=''; return; }
   const P=X.print, C=X.cases??[];
@@ -298,8 +303,8 @@ function renderDeliv(){
      <p><b>Reproduce it</b></p><pre class="cmd">python -I tracks/print/make_poc.py &amp;&amp; python -I tracks/print/test_poc.py &amp;&amp; python -I tracks/print/test_poc.py --fail-once</pre>`):'';
   const prop=X.proposal_md?sec('2. Proposal: a new bio-based material designed through its crosslinks','draft for the architecture practice; nobody has been contacted',md(X.proposal_md)):'';
   const cases=C.length?sec('3. Cases run through the full suite',`${C.length} cases`,
-    `<div class="plain"><h4>In plain words</h4><p>Each case takes one rule, sets aside part of the real data before looking, tunes on the rest, and is then scored once on the part set aside. The last column says what turned out to be wrong.</p></div>
-     <div class="scroll"><table class="tbl"><tr><th>case</th><th>validation</th><th>holdout set</th><th>performance</th><th>what was wrong</th><th>Lean</th></tr>${C.map(c=>`<tr><td><b>${esc(c.case_name??c.topic??c.slug)}</b><div class="q">${esc(c.statement??'')}</div></td><td>${esc(c.validation??'')}</td><td>${esc(c.holdout_set??'')}</td><td>${esc(c.performance??'')}</td><td>${esc(c.what_was_wrong??'')}</td><td>${esc(c.lean_status??'')}</td></tr>`).join('')}</table></div>
+    `<div class="plain"><h4>In plain words</h4><p>Each case takes one rule, sets aside part of the real data before looking, tunes on the rest, and is then scored once on the part set aside. The “what was wrong” column says what turned out to be wrong. The last column is a separate script’s ruling on whether the run earned its number: the plan must be older than the result, there must be a simpler method to compare with, and scrambled input must score worse. “Claim earned” does not mean the rule held; that is the second label. All times are file times on one machine, so nothing outside vouches for them.</p></div>
+     <div class="scroll"><table class="tbl"><tr><th>case</th><th>validation</th><th>holdout set</th><th>performance</th><th>what was wrong</th><th>Lean</th><th>suite gate</th></tr>${C.map(c=>`<tr><td><b>${esc(c.case_name??c.topic??c.slug)}</b><div class="q">${esc(c.statement??'')}</div></td><td>${esc(c.validation??'')}</td><td>${esc(c.holdout_set??'')}</td><td>${esc(c.performance??'')}</td><td>${esc(c.what_was_wrong??'')}</td><td>${esc(c.lean_status??'')}</td><td>${gateCell(X.gate?.[c.slug])}</td></tr>`).join('')}</table></div>
      <p class="note">These numbers are each agent's own run. Scripts are in <code>tracks/research/agent-scripts/cs-*/</code>; a separate re-run by a second agent has not been done unless a row says so.</p>`):'';
   $('#deliv').innerHTML=print+prop+cases;
 }

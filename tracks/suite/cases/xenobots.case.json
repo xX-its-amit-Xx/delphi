@@ -1,0 +1,140 @@
+{
+ "schema_version": "1.0.0",
+ "case_id": "cs-xenobots",
+ "title": "xenobots (frog-cell and human-cell cilia-driven biobots)",
+ "owner_thread": "tracks (session b0ad0789)",
+ "toy": false,
+ "converted_by": "tracks/suite/make-cases.mjs; numbers are the agent's own, times are file times, see the header of that script",
+ "stages": {
+  "statement": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agents/cs-xenobots.json",
+    "sha256": "867df5d4b04cd34f0c836ec38a312d6f6a4b30c6e43b116bd908a5eec9f256ae"
+   },
+   "text": "Four upper bounds. S1: speed v <= mu/(rho*D), i.e. Reynolds number <= 1 in water (no free constant). S2: unfed lifespan <= T_max, with T_max = 2 x the longest lifespan in development papers = 24 days. S3: radius R <= sqrt(6*Dox*C0/Q) = 0.548 mm (diameter 1.10 mm) for a sphere with uniform oxygen uptake (Dox 2e-9 m2/s, C0 0.25 mol/m3, Q 1e-2 mol/m3/s; no free constant). S4: replication generations G <= G_max = 2 x development maximum = 8. No checked Lean file under tracks/research/lean states any of these (CHECKED.txt has none on Reynolds, oxygen or replication). I wrote a new core-Lean file, X",
+   "source": "tracks/research/agents/cs-xenobots.json"
+  },
+  "lean": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/lean/CHECKED.txt",
+    "sha256": "a8a67be9cd85c4e38cd1c6f623d093e2c86ee2500d9211c9da847a91f9ebe412"
+   },
+   "lean_file": {
+    "path": "../../research/lean/cs-xenobots__XenobotBounds.lean",
+    "sha256": "704523dc6906aa5d328a1221f0e53905fa2f363f599290f1b206ee7f17310686"
+   },
+   "theorems": [
+    "XenobotBounds.lowRe_of_le",
+    "XenobotBounds.oxygen_of_le",
+    "XenobotBounds.lifetime_bound",
+    "XenobotBounds.generation_bound",
+    "XenobotBounds.anthrobot_lowRe",
+    "XenobotBounds.calibrated_lifetime_refuted"
+   ],
+   "axioms_allowed": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "named_hypotheses": [],
+   "negative_control": {
+    "description": "a deliberately false numeric instance of the first theorem; rejection is re-checked by tracks/reproduce.mjs",
+    "expected": "fail",
+    "observed": "fail",
+    "evidence": {
+     "path": "../../research/lean/cs-xenobots__XenobotNegativeControl.lean",
+     "sha256": "c04cc377587abdf070122505edafae3fe8d0fa82d0d21732f863ac4086b58d90"
+    }
+   }
+  },
+  "prereg": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agent-scripts/cs-xenobots/prereg.md",
+    "sha256": "efdade4e3a1bc89a9669905c9941eda5f1e5232331f113feb5b11480437a6170"
+   },
+   "hashed_utc": "2026-11-14T04:17:22Z",
+   "dated_by": "self-attested",
+   "hashed_utc_source": "last-modified time of the original prereg file (includes any amendment appended to it)",
+   "written_utc_claimed_in_file": "2026-11-14T04:17:22Z"
+  },
+  "holdout": {
+   "status": "done",
+   "evidence": {
+    "path": "evidence/leak-gate.log",
+    "sha256": "f1068c7937c69d2cc9bc9f32ceb049c7392bc10bf5b14add7f03bf976b62fd6c"
+   },
+   "holdout_set": "Rule written to prereg.md at 2026-11-14T04:17:22Z (shell clock) before any paper was fetched: sha256 of each DOI string, the two smallest hashes are held out. Held out: 10.1126/scirobotics.abf1571 and 10.1002/advs.202303575. Development: 10.1073/pnas.1910837117 and 10.1073/pnas.2112672118. Constants were frozen in frozen_constants.json at 04:18:34Z before the held-out full text was searched. Size: 2 papers by rule, but only 1 could be opened; it yielded 8 measurements (2 diameter, 2 speed, 4 lif",
+   "frozen_before_utc": "2026-11-14T04:17:22Z",
+   "frozen_source": "time written in the prereg header by the agent (self-attested); the split rule is a hash of the unit id, so it cannot be tuned",
+   "n_holdout": 1,
+   "n_unit": "papers",
+   "min_n_for_verdict": 10,
+   "min_n_source": "convention of make-cases.mjs, set after the runs",
+   "leak_gate_exit": 0
+  },
+  "validation": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agent-scripts/cs-xenobots/records_dev.csv",
+    "sha256": "bfc329690379fb026f3a736db37187902a9ad1ca71d734614f9705fb39de1c1e"
+   },
+   "command": "see tracks/research/agent-scripts/cs-xenobots/",
+   "data_used": [
+    "Europe PMC full-text XML for PMC6994979, PMC8670470, PMC10811512 (downloaded to C:/Temp/delphi-sprint/cs-xenobots/raw, about 400 KB); Europe PMC abstract and Unpaywall record for the closed Science Robotics paper. Every number is a verbatim string re-checked by verify_quotes.py (11 of 11 found)."
+   ]
+  },
+  "performance": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agent-scripts/cs-xenobots/results.json",
+    "sha256": "4a81b55e3f86339d4e27834c0a6fa46c685617d6d97eff6090e5fd511789340e"
+   },
+   "metric": "fraction of held-out measurements under their bound",
+   "value": 0.5,
+   "lower_is_better": false,
+   "computed_utc": "2026-11-14T04:20:02Z",
+   "computed_utc_source": "last-modified time of the original final results file",
+   "evaluated_on": "holdout",
+   "verdict": "fail",
+   "verdict_basis": "The lifetime bound held in 0 of 4 measurements: the held-out bots are fed, so the closed-energy-store assumption is false. The scorer also did not react to scrambled labels.",
+   "baseline": {
+    "name": "bound = development maximum, no physics",
+    "value": 0.33,
+    "evidence": {
+     "path": "../../research/agent-scripts/cs-xenobots/results.json",
+     "sha256": "4a81b55e3f86339d4e27834c0a6fa46c685617d6d97eff6090e5fd511789340e"
+    }
+   },
+   "broken_input_control": {
+    "description": "quantity labels rotated by two places: coverage stayed 0.50, it did not get worse",
+    "expected": "fail",
+    "observed": "pass",
+    "evidence": {
+     "path": "../../research/agent-scripts/cs-xenobots/results.json",
+     "sha256": "4a81b55e3f86339d4e27834c0a6fa46c685617d6d97eff6090e5fd511789340e"
+    }
+   }
+  },
+  "what_was_wrong": {
+   "status": "done",
+   "evidence": {
+    "path": "../../research/agents/cs-xenobots.json",
+    "sha256": "867df5d4b04cd34f0c836ec38a312d6f6a4b30c6e43b116bd908a5eec9f256ae"
+   },
+   "kind_assigned_by": "keyword rule in make-cases.mjs",
+   "items": [
+    {
+     "what": "1) The energy-store lifetime law failed out of sample: 0 of 4 held-out lifespans are under the 24-day bound. Cause: the bound assumes a closed store (frog cells living on yolk); the held-out bots are human airway cells kept in culture medium with regular media changes, so the law's hypothesis is false for them. The law must carry 'never refilled' as an explicit condition, as the Lean theorem now does. 2) The held-out paper contradicts itself on lifespan: '45-60 days' in the introduction, '4-6 we",
+     "kind": "underpowered"
+    }
+   ]
+  },
+  "nanopub_draft": {
+   "status": "not_done",
+   "reason": "No nanopublication draft is written until a case passes the gate."
+  }
+ }
+}
