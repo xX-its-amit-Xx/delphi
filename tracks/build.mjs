@@ -241,6 +241,14 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     lean_checked: leanChecked,
   };
 
+  // The paper watcher (tracks/watch/): what was found, what could be checked, and why the rest could not.
+  const wSum = readJson(path.join(HERE, 'watch', 'summary.json')), wExt = readJson(path.join(HERE, 'watch', 'extractions.json'));
+  const watch = wSum ? { summary: wSum,
+    lean_instances: (txt(path.join(HERE, 'watch', 'lean', 'WatchInstances.lean')) ?? '').split(/\r?\n/).filter((l) => /^theorem /.test(l)).map((l) => { const m = l.match(/^theorem (\S+) : (.*) := by norm_num$/); return m ? [m[1], m[2]] : null; }).filter(Boolean),
+    papers: (wExt?.papers ?? []).map((p) => ({ slug: p.slug, title: p.title, doi: p.doi, usecase: p.usecase, read: p.read, outcome: p.outcome, why: p.why, missing: p.missing, badge: p.badge ?? null, preprint: p.preprint,
+      checks: (p.checks ?? []).map((c) => ({ law: c.law, label: c.label, result: c.result, theorem: c.theorem ?? null, by: c.by ?? null, detail: c.detail ?? null, says: c.says ?? null, kind: c.kind ?? null, general_theorem: c.general_theorem ?? null, note: c.note ?? null, why: c.why ?? null })),
+      candidate_laws: p.candidate_laws ?? [] })) } : null;
+
   const allCites = [...tracks.flatMap((t) => t.scout?.citations ?? []), ...specialists.flatMap((s) => s.citations ?? []), ...fleet.flatMap((s) => s.citations ?? [])];
   const citeStats = {
     total: allCites.length,
@@ -256,7 +264,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     built: new Date().toISOString().slice(0, 10),
     brief: 'tracks/BRIEF-2026-11-12.md',
     lawset: tracks.find((t) => t.laws?.lawset_version)?.laws.lawset_version ?? null,
-    tracks, specialists, fleet, extraExplain, verdicts, synthesis, deliverables,
+    tracks, specialists, fleet, extraExplain, verdicts, synthesis, deliverables, watch,
     corpus: corpus.error ? corpus : { ...corpus, works: corpus.works.slice(0, 400) },
     corpus_full_in_repo: 'tracks/research/buehler-corpus.json',
     citations: citeStats,

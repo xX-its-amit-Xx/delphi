@@ -98,6 +98,9 @@
     <p>A new biomaterial whose design space is narrowed by machine-checked laws, printed on a Formlabs machine as a proof of concept for an architecture practice.</p></div>
 </div>
 
+<h2>Paper watch <small>new papers found, checked against the laws, and why the rest could not be</small></h2>
+<div id="watch"></div>
+
 <h2>Deliverables <small>print files, the client proposal, and every case run through the full suite</small></h2>
 <div id="deliv"></div>
 
@@ -291,6 +294,27 @@ function gateCell(g){ if(!g) return '<span class="chip mute">not gated</span>';
   const ok=!g.errors.length, v=g.verdict;
   return `<span class="chip ${ok?'ok':'bad'}">${ok?'claim earned':'claim not earned'}</span> <span class="chip ${v==='pass'?'ok':v==='fail'?'bad':'warn'}">law: ${esc(v==='pass'?'held':v==='fail'?'failed':v??'?')}</span>
     <div class="q">${g.n} held-out ${esc(g.unit??'units')}${g.n<g.min_n?` (under ${g.min_n})`:''}. ${esc(g.basis??'')}</div>${g.errors.map(e=>`<div class="q"><b>${esc(e.rule)}</b>: ${esc(GATE_RULE[e.rule]??e.msg)}</div>`).join('')}`; }
+function renderWatch(){
+  const W=D.watch; if(!W){ $('#watch').innerHTML=''; return; }
+  const S=W.summary, inst=Object.fromEntries(W.lean_instances.map(([n,p])=>['Watch.'+n,p]));
+  const chk=W.papers.filter(p=>p.badge), cand=W.papers.filter(p=>p.candidate_laws.length);
+  const head=`<div class="plain"><h4>In plain words</h4><p>A script searches a public index of papers every time it is run, one search per use case. A reader agent opens each new paper and copies out the numbers our laws take, with the sentence each number came from. A second script then puts those numbers into the law and asks the Lean proof checker whether the result is inside the law's bound. A badge says how many checks came out inside. It is a statement about the copied numbers. It does not certify the paper, and no second reader has re-checked the copying yet.</p></div>
+    <p><b>${esc(S.sentence)}</b></p>
+    <div class="scroll"><table class="tbl"><tr><th>papers</th><th>why they could not be checked</th></tr>${S.reasons.map(r=>`<tr><td><b>${r.n}</b></td><td>${esc(r.plain)}</td></tr>`).join('')}</table></div>
+    <div class="scroll"><table class="tbl"><tr><th>use case</th><th>found</th><th>checked</th><th>new-law suggestions</th></tr>${S.by_usecase.map(u=>`<tr><td><b>${esc(u.title)}</b> <span class="chip mute">${esc(u.group)}</span></td><td>${u.found}</td><td>${u.checked}</td><td>${u.candidate_laws}</td></tr>`).join('')}</table></div>
+    <p class="note">${esc(S.caveat)}</p>
+    <p><b>Reproduce it</b></p><pre class="cmd">node tracks/watch/watch.mjs &amp;&amp; node tracks/watch/verify.mjs &amp;&amp; node tracks/watch/verify.mjs --status</pre>`;
+  const papers=chk.map(p=>sec(p.title,p.badge,
+    `<p id="paper-${p.slug}"><img src="badges/${p.slug}.svg" alt="Lean4Bio checked: ${esc(p.badge)}"> · ${p.doi?`<a href="https://doi.org/${esc(p.doi)}" target="_blank" rel="noopener">${esc(p.doi)}</a>`:''}${p.preprint?' <span class="chip warn">preprint</span>':''}</p>
+     <div class="scroll"><table class="tbl"><tr><th>record</th><th>law</th><th>result</th><th>the proof</th></tr>${p.checks.map(c=>`<tr><td>${esc(c.label??'')}${c.note?`<div class="q">${esc(c.note)}</div>`:''}</td><td>${esc(c.says??c.law)}${c.kind?`<div class="q">${esc(c.kind)}</div>`:''}</td>
+       <td><span class="chip ${c.result==='inside'?'ok':c.result==='outside'?'bad':'mute'}">${esc(c.result)}</span></td>
+       <td>${c.theorem?`<code>${esc(inst[c.theorem]??'')}</code><div class="q">${esc(c.theorem)}, checked by the Lean kernel; an instance of <code>${esc(c.general_theorem??'')}</code></div>`:esc(c.detail??c.why??'')+(c.by?`<div class="q">${esc(c.by)}</div>`:'')}</td></tr>`).join('')}</table></div>`)).join('');
+  const cands=cand.length?sec('Suggestions for new laws',`${cand.reduce((a,p)=>a+p.candidate_laws.length,0)} statements from ${cand.length} papers`,
+    `<p>Claims the readers found that no law of ours covers. None is formalised or tested yet.</p><div class="scroll"><table class="tbl"><tr><th>statement</th><th>paper</th></tr>${cand.flatMap(p=>p.candidate_laws.map(c=>`<tr><td>${esc(c.statement)}${c.quote?`<div class="q">“${esc(c.quote)}” <span class="chip mute">agent’s quote</span></div>`:''}</td><td>${esc(p.title)}${p.doi?` <a href="https://doi.org/${esc(p.doi)}" target="_blank" rel="noopener">link</a>`:''}</td></tr>`)).join('')}</table></div>`):'';
+  const rest=sec('Every paper and what happened to it',`${W.papers.length} papers`,
+    `<div class="scroll"><table class="tbl"><tr><th>paper</th><th>use case</th><th>read</th><th>outcome</th><th>why</th></tr>${W.papers.map(p=>`<tr><td>${esc(p.title)}</td><td>${esc(p.usecase)}</td><td>${esc((p.read??'').replace('_',' '))}</td><td>${esc(p.badge??(p.outcome??'').replace(/_/g,' '))}</td><td>${esc(p.why??'')}${p.missing?.length?`<div class="q">missing: ${esc(p.missing.join('; '))}</div>`:''}</td></tr>`).join('')}</table></div>`);
+  $('#watch').innerHTML=head+papers+cands+rest;
+}
 function renderDeliv(){
   const X=D.deliverables; if(!X){ $('#deliv').innerHTML=''; return; }
   const P=X.print, C=X.cases??[];
@@ -365,7 +389,7 @@ if(D){
   $('#lede').textContent=`Four candidate routes for the paper, one contracting route, and the existing flying-fish framework. ${done} of ${D.tracks.length} tracks have a frozen-prediction design; law set ${D.lawset??'—'}.`;
   const c=D.citations;
   $('#built').textContent=`built ${D.built} · ${fmt(c.total)} citations from the track agents, ${fmt(c.independently_resolved)} resolved independently, ${fmt(c.failed_to_resolve)} failed, ${fmt(c.not_yet_checked)} unchecked`;
-  renderDeliv(); renderCards(); renderSpecs(); renderFleet(); renderCorpus();
+  renderWatch(); renderDeliv(); renderCards(); renderSpecs(); renderFleet(); renderCorpus();
   $('#ask').innerHTML=(D.open_for_amit??[]).map(x=>`<li>${esc(x)}</li>`).join('');
   show(D.tracks.find(t=>t.design)?.n??5);
 }

@@ -1,6 +1,6 @@
 # STATE — DELPHI atlas + six tracks (antigravity session b0ad0789)
 
-Read this first. Updated 2026-11-15.
+Read this first, then BRAIN.md. Updated 2026-11-17.
 
 ## What this session owns
 - `sim-engine/scales/atlas/`, `sim-engine/scales/micro/division.mjs`, `sim-engine/scales/molecular/`
@@ -11,6 +11,7 @@ Read this first. Updated 2026-11-15.
 ## Briefs (all saved verbatim in tracks/)
 - `BRIEF-2026-11-12.md`: PAPER (with Buehler, Marom) and CONTRACTING (Mamou-Mani, Formlabs print); six tracks.
 - `BRIEF-2026-11-13-green-fire-coatings.md`: fire-coatings lead. `BRIEF-2026-11-13-group-split.md`: group splits into academic zebrafish paper and industry (biomaterials, zebot, locomotion).
+- `BRIEF-2026-11-17-community-badge-watcher.md`: alphaXiv Community, methods paper, "Lean4Bio checked" badge, paper watcher (priority: scraping for verification); Slack bot question.
 - `BRIEF-2026-11-13-deliverables.md`: top deliverables = Formlabs print file, biomaterial proposal grounded in "linker biology", validation-suite improvements and more cases (validation / holdout / performance / what was wrong). Biomaterials and xenobots must use Lean for Biology.
 
 ## Upstream
@@ -27,6 +28,7 @@ Read this first. Updated 2026-11-15.
 - Everything: `node tracks/reproduce.mjs [--online] [--only lean,print,suite]`
 - Lean: `bash tracks/lean/check.sh <file>` (v2, strict) and `bash tracks/lean/check.sh --probes`
 - Cases: `node tracks/suite/make-cases.mjs [--expect|--record]` (cs-* runs -> `tracks/suite/cases/*.case.json` -> gate); `node tracks/suite/rerun-cases.mjs` (re-executes six case scripts in a scratch copy)
+- Paper watcher: `node tracks/watch/watch.mjs` (Europe PMC -> `queue.jsonl`), readers write `watch-*.json` (prompt shape in BRAIN/brief; outputs in `delphi-work/agents6/`), `node tracks/watch/verify.mjs --from <folder>` (Lean-checks every record, writes `summary.json`, badges), `--status` prints the tally
 - Print files: `python -I tracks/print/make_poc.py && python -I tracks/print/test_poc.py [--fail-once]`
 - Holdout: `node holdout/check-leaks.mjs tracks`; `node sim-engine/scales/atlas/holdout-html-scan.mjs`
 - Deploy: `node dashboard/predeploy.mjs` then `cd dashboard && npx wrangler deploy`. Live: https://delphi-mission-control.ashenoy000.workers.dev/blueprint3d/studio-live/tracks/
@@ -44,6 +46,10 @@ Read this first. Updated 2026-11-15.
 - Hygromorph: 2 held-out records only; 9 of 12 development records sit ABOVE the 3/2 ceiling (inferred strain, wide strips). All 14 records are under the proved wide-plate ceiling 9/4 (max 2.06; post-hoc consistency check, `tracks/scripts/check-hygromorph-plate-ceiling.py`). Quote 9/4 until our own narrow coupons are measured.
 - Crosslink swelling: 9/11 held-out series right sign, effective n about 3-4. Fish: Strouhal band holds 80% held-out; larval zebrafish sit at 0.72-2.5.
 - Lean added and passing: crosslinker window (14 thm), xenobot laws (13), print structure (21), fire certificate V2 (11; v1's three eliminations were wrong-way), binding thermo fixed (9).
+
+## Paper watcher, first pass (2026-11-17)
+- 43 new papers since 2026-05-01 + 2 back-catalogue. 4 papers checkable: 36 checks (28 Lean, 8 script), 24 inside, 12 outside. Not checkable: 16 off-topic, 14 abstract only, 5 partial inputs, 4 sealed, 2 no law yet. 13 new-law suggestions recorded, none formalised.
+- Not done: second reader to re-check copied numbers; bioRxiv full text (HTTP 429); scheduled daily run; nothing posted to alphaXiv or Slack.
 
 ## Known gaps
 - Public bundle is scrubbed of machine paths at write time (build.mjs); committed agent JSONs still contain them.

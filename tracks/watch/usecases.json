@@ -1,0 +1,138 @@
+{
+ "note": "One entry per use case the watcher follows. 'query' is a Europe PMC search (public, no key). 'laws' are the checks a paper's numbers can be put through; each names the general theorem it is an instance of. A check can only say 'inside the bound' or 'outside the bound' for the numbers extracted. It never certifies a paper.",
+ "since": "2026-05-01",
+ "usecases": [
+  {
+   "id": "hygromorph",
+   "group": "industry",
+   "title": "Humidity-driven bilayers (the biomaterial panel)",
+   "query": "(TITLE_ABS:hygromorph* OR TITLE_ABS:\"hygroscopic actuator\" OR TITLE_ABS:\"hygroscopic actuation\" OR TITLE_ABS:\"humidity-driven actuator\" OR TITLE_ABS:\"moisture-driven actuator\" OR (TITLE_ABS:bilayer AND (TITLE_ABS:humidity OR TITLE_ABS:moisture OR TITLE_ABS:hygroscopic) AND (TITLE_ABS:curvature OR TITLE_ABS:bending) AND TITLE_ABS:actuat*))",
+   "laws": [
+    "bilayer_plate_ceiling",
+    "bilayer_strip_ceiling"
+   ]
+  },
+  {
+   "id": "crosslink",
+   "group": "industry",
+   "title": "Crosslinker dose against stiffness and swelling",
+   "query": "((TITLE_ABS:genipin OR TITLE_ABS:\"citric acid\" OR TITLE_ABS:\"tannic acid\") AND TITLE_ABS:crosslink* AND (TITLE_ABS:swelling) AND (TITLE_ABS:modulus OR TITLE_ABS:stiffness))",
+   "laws": [
+    "crosslink_direction"
+   ]
+  },
+  {
+   "id": "locomotion",
+   "group": "industry",
+   "title": "Swimming: tail-beat frequency, amplitude and speed",
+   "query": "((TITLE_ABS:\"Strouhal number\" AND (TITLE_ABS:fish OR TITLE_ABS:swimm* OR TITLE_ABS:undulat*)) OR (TITLE_ABS:\"tail beat frequency\" AND TITLE_ABS:\"swimming speed\") OR (TITLE_ABS:\"tail-beat frequency\" AND TITLE_ABS:\"swimming speed\"))",
+   "laws": [
+    "strouhal_band"
+   ]
+  },
+  {
+   "id": "xenobot",
+   "group": "industry",
+   "title": "Xenobots and other cell-built swimmers",
+   "query": "(TITLE_ABS:xenobot* OR TITLE_ABS:anthrobot* OR TITLE_ABS:biobot* OR TITLE_ABS:\"living robot\" OR TITLE_ABS:\"living robots\" OR TITLE_ABS:\"biohybrid swimmer\" OR TITLE_ABS:\"biohybrid robot\")",
+   "laws": [
+    "low_reynolds"
+   ]
+  },
+  {
+   "id": "zebrafish-morphology",
+   "group": "academic",
+   "title": "Zebrafish body plan: somites and segmentation clock",
+   "query": "(TITLE_ABS:zebrafish AND (TITLE_ABS:somite* OR TITLE_ABS:\"segmentation clock\" OR TITLE_ABS:somitogenesis OR TITLE_ABS:\"axis elongation\"))",
+   "laws": [
+    "clock_wavefront"
+   ]
+  }
+ ],
+ "laws": {
+  "bilayer_plate_ceiling": {
+   "says": "A two-layer sheet cannot curl tighter than 2.25 x (swelling difference) / (total thickness).",
+   "inputs": {
+    "kappa_per_mm": "measured curvature, 1/mm",
+    "h_mm": "total thickness, mm",
+    "deps": "difference in free swelling strain between the layers (a fraction, not percent)"
+   },
+   "lhs": "kappa_per_mm * h_mm",
+   "rel": "<=",
+   "rhs": "9/4 * deps",
+   "general_theorem": "ThompsonLaws.Hygromorphs.plateCurvature_le",
+   "lean_file": "tracks/research/lean/cs-hygromorph-bilayer__HygromorphFalsifier.lean",
+   "kind": "proved bound under stated assumptions (Timoshenko bilayer, Poisson ratio up to 0.5)"
+  },
+  "bilayer_strip_ceiling": {
+   "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+   "inputs": {
+    "kappa_per_mm": "measured curvature, 1/mm",
+    "h_mm": "total thickness, mm",
+    "deps": "difference in free swelling strain"
+   },
+   "lhs": "kappa_per_mm * h_mm",
+   "rel": "<=",
+   "rhs": "3/2 * deps",
+   "general_theorem": "ThompsonLaws.Hygromorphs.bilayerCurvature_le",
+   "lean_file": "tracks/research/lean/cs-hygromorph-bilayer__HygromorphFalsifier.lean",
+   "kind": "proved bound under stated assumptions (narrow strip)"
+  },
+  "strouhal_band": {
+   "says": "Cruising swimmers beat their tails so that frequency x amplitude / speed falls between 0.2 and 0.4.",
+   "inputs": {
+    "f_hz": "tail-beat frequency, Hz",
+    "a_m": "peak-to-peak tail amplitude, m",
+    "u_m_s": "swimming speed, m/s"
+   },
+   "lhs": "f_hz * a_m",
+   "rel": "<=",
+   "rhs": "2/5 * u_m_s",
+   "lhs2": "1/5 * u_m_s",
+   "rel2": "<=",
+   "rhs2": "f_hz * a_m",
+   "general_theorem": "StrouhalBainbridge.band_upper_iff",
+   "lean_file": "tracks/research/lean/cs-allometry-fins__StrouhalBainbridge.lean",
+   "kind": "empirical band, not a proved law; the Lean file proves only how the band follows from the frequency-speed line"
+  },
+  "low_reynolds": {
+   "says": "A swimmer this small and slow is in the viscous regime: density x speed x size / viscosity is below 1.",
+   "inputs": {
+    "u_um_s": "speed, micrometres per second",
+    "l_um": "body size, micrometres"
+   },
+   "lhs": "u_um_s * l_um",
+   "rel": "<=",
+   "rhs": "1000000",
+   "general_theorem": "XenobotBounds (low-Reynolds statement)",
+   "lean_file": "tracks/research/lean/cs-xenobots__XenobotBounds.lean",
+   "kind": "regime check in water (kinematic viscosity 1e-6 m2/s), integer arithmetic"
+  },
+  "clock_wavefront": {
+   "says": "Somite length equals wavefront speed x clock period.",
+   "inputs": {
+    "s_um": "somite length, micrometres",
+    "v_um_min": "wavefront speed, micrometres per minute",
+    "t_min": "clock period, minutes"
+   },
+   "lhs": "s_um",
+   "rel": "<=",
+   "rhs": "3/2 * (v_um_min * t_min)",
+   "lhs2": "2/3 * (v_um_min * t_min)",
+   "rel2": "<=",
+   "rhs2": "s_um",
+   "general_theorem": "ClockWavefront (somite length = speed x period)",
+   "lean_file": "lean/ (session 31) ClockWavefront.lean",
+   "kind": "model identity, tested here within a factor of 1.5; the tolerance is our convention"
+  },
+  "crosslink_direction": {
+   "says": "More crosslinker: stiffer, and less swelling.",
+   "inputs": {
+    "series": "dose-ordered values of modulus or swelling from one figure or table"
+   },
+   "general_theorem": "CrosslinkSwelling.modulus_strictMono / swelling_strictAnti",
+   "lean_file": "tracks/research/lean/cs-crosslink-swelling__CrosslinkSwellingWindow.lean",
+   "kind": "direction only, checked by a script, no Lean instance"
+  }
+ }
+}
