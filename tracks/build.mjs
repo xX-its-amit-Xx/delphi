@@ -245,7 +245,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const wSum = readJson(path.join(HERE, 'watch', 'summary.json')), wExt = readJson(path.join(HERE, 'watch', 'extractions.json'));
   const watch = wSum ? { summary: wSum,
     lean_instances: (txt(path.join(HERE, 'watch', 'lean', 'WatchInstances.lean')) ?? '').split(/\r?\n/).filter((l) => /^theorem /.test(l)).map((l) => { const m = l.match(/^theorem (\S+) : (.*) := by norm_num$/); return m ? [m[1], m[2]] : null; }).filter(Boolean),
-    papers: (wExt?.papers ?? []).map((p) => ({ slug: p.slug, title: p.title, doi: p.doi, usecase: p.usecase, read: p.read, outcome: p.outcome, why: p.why, missing: p.missing, badge: p.badge ?? null, preprint: p.preprint,
+    papers: (wExt?.papers ?? []).map((p) => ({ slug: p.slug, title: p.title, doi: p.doi, usecase: p.usecase, read: p.read, outcome: p.outcome, why: p.why, missing: p.missing, badge: p.badge ?? null, preprint: p.preprint, source: p.source ?? null, arxiv_id: p.arxiv_id ?? null, alphaxiv: p.alphaxiv ?? null, second_reader: p.second_reader ?? null,
       checks: (p.checks ?? []).map((c) => ({ law: c.law, label: c.label, result: c.result, theorem: c.theorem ?? null, by: c.by ?? null, detail: c.detail ?? null, says: c.says ?? null, kind: c.kind ?? null, general_theorem: c.general_theorem ?? null, note: c.note ?? null, why: c.why ?? null })),
       candidate_laws: p.candidate_laws ?? [] })) } : null;
 

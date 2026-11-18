@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lean4Bio paper checks</title>
+<link rel="alternate" type="application/atom+xml" title="Lean4Bio paper watch" href="feed.xml">
+<style>
+  :root{--bg:#080b11;--panel:#0d1219;--card:#111823;--edge:#1e2836;--ink:#e6edf6;--dim:#9fb0c5;--faint:#6b7b90;--blue:#3f82d6;--amber:#d09a2a;--green:#4ec9a0;--red:#ef6a6a}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 "Segoe UI",system-ui,sans-serif}
+  a{color:#7fb0ef;text-decoration:none} a:hover{text-decoration:underline}
+  .wrap{max-width:980px;margin:0 auto;padding:22px 16px 80px}
+  h1{font-size:24px;margin:0 0 6px} h2{font-size:18px;margin:38px 0 6px} h2 small{font-weight:400;color:var(--faint);font-size:13px;margin-left:8px}
+  p{margin:8px 0;max-width:780px} .dim{color:var(--dim)} .small{font-size:13px;color:var(--dim)}
+  .nav{font-size:13px;color:var(--faint);margin:8px 0 0} .nav a{margin-right:14px}
+  .ways{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:18px 0}
+  .way{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:13px 15px} .way b{display:block;margin-bottom:4px} .way p{margin:0;font-size:13.5px;color:var(--dim)}
+  .box{background:var(--card);border:1px solid var(--edge);border-radius:12px;padding:14px 16px;margin:12px 0}
+  label{display:block;font-size:13px;color:var(--dim);margin:10px 0 3px}
+  select,input,button,textarea{font:inherit;color:var(--ink);background:#0b111a;border:1px solid var(--edge);border-radius:8px;padding:8px 10px;max-width:100%}
+  input{width:220px} select{width:100%} button{cursor:pointer;background:#16233a;border-color:#2c456e} button:hover{background:#1b2c49}
+  pre{background:#0b111a;border:1px solid var(--edge);border-radius:8px;padding:10px 12px;overflow-x:auto;font:12.5px/1.5 Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+  code{font:12.5px Consolas,monospace;background:#0b111a;padding:1px 5px;border-radius:4px;word-break:break-word}
+  .chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;border:1px solid;text-transform:uppercase;white-space:nowrap}
+  .ok{color:var(--green);border-color:var(--green)} .bad{color:var(--red);border-color:var(--red)} .warn{color:var(--amber);border-color:var(--amber)} .mute{color:var(--faint);border-color:var(--edge)}
+  details{background:var(--card);border:1px solid var(--edge);border-radius:12px;margin:10px 0} summary{cursor:pointer;padding:12px 15px;font-weight:600} details>div{padding:0 15px 14px}
+  summary small{font-weight:400;color:var(--faint);margin-left:8px}
+  .scroll{overflow-x:auto} table{border-collapse:collapse;width:100%;font-size:13.5px} th,td{text-align:left;vertical-align:top;padding:7px 9px;border-bottom:1px solid var(--edge)} th{color:var(--faint);font-weight:600}
+  .q{color:var(--dim);font-size:12.5px;margin-top:3px} .row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  #verdict{font-size:16px;margin:12px 0 4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Lean4Bio paper checks</h1>
+  <p class="dim">We state laws of biology and of bio-based materials in Lean 4, a language in which a computer checks every step of a proof. Each day a watcher looks for new papers on arXiv and in journals, copies out the numbers they print, and asks one question: do these numbers sit inside the law or outside it? This page is for readers of alphaXiv and anyone else who wants to join in.</p>
+  <p class="small">An independent research project. Not affiliated with alphaXiv or arXiv. A check is arithmetic on numbers copied from a paper. It is not a review and it certifies nothing.</p>
+  <div class="nav"><a href="../">Six tracks dashboard</a><a href="#try">Try your numbers</a><a href="#breakers">Law breakers</a><a href="#short">One number short</a><a href="#wanted">Laws wanted</a><a href="#papers">Checked papers</a><a href="feed.xml">Feed</a><a href="https://www.alphaxiv.org/?feed=lean4bio-papers-we-can-check-7jkmeu" target="_blank" rel="noopener">Follow our feed on alphaXiv</a></div>
+</header>
+
+<div class="ways">
+  <div class="way"><b>1. Break a law</b><p>Type the numbers from any paper. You get a verdict and a Lean theorem you can check yourself in a browser. Numbers that land outside a law go on the board.</p></div>
+  <div class="way"><b>2. One number short</b><p>Papers that are one missing number away from being checkable. Authors and readers can supply it.</p></div>
+  <div class="way"><b>3. Laws wanted</b><p>Regularities that papers report and nobody has stated in Lean. Each comes with a starter file.</p></div>
+  <div class="way"><b>4. A badge and a feed</b><p>Every checked paper gets a badge that links to its proof, a ready comment for its alphaXiv page, and an entry in a feed.</p></div>
+</div>
+<p id="tally" class="dim"></p>
+<div id="sources"></div>
+
+<h2 id="try">1. Break a law <small>try your own numbers</small></h2>
+<div class="box">
+  <label for="law">Pick a law</label>
+  <select id="law"></select>
+  <p id="lawkind" class="small"></p>
+  <div id="inputs"></div>
+  <div class="row"><button id="go">Check</button></div>
+  <div id="verdict"></div>
+  <div id="out" hidden>
+    <p class="small">This is the statement for your numbers. Lean has the final word: paste it into Lean's web editor and it will accept or reject it.</p>
+    <pre id="lean"></pre>
+    <div class="row"><a id="live" target="_blank" rel="noopener"><button type="button">Open in Lean's web editor</button></a><button id="copy" type="button">Copy the theorem</button><a id="send" target="_blank" rel="noopener"><button type="button">Send it to us (opens a GitHub issue)</button></a></div>
+    <p class="small">Sending is optional and uses your own GitHub account. Say which paper, table or sentence the numbers came from, so a second person can find them.</p>
+  </div>
+</div>
+
+<h2 id="breakers">Law breakers so far <small>records that sit outside a law</small></h2>
+<p class="dim">A record outside a law is the useful result. It means the law is wrong, or too narrow, or the paper measured something the law does not cover. Each one below is a lead.</p>
+<div id="breakerlist"></div>
+
+<h2 id="short">2. One number short</h2>
+<p class="dim">These papers are about the right thing, but at least one number a law needs is not printed in the text or a table. If you are an author or you know the value, tell us and we will run the check.</p>
+<div id="shortlist"></div>
+
+<h2 id="wanted">3. Laws wanted</h2>
+<p class="dim">Each line is a regularity a paper reports that no law of ours covers. If you write Lean, download the starter file, state the law, and send it back. If you do not write Lean, tell us whether the statement is fair to the paper.</p>
+<div id="wantedlist"></div>
+
+<h2 id="papers">4. Checked papers <small>badge, proof, and a ready comment</small></h2>
+<div id="paperlist"></div>
+
+<h2 id="feed">Follow along</h2>
+<p class="dim">The watcher runs once a day. New checks and new "one number short" papers appear in the <a href="feed.xml">feed</a> (Atom, works in any feed reader). The code and the laws are in the <a href="https://github.com/fractastical/delphi" target="_blank" rel="noopener">project repository</a>.</p>
+</div>
+<script>
+const $=(s)=>document.querySelector(s), esc=(s)=>String(s??'').replace(/[&<>"]/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let D=null;
+const sec=(title,sub,body,id)=>`<details${id?` id="${id}"`:''}><summary>${esc(title)}${sub?`<small>${esc(sub)}</small>`:''}</summary><div>${body}</div></details>`;
+const numOk=(s)=>/^\d+(\.\d+)?$/.test(s)&&Number(s)>0;
+function lawForm(){
+  const L=D.laws.find((l)=>l.id===$('#law').value);
+  $('#lawkind').textContent=`${L.says} (${L.kind})`;
+  $('#inputs').innerHTML=Object.entries(L.inputs).map(([k,v])=>`<label for="in-${k}">${esc(v)}</label><input id="in-${k}" inputmode="decimal" placeholder="a positive number">`).join('');
+  $('#verdict').innerHTML=''; $('#out').hidden=true;
+}
+function check(){
+  const L=D.laws.find((l)=>l.id===$('#law').value), names=Object.keys(L.inputs), vals={};
+  for(const k of names){ const s=$('#in-'+k).value.trim(); if(!numOk(s)){ $('#verdict').innerHTML=`<span class="chip warn">needs a number</span> Enter a plain positive number (like 0.042) for: ${esc(L.inputs[k])}`; $('#out').hidden=true; return; } vals[k]=s; }
+  const ev=(e)=>Function(...names,`return (${e.replace(/(\d+)\/(\d+)/g,'($1/$2)')});`)(...names.map((k)=>Number(vals[k])));
+  const sub=(e)=>e.replace(/[a-z_][a-z0-9_]*/g,(m)=>m in vals?`(${vals[m]} : ℝ)`:m);
+  const inside=L.parts.every(([a,b])=>ev(a)<=ev(b)), prop=L.parts.map(([a,b])=>`${sub(a)} ≤ ${sub(b)}`).join(' ∧ ');
+  const code=`import Mathlib\n\n-- ${L.says}\n-- Your numbers: ${names.map((k)=>`${k} = ${vals[k]}`).join(', ')}\ntheorem my_check : ${inside?prop:`¬ (${prop})`} := by norm_num\n\n#print axioms my_check\n`;
+  $('#verdict').innerHTML=inside?`<span class="chip ok">inside the law</span> These numbers are consistent with it.`:`<span class="chip bad">outside the law</span> These numbers break it. That is worth a second look at both the numbers and the law.`;
+  $('#lean').textContent=code; $('#out').hidden=false;
+  $('#live').href='https://live.lean-lang.org/#code='+encodeURIComponent(code);
+  $('#send').href=D.repo_issues+'?title='+encodeURIComponent(`Paper check: ${L.id} ${inside?'inside':'OUTSIDE'}`)+'&body='+encodeURIComponent(`Paper (arXiv id or DOI):\nWhere the numbers are printed (table, section, sentence):\n\nLaw: ${L.says}\nResult by arithmetic: ${inside?'inside':'outside'}\n\n\`\`\`lean\n${code}\`\`\`\n`);
+}
+function render(){
+  const S=D.summary;
+  $('#tally').textContent=S.sentence.replace(/ \d+ papers could not be checked.*$/,'');
+  $('#sources').innerHTML=S.by_source?.length?`<div class="scroll"><table><tr><th>where the papers came from</th><th>found</th><th>read</th><th>checked</th></tr>${S.by_source.map((s)=>`<tr><td>${esc(s.plain)}</td><td>${s.found}</td><td>${s.read}</td><td>${s.checked}</td></tr>`).join('')}</table></div><p class="small">${esc(S.caveat)}</p>`:'';
+  $('#law').innerHTML=D.laws.map((l)=>`<option value="${l.id}">${esc(l.says)}</option>`).join(''); lawForm();
+  const byP={}; for(const b of D.breakers)(byP[b.slug]??=[]).push(b);
+  $('#breakerlist').innerHTML=Object.values(byP).map((bs)=>sec(bs[0].paper,`${bs.length} outside`,`<div class="scroll"><table><tr><th>record</th><th>law it breaks</th><th>checked by</th></tr>${bs.map((b)=>`<tr><td>${esc(b.label)}</td><td>${esc(b.says)}</td><td>${esc(b.by??'')}</td></tr>`).join('')}</table></div><p><a href="#paper-${bs[0].slug}">See the numbers and quotes</a>${bs[0].link?` · <a href="${esc(bs[0].link)}" target="_blank" rel="noopener">the paper</a>`:''}</p>`)).join('')||'<p class="small">None yet.</p>';
+  $('#shortlist').innerHTML=D.short.map((p)=>sec(p.title,p.usecase_title,`<p>${esc(p.why)}</p><p><b>Missing:</b> ${esc(p.missing.join('; '))}</p><p>${p.link?`<a href="${esc(p.link)}" target="_blank" rel="noopener">the paper</a>`:''}${p.alphaxiv?` · <a href="${esc(p.alphaxiv)}" target="_blank" rel="noopener">discuss on alphaXiv</a>`:''} · <a target="_blank" rel="noopener" href="${D.repo_issues}?title=${encodeURIComponent('Missing number for: '+p.title.slice(0,80))}&body=${encodeURIComponent('Paper: '+(p.link??'')+'\nMissing: '+p.missing.join('; ')+'\n\nValue and where it is printed:\n')}">supply the number</a></p>`,'short-'+p.slug)).join('')||'<p class="small">None right now.</p>';
+  $('#wantedlist').innerHTML=D.wanted.map((w)=>sec(w.statement,w.usecase_title,`<p class="q">"${esc(w.quote??'')}" ${w.where?'('+esc(w.where)+')':''}</p><p>From: ${w.link?`<a href="${esc(w.link)}" target="_blank" rel="noopener">${esc(w.paper)}</a>`:esc(w.paper)}</p><p>Quantities: ${esc(w.quantities.join('; '))}</p><p><a href="${esc(w.stub)}" download><b>Download the starter Lean file</b></a></p>`)).join('')||'<p class="small">None right now.</p>';
+  $('#paperlist').innerHTML=D.checked.map((p)=>{
+    const proof=`${D.site}/alphaxiv/#paper-${p.slug}`, badge=`${D.site}/badges/${p.slug}.svg`, md=`[![Lean4Bio checked: ${p.badge}](${badge})](${proof})`;
+    const comment=`We ran the numbers printed in this paper through laws stated in Lean 4 (Lean4Bio). Result: ${p.badge}. Every number, the sentence it came from, and the machine-checked statement: ${proof} . This is arithmetic on copied numbers, not a review. If a number was copied wrongly, tell us and we will correct it.`;
+    return sec(p.title,p.badge+(p.back_catalogue?' · from our back catalogue':''),
+     `<p><a href="${proof}"><img src="../badges/${p.slug}.svg" alt="Lean4Bio checked: ${esc(p.badge)}"></a> ${p.link?`· <a href="${esc(p.link)}" target="_blank" rel="noopener">the paper</a>`:''}${p.alphaxiv?` · <a href="${esc(p.alphaxiv)}" target="_blank" rel="noopener">on alphaXiv</a>`:''}${p.preprint?' <span class="chip warn">preprint</span>':''}
+       ${p.second_reader?`<span class="chip ${p.second_reader.agree?'ok':'warn'}">${esc(p.second_reader.plain)}</span>`:'<span class="chip mute">one reader only</span>'}</p>
+      <div class="scroll"><table><tr><th>record</th><th>result</th><th>statement checked, and the sentence the numbers came from</th></tr>${p.checks.map((c)=>`<tr><td>${esc(c.label)}${c.note?`<div class="q">${esc(c.note)}</div>`:''}</td><td><span class="chip ${c.result==='inside'?'ok':'bad'}">${c.result}</span></td><td>${c.prop?`<code>${esc(c.prop)}</code><div class="q">${esc(c.theorem)}, Lean kernel</div>`:`${esc(c.detail??'')}<div class="q">${esc(c.by??'')}</div>`}${(c.quotes??[]).map((q)=>`<div class="q">"${esc(q.text)}" (${esc(q.where??'')})</div>`).join('')}</td></tr>`).join('')}</table></div>
+      <p><b>Badge for a README or web page</b></p><pre>${esc(md)}</pre>
+      <p><b>Comment for the paper's discussion page</b></p><pre>${esc(comment)}</pre>`,'paper-'+p.slug);}).join('')||'<p class="small">None yet.</p>';
+  if(location.hash){ const el=document.getElementById(location.hash.slice(1)); if(el){ if(el.tagName==='DETAILS') el.open=true; el.scrollIntoView(); } }
+}
+$('#law').addEventListener('change',lawForm); $('#go').addEventListener('click',check);
+$('#copy').addEventListener('click',()=>navigator.clipboard?.writeText($('#lean').textContent));
+fetch('./data.json').then((r)=>r.json()).then((d)=>{ D=d; render(); }).catch((e)=>{ $('#tally').textContent='could not load data.json: '+e.message; });
+</script>
+</body>
+</html>

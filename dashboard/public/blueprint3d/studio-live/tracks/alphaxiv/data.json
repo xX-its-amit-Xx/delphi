@@ -1,0 +1,1988 @@
+{
+ "made_by": "tracks/watch/community.mjs",
+ "built": "2026-11-18",
+ "site": "https://delphi-mission-control.ashenoy000.workers.dev/blueprint3d/studio-live/tracks",
+ "summary": {
+  "sentence": "99 new papers found since 2026-05-01, plus 2 from our back catalogue. 6 carried numbers a law of ours takes: 40 separate checks (31 by the Lean kernel, 9 by a rank-direction script), 28 inside the law and 12 outside. 2 papers were inside on every check. 95 papers could not be checked, for 6 reasons:",
+  "reasons": [
+   {
+    "code": "off_topic",
+    "n": 31,
+    "plain": "the search matched but the paper is about something else"
+   },
+   {
+    "code": "no_full_text",
+    "n": 23,
+    "plain": "only the abstract is open, and it does not carry the numbers"
+   },
+   {
+    "code": "partial_inputs",
+    "n": 19,
+    "plain": "some of the numbers a law needs are there, at least one is missing"
+   },
+   {
+    "code": "no_numbers",
+    "n": 11,
+    "plain": "relevant, but it reports nothing our laws take as input"
+   },
+   {
+    "code": "no_law_yet",
+    "n": 7,
+    "plain": "it makes a quantitative claim that no law of ours covers yet"
+   },
+   {
+    "code": "holdout",
+    "n": 4,
+    "plain": "it is about the organisms we keep sealed for the final test"
+   }
+  ],
+  "by_source": [
+   {
+    "source": "ARXIV",
+    "plain": "arXiv (the papers alphaXiv mirrors)",
+    "found": 19,
+    "read": 19,
+    "checked": 1
+   },
+   {
+    "source": "MED",
+    "plain": "journals (via Europe PMC)",
+    "found": 67,
+    "read": 67,
+    "checked": 2
+   },
+   {
+    "source": "PPR",
+    "plain": "other preprint servers (via Europe PMC)",
+    "found": 9,
+    "read": 9,
+    "checked": 1
+   }
+  ],
+  "by_usecase": [
+   {
+    "id": "hygromorph",
+    "title": "Humidity-driven bilayers (the biomaterial panel)",
+    "group": "industry",
+    "found": 15,
+    "checked": 2,
+    "candidate_laws": 6
+   },
+   {
+    "id": "crosslink",
+    "title": "Crosslinker dose against stiffness and swelling",
+    "group": "industry",
+    "found": 28,
+    "checked": 3,
+    "candidate_laws": 7
+   },
+   {
+    "id": "locomotion",
+    "title": "Swimming: tail-beat frequency, amplitude and speed",
+    "group": "industry",
+    "found": 12,
+    "checked": 0,
+    "candidate_laws": 7
+   },
+   {
+    "id": "xenobot",
+    "title": "Xenobots and other cell-built swimmers",
+    "group": "industry",
+    "found": 19,
+    "checked": 1,
+    "candidate_laws": 3
+   },
+   {
+    "id": "zebrafish-morphology",
+    "title": "Zebrafish body plan: somites and segmentation clock",
+    "group": "academic",
+    "found": 23,
+    "checked": 0,
+    "candidate_laws": 6
+   }
+  ],
+  "caveat": "A check is arithmetic on numbers a reader agent copied from the paper. The copying has not been re-checked by a second reader. No paper is certified.",
+  "found": 101,
+  "checked": 6
+ },
+ "laws": [
+  {
+   "id": "bilayer_plate_ceiling",
+   "says": "A two-layer sheet cannot curl tighter than 2.25 x (swelling difference) / (total thickness).",
+   "inputs": {
+    "kappa_per_mm": "measured curvature, 1/mm",
+    "h_mm": "total thickness, mm",
+    "deps": "difference in free swelling strain between the layers (a fraction, not percent)"
+   },
+   "parts": [
+    [
+     "kappa_per_mm * h_mm",
+     "9/4 * deps"
+    ]
+   ],
+   "kind": "proved bound under stated assumptions (Timoshenko bilayer, Poisson ratio up to 0.5)",
+   "general_theorem": "ThompsonLaws.Hygromorphs.plateCurvature_le"
+  },
+  {
+   "id": "bilayer_strip_ceiling",
+   "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+   "inputs": {
+    "kappa_per_mm": "measured curvature, 1/mm",
+    "h_mm": "total thickness, mm",
+    "deps": "difference in free swelling strain"
+   },
+   "parts": [
+    [
+     "kappa_per_mm * h_mm",
+     "3/2 * deps"
+    ]
+   ],
+   "kind": "proved bound under stated assumptions (narrow strip)",
+   "general_theorem": "ThompsonLaws.Hygromorphs.bilayerCurvature_le"
+  },
+  {
+   "id": "strouhal_band",
+   "says": "Cruising swimmers beat their tails so that frequency x amplitude / speed falls between 0.2 and 0.4.",
+   "inputs": {
+    "f_hz": "tail-beat frequency, Hz",
+    "a_m": "peak-to-peak tail amplitude, m",
+    "u_m_s": "swimming speed, m/s"
+   },
+   "parts": [
+    [
+     "f_hz * a_m",
+     "2/5 * u_m_s"
+    ],
+    [
+     "1/5 * u_m_s",
+     "f_hz * a_m"
+    ]
+   ],
+   "kind": "empirical band, not a proved law; the Lean file proves only how the band follows from the frequency-speed line",
+   "general_theorem": "StrouhalBainbridge.band_upper_iff"
+  },
+  {
+   "id": "low_reynolds",
+   "says": "A swimmer this small and slow is in the viscous regime: density x speed x size / viscosity is below 1.",
+   "inputs": {
+    "u_um_s": "speed, micrometres per second",
+    "l_um": "body size, micrometres"
+   },
+   "parts": [
+    [
+     "u_um_s * l_um",
+     "1000000"
+    ]
+   ],
+   "kind": "regime check in water (kinematic viscosity 1e-6 m2/s), integer arithmetic",
+   "general_theorem": "XenobotBounds (low-Reynolds statement)"
+  },
+  {
+   "id": "clock_wavefront",
+   "says": "Somite length equals wavefront speed x clock period.",
+   "inputs": {
+    "s_um": "somite length, micrometres",
+    "v_um_min": "wavefront speed, micrometres per minute",
+    "t_min": "clock period, minutes"
+   },
+   "parts": [
+    [
+     "s_um",
+     "3/2 * (v_um_min * t_min)"
+    ],
+    [
+     "2/3 * (v_um_min * t_min)",
+     "s_um"
+    ]
+   ],
+   "kind": "model identity, tested here within a factor of 1.5; the tolerance is our convention",
+   "general_theorem": "ClockWavefront (somite length = speed x period)"
+  }
+ ],
+ "checked": [
+  {
+   "slug": "10-1002-smll-75441",
+   "title": "Ultra-Tough Hybrid Supramolecular Gelatin Hydrogels.",
+   "usecase": "crosslink",
+   "usecase_title": "Crosslinker dose against stiffness and swelling",
+   "link": "https://doi.org/10.1002/smll.75441",
+   "alphaxiv": null,
+   "doi": "10.1002/smll.75441",
+   "arxiv_id": null,
+   "preprint": false,
+   "published": "2026-09-02",
+   "read": "full_text",
+   "back_catalogue": false,
+   "badge": "4 of 5 checks inside",
+   "second_reader": {
+    "agree": true,
+    "matched": 5,
+    "first_records": 5,
+    "second_records": 6,
+    "first_only": [],
+    "second_only": [
+     "TanOxo-Gel: relative volumetric change in the compacted state straight after tannic acid treatment (Shr), versus bis-oxazoline loading"
+    ],
+    "plain": "second reader agrees on all 5 records"
+   },
+   "checks": [
+    {
+     "label": "Tan-GelPHy: storage modulus after 5 days vs tannic acid bath concentration",
+     "law": "crosslink_direction",
+     "says": "More crosslinker: stiffer, and less swelling.",
+     "result": "inside",
+     "theorem": null,
+     "prop": null,
+     "detail": "modulus: 18.9, 23, 29.3, 31.6, 32.9 along rising dose",
+     "by": "script (rank direction), no Lean",
+     "quotes": [
+      {
+       "text": "G′ increased from 18.9 kPa at 5 wt.% tannic acid to 23.0, 29.3, 31.6, and 32.9 kPa at 10, 20, 30, and 40 wt.%",
+       "where": "Results 2.1, text describing Figure 1E"
+      }
+     ],
+     "note": null
+    },
+    {
+     "label": "TanOxo-Gel: storage modulus retained after 5 days immersion vs bis-oxazoline loading",
+     "law": "crosslink_direction",
+     "says": "More crosslinker: stiffer, and less swelling.",
+     "result": "inside",
+     "theorem": null,
+     "prop": null,
+     "detail": "modulus: 14.7, 27.2, 30.8, 33.1, 45.6, 35.6, 28.5 along rising dose",
+     "by": "script (rank direction), no Lean",
+     "quotes": [
+      {
+       "text": "increased from 14.7 kPa at 0.5 eq to 27.2 kPa at 0.75 eq, 30.8 kPa at 1.0 eq, and 33.1 kPa at 1.25 eq",
+       "where": "Results 2.4, text describing Figure 3D"
+      },
+      {
+       "text": "a maximum of 45.6 kPa at 1.5 eq and then decreasing again to 35.6 kPa at 1.75 eq and 28.5 kPa at 2.0 eq",
+       "where": "Results 2.4, text describing Figure 3D"
+      }
+     ],
+     "note": null
+    },
+    {
+     "label": "Oxo-GelPHy (no tannic acid): storage modulus after 5 days immersion vs bis-oxazoline loading",
+     "law": "crosslink_direction",
+     "says": "More crosslinker: stiffer, and less swelling.",
+     "result": "inside",
+     "theorem": null,
+     "prop": null,
+     "detail": "modulus: 4.4, 7.1, 5.4 along rising dose",
+     "by": "script (rank direction), no Lean",
+     "quotes": [
+      {
+       "text": "the 1.25, 1.5, and 1.75 eq Oxo‐GelPHy formulations retained G′ values of 4.4, 7.1, and 5.4 kPa, respectively",
+       "where": "Results 2.4"
+      }
+     ],
+     "note": null
+    },
+    {
+     "label": "Oxo-GelPHy (no tannic acid): relative swelling at Day 21 in water vs bis-oxazoline loading",
+     "law": "crosslink_direction",
+     "says": "More crosslinker: stiffer, and less swelling.",
+     "result": "outside",
+     "theorem": null,
+     "prop": null,
+     "detail": "swelling: 225, 185, 78, 155, 234.6 along rising dose",
+     "by": "script (rank direction), no Lean",
+     "quotes": [
+      {
+       "text": "swelling values of 225.0% at 1.0 eq, 185.0% at 1.25 eq, 78.0% at 1.5 eq, 155.0% at 1.75 eq, and 234.6% at 2.0 eq",
+       "where": "Results 2.3, text describing Figure 3A left"
+      }
+     ],
+     "note": null
+    },
+    {
+     "label": "TanOxo-Gel: relative volumetric change at Day 21 in water vs bis-oxazoline loading",
+     "law": "crosslink_direction",
+     "says": "More crosslinker: stiffer, and less swelling.",
+     "result": "inside",
+     "theorem": null,
+     "prop": null,
+     "detail": "swelling: 178, 125, 56, 24.9, -31, 11.7, 88.3 along rising dose",
+     "by": "script (rank direction), no Lean",
+     "quotes": [
+      {
+       "text": "At Day 21, the 0.50 eq formulation showed a relative volumetric change of 178.0%.",
+       "where": "Results 2.3, text describing Figure 3A right"
+      },
+      {
+       "text": "Increasing the bis‐oxazoline loading to 0.75 and 1.00 eq reduced the expansion to 125.0% and 56.0%, respectively.",
+       "where": "Results 2.3"
+      }
+     ],
+     "note": null
+    }
+   ]
+  },
+  {
+   "slug": "10-21203-rs-3-rs-9801627-v1",
+   "title": "Cellulose-Based Superabsorbent Hydrogels for Hygiene Applications: A Study of Absorbency Properties",
+   "usecase": "crosslink",
+   "usecase_title": "Crosslinker dose against stiffness and swelling",
+   "link": "https://doi.org/10.21203/rs.3.rs-9801627/v1",
+   "alphaxiv": null,
+   "doi": "10.21203/rs.3.rs-9801627/v1",
+   "arxiv_id": null,
+   "preprint": true,
+   "published": "2026-10-06",
+   "read": "full_text",
+   "back_catalogue": false,
+   "badge": "2 of 3 checks inside",
+   "second_reader": {
+    "agree": false,
+    "matched": 2,
+    "first_records": 3,
+    "second_records": 7,
+    "first_only": [
+     "CMC-HEC: centrifuge retention capacity in 0.9% saline vs citric acid dose"
+    ],
+    "second_only": [
+     "CMC-HEC hydrogel, BTCA: storage modulus G' at 1 Hz versus BTCA loading",
+     "CMC-HEC hydrogel, citric acid: centrifuge retention capacity (CRC) in 0.9% saline versus citric acid loading",
+     "CMC-HEC hydrogel, citric acid: absorption under load (AUL, 6.2 kPa) in 0.9% saline versus citric acid loading",
+     "CMC-HEC hydrogel, BTCA: absorption under load (AUL, 6.2 kPa) in 0.9% saline versus BTCA loading",
+     "CMC-starch hydrogel, BTCA: absorption under load (AUL) in 0.9% saline versus BTCA loading"
+    ],
+    "plain": "second reader agrees on 2 of 3 records"
+   },
+   "checks": [
+    {
+     "label": "CMC-HEC: storage modulus G' at 1 Hz vs citric acid dose",
+     "law": "crosslink_direction",
+     "says": "More crosslinker: stiffer, and less swelling.",
+     "result": "inside",
+     "theorem": null,
+     "prop": null,
+     "detail": "modulus: 21, 187, 949 along rising dose",
+     "by": "script (rank direction), no Lean",
+     "quotes": [
+      {
+       "text": "from 21 Pa in the non-crosslinked sample to 187 Pa at 0.5% CA",
+       "where": "Section 3.3.1, text under Table 2"
+      },
+      {
+       "text": "the 2.0% CA sample exhibits the highest G (949 ± 1 Pa) at 1Hz among the hydrogels crosslinked with Citric Acid",
+       "where": "Section 3.3, text citing Table 2"
+      }
+     ],
+     "note": null
+    },
+    {
+     "label": "CMC-HEC: centrifuge retention capacity in 0.9% saline vs citric acid dose",
+     "law": "crosslink_direction",
+     "says": "More crosslinker: stiffer, and less swelling.",
+     "result": "inside",
+     "theorem": null,
+     "prop": null,
+     "detail": "swelling: 17, 22, 20, 16 along rising dose",
+     "by": "script (rank direction), no Lean",
+     "quotes": [
+      {
+       "text": "0.5% CA 0.7 ± 0.1 9.0 ± 0.0 22 ± 1",
+       "where": "Table 1 (columns: TCC mmol/g, AUL g/g, CRC g/g)"
+      },
+      {
+       "text": "1.0 % CA 1.0 ± 0.1 9.0 ± 0.5 20 ± 0",
+       "where": "Table 1"
+      }
+     ],
+     "note": null
+    },
+    {
+     "label": "CMC-HEC: centrifuge retention capacity in 0.9% saline vs BTCA dose",
+     "law": "crosslink_direction",
+     "says": "More crosslinker: stiffer, and less swelling.",
+     "result": "outside",
+     "theorem": null,
+     "prop": null,
+     "detail": "swelling: 8, 16, 17 along rising dose",
+     "by": "script (rank direction), no Lean",
+     "quotes": [
+      {
+       "text": "0.5% BTCA 1.2 ± 0.2 7.0 ± 0.0 8±3",
+       "where": "Table 1 (columns: TCC mmol/g, AUL g/g, CRC g/g)"
+      },
+      {
+       "text": "1.0% BTCA 1.9 ± 0.1 8.2 ± 0.5 16 ± 5",
+       "where": "Table 1"
+      }
+     ],
+     "note": null
+    }
+   ]
+  },
+  {
+   "slug": "10-1371-journal-pone-0120718",
+   "title": "Bio-inspired wooden actuators for large scale applications.",
+   "usecase": "hygromorph",
+   "usecase_title": "Humidity-driven bilayers (the biomaterial panel)",
+   "link": "https://doi.org/10.1371/journal.pone.0120718",
+   "alphaxiv": null,
+   "doi": "10.1371/journal.pone.0120718",
+   "arxiv_id": null,
+   "preprint": false,
+   "published": "2015-04-02",
+   "read": "full_text",
+   "back_catalogue": true,
+   "badge": "15 of 24 checks inside",
+   "second_reader": null,
+   "checks": [
+    {
+     "label": "RB15-24h-0.2 (development record of the earlier case)",
+     "law": "bilayer_plate_ceiling",
+     "says": "A two-layer sheet cannot curl tighter than 2.25 x (swelling difference) / (total thickness).",
+     "result": "inside",
+     "theorem": "Watch.w1_bilayer_plate_ceiling",
+     "prop": "(0.0041 : ℝ) * (4.2 : ℝ) ≤ 9/4 * (0.010329 : ℝ)",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "RB15-24h-0.2 (development record of the earlier case)",
+     "law": "bilayer_strip_ceiling",
+     "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+     "result": "outside",
+     "theorem": "Watch.w2_bilayer_strip_ceiling",
+     "prop": "¬ ((0.0041 : ℝ) * (4.2 : ℝ) ≤ 3/2 * (0.010329 : ℝ))",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "RB15-24h-0.8 (development record of the earlier case)",
+     "law": "bilayer_plate_ceiling",
+     "says": "A two-layer sheet cannot curl tighter than 2.25 x (swelling difference) / (total thickness).",
+     "result": "inside",
+     "theorem": "Watch.w3_bilayer_plate_ceiling",
+     "prop": "(0.0038 : ℝ) * (4.8 : ℝ) ≤ 9/4 * (0.010329 : ℝ)",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "RB15-24h-0.8 (development record of the earlier case)",
+     "law": "bilayer_strip_ceiling",
+     "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+     "result": "outside",
+     "theorem": "Watch.w4_bilayer_strip_ceiling",
+     "prop": "¬ ((0.0038 : ℝ) * (4.8 : ℝ) ≤ 3/2 * (0.010329 : ℝ))",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "RB15-24h-1 (development record of the earlier case)",
+     "law": "bilayer_plate_ceiling",
+     "says": "A two-layer sheet cannot curl tighter than 2.25 x (swelling difference) / (total thickness).",
+     "result": "inside",
+     "theorem": "Watch.w5_bilayer_plate_ceiling",
+     "prop": "(0.0036 : ℝ) * (5 : ℝ) ≤ 9/4 * (0.010329 : ℝ)",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "RB15-24h-1 (development record of the earlier case)",
+     "law": "bilayer_strip_ceiling",
+     "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+     "result": "outside",
+     "theorem": "Watch.w6_bilayer_strip_ceiling",
+     "prop": "¬ ((0.0036 : ℝ) * (5 : ℝ) ≤ 3/2 * (0.010329 : ℝ))",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "RB15-24h-2 (development record of the earlier case)",
+     "law": "bilayer_plate_ceiling",
+     "says": "A two-layer sheet cannot curl tighter than 2.25 x (swelling difference) / (total thickness).",
+     "result": "inside",
+     "theorem": "Watch.w7_bilayer_plate_ceiling",
+     "prop": "(0.0025 : ℝ) * (6 : ℝ) ≤ 9/4 * (0.010329 : ℝ)",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "RB15-24h-2 (development record of the earlier case)",
+     "law": "bilayer_strip_ceiling",
+     "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+     "result": "inside",
+     "theorem": "Watch.w8_bilayer_strip_ceiling",
+     "prop": "(0.0025 : ℝ) * (6 : ℝ) ≤ 3/2 * (0.010329 : ℝ)",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "RB15-12h-0.2 (development record of the earlier case)",
+     "law": "bilayer_plate_ceiling",
+     "says": "A two-layer sheet cannot curl tighter than 2.25 x (swelling difference) / (total thickness).",
+     "result": "inside",
+     "theorem": "Watch.w9_bilayer_plate_ceiling",
+     "prop": "(0.0029 : ℝ) * (4.2 : ℝ) ≤ 9/4 * (0.006573 : ℝ)",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "RB15-12h-0.2 (development record of the earlier case)",
+     "law": "bilayer_strip_ceiling",
+     "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+     "result": "outside",
+     "theorem": "Watch.w10_bilayer_strip_ceiling",
+     "prop": "¬ ((0.0029 : ℝ) * (4.2 : ℝ) ≤ 3/2 * (0.006573 : ℝ))",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "RB15-12h-0.8 (development record of the earlier case)",
+     "law": "bilayer_plate_ceiling",
+     "says": "A two-layer sheet cannot curl tighter than 2.25 x (swelling difference) / (total thickness).",
+     "result": "inside",
+     "theorem": "Watch.w11_bilayer_plate_ceiling",
+     "prop": "(0.0022 : ℝ) * (4.8 : ℝ) ≤ 9/4 * (0.006573 : ℝ)",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "RB15-12h-0.8 (development record of the earlier case)",
+     "law": "bilayer_strip_ceiling",
+     "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+     "result": "outside",
+     "theorem": "Watch.w12_bilayer_strip_ceiling",
+     "prop": "¬ ((0.0022 : ℝ) * (4.8 : ℝ) ≤ 3/2 * (0.006573 : ℝ))",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "RB15-12h-1 (development record of the earlier case)",
+     "law": "bilayer_plate_ceiling",
+     "says": "A two-layer sheet cannot curl tighter than 2.25 x (swelling difference) / (total thickness).",
+     "result": "inside",
+     "theorem": "Watch.w13_bilayer_plate_ceiling",
+     "prop": "(0.0022 : ℝ) * (5 : ℝ) ≤ 9/4 * (0.006573 : ℝ)",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "RB15-12h-1 (development record of the earlier case)",
+     "law": "bilayer_strip_ceiling",
+     "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+     "result": "outside",
+     "theorem": "Watch.w14_bilayer_strip_ceiling",
+     "prop": "¬ ((0.0022 : ℝ) * (5 : ℝ) ≤ 3/2 * (0.006573 : ℝ))",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "RB15-12h-2 (development record of the earlier case)",
+     "law": "bilayer_plate_ceiling",
+     "says": "A two-layer sheet cannot curl tighter than 2.25 x (swelling difference) / (total thickness).",
+     "result": "inside",
+     "theorem": "Watch.w15_bilayer_plate_ceiling",
+     "prop": "(0.0016 : ℝ) * (6 : ℝ) ≤ 9/4 * (0.006573 : ℝ)",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "RB15-12h-2 (development record of the earlier case)",
+     "law": "bilayer_strip_ceiling",
+     "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+     "result": "inside",
+     "theorem": "Watch.w16_bilayer_strip_ceiling",
+     "prop": "(0.0016 : ℝ) * (6 : ℝ) ≤ 3/2 * (0.006573 : ℝ)",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "RB15-6h-0.2 (development record of the earlier case)",
+     "law": "bilayer_plate_ceiling",
+     "says": "A two-layer sheet cannot curl tighter than 2.25 x (swelling difference) / (total thickness).",
+     "result": "inside",
+     "theorem": "Watch.w17_bilayer_plate_ceiling",
+     "prop": "(0.002 : ℝ) * (4.2 : ℝ) ≤ 9/4 * (0.004069 : ℝ)",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "RB15-6h-0.2 (development record of the earlier case)",
+     "law": "bilayer_strip_ceiling",
+     "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+     "result": "outside",
+     "theorem": "Watch.w18_bilayer_strip_ceiling",
+     "prop": "¬ ((0.002 : ℝ) * (4.2 : ℝ) ≤ 3/2 * (0.004069 : ℝ))",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "RB15-6h-0.8 (development record of the earlier case)",
+     "law": "bilayer_plate_ceiling",
+     "says": "A two-layer sheet cannot curl tighter than 2.25 x (swelling difference) / (total thickness).",
+     "result": "inside",
+     "theorem": "Watch.w19_bilayer_plate_ceiling",
+     "prop": "(0.0015 : ℝ) * (4.8 : ℝ) ≤ 9/4 * (0.004069 : ℝ)",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "RB15-6h-0.8 (development record of the earlier case)",
+     "law": "bilayer_strip_ceiling",
+     "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+     "result": "outside",
+     "theorem": "Watch.w20_bilayer_strip_ceiling",
+     "prop": "¬ ((0.0015 : ℝ) * (4.8 : ℝ) ≤ 3/2 * (0.004069 : ℝ))",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "RB15-6h-1 (development record of the earlier case)",
+     "law": "bilayer_plate_ceiling",
+     "says": "A two-layer sheet cannot curl tighter than 2.25 x (swelling difference) / (total thickness).",
+     "result": "inside",
+     "theorem": "Watch.w21_bilayer_plate_ceiling",
+     "prop": "(0.0015 : ℝ) * (5 : ℝ) ≤ 9/4 * (0.004069 : ℝ)",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "RB15-6h-1 (development record of the earlier case)",
+     "law": "bilayer_strip_ceiling",
+     "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+     "result": "outside",
+     "theorem": "Watch.w22_bilayer_strip_ceiling",
+     "prop": "¬ ((0.0015 : ℝ) * (5 : ℝ) ≤ 3/2 * (0.004069 : ℝ))",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "RB15-6h-2 (development record of the earlier case)",
+     "law": "bilayer_plate_ceiling",
+     "says": "A two-layer sheet cannot curl tighter than 2.25 x (swelling difference) / (total thickness).",
+     "result": "inside",
+     "theorem": "Watch.w23_bilayer_plate_ceiling",
+     "prop": "(0.001 : ℝ) * (6 : ℝ) ≤ 9/4 * (0.004069 : ℝ)",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "RB15-6h-2 (development record of the earlier case)",
+     "law": "bilayer_strip_ceiling",
+     "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+     "result": "inside",
+     "theorem": "Watch.w24_bilayer_strip_ceiling",
+     "prop": "(0.001 : ℝ) * (6 : ℝ) ≤ 3/2 * (0.004069 : ℝ)",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    }
+   ]
+  },
+  {
+   "slug": "10-1371-journal-pone-0205607",
+   "title": "Modeling and design of thin bending wooden bilayers.",
+   "usecase": "hygromorph",
+   "usecase_title": "Humidity-driven bilayers (the biomaterial panel)",
+   "link": "https://doi.org/10.1371/journal.pone.0205607",
+   "alphaxiv": null,
+   "doi": "10.1371/journal.pone.0205607",
+   "arxiv_id": null,
+   "preprint": false,
+   "published": "2018-10-16",
+   "read": "full_text",
+   "back_catalogue": true,
+   "badge": "3 of 4 checks inside",
+   "second_reader": null,
+   "checks": [
+    {
+     "label": "GR18-r0.17 (held-out record of the earlier case)",
+     "law": "bilayer_plate_ceiling",
+     "says": "A two-layer sheet cannot curl tighter than 2.25 x (swelling difference) / (total thickness).",
+     "result": "inside",
+     "theorem": "Watch.w25_bilayer_plate_ceiling",
+     "prop": "(0.0045 : ℝ) * (4.9 : ℝ) ≤ 9/4 * (0.0144 : ℝ)",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "GR18-r0.17 (held-out record of the earlier case)",
+     "law": "bilayer_strip_ceiling",
+     "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+     "result": "outside",
+     "theorem": "Watch.w26_bilayer_strip_ceiling",
+     "prop": "¬ ((0.0045 : ℝ) * (4.9 : ℝ) ≤ 3/2 * (0.0144 : ℝ))",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "GR18-r0.49 (held-out record of the earlier case)",
+     "law": "bilayer_plate_ceiling",
+     "says": "A two-layer sheet cannot curl tighter than 2.25 x (swelling difference) / (total thickness).",
+     "result": "inside",
+     "theorem": "Watch.w27_bilayer_plate_ceiling",
+     "prop": "(0.0015 : ℝ) * (8 : ℝ) ≤ 9/4 * (0.0144 : ℝ)",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    },
+    {
+     "label": "GR18-r0.49 (held-out record of the earlier case)",
+     "law": "bilayer_strip_ceiling",
+     "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+     "result": "inside",
+     "theorem": "Watch.w28_bilayer_strip_ceiling",
+     "prop": "(0.0015 : ℝ) * (8 : ℝ) ≤ 3/2 * (0.0144 : ℝ)",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "see tracks/research/agent-scripts/cs-hygromorph-bilayer/records.csv",
+       "where": "case run of 2026-11-14"
+      }
+     ],
+     "note": "swelling difference inferred from the paper's own data in the case run, not printed in the paper"
+    }
+   ]
+  },
+  {
+   "slug": "10-3390-mi17070815",
+   "title": "Phototaxis and Motility of Euglena gracilis in Physiological Saline via Stepwise Acclimation for Biohybrid Microrobotics.",
+   "usecase": "xenobot",
+   "usecase_title": "Xenobots and other cell-built swimmers",
+   "link": "https://doi.org/10.3390/mi17070815",
+   "alphaxiv": null,
+   "doi": "10.3390/mi17070815",
+   "arxiv_id": null,
+   "preprint": false,
+   "published": "2026-07-06",
+   "read": "full_text",
+   "back_catalogue": false,
+   "badge": "3 of 3 checks inside",
+   "second_reader": null,
+   "checks": [
+    {
+     "label": "Euglena gracilis, control medium (PBS 0%), direct-transfer experiment, 1 h",
+     "law": "low_reynolds",
+     "says": "A swimmer this small and slow is in the viscous regime: density x speed x size / viscosity is below 1.",
+     "result": "inside",
+     "theorem": "Watch.w29_low_reynolds",
+     "prop": "(22.5 : ℝ) * (40.9 : ℝ) ≤ 1000000",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "At 1 h, the mean speed declined from 22.5 ± 13.8 µm/s at PBS 0% to 4.1 ± 6.4 µm/s at PBS 100%.",
+       "where": "Results, direct transfer, swimming speed (text with Fig. 5)"
+      },
+      {
+       "text": "Values under all conditions at 1 h ranged from approximately 39–41 µm, comparable to the control group (PBS 0%: 40.9 µm).",
+       "where": "Results, direct transfer, morphology (text with Fig. 3)"
+      }
+     ],
+     "note": "Body size is the cell's major axis. Speed is the population mean over all tracked cells, including near-stationary ones (the paper counts cells under 5 µm/s as inactive), so it understates the speed of active swimmers. A natural single-celled organism, not an engineered biobot."
+    },
+    {
+     "label": "Euglena gracilis after stepwise acclimation, PBS 25%",
+     "law": "low_reynolds",
+     "says": "A swimmer this small and slow is in the viscous regime: density x speed x size / viscosity is below 1.",
+     "result": "inside",
+     "theorem": "Watch.w30_low_reynolds",
+     "prop": "(12.9 : ℝ) * (45.4 : ℝ) ≤ 1000000",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "the mean speed increased from 12.9 µm/s at PBS 25% to 25.2 µm/s at PBS 75%, before decreasing to 12.2 µm/s at PBS 100%.",
+       "where": "Results, stepwise acclimation, swimming speed (text with Figs. 13-14)"
+      },
+      {
+       "text": "The major axis a dropped from 45.4 µm at PBS 25% to 36.5 µm at PBS 100%.",
+       "where": "Results, stepwise acclimation, morphology (text with Fig. 11)"
+      }
+     ],
+     "note": "Body size is the major axis. Speed is the population mean including near-stationary cells. Speed and size come from the same acclimation series but from separate measurements."
+    },
+    {
+     "label": "Euglena gracilis after stepwise acclimation, PBS 100%",
+     "law": "low_reynolds",
+     "says": "A swimmer this small and slow is in the viscous regime: density x speed x size / viscosity is below 1.",
+     "result": "inside",
+     "theorem": "Watch.w31_low_reynolds",
+     "prop": "(12.2 : ℝ) * (36.5 : ℝ) ≤ 1000000",
+     "detail": null,
+     "by": "Lean kernel",
+     "quotes": [
+      {
+       "text": "the mean speed increased from 12.9 µm/s at PBS 25% to 25.2 µm/s at PBS 75%, before decreasing to 12.2 µm/s at PBS 100%.",
+       "where": "Results, stepwise acclimation, swimming speed (text with Figs. 13-14)"
+      },
+      {
+       "text": "The major axis a dropped from 45.4 µm at PBS 25% to 36.5 µm at PBS 100%.",
+       "where": "Results, stepwise acclimation, morphology (text with Fig. 11)"
+      }
+     ],
+     "note": "Body size is the major axis. Speed is the population mean including near-stationary cells (motility rate 30.7% at this condition). Not recorded: PBS 100% direct transfer (speed 4.1 µm/s printed, but size given only as a range 'approximately 39–41 µm') and PBS 75% acclimation (speed 25.2 µm/s printed, size not printed)."
+    }
+   ]
+  },
+  {
+   "slug": "arxiv-2610-29389",
+   "title": "Tuning Thermal Memory and Dissipation in Colloidal Microgel Glasses via Particle Stiffness",
+   "usecase": "crosslink",
+   "usecase_title": "Crosslinker dose against stiffness and swelling",
+   "link": "https://arxiv.org/abs/2610.29389",
+   "alphaxiv": "https://www.alphaxiv.org/abs/2610.29389",
+   "doi": null,
+   "arxiv_id": "2610.29389",
+   "preprint": true,
+   "published": "2026-10-21",
+   "read": "full_text",
+   "back_catalogue": false,
+   "badge": "1 of 1 checks inside",
+   "second_reader": {
+    "agree": true,
+    "matched": 1,
+    "first_records": 1,
+    "second_records": 1,
+    "first_only": [],
+    "second_only": [],
+    "plain": "second reader agrees on all 1 records"
+   },
+   "checks": [
+    {
+     "label": "PNIPAM microgel particles: maximum swelling ratio (hydrodynamic diameter at 20 C over diameter at 50 C, by dynamic light scattering) versus MBA crosslinker content",
+     "law": "crosslink_direction",
+     "says": "More crosslinker: stiffer, and less swelling.",
+     "result": "inside",
+     "theorem": null,
+     "prop": null,
+     "detail": "swelling: 2.43, 1.85, 1.66, 1.59, 1.48, 1.4, 1.3 along rising dose",
+     "by": "script (rank direction), no Lean",
+     "quotes": [
+      {
+       "text": "7 | 0.28 | 0.03 | 1.0 | Soft | 2.43±0.070 | 2.42 | 1.6 | 3.87",
+       "where": "Table 1, row 1 (columns: NIPAM g, KPS g, SDS g, MBA/NIPAM %, stiffness category, alpha, cp wt.%, phi_eff, c wt.%)"
+      },
+      {
+       "text": "7 | 0.28 | 0.03 | 5.0 | Soft | 1.85±0.064 | 4.95 | 1.6 | 7.92",
+       "where": "Table 1, row 2"
+      }
+     ],
+     "note": null
+    }
+   ]
+  }
+ ],
+ "breakers": [
+  {
+   "paper": "Ultra-Tough Hybrid Supramolecular Gelatin Hydrogels.",
+   "slug": "10-1002-smll-75441",
+   "link": "https://doi.org/10.1002/smll.75441",
+   "label": "Oxo-GelPHy (no tannic acid): relative swelling at Day 21 in water vs bis-oxazoline loading",
+   "law": "crosslink_direction",
+   "says": "More crosslinker: stiffer, and less swelling.",
+   "by": "script (rank direction), no Lean"
+  },
+  {
+   "paper": "Cellulose-Based Superabsorbent Hydrogels for Hygiene Applications: A Study of Absorbency Properties",
+   "slug": "10-21203-rs-3-rs-9801627-v1",
+   "link": "https://doi.org/10.21203/rs.3.rs-9801627/v1",
+   "label": "CMC-HEC: centrifuge retention capacity in 0.9% saline vs BTCA dose",
+   "law": "crosslink_direction",
+   "says": "More crosslinker: stiffer, and less swelling.",
+   "by": "script (rank direction), no Lean"
+  },
+  {
+   "paper": "Bio-inspired wooden actuators for large scale applications.",
+   "slug": "10-1371-journal-pone-0120718",
+   "link": "https://doi.org/10.1371/journal.pone.0120718",
+   "label": "RB15-24h-0.2 (development record of the earlier case)",
+   "law": "bilayer_strip_ceiling",
+   "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+   "by": "Lean kernel"
+  },
+  {
+   "paper": "Bio-inspired wooden actuators for large scale applications.",
+   "slug": "10-1371-journal-pone-0120718",
+   "link": "https://doi.org/10.1371/journal.pone.0120718",
+   "label": "RB15-24h-0.8 (development record of the earlier case)",
+   "law": "bilayer_strip_ceiling",
+   "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+   "by": "Lean kernel"
+  },
+  {
+   "paper": "Bio-inspired wooden actuators for large scale applications.",
+   "slug": "10-1371-journal-pone-0120718",
+   "link": "https://doi.org/10.1371/journal.pone.0120718",
+   "label": "RB15-24h-1 (development record of the earlier case)",
+   "law": "bilayer_strip_ceiling",
+   "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+   "by": "Lean kernel"
+  },
+  {
+   "paper": "Bio-inspired wooden actuators for large scale applications.",
+   "slug": "10-1371-journal-pone-0120718",
+   "link": "https://doi.org/10.1371/journal.pone.0120718",
+   "label": "RB15-12h-0.2 (development record of the earlier case)",
+   "law": "bilayer_strip_ceiling",
+   "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+   "by": "Lean kernel"
+  },
+  {
+   "paper": "Bio-inspired wooden actuators for large scale applications.",
+   "slug": "10-1371-journal-pone-0120718",
+   "link": "https://doi.org/10.1371/journal.pone.0120718",
+   "label": "RB15-12h-0.8 (development record of the earlier case)",
+   "law": "bilayer_strip_ceiling",
+   "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+   "by": "Lean kernel"
+  },
+  {
+   "paper": "Bio-inspired wooden actuators for large scale applications.",
+   "slug": "10-1371-journal-pone-0120718",
+   "link": "https://doi.org/10.1371/journal.pone.0120718",
+   "label": "RB15-12h-1 (development record of the earlier case)",
+   "law": "bilayer_strip_ceiling",
+   "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+   "by": "Lean kernel"
+  },
+  {
+   "paper": "Bio-inspired wooden actuators for large scale applications.",
+   "slug": "10-1371-journal-pone-0120718",
+   "link": "https://doi.org/10.1371/journal.pone.0120718",
+   "label": "RB15-6h-0.2 (development record of the earlier case)",
+   "law": "bilayer_strip_ceiling",
+   "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+   "by": "Lean kernel"
+  },
+  {
+   "paper": "Bio-inspired wooden actuators for large scale applications.",
+   "slug": "10-1371-journal-pone-0120718",
+   "link": "https://doi.org/10.1371/journal.pone.0120718",
+   "label": "RB15-6h-0.8 (development record of the earlier case)",
+   "law": "bilayer_strip_ceiling",
+   "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+   "by": "Lean kernel"
+  },
+  {
+   "paper": "Bio-inspired wooden actuators for large scale applications.",
+   "slug": "10-1371-journal-pone-0120718",
+   "link": "https://doi.org/10.1371/journal.pone.0120718",
+   "label": "RB15-6h-1 (development record of the earlier case)",
+   "law": "bilayer_strip_ceiling",
+   "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+   "by": "Lean kernel"
+  },
+  {
+   "paper": "Modeling and design of thin bending wooden bilayers.",
+   "slug": "10-1371-journal-pone-0205607",
+   "link": "https://doi.org/10.1371/journal.pone.0205607",
+   "label": "GR18-r0.17 (held-out record of the earlier case)",
+   "law": "bilayer_strip_ceiling",
+   "says": "A narrow two-layer strip cannot curl tighter than 1.5 x (swelling difference) / (total thickness).",
+   "by": "Lean kernel"
+  }
+ ],
+ "short": [
+  {
+   "slug": "10-1002-advs-77473",
+   "title": "A Physical Adaptive Material Motor Unit Neural Network: A Hygromorph Composite Material Machine.",
+   "usecase": "hygromorph",
+   "usecase_title": "Humidity-driven bilayers (the biomaterial panel)",
+   "link": "https://doi.org/10.1002/advs.77473",
+   "alphaxiv": null,
+   "doi": "10.1002/advs.77473",
+   "arxiv_id": null,
+   "preprint": false,
+   "published": "2026-09-06",
+   "read": "full_text",
+   "back_catalogue": false,
+   "missing": [
+    "kappa_per_mm",
+    "h_mm (only per-layer print heights are given, no total)",
+    "deps (only shrinkage values cited from another paper)"
+   ],
+   "why": "A 4D-printed wood/PLA hygromorph actuator array driven mainly by voltage; it reports light output and an actuation strain of the aperture width, not curvature, total thickness or its own swelling strain.",
+   "outcome": "partial_inputs"
+  },
+  {
+   "slug": "10-3390-polym18131638",
+   "title": "Photothermally Responsive Poly(vinyl alcohol)/Polyaniline Nanoparticle Composite Hydrogels Prepared by a Facile Aqueous Route.",
+   "usecase": "crosslink",
+   "usecase_title": "Crosslinker dose against stiffness and swelling",
+   "link": "https://doi.org/10.3390/polym18131638",
+   "alphaxiv": null,
+   "doi": "10.3390/polym18131638",
+   "arxiv_id": null,
+   "preprint": false,
+   "published": "2026-07-01",
+   "read": "full_text",
+   "back_catalogue": false,
+   "missing": [
+    "series (citric acid is fixed at 20% w/w; the quantity varied is polyaniline nanoparticle loading, a filler)"
+   ],
+   "why": "Citric acid-crosslinked PVA films where the crosslinker dose never changes, so there is no crosslinker dose series to test.",
+   "outcome": "partial_inputs"
+  },
+  {
+   "slug": "10-2147-dddt-s601447",
+   "title": "Celecoxib-Loaded \"Nano-in-Nano\" Hierarchical Delivery System: Structure-Driven Synergistic Optimization of Diffusion Efficiency and Mechanical Stability for Osteoarthritis Therapy.",
+   "usecase": "crosslink",
+   "usecase_title": "Crosslinker dose against stiffness and swelling",
+   "link": "https://doi.org/10.2147/dddt.s601447",
+   "alphaxiv": null,
+   "doi": "10.2147/dddt.s601447",
+   "arxiv_id": null,
+   "preprint": false,
+   "published": "2026-06-08",
+   "read": "full_text",
+   "back_catalogue": false,
+   "missing": [
+    "series (a single genipin condition, 1% w/v for 30 minutes; one modulus and one swelling value)"
+   ],
+   "why": "A drug-delivery membrane with a genipin-crosslinked gelatin layer made at one genipin dose, so there is no dose series.",
+   "outcome": "partial_inputs"
+  },
+  {
+   "slug": "10-3390-ani16172710",
+   "title": "Effects of Test-Section Length and Cross-Sectional Blockage on the Swimming Performance of Juvenile Grass Carp: Implications for Standardized Testing and Fish-Passage Design.",
+   "usecase": "locomotion",
+   "usecase_title": "Swimming: tail-beat frequency, amplitude and speed",
+   "link": "https://doi.org/10.3390/ani16172710",
+   "alphaxiv": null,
+   "doi": "10.3390/ani16172710",
+   "arxiv_id": null,
+   "preprint": false,
+   "published": "2026-09-01",
+   "read": "full_text",
+   "back_catalogue": false,
+   "missing": [
+    "u_m_s (the text gives tail-beat frequency and amplitude only as start-to-end ranges; the flow speed for each value is only in Figures 3 and 6)"
+   ],
+   "why": "Juvenile grass carp in a swim tunnel with tail-beat frequency (Hz) and peak-to-peak amplitude (in body lengths) stated, but never paired in the text with the speed at which they were measured.",
+   "outcome": "partial_inputs"
+  },
+  {
+   "slug": "10-1016-j-cels-2026-101708",
+   "title": "Single-cell transcriptional dynamics in a living vertebrate.",
+   "usecase": "zebrafish-morphology",
+   "usecase_title": "Zebrafish body plan: somites and segmentation clock",
+   "link": "https://doi.org/10.1016/j.cels.2026.101708",
+   "alphaxiv": null,
+   "doi": "10.1016/j.cels.2026.101708",
+   "arxiv_id": null,
+   "preprint": false,
+   "published": "2026-08-19",
+   "read": "full_text",
+   "back_catalogue": false,
+   "missing": [
+    "s_um",
+    "v_um_min",
+    "t_min (stated only as cited background, not measured here)"
+   ],
+   "why": "Live imaging of her1 transcription in the zebrafish segmentation clock; a clock period (~30 min at 28 C) is stated only as background citing earlier work, and no somite length or wavefront speed is given (Europe PMC fullTextXML gave HTTP 500, text read from the public NCBI efetch copy of the same PMCID).",
+   "outcome": "partial_inputs"
+  },
+  {
+   "slug": "10-3390-gels12090798",
+   "title": "Gelatin Hydrogel Crosslinking: From Molecular Design to Functional Soft Materials.",
+   "usecase": "crosslink",
+   "usecase_title": "Crosslinker dose against stiffness and swelling",
+   "link": "https://doi.org/10.3390/gels12090798",
+   "alphaxiv": null,
+   "doi": "10.3390/gels12090798",
+   "arxiv_id": null,
+   "preprint": false,
+   "published": "2026-09-02",
+   "read": "full_text",
+   "back_catalogue": false,
+   "missing": [
+    "a dose series measured in this paper"
+   ],
+   "why": "The only dose series is quoted second-hand: this review tabulates it from another paper, which the reader did not open. Numbers must come from the paper that measured them, so it was not checked.",
+   "outcome": "partial_inputs"
+  },
+  {
+   "slug": "10-3389-fbioe-2026-1876387",
+   "title": "Development of a compartmentalized silk fibroin-reinforced GelMA hydrogel platform for kidney-inspired tissue engineering.",
+   "usecase": "crosslink",
+   "usecase_title": "Crosslinker dose against stiffness and swelling",
+   "link": "https://doi.org/10.3389/fbioe.2026.1876387",
+   "alphaxiv": null,
+   "doi": "10.3389/fbioe.2026.1876387",
+   "arxiv_id": null,
+   "preprint": false,
+   "published": "2026-07-23",
+   "read": "full_text",
+   "back_catalogue": false,
+   "missing": [
+    "doses (only two crosslinker levels are used: 200 and 400 µL HEMA; three are needed)"
+   ],
+   "why": "The gels are made at only two crosslinker amounts (low and high), each at two silk contents, so there is no three-point crosslinker series; stiffness is printed for the four recipes (0.73, 0.93, 2.14, 2.94 kPa) and is higher at the higher crosslinker amount.",
+   "outcome": "partial_inputs"
+  },
+  {
+   "slug": "10-1073-pnas-2619120123",
+   "title": "Cycles upon cycles-Temperature scaling of medaka development.",
+   "usecase": "zebrafish-morphology",
+   "usecase_title": "Zebrafish body plan: somites and segmentation clock",
+   "link": "https://doi.org/10.1073/pnas.2619120123",
+   "alphaxiv": null,
+   "doi": "10.1073/pnas.2619120123",
+   "arxiv_id": null,
+   "preprint": false,
+   "published": "2026-10-08",
+   "read": "full_text",
+   "back_catalogue": false,
+   "missing": [
+    "s_um",
+    "v_um_min"
+   ],
+   "why": "The paper measures the medaka segmentation clock and tail elongation at 22, 27 and 32 °C, but the main text prints only the clock period (80 min at 27 °C); somite size and elongation speed appear only in figures and the supplement.",
+   "outcome": "partial_inputs"
+  },
+  {
+   "slug": "arxiv-2608-07638",
+   "title": "A transient nonlinear finite element framework and implementation of coupled electro-chemo-mechanics of polyelectrolyte hydrogels",
+   "usecase": "hygromorph",
+   "usecase_title": "Humidity-driven bilayers (the biomaterial panel)",
+   "link": "https://arxiv.org/abs/2608.07638",
+   "alphaxiv": "https://www.alphaxiv.org/abs/2608.07638",
+   "doi": null,
+   "arxiv_id": "2608.07638",
+   "preprint": true,
+   "published": "2026-08-07",
+   "read": "full_text",
+   "back_catalogue": false,
+   "missing": [
+    "kappa_per_mm",
+    "deps"
+   ],
+   "why": "A computer simulation of a swelling gel on a rubber layer prints the sheet thickness (\"a height of h=0.5 mm\", Section 5.2) but shows the bending curvature only as plotted curves (Figure 10), and it is simulated rather than measured; no swelling-strain difference between the layers is printed.",
+   "outcome": "partial_inputs"
+  },
+  {
+   "slug": "arxiv-2607-03216",
+   "title": "Strouhal-Aware Model Predictive Control for Efficient Multi-Fin Flapping Locomotion",
+   "usecase": "locomotion",
+   "usecase_title": "Swimming: tail-beat frequency, amplitude and speed",
+   "link": "https://arxiv.org/abs/2607.03216",
+   "alphaxiv": "https://www.alphaxiv.org/abs/2607.03216",
+   "doi": null,
+   "arxiv_id": "2607.03216",
+   "preprint": true,
+   "published": "2026-07-03",
+   "read": "full_text",
+   "back_catalogue": false,
+   "missing": [
+    "f_hz",
+    "a_m"
+   ],
+   "why": "A four-fin underwater robot is tested at printed cruising speeds of 0.1 to 0.4 m/s (Table V) and the paper prints Strouhal-number errors, but it never prints the fin-beat frequency or the peak-to-peak amplitude for those trials (only that the fin frequency is \"around 3Hz in the maximum case\").",
+   "outcome": "partial_inputs"
+  },
+  {
+   "slug": "10-1186-s13065-026-01822-0",
+   "title": "A light-response bilayer actuator for light-controlled capsule system.",
+   "usecase": "hygromorph",
+   "usecase_title": "Humidity-driven bilayers (the biomaterial panel)",
+   "link": "https://doi.org/10.1186/s13065-026-01822-0",
+   "alphaxiv": null,
+   "doi": "10.1186/s13065-026-01822-0",
+   "arxiv_id": null,
+   "preprint": false,
+   "published": "2026-05-08",
+   "read": "full_text",
+   "back_catalogue": false,
+   "missing": [
+    "kappa_per_mm",
+    "deps"
+   ],
+   "why": "A two-layer film that curls when light heats it has its total thickness printed (\"a total film thickness of approximately 175 μm\"), but its bending is given as angles in the text and curvature only in plots, and the layers differ in thermal expansion (printed coefficients 200e-6/K and 80e-6/K), not in swelling strain.",
+   "outcome": "partial_inputs"
+  },
+  {
+   "slug": "10-3390-gels12060524",
+   "title": "Physical and Mechanical Characterisation of 3D-Bioprinted Hydrogels for Dental Applications: A Scoping Review.",
+   "usecase": "crosslink",
+   "usecase_title": "Crosslinker dose against stiffness and swelling",
+   "link": "https://doi.org/10.3390/gels12060524",
+   "alphaxiv": null,
+   "doi": "10.3390/gels12060524",
+   "arxiv_id": null,
+   "preprint": false,
+   "published": "2026-06-11",
+   "read": "full_text",
+   "back_catalogue": false,
+   "missing": [
+    "a third dose and value (only two genipin concentrations are printed)"
+   ],
+   "why": "This review quotes another study's swelling at just two genipin crosslinker levels (\"0.5% genipin showing the highest swelling at 8.2, and 2.5% genipin the lowest at 6.8\"); the law needs at least three doses, and the numbers are second-hand from the cited study (ref. 81), which was not opened.",
+   "outcome": "partial_inputs"
+  },
+  {
+   "slug": "10-3390-biomimetics11100695",
+   "title": "Decoupled Online-Inertia-Tunable Robotic Fish: Design, Modeling and Performance Analysis.",
+   "usecase": "locomotion",
+   "usecase_title": "Swimming: tail-beat frequency, amplitude and speed",
+   "link": "https://doi.org/10.3390/biomimetics11100695",
+   "alphaxiv": null,
+   "doi": "10.3390/biomimetics11100695",
+   "arxiv_id": null,
+   "preprint": false,
+   "published": "2026-10-01",
+   "read": "full_text",
+   "back_catalogue": false,
+   "missing": [
+    "a_m",
+    "u_m_s"
+   ],
+   "why": "A robotic fish paper that prints tail-beat frequencies (1 to 5 Hz) and Strouhal numbers (for example \"from 0.54 to 0.51 at 2 Hz\"), but the tail amplitude and swimming speed behind them appear only in plots, not as printed values.",
+   "outcome": "partial_inputs"
+  },
+  {
+   "slug": "10-2142-biophysico-bppb-v23-0019",
+   "title": "Chlamylipo, a Chlamydomonas-in-liposome microswimmer: Self-propelled swimming and associated lipid membrane flow.",
+   "usecase": "xenobot",
+   "usecase_title": "Xenobots and other cell-built swimmers",
+   "link": "https://doi.org/10.2142/biophysico.bppb-v23.0019",
+   "alphaxiv": null,
+   "doi": "10.2142/biophysico.bppb-v23.0019",
+   "arxiv_id": null,
+   "preprint": false,
+   "published": "2026-05-26",
+   "read": "full_text",
+   "back_catalogue": false,
+   "missing": [
+    "l_um (measured body size)"
+   ],
+   "why": "The speed is printed (8.0 micrometres per second), but the body size appears only as a fitting parameter of a flow model, not as a measurement of the swimmers, so the check was not run.",
+   "outcome": "partial_inputs"
+  },
+  {
+   "slug": "10-64898-2026-04-29-721344",
+   "title": "Heterochrony of axis segmentation underlies extreme morphogenesis in the Japanese eel",
+   "usecase": "zebrafish-morphology",
+   "usecase_title": "Zebrafish body plan: somites and segmentation clock",
+   "link": "https://doi.org/10.64898/2026.04.29.721344",
+   "alphaxiv": null,
+   "doi": "10.64898/2026.04.29.721344",
+   "arxiv_id": null,
+   "preprint": true,
+   "published": "2026-05-01",
+   "read": "full_text",
+   "back_catalogue": false,
+   "missing": [
+    "v_um_min",
+    "s_um at the same stage as the printed period"
+   ],
+   "why": "The eel-embryo preprint prints a segment-making period (\"an overall periodicity of somite formation of ~25 minutes\" at the 16-47 somite stages) and a minimum segment length (\"~7 µm\", reached from about the 47-somite stage on), but no wavefront or axis-growth speed, and the two printed numbers are not from the same stage; other segment lengths are only in plots.",
+   "outcome": "partial_inputs"
+  },
+  {
+   "slug": "10-1038-s41377-026-02287-5",
+   "title": "All-in-one optically interactive soft robots with embedded liquid crystal holography.",
+   "usecase": "hygromorph",
+   "usecase_title": "Humidity-driven bilayers (the biomaterial panel)",
+   "link": "https://doi.org/10.1038/s41377-026-02287-5",
+   "alphaxiv": null,
+   "doi": "10.1038/s41377-026-02287-5",
+   "arxiv_id": null,
+   "preprint": false,
+   "published": "2026-05-06",
+   "read": "full_text",
+   "back_catalogue": false,
+   "missing": [
+    "kappa_per_mm",
+    "deps"
+   ],
+   "why": "A humidity- and light-driven two-layer film (liquid crystal network on silk fibroin); the layer thicknesses are printed (50 micrometre and 30 micrometre layers) but the curvature is shown only in plots and no swelling strain is given.",
+   "outcome": "partial_inputs"
+  },
+  {
+   "slug": "10-3390-ijms27125216",
+   "title": "Enhanced Physico-Mechanical Properties of Sericin-PVA Composite Films with a Potential Antibacterial and Controlled Drug Release Features for Wound Dressing.",
+   "usecase": "crosslink",
+   "usecase_title": "Crosslinker dose against stiffness and swelling",
+   "link": "https://doi.org/10.3390/ijms27125216",
+   "alphaxiv": null,
+   "doi": "10.3390/ijms27125216",
+   "arxiv_id": null,
+   "preprint": false,
+   "published": "2026-06-09",
+   "read": "full_text",
+   "back_catalogue": false,
+   "missing": [
+    "doses (only one glutaraldehyde level, 3%, was used; the three films differ by silk species, not crosslinker amount)"
+   ],
+   "why": "Sericin-PVA wound films crosslinked with glutaraldehyde; stiffness is printed for three films (25.0, 78.8 and 47.8 MPa) but all were made at one crosslinker level, so there is no dose series.",
+   "outcome": "partial_inputs"
+  },
+  {
+   "slug": "10-1242-jeb-252605",
+   "title": "Thyroid hormone determines energy efficiency of locomotion in zebrafish (Danio rerio) in a temperature-sensitive manner.",
+   "usecase": "locomotion",
+   "usecase_title": "Swimming: tail-beat frequency, amplitude and speed",
+   "link": "https://doi.org/10.1242/jeb.252605",
+   "alphaxiv": null,
+   "doi": "10.1242/jeb.252605",
+   "arxiv_id": null,
+   "preprint": false,
+   "published": "2026-07-16",
+   "read": "full_text",
+   "back_catalogue": false,
+   "missing": [
+    "f_hz",
+    "a_m"
+   ],
+   "why": "Zebrafish were filmed swimming at two printed speeds (0.16 and 0.28 m/s) to measure tail-beat frequency and amplitude, but those two measurements appear only in figures, not as printed numbers.",
+   "outcome": "partial_inputs"
+  },
+  {
+   "slug": "10-3390-biomimetics11090630",
+   "title": "From Biological Mechanisms to Task-Oriented Design Principles: A Critical Review of Fish-like Biomimetic Robots.",
+   "usecase": "locomotion",
+   "usecase_title": "Swimming: tail-beat frequency, amplitude and speed",
+   "link": "https://doi.org/10.3390/biomimetics11090630",
+   "alphaxiv": null,
+   "doi": "10.3390/biomimetics11090630",
+   "arxiv_id": null,
+   "preprint": false,
+   "published": "2026-09-03",
+   "read": "full_text",
+   "back_catalogue": false,
+   "missing": [
+    "f_hz",
+    "a_m"
+   ],
+   "why": "A review of fish-like robots; its Table 4 prints top speeds for several robots (for example 0.70 m/s and 0.47 m/s) but not the tail-beat frequency and tail amplitude that go with them.",
+   "outcome": "partial_inputs"
+  }
+ ],
+ "wanted": [
+  {
+   "n": 1,
+   "statement": "For a two-ended crosslinker there is a best intermediate loading: stiffness peaks and swelling is lowest there, and adding more makes the gel softer and more swollen again.",
+   "quantities": [
+    "crosslinker loading (eq per reactive group)",
+    "storage modulus (kPa)",
+    "relative swelling (%)"
+   ],
+   "quote": "1.5 eq gave the highest initial and retained modulus, reaching 55.7 kPa initially and remaining at 45.6 kPa after immersion",
+   "where": "Results 2.4",
+   "paper": "Ultra-Tough Hybrid Supramolecular Gelatin Hydrogels.",
+   "link": "https://doi.org/10.1002/smll.75441",
+   "usecase_title": "Crosslinker dose against stiffness and swelling",
+   "stub": "stubs/wanted-01.lean"
+  },
+  {
+   "n": 2,
+   "statement": "Adding nanoparticle filler to a crosslinked gel lowers its equilibrium swelling, up to a loading beyond which particles clump and swelling rises again.",
+   "quantities": [
+    "filler loading (% w/w)",
+    "equilibrium swelling (%)",
+    "elastic modulus (MPa)"
+   ],
+   "quote": "Neat PVA hydrogel exhibited a maximum swelling of 247 ± 10%, whereas incorporation of PANI-NP significantly reduced this value to approximately 140%",
+   "where": "Results, text describing Table 2",
+   "paper": "Photothermally Responsive Poly(vinyl alcohol)/Polyaniline Nanoparticle Composite Hydrogels Prepared by a Facile Aqueous Route.",
+   "link": "https://doi.org/10.3390/polym18131638",
+   "usecase_title": "Crosslinker dose against stiffness and swelling",
+   "stub": "stubs/wanted-02.lean"
+  },
+  {
+   "n": 3,
+   "statement": "An absorbent gel holds the most fluid under load at an intermediate stiffness: too soft and it collapses, too stiff and it cannot swell.",
+   "quantities": [
+    "storage modulus G' (Pa)",
+    "absorption under load (g/g)",
+    "centrifuge retention capacity (g/g)"
+   ],
+   "quote": "The optimal absorbency herein occurred at an intermediate G' of 150–200 Pa for the 0.5% CA gel",
+   "where": "Section 3.3.1",
+   "paper": "Cellulose-Based Superabsorbent Hydrogels for Hygiene Applications: A Study of Absorbency Properties",
+   "link": "https://doi.org/10.21203/rs.3.rs-9801627/v1",
+   "usecase_title": "Crosslinker dose against stiffness and swelling",
+   "stub": "stubs/wanted-03.lean"
+  },
+  {
+   "n": 4,
+   "statement": "Past a certain dose, extra polyacid crosslinker leaves unreacted acid groups that pull water in, so retention can rise again with dose.",
+   "quantities": [
+    "crosslinker dose (%)",
+    "total carboxylic content (mmol/g)",
+    "centrifuge retention capacity (g/g)"
+   ],
+   "quote": "excess unreacted acid can increase the ability of the gel to retain water (via osmotic effects) even though the crosslinked network is stiff",
+   "where": "Section 3.2",
+   "paper": "Cellulose-Based Superabsorbent Hydrogels for Hygiene Applications: A Study of Absorbency Properties",
+   "link": "https://doi.org/10.21203/rs.3.rs-9801627/v1",
+   "usecase_title": "Crosslinker dose against stiffness and swelling",
+   "stub": "stubs/wanted-04.lean"
+  },
+  {
+   "n": 5,
+   "statement": "The farthest a fish travels per tail beat is set by the wavelength of its body wave and the tail-beat phase offset, not by body length, and there is no minimum frequency for forward motion.",
+   "quantities": [
+    "stride length (distance per tail beat)",
+    "undulatory wavelength",
+    "tail-beat phase offset",
+    "tail-beat frequency",
+    "swimming speed"
+   ],
+   "quote": "the maximum stride length is set by the undulatory wavelength and the tail-beat phase offset",
+   "where": "Abstract",
+   "paper": "Physical origins of speed control in swimming fishes.",
+   "link": "https://doi.org/10.1073/pnas.2616348123",
+   "usecase_title": "Swimming: tail-beat frequency, amplitude and speed",
+   "stub": "stubs/wanted-05.lean"
+  },
+  {
+   "n": 6,
+   "statement": "Measured critical swimming speed is steady while the test section is at least 4 body lengths long and drops when it is shorter.",
+   "quantities": [
+    "test-section length (body lengths)",
+    "relative critical swimming speed (BL/s)"
+   ],
+   "quote": "Relative critical swimming speed was similar at 4–8 BL (9.71–9.95 BL/s) but decreased by 10.96% from 4 to 3.5 BL.",
+   "where": "Abstract",
+   "paper": "Effects of Test-Section Length and Cross-Sectional Blockage on the Swimming Performance of Juvenile Grass Carp: Implications for Standardized Testing and Fish-Passage Design.",
+   "link": "https://doi.org/10.3390/ani16172710",
+   "usecase_title": "Swimming: tail-beat frequency, amplitude and speed",
+   "stub": "stubs/wanted-06.lean"
+  },
+  {
+   "n": 7,
+   "statement": "The more of the tunnel cross-section the fish's body fills, the lower its measured critical swimming speed.",
+   "quantities": [
+    "cross-sectional blockage ratio (%)",
+    "relative critical swimming speed (BL/s)"
+   ],
+   "quote": "Increasing blockage from 1.88% to 9.26% and 15.31% reduced it from 6.99 to 5.34 and 5.24 BL/s, respectively.",
+   "where": "Abstract",
+   "paper": "Effects of Test-Section Length and Cross-Sectional Blockage on the Swimming Performance of Juvenile Grass Carp: Implications for Standardized Testing and Fish-Passage Design.",
+   "link": "https://doi.org/10.3390/ani16172710",
+   "usecase_title": "Swimming: tail-beat frequency, amplitude and speed",
+   "stub": "stubs/wanted-07.lean"
+  },
+  {
+   "n": 8,
+   "statement": "The sideways force from a flapping side fin grows with Strouhal number as a power law that is steep below a Strouhal number of 0.08 and about half as steep above it.",
+   "quantities": [
+    "Strouhal number St = fA/U of the fin",
+    "lateral force coefficient divided by amplitude (CFy/A*)",
+    "exponents 0.79 and 0.38",
+    "crossover St 0.08"
+   ],
+   "quote": "The transition in the lateral force scaling from one regime to another occurs at the crossover Strouhal number Stc=0.08",
+   "where": "Results, text describing the lateral force scaling figure",
+   "paper": "Maneuvering of an Underwater Vehicle Using Bio-Inspired Pectoral Fins.",
+   "link": "https://doi.org/10.3390/biomimetics11070447",
+   "usecase_title": "Swimming: tail-beat frequency, amplitude and speed",
+   "stub": "stubs/wanted-08.lean"
+  },
+  {
+   "n": 9,
+   "statement": "The drag (braking) force from a flapping side fin depends on how far the fin sticks out, and hardly at all on how fast it flaps.",
+   "quantities": [
+    "streamwise force coefficient CFx",
+    "non-dimensional amplitude A* = sin(beta)",
+    "reduced frequency k = fc/U"
+   ],
+   "quote": "The streamwise force is, to first order, a linear function of the projected frontal area of the flapping amplitude A*=sinβ",
+   "where": "Discussion/Conclusions",
+   "paper": "Maneuvering of an Underwater Vehicle Using Bio-Inspired Pectoral Fins.",
+   "link": "https://doi.org/10.3390/biomimetics11070447",
+   "usecase_title": "Swimming: tail-beat frequency, amplitude and speed",
+   "stub": "stubs/wanted-09.lean"
+  },
+  {
+   "n": 10,
+   "statement": "A thin-film skeletal-muscle biohybrid robot moves at up to 4 body lengths per minute in a straight line and turns at up to 1200 degrees per minute.",
+   "quantities": [
+    "speed in body lengths per minute",
+    "rotation rate in degrees per minute",
+    "body length (not given in abstract)"
+   ],
+   "quote": "locomotion at speeds up to 4 body lengths per minute in straight movement and 1200 degrees per minute in rotational movement",
+   "where": "Abstract",
+   "paper": "2D Skeletal Muscle Thin Film Actuators Enhance Efficiency of Biohybrid Robots",
+   "link": "https://doi.org/10.64898/2026.05.05.723017",
+   "usecase_title": "Xenobots and other cell-built swimmers",
+   "stub": "stubs/wanted-10.lean"
+  },
+  {
+   "n": 11,
+   "statement": "The tissue-level oscillation period of the segmentation clock lengthens by about 40% as cells approach somite formation.",
+   "quantities": [
+    "oscillation period in posterior tissue",
+    "oscillation period just before somite formation"
+   ],
+   "quote": "we observed an increase in the oscillation period in the kymograph of approximately 40% prior to somite formation",
+   "where": "Results, tissue-scale analysis (text referring to Fig. 4E-F)",
+   "paper": "Single-cell transcriptional dynamics in a living vertebrate.",
+   "link": "https://doi.org/10.1016/j.cels.2026.101708",
+   "usecase_title": "Zebrafish body plan: somites and segmentation clock",
+   "stub": "stubs/wanted-11.lean"
+  },
+  {
+   "n": 12,
+   "statement": "Along the growing notochord, the spacing between neighbouring cells rises linearly with position, set by posterior cell addition together with anterior vacuolation.",
+   "quantities": [
+    "nearest neighbour distance between notochord cells",
+    "position along the anterior-posterior axis",
+    "progenitor addition rate",
+    "vacuolation rate"
+   ],
+   "quote": "progenitor incorporation, together with vacuolation, produces a linear gradient in nearest neighbour distance",
+   "where": "Abstract",
+   "paper": "Coupling Vgll4b/Yap-regulated posterior cell addition with anterior vacuolation enables robust notochord elongation.",
+   "link": "https://doi.org/10.1242/dev.205951",
+   "usecase_title": "Zebrafish body plan: somites and segmentation clock",
+   "stub": "stubs/wanted-12.lean"
+  },
+  {
+   "n": 13,
+   "statement": "Adding more progenitor cells to the notochord does not make it longer once vacuolation drives elongation: mutants with more cells end up with a shorter notochord.",
+   "quantities": [
+    "notochord cell number",
+    "notochord length",
+    "vacuole area"
+   ],
+   "quote": "vgll4b mutants display a shorter notochord even though they contribute more progenitor cells to the tissue",
+   "where": "Results (text referring to Fig. 4A)",
+   "paper": "Coupling Vgll4b/Yap-regulated posterior cell addition with anterior vacuolation enables robust notochord elongation.",
+   "link": "https://doi.org/10.1242/dev.205951",
+   "usecase_title": "Zebrafish body plan: somites and segmentation clock",
+   "stub": "stubs/wanted-13.lean"
+  },
+  {
+   "n": 14,
+   "statement": "The length change of a nanoparticle-polymer micro-pillar rises roughly in proportion to relative humidity.",
+   "quantities": [
+    "relative humidity (%)",
+    "length change rate (deltaL/L0)"
+   ],
+   "quote": "the bioinspired microactuator shows an approximately linear response that scales with relative humidity (Fig. 3h).",
+   "where": "Results, humidity-driven actuation (text after Fig. 3)",
+   "paper": "Bioinspired Microactuators Fabricated via One-step Meniscus-guided 3D Nanoprinting",
+   "link": "https://arxiv.org/abs/2608.12908",
+   "usecase_title": "Humidity-driven bilayers (the biomaterial panel)",
+   "stub": "stubs/wanted-14.lean"
+  },
+  {
+   "n": 15,
+   "statement": "Taller clamped pillars elongate more in absolute terms but less as a fraction of their height.",
+   "quantities": [
+    "as-printed pillar height",
+    "absolute length change",
+    "normalized length change"
+   ],
+   "quote": "the absolute elongation increases with height, whereas the normalized response decreases due to constraint-dominated deformation.",
+   "where": "Results, humidity-driven actuation (text after Fig. 3)",
+   "paper": "Bioinspired Microactuators Fabricated via One-step Meniscus-guided 3D Nanoprinting",
+   "link": "https://arxiv.org/abs/2608.12908",
+   "usecase_title": "Humidity-driven bilayers (the biomaterial panel)",
+   "stub": "stubs/wanted-15.lean"
+  },
+  {
+   "n": 16,
+   "statement": "In the model, when diffusion into the coating is much faster than its viscoelastic relaxation, the transient curvature overshoots the steady state by up to about a factor of two; the overshoot disappears once diffusion is slow (ratio of timescales about 3 or more).",
+   "quantities": [
+    "tau0/taur (diffusion time over relaxation time)",
+    "kappa_peak/kappa_ss"
+   ],
+   "quote": "the curvature overshoots its steady state, reaching 1.95κss at τ0/τr=0.01 .",
+   "where": "Section 4, transient verification (text with Fig. 3)",
+   "paper": "Through-thickness coupling of diffusion and viscoelastic relaxation in the transient bending of bilayer microcantilevers",
+   "link": "https://arxiv.org/abs/2609.09760",
+   "usecase_title": "Humidity-driven bilayers (the biomaterial panel)",
+   "stub": "stubs/wanted-16.lean"
+  },
+  {
+   "n": 17,
+   "statement": "For the modelled stiffness ratio (coating/substrate modulus 0.005), static bilayer curvature is largest at a coating-to-substrate thickness ratio of about 4.2, where curvature times substrate thickness divided by swelling strain is about 0.21.",
+   "quantities": [
+    "m = h1/h2",
+    "kappa*h2/eps_c",
+    "n = ER/E2"
+   ],
+   "quote": "The Timoshenko curvature is non-monotonic: it increases linearly at small m , reaches a maximum at m≈4.2 (where κh2/εc≈0.21 ), then decreases as ∼1/m2 for m≫1 .",
+   "where": "Section 4, static bilayer verification (text with Fig. 2)",
+   "paper": "Through-thickness coupling of diffusion and viscoelastic relaxation in the transient bending of bilayer microcantilevers",
+   "link": "https://arxiv.org/abs/2609.09760",
+   "usecase_title": "Humidity-driven bilayers (the biomaterial panel)",
+   "stub": "stubs/wanted-17.lean"
+  },
+  {
+   "n": 18,
+   "statement": "In a two-region electrothermal film actuator wired in series, the ratio of the two regions' bending curvatures rises linearly with the ratio of their electrical resistances, whatever the drive current.",
+   "quantities": [
+    "resistance ratio (part A / part B)",
+    "curvature ratio"
+   ],
+   "quote": "the resistance ratio (1.3 to 19.1) from part A to part B faithfully reflects a linear dependence on its curvature ratio (1.2 to 12.7), regardless of the applied current level.",
+   "where": "Results, text describing Fig. 3G",
+   "paper": "Hierarchical laser-programmed soft actuators for designing bionic robots with freeform morphing shapes.",
+   "link": "https://doi.org/10.1126/sciadv.aeb1989",
+   "usecase_title": "Humidity-driven bilayers (the biomaterial panel)",
+   "stub": "stubs/wanted-18.lean"
+  },
+  {
+   "n": 19,
+   "statement": "Stiffness and structure depend on crosslinker (glucose) content in a non-monotonic, two-phase way: best at low-to-moderate content, worse when glucose is in large excess.",
+   "quantities": [
+    "glucose content (wt% of dry polymer)",
+    "[glucose]/[-NH2] molar ratio",
+    "storage modulus",
+    "Young's modulus",
+    "porosity"
+   ],
+   "quote": "Structural and mechanical properties showed a biphasic, nonlinear dependence on glucose content",
+   "where": "Abstract",
+   "paper": "Effect of Maillard-crosslinked semi-interpenetrating starch/gelatin films on their physicochemical, mechanical, and biological properties for tissue engineering applications.",
+   "link": "https://doi.org/10.1016/j.bioadv.2026.215305",
+   "usecase_title": "Crosslinker dose against stiffness and swelling",
+   "stub": "stubs/wanted-19.lean"
+  },
+  {
+   "n": 20,
+   "statement": "Swimming speed equals tail-beat frequency times stride length; at a given body mass and water temperature, fishes with warm red muscle cruise about 1.9 times faster through a 1.9 times higher tail-beat frequency, with stride length unchanged.",
+   "quantities": [
+    "cruising speed",
+    "tailbeat frequency (Hz)",
+    "stride length (m)",
+    "body mass",
+    "water temperature"
+   ],
+   "quote": "RM-endothermic fishes exhibited 1.9 times higher cruising speed and TBF than ectothermic fishes, while SL remained similar.",
+   "where": "Abstract",
+   "paper": "Comparative analyses of tailbeat frequency and stride length reveal how regionally endothermic fishes cruise fast",
+   "link": "https://doi.org/10.64898/2026.08.14.744074",
+   "usecase_title": "Swimming: tail-beat frequency, amplitude and speed",
+   "stub": "stubs/wanted-20.lean"
+  },
+  {
+   "n": 21,
+   "statement": "On direct transfer, mean swimming speed of Euglena falls linearly with the fraction of physiological saline in the medium.",
+   "quantities": [
+    "PBS fraction x (0-1)",
+    "mean speed v (µm/s)"
+   ],
+   "quote": "Linear regression yielded v(x) = −17.6x + 24.1 (R2 = 0.858, p < 0.001), indicating a strong negative correlation between PBS concentration and swimming speed.",
+   "where": "Results, direct transfer, swimming speed (text with Fig. 5)",
+   "paper": "Phototaxis and Motility of Euglena gracilis in Physiological Saline via Stepwise Acclimation for Biohybrid Microrobotics.",
+   "link": "https://doi.org/10.3390/mi17070815",
+   "usecase_title": "Xenobots and other cell-built swimmers",
+   "stub": "stubs/wanted-21.lean"
+  },
+  {
+   "n": 22,
+   "statement": "Somite size, estimated as the pattern wavelength at the clock-gene front (front speed times clock period), stays the same across temperatures even though clock frequency and elongation speed each change, and change by different amounts.",
+   "quantities": [
+    "lambda = 2*pi*v_f/omega",
+    "temperature (22, 27, 32 °C)",
+    "nascent somite size"
+   ],
+   "quote": "the segment pattern wavelength at the Her-7 front, λ=2πvf/ω, which is a proxy for somite size.",
+   "where": "Results, 'Temperature Sensitivity of Dynamic Modes and of Axis Elongation'",
+   "paper": "Cycles upon cycles-Temperature scaling of medaka development.",
+   "link": "https://doi.org/10.1073/pnas.2619120123",
+   "usecase_title": "Zebrafish body plan: somites and segmentation clock",
+   "stub": "stubs/wanted-22.lean"
+  },
+  {
+   "n": 23,
+   "statement": "Under cycling temperature, elongation per clock cycle is about 20% larger than at the matching constant temperature, and somite size increases after a delay of about three cycles.",
+   "quantities": [
+    "elongation per clock cycle",
+    "temperature cycle period (6 h)",
+    "somite length",
+    "PSM length"
+   ],
+   "quote": "there is a 20% increase of elongation per clock cycle when temperature conditions are cyclic (Fig. 5C).",
+   "where": "Results, 'Temperature Cycles Reveal Dynamic Integration of Modular Responses of Segmentation Clock and Axis Elongation'",
+   "paper": "Cycles upon cycles-Temperature scaling of medaka development.",
+   "link": "https://doi.org/10.1073/pnas.2619120123",
+   "usecase_title": "Zebrafish body plan: somites and segmentation clock",
+   "stub": "stubs/wanted-23.lean"
+  },
+  {
+   "n": 24,
+   "statement": "Raising the dose of a catalytic chain-transfer agent (CoBF, 0 to 175 ppm) lowers the rubbery storage modulus and the effective crosslink density of a methacrylate liquid-crystal elastomer; Table 1 prints modulus at 100 C of 1.26, 0.09, 0.09 MPa (EDT series) and 0.75, 0.69, 0.49 MPa (EDDET series) at 0, 117, 175 ppm.",
+   "quantities": [
+    "chain-transfer agent concentration (ppm)",
+    "rubbery storage modulus at 100 C (MPa)",
+    "effective crosslink density (mol/m3)"
+   ],
+   "quote": "the effective crosslink density decreased systematically with increasing CoBF concentration for both network series (Table 1)",
+   "where": "Results, 'Effect of Catalytic Chain Transfer on Thermomechanical Properties', and Table 1 (read from the arXiv PDF; no HTML version exists)",
+   "paper": "Cobalt-Catalysed Chain Transfer Polymerisation Enables Soft Methacrylate Nematic Elastomers for Switchable Pressure-Sensitive Adhesion",
+   "link": "https://arxiv.org/abs/2606.15403",
+   "usecase_title": "Crosslinker dose against stiffness and swelling",
+   "stub": "stubs/wanted-24.lean"
+  },
+  {
+   "n": 25,
+   "statement": "In a simulated friction-ratchet crawler driven by heart muscle cells, a 1.96-fold rise in contractile stress gives a 4.35-fold rise in crawling speed (10.05 to 43.73 micrometres per second), i.e. speed grows faster than linearly with driving stress near the friction threshold. Simulation only.",
+   "quantities": [
+    "contractile stress ratio",
+    "crawling speed (um/s)"
+   ],
+   "quote": "The central finding is the 4.35× speed amplification from a 1.96× stress input",
+   "where": "Conclusions; speeds in Table 9",
+   "paper": "Computational modelling reveals advantages of ventricular over atrial cardiomyocytes to power self-guided biorobots",
+   "link": "https://arxiv.org/abs/2607.24565",
+   "usecase_title": "Xenobots and other cell-built swimmers",
+   "stub": "stubs/wanted-25.lean"
+  },
+  {
+   "n": 26,
+   "statement": "In the Japanese eel each new body segment takes a fixed small fraction (6.20%) of the remaining unsegmented tissue length per clock cycle, and this ratio holds over a 5-fold change in that tissue's length (linear fit R2 = 0.89), which lets the embryo make 120 segments with little axis growth.",
+   "quantities": [
+    "nascent somite length (um)",
+    "presomitic mesoderm length (um)",
+    "fraction incorporated per cycle"
+   ],
+   "quote": "the stable fraction of the PSM that gets incorporated into a segment is minimal, i.e. only 6.20% per cycle",
+   "where": "Results, first section (text referring to Fig. 1I); read from the Europe PMC preprint full-text XML (PPR1212536)",
+   "paper": "Heterochrony of axis segmentation underlies extreme morphogenesis in the Japanese eel",
+   "link": "https://doi.org/10.64898/2026.04.29.721344",
+   "usecase_title": "Zebrafish body plan: somites and segmentation clock",
+   "stub": "stubs/wanted-26.lean"
+  },
+  {
+   "n": 27,
+   "statement": "In a hydrogel box hinge the equilibrium fold angle grows close to linearly with the length of the gel block (simulation; stated qualitatively, no fitted slope printed).",
+   "quantities": [
+    "bend angle theta",
+    "gel length L_H",
+    "gel stiffness G_H"
+   ],
+   "quote": "doubling gel length can be expected to double the bending angle",
+   "where": "5 Conclusions",
+   "paper": "Will it bend? Modelling hydrogel box hinges with a gel Lattice Spring Method",
+   "link": "https://arxiv.org/abs/2611.20857",
+   "usecase_title": "Humidity-driven bilayers (the biomaterial panel)",
+   "stub": "stubs/wanted-27.lean"
+  },
+  {
+   "n": 28,
+   "statement": "In dense microgel suspensions the heating-versus-cooling asymmetry of the storage modulus recovery (Kovacs asymmetry) is non-monotonic in particle stiffness and peaks at intermediate crosslinker content; the values are shown only in figures.",
+   "quantities": [
+    "asymmetry parameter Delta A",
+    "MBA/NIPAM %",
+    "temperature ramp rate"
+   ],
+   "quote": "Our data revealed a pronounced, non-monotonic asymmetry in G′ with increasing particle stiffness, with maximum asymmetry observed in intermediate-stiffness particle suspensions.",
+   "where": "1 Introduction, last paragraph",
+   "paper": "Tuning Thermal Memory and Dissipation in Colloidal Microgel Glasses via Particle Stiffness",
+   "link": "https://arxiv.org/abs/2610.29389",
+   "usecase_title": "Crosslinker dose against stiffness and swelling",
+   "stub": "stubs/wanted-28.lean"
+  },
+  {
+   "n": 29,
+   "statement": "A vortex-formation Strouhal number built from twice the wingbeat frequency, a separated-flow length and a separation velocity falls in about 0.15 to 0.17 for hovering insects, the same range as bluff-body vortex shedding. The body text gives the insect mean as 0.162 with spread 0.038 and the stationary-wing value as 0.171 with spread 0.018 (the plus-minus sign was lost in the PDF text layer, so those are not quoted here).",
+   "quantities": [
+    "wingbeat frequency",
+    "separated-flow dimension D",
+    "separation velocity",
+    "aerodynamic Strouhal number"
+   ],
+   "quote": "identifies a universal vortex-formation Strouhal-number range of approximately 0.15 to 0.17. Here we show that this same range governs LEV formation on both stationary wings and hovering insect wings.",
+   "where": "Abstract (arXiv abstract page)",
+   "paper": "A Universal Vortex-Formation Law for Insect Hovering",
+   "link": "https://arxiv.org/abs/2609.07073",
+   "usecase_title": "Swimming: tail-beat frequency, amplitude and speed",
+   "stub": "stubs/wanted-29.lean"
+  }
+ ],
+ "repo_issues": "https://github.com/fractastical/delphi/issues/new"
+}

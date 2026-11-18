@@ -30,6 +30,7 @@ const REASONS = { off_topic: 'the search matched but the paper is about somethin
   holdout: 'it is about the organisms we keep sealed for the final test', bad_record: 'the reader\'s record was incomplete or not numeric, so it was refused', not_read: 'no reader has opened it yet' };
 
 const readQueue = () => (fs.existsSync(QUEUE) ? fs.readFileSync(QUEUE, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l)) : []);
+const clean = (t) => String(t ?? '').replace(/&lt;[/]?[a-z]+&gt;|<[/]?[a-z]+>/gi, '').replace(/&amp;/g, '&');
 const slug = (key) => key.replace(/^doi:/, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase().slice(0, 80);
 
 function printStatus() {
@@ -114,20 +115,23 @@ for (const p of papers) {
   const c = p.checks.filter((x) => x.result !== 'refused');
   if (p.outcome === 'extracted' && !c.length) { p.outcome = 'bad_record'; }
   p.verdict = c.length ? (leanOk === false && c.some((x) => x.theorem) ? 'lean_failed' : c.some((x) => x.result === 'outside') ? 'outside' : 'inside') : null;
-  p.slug = slug(p.key); const q = qByKey.get(p.key); p.title = q.title; p.doi = q.doi; p.published = q.published; p.journal = q.journal; p.preprint = q.preprint;
+  p.slug = slug(p.key); const q = qByKey.get(p.key); p.title = clean(q.title); p.doi = q.doi; p.published = q.published; p.journal = q.journal; p.preprint = q.preprint; p.source = q.source ?? null; p.arxiv_id = q.arxiv_id ?? null; p.alphaxiv = q.alphaxiv ?? null;
 }
 const read = new Set(papers.map((p) => p.key));
-const all = [...papers, ...queue.filter((q) => !read.has(q.key)).map((q) => ({ key: q.key, usecase: q.usecase, outcome: 'not_read', verdict: null, title: q.title, doi: q.doi, slug: slug(q.key), checks: [] }))];
+const all = [...papers, ...queue.filter((q) => !read.has(q.key)).map((q) => ({ key: q.key, usecase: q.usecase, outcome: 'not_read', verdict: null, title: clean(q.title), doi: q.doi, source: q.source ?? null, slug: slug(q.key), checks: [] }))];
 const checked = all.filter((p) => p.verdict === 'inside' || p.verdict === 'outside');
 const reasonCount = {}; for (const p of all) if (!p.verdict) reasonCount[p.outcome] = (reasonCount[p.outcome] ?? 0) + 1;
 const heldTotal = Math.max(heldPrev + held.size, sealed.size); if (heldTotal) reasonCount.holdout = heldTotal;
 const found = all.length + heldTotal, notChecked = found - checked.length;
 const reasons = Object.entries(reasonCount).sort((a, b) => b[1] - a[1]).map(([code, k]) => ({ code, n: k, plain: REASONS[code] ?? code }));
 const nChecks = checked.reduce((a, p) => a + p.checks.filter((c) => c.result !== 'refused').length, 0), nIn = checked.reduce((a, p) => a + p.checks.filter((c) => c.result === 'inside').length, 0);
+const isSeed = (p) => qByKey.get(p.key)?.status === 'seed';
 const nSeed = queue.filter((q) => q.status === 'seed').length;
 const sentence = `${found - nSeed} new papers found since ${cfg.since}${nSeed ? `, plus ${nSeed} from our back catalogue` : ''}. ${checked.length} carried numbers a law of ours takes: ${nChecks} separate checks (${n} by the Lean kernel, ${nChecks - n} by a rank-direction script), ${nIn} inside the law and ${nChecks - nIn} outside. ${checked.filter((p) => p.verdict === 'inside').length} papers were inside on every check. ${notChecked} papers could not be checked, for ${reasons.length} reasons:`;
 const summary = { made_by: 'tracks/watch/verify.mjs', since: cfg.since, found, checked: checked.length, inside: checked.filter((p) => p.verdict === 'inside').length, outside: checked.filter((p) => p.verdict === 'outside').length,
   not_checked: notChecked, checks: nChecks, checks_inside: nIn, checks_by_lean: n, checks_by_script: nChecks - n, reasons, holdout_dropped_by_reader: heldTotal, lean: { theorems: n, ok: leanOk }, sentence,
+  by_source: ['ARXIV', 'MED', 'PPR'].map((s) => ({ source: s, plain: s === 'ARXIV' ? 'arXiv (the papers alphaXiv mirrors)' : s === 'MED' ? 'journals (via Europe PMC)' : 'other preprint servers (via Europe PMC)',
+    found: all.filter((p) => p.source === s && !isSeed(p)).length, read: all.filter((p) => p.source === s && !isSeed(p) && p.outcome !== 'not_read').length, checked: checked.filter((p) => p.source === s && !isSeed(p)).length })),
   by_usecase: cfg.usecases.map((u) => ({ id: u.id, title: u.title, group: u.group, found: all.filter((p) => p.usecase === u.id).length, checked: checked.filter((p) => p.usecase === u.id).length,
     candidate_laws: papers.filter((p) => p.usecase === u.id).reduce((a, p) => a + (p.candidate_laws?.length ?? 0), 0) })),
   caveat: 'A check is arithmetic on numbers a reader agent copied from the paper. The copying has not been re-checked by a second reader. No paper is certified.' };

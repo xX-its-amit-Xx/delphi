@@ -66,6 +66,9 @@ run('suite', 'suite gate self-test: 29 injected faults must all be caught', 'nod
 run('suite', 'real cases through the suite gate: verdicts as recorded', 'node', ['tracks/suite/make-cases.mjs', '--expect'], { expect: /verdicts match/ });
 // the paper watcher: re-check every committed extraction (regenerates the Lean instances and has the kernel check them)
 run('watch', 'paper watcher: committed extractions re-checked by the Lean kernel', 'node', ['tracks/watch/verify.mjs'], { skipIf: !bash || !lean ? 'no Lean toolchain' : null, expect: /papers could not be checked/ });
+// the second reading of the checked papers, compared with the first (same numbers or not), and the public files built from both
+run('watch', 'paper watcher: second reader compared with the first', 'node', ['tracks/watch/second.mjs'], { expect: /papers have a second reading/ });
+run('watch', 'paper watcher: public page data, feed, digest and Lean starter files', 'node', ['tracks/watch/community.mjs'], { expect: /community: \d+ checked papers/ });
 // the case scripts, re-executed in a scratch copy: every committed number must come back
 run('suite', 'case scripts re-run: numbers identical to the committed results', 'node', ['tracks/suite/rerun-cases.mjs'], { skipIf: py ? null : 'python not found', expect: /0 differ or error/ });
 run('numeric', 'wood bilayer records against the wide-plate ceiling 9/4', 'python', ['-I', 'tracks/scripts/check-hygromorph-plate-ceiling.py'], { skipIf: py ? null : 'python not found', expect: /plate ceiling not contradicted/ });

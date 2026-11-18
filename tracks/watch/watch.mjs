@@ -38,8 +38,35 @@ const seen = new Set(fs.existsSync(QUEUE) ? fs.readFileSync(QUEUE, 'utf8').split
 const SEALED = path.join(HERE, 'sealed.json');
 const sealedKeys = new Set(fs.existsSync(SEALED) ? JSON.parse(fs.readFileSync(SEALED, 'utf8')).sha256_of_key : []); // papers a reader sealed earlier
 const out = [], stats = [];
-for (const u of cfg.usecases) {
-  const q = `(${u.query}) AND FIRST_PDATE:[${SINCE} TO ${TODAY}] AND SRC:(MED OR PPR)`;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const sha = (k) => crypto.createHash('sha256').update(k).digest('hex');
+const ONLY_SRC = arg('--source', 'all');
+// ---- arXiv (the papers alphaXiv mirrors). Public API, no key; one request every 3 s as arXiv asks. ----
+const tag = (s, t) => (s.match(new RegExp(`<${t}[^>]*>([\\s\\S]*?)</${t}>`)) ?? [])[1]?.replace(/\s+/g, ' ').trim() ?? null;
+for (const u of ONLY_SRC === 'epmc' ? [] : cfg.usecases) {
+  for (const aq of u.arxiv ?? []) {
+    const url = `https://export.arxiv.org/api/query?search_query=${encodeURIComponent(aq)}&max_results=${MAX}&sortBy=submittedDate&sortOrder=descending`;
+    let xml; try { const r = await fetch(url, { headers: { 'User-Agent': 'paper-watcher/1.0' } }); if (!r.ok) throw new Error(`HTTP ${r.status}`); xml = await r.text(); } catch (e) { stats.push({ usecase: u.id, source: 'arXiv', error: String(e).slice(0, 120) }); await sleep(3000); continue; }
+    let added = 0, dropped = 0, known = 0, old = 0;
+    for (const e of xml.split('<entry>').slice(1)) {
+      const id = (tag(e, 'id') ?? '').replace(/^.*\/abs\//, '').replace(/v\d+$/, ''), published = (tag(e, 'published') ?? '').slice(0, 10);
+      if (!id) continue;
+      if (published < SINCE) { old++; continue; }
+      const doi = tag(e, 'arxiv:doi'), key = `arxiv:${id}`;
+      if (seen.has(key) || (doi && seen.has(`doi:${doi.toLowerCase()}`))) { known++; continue; }
+      const title = tag(e, 'title') ?? '';
+      if (sealedKeys.has(sha(key)) || heldOut(`${title} ${tag(e, 'summary') ?? ''}`)) { dropped++; continue; }
+      seen.add(key); added++;
+      out.push({ key, usecase: u.id, laws: u.laws, doi: doi ?? null, pmid: null, pmcid: null, arxiv_id: id, source: 'ARXIV', title: title.slice(0, 300), journal: 'arXiv', published,
+        open_access: true, preprint: true, url: `https://arxiv.org/abs/${id}`, alphaxiv: `https://www.alphaxiv.org/abs/${id}`, found: TODAY, status: 'queued' });
+    }
+    stats.push({ usecase: u.id, source: 'arXiv', hits: xml.split('<entry>').length - 1, added, already_queued: known, dropped_holdout: dropped, older_than_since: old });
+    await sleep(3000);
+  }
+}
+// ---- Europe PMC (journals and bioRxiv/medRxiv/Research Square preprints) ----
+for (const [u, uq] of ONLY_SRC === 'arxiv' ? [] : cfg.usecases.flatMap((u) => [u.query, ...(u.more ?? [])].map((x) => [u, x]))) {
+  const q = `(${uq}) AND FIRST_PDATE:[${SINCE} TO ${TODAY}] AND SRC:(MED OR PPR)`;
   const url = `https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(q)}&format=json&pageSize=${MAX}&resultType=core&sort=${encodeURIComponent('P_PDATE_D desc')}`;
   let res; try { res = await (await fetch(url, { headers: { 'User-Agent': 'paper-watcher/1.0' } })).json(); } catch (e) { stats.push({ usecase: u.id, error: String(e).slice(0, 120) }); continue; }
   let added = 0, dropped = 0, known = 0;
@@ -53,10 +80,10 @@ for (const u of cfg.usecases) {
       journal: r.journalInfo?.journal?.title ?? r.bookOrReportDetails?.publisher ?? null, published: r.firstPublicationDate ?? null, open_access: r.isOpenAccess === 'Y', preprint: r.source === 'PPR',
       found: TODAY, status: 'queued' });
   }
-  stats.push({ usecase: u.id, hits: res.hitCount ?? 0, added, already_queued: known, dropped_holdout: dropped });
+  stats.push({ usecase: u.id, source: 'Europe PMC', hits: res.hitCount ?? 0, added, already_queued: known, dropped_holdout: dropped });
 }
 if (!DRY && out.length) fs.appendFileSync(QUEUE, out.map((x) => JSON.stringify(x)).join('\n') + '\n');
-for (const s of stats) console.log(s.error ? `ERROR  ${s.usecase}: ${s.error}` : `${s.usecase.padEnd(22)} hits ${String(s.hits).padStart(4)}  added ${String(s.added).padStart(3)}  already queued ${String(s.already_queued).padStart(3)}  dropped (holdout) ${s.dropped_holdout}`);
-console.log(`${DRY ? 'dry run: would add' : 'added'} ${out.length} papers; queue now ${seen.size}`);
-if (!DRY) fs.writeFileSync(path.join(HERE, 'watch-last-run.json'), JSON.stringify({ ran: TODAY, since: SINCE, source: 'Europe PMC REST search', stats }, null, 1) + '\n');
+for (const s of stats) console.log(s.error ? `ERROR  ${s.usecase} (${s.source ?? 'Europe PMC'}): ${s.error}` : `${s.usecase.padEnd(22)} ${s.source.padEnd(10)} hits ${String(s.hits).padStart(4)}  added ${String(s.added).padStart(3)}  already queued ${String(s.already_queued).padStart(3)}  dropped (holdout) ${s.dropped_holdout}`);
+console.log(`${DRY ? 'dry run: would add' : 'added'} ${out.length} papers (${out.filter((x) => x.source === 'ARXIV').length} from arXiv); queue now ${seen.size}`);
+if (!DRY) fs.writeFileSync(path.join(HERE, 'watch-last-run.json'), JSON.stringify({ ran: TODAY, since: SINCE, source: 'arXiv API and Europe PMC REST search', added: out.length, stats }, null, 1) + '\n');
 process.exit(stats.some((s) => s.error) ? 1 : 0);

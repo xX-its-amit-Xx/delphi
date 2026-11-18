@@ -1,6 +1,6 @@
 # STATE — DELPHI atlas + six tracks (antigravity session b0ad0789)
 
-Read this first, then BRAIN.md. Updated 2026-11-17.
+Read this first, then BRAIN.md. Updated 2026-11-18.
 
 ## What this session owns
 - `sim-engine/scales/atlas/`, `sim-engine/scales/micro/division.mjs`, `sim-engine/scales/molecular/`
@@ -12,6 +12,7 @@ Read this first, then BRAIN.md. Updated 2026-11-17.
 - `BRIEF-2026-11-12.md`: PAPER (with Buehler, Marom) and CONTRACTING (Mamou-Mani, Formlabs print); six tracks.
 - `BRIEF-2026-11-13-green-fire-coatings.md`: fire-coatings lead. `BRIEF-2026-11-13-group-split.md`: group splits into academic zebrafish paper and industry (biomaterials, zebot, locomotion).
 - `BRIEF-2026-11-17-community-badge-watcher.md`: alphaXiv Community, methods paper, "Lean4Bio checked" badge, paper watcher (priority: scraping for verification); Slack bot question.
+- `BRIEF-2026-11-17-alphaxiv-collaboration.md`: run daily, widen searches, use the named account for alphaXiv, three or more collaboration ideas implemented.
 - `BRIEF-2026-11-13-deliverables.md`: top deliverables = Formlabs print file, biomaterial proposal grounded in "linker biology", validation-suite improvements and more cases (validation / holdout / performance / what was wrong). Biomaterials and xenobots must use Lean for Biology.
 
 ## Upstream
@@ -47,9 +48,14 @@ Read this first, then BRAIN.md. Updated 2026-11-17.
 - Crosslink swelling: 9/11 held-out series right sign, effective n about 3-4. Fish: Strouhal band holds 80% held-out; larval zebrafish sit at 0.72-2.5.
 - Lean added and passing: crosslinker window (14 thm), xenobot laws (13), print structure (21), fire certificate V2 (11; v1's three eliminations were wrong-way), binding thermo fixed (9).
 
-## Paper watcher, first pass (2026-11-17)
-- 43 new papers since 2026-05-01 + 2 back-catalogue. 4 papers checkable: 36 checks (28 Lean, 8 script), 24 inside, 12 outside. Not checkable: 16 off-topic, 14 abstract only, 5 partial inputs, 4 sealed, 2 no law yet. 13 new-law suggestions recorded, none formalised.
-- Not done: second reader to re-check copied numbers; bioRxiv full text (HTTP 429); scheduled daily run; nothing posted to alphaXiv or Slack.
+## Paper watcher (2026-11-18: wider searches, arXiv added, daily)
+- Sources: arXiv API (what alphaXiv mirrors) + Europe PMC; 17 searches in `tracks/watch/usecases.json`. 97 new papers read since 2026-05-01 (+4 sealed, +2 back-catalogue). 6 checked: 40 checks (31 Lean, 9 script), 28 inside, 12 outside. arXiv: 19 found, 1 checked (arxiv:2610.29389).
+- Not checkable: 31 off-topic, 23 abstract only, 19 partial inputs, 11 no numbers, 7 no law yet, 4 sealed. 29 new-law suggestions, none formalised.
+- Second reader (`second.mjs`, readings kept in `tracks/watch/second/`): 3 papers re-read blind; numbers agree; one difference (whether to count the uncrosslinked control). The other 3 checked papers have one reading.
+- Two reader records were refused by me as second-hand or model-parameter numbers (scratch script, reasons in each paper's `why`).
+- Daily: `node tracks/watch/daily.mjs [--deploy]` (search, headless Sonnet reader via `reader-prompt.md`, verify, second, community, build, gates, deploy only if all pass; never commits). Log: `tracks/watch/daily-log.jsonl`. So the working tree drifts ahead of git until someone commits.
+- Public page `studio-live/tracks/alphaxiv/` (built by `tracks/watch/community.mjs`): try-your-numbers checker, law breakers, one number short, laws wanted (+Lean stubs), badges, comment drafts, `feed.xml`. Drafts in `tracks/watch/community/` (digest.md, comments/); none posted.
+- alphaXiv: signed in with Google as the account Amit named; "Communities" are now Feeds. Created public feed https://www.alphaxiv.org/?feed=lean4bio-papers-we-can-check-7jkmeu . No comments, no blog post, no API key.
 
 ## Known gaps
 - Public bundle is scrubbed of machine paths at write time (build.mjs); committed agent JSONs still contain them.
@@ -60,7 +66,7 @@ Read this first, then BRAIN.md. Updated 2026-11-17.
 - Issues #17-#42: 1 resolved (#27), 12 partly, 11 need Amit, 2 blocked. Drafts in `tracks/research/agent-scripts/is-fix-*/`; no comments posted.
 
 ## What is running
-- Nothing. No cluster jobs, no GPUs. Explorer/Discovery still decline the SSH key.
+- Windows scheduled task "Delphi paper watcher (daily)", 06:17, wrapper `C:Tempdelphi-watch-dailyun.cmd` (row in registry-claims.md). No cluster jobs, no GPUs. Explorer/Discovery still decline the SSH key.
 
 ## Standing constraints
 - Frozen holdout: nothing from the held-out clade (roster in holdout/split.json) in any file, mesh, manifest or log. Never add allowlist entries. Agents may download tables that contain it: keep raw downloads out of the repo.

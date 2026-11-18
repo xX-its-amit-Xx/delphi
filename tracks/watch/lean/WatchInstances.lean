@@ -87,6 +87,15 @@ theorem w27_bilayer_plate_ceiling : (0.0015 : ℝ) * (8 : ℝ) ≤ 9/4 * (0.0144
 /-- doi:10.1371/journal.pone.0205607 | GR18 r0.49 (held out record of the earlier case) | inside -/
 theorem w28_bilayer_strip_ceiling : (0.0015 : ℝ) * (8 : ℝ) ≤ 3/2 * (0.0144 : ℝ) := by norm_num
 
+/-- doi:10.3390/mi17070815 | Euglena gracilis, control medium (PBS 0%), direct transfer experiment, 1 h | inside -/
+theorem w29_low_reynolds : (22.5 : ℝ) * (40.9 : ℝ) ≤ 1000000 := by norm_num
+
+/-- doi:10.3390/mi17070815 | Euglena gracilis after stepwise acclimation, PBS 25% | inside -/
+theorem w30_low_reynolds : (12.9 : ℝ) * (45.4 : ℝ) ≤ 1000000 := by norm_num
+
+/-- doi:10.3390/mi17070815 | Euglena gracilis after stepwise acclimation, PBS 100% | inside -/
+theorem w31_low_reynolds : (12.2 : ℝ) * (36.5 : ℝ) ≤ 1000000 := by norm_num
+
 end Watch
 
 #print axioms Watch.w1_bilayer_plate_ceiling
@@ -117,3 +126,6 @@ end Watch
 #print axioms Watch.w26_bilayer_strip_ceiling
 #print axioms Watch.w27_bilayer_plate_ceiling
 #print axioms Watch.w28_bilayer_strip_ceiling
+#print axioms Watch.w29_low_reynolds
+#print axioms Watch.w30_low_reynolds
+#print axioms Watch.w31_low_reynolds
