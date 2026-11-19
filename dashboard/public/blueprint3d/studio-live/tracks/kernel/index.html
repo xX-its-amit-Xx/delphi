@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The DELPHI kernel</title>
+<style>
+  :root{--bg:#080b11;--panel:#0d1219;--card:#111823;--edge:#1e2836;--ink:#e6edf6;--dim:#9fb0c5;--faint:#6b7b90;--blue:#3f82d6;--amber:#d09a2a;--green:#4ec9a0;--red:#ef6a6a}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 "Segoe UI",system-ui,sans-serif}
+  a{color:#7fb0ef;text-decoration:none} a:hover{text-decoration:underline}
+  .wrap{max-width:980px;margin:0 auto;padding:22px 16px 80px}
+  h1{font-size:24px;margin:0 0 6px} h2{font-size:18px;margin:38px 0 6px} h2 small{font-weight:400;color:var(--faint);font-size:13px;margin-left:8px}
+  p{margin:8px 0;max-width:780px} .dim{color:var(--dim)} .small{font-size:13px;color:var(--dim)}
+  .nav{font-size:13px;color:var(--faint);margin:8px 0 0} .nav a{margin-right:14px}
+  .ways{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:18px 0}
+  .way{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:13px 15px} .way b{display:block;margin-bottom:4px} .way p{margin:0;font-size:13.5px;color:var(--dim)}
+  .box{background:var(--card);border:1px solid var(--edge);border-radius:12px;padding:14px 16px;margin:12px 0}
+  pre{background:#0b111a;border:1px solid var(--edge);border-radius:8px;padding:10px 12px;overflow-x:auto;font:12.5px/1.5 Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+  code{font:12.5px Consolas,monospace;background:#0b111a;padding:1px 5px;border-radius:4px;word-break:break-word}
+  .chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;border:1px solid;text-transform:uppercase;white-space:nowrap}
+  .ok{color:var(--green);border-color:var(--green)} .bad{color:var(--red);border-color:var(--red)} .warn{color:var(--amber);border-color:var(--amber)} .mute{color:var(--faint);border-color:var(--edge)}
+  details{background:var(--card);border:1px solid var(--edge);border-radius:12px;margin:10px 0} summary{cursor:pointer;padding:12px 15px;font-weight:600} details>div{padding:0 15px 14px}
+  summary small{font-weight:400;color:var(--faint);margin-left:8px}
+  .scroll{overflow-x:auto} table{border-collapse:collapse;width:100%;font-size:13.5px} th,td{text-align:left;vertical-align:top;padding:7px 9px;border-bottom:1px solid var(--edge)} th{color:var(--faint);font-weight:600}
+  .q{color:var(--dim);font-size:12.5px;margin-top:3px}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font:12.5px Consolas,monospace;color:var(--dim);margin:14px 0}
+  .flow span{background:#0b111a;border:1px solid var(--edge);border-radius:7px;padding:5px 9px;color:var(--ink)}
+  .flow i{color:var(--faint);font-style:normal}
+  .num{font-variant-numeric:tabular-nums}
+  ul{max-width:780px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>The DELPHI kernel</h1>
+  <p class="dim">A design is only as good as the records under it. This page shows a small trusted core that will not hand over a file unless every number in it traces back to a paper that printed it, and every law it was checked against has been accepted by the Lean proof kernel. When something is missing, it says so and names what would fix it, instead of filling the gap with a plausible guess.</p>
+  <p class="small">An independent research project. Everything here is a <b>design</b>: nothing has been built, cloned, sequenced, or run on a robot.</p>
+  <div class="nav"><a href="../">Six tracks dashboard</a><a href="../alphaxiv/">Paper checks</a><a href="#how">How it works</a><a href="#run">What the run said</a><a href="#refusals">What it refused</a><a href="#laws">The laws</a><a href="#audit">Auditing a "0 sorry" claim</a><a href="#files">Download</a></div>
+</header>
+
+<div class="ways">
+  <div class="way"><b>Evidence or nothing</b><p>A number cannot enter without the sentence it was read in and where that sentence sits in the paper.</p></div>
+  <div class="way"><b>"Cannot tell" is an answer</b><p>A missing input never becomes a pass. It becomes <i>cannot-assess</i>, with the reason attached.</p></div>
+  <div class="way"><b>Refusals are the product</b><p>Each refused artifact is a short list of measurements that would unblock it. That list is what you send an author.</p></div>
+  <div class="way"><b>Nothing edits silently</b><p>Every record is named by the hash of its own contents and chained to the one before. Change a number and its name changes.</p></div>
+</div>
+
+<h2 id="how">How it works <small>five steps, and what each one turns away</small></h2>
+<div class="flow"><span>evidence</span><i>&rarr;</i><span>fact</span><i>&rarr;</i><span>verdict</span><i>&rarr;</i><span>build</span><i>&rarr;</i><span>files</span><i style="margin-left:10px">and a law only exists once the Lean kernel has accepted it</i></div>
+<div class="scroll"><table id="guards"><thead><tr><th>step</th><th>turned away when</th></tr></thead><tbody></tbody></table></div>
+
+<h2 id="run">What the run said <small>a two-input AND, compiled from behaviour into DNA</small></h2>
+<p class="dim">The design is three lines of behaviour: <code>assign out = a &amp; b;</code>. A transcriptional gate inverts, so an AND cannot be one gate &mdash; it becomes the NOR of two inverted inputs, which needs three repressor proteins that do not interfere with one another, each with enough separation between its output levels and the next gate's switching point.</p>
+<div class="box" id="runbox"></div>
+<div class="scroll"><table id="verdicts"><thead><tr><th>result</th><th>law</th><th>what was checked</th><th>what came out</th></tr></thead><tbody></tbody></table></div>
+<p class="small">Open a row to see every number that went into it, the sentence it was read in, and the conditions it was measured under.</p>
+<div id="traces"></div>
+
+<h2 id="refusals">What it refused <small>and what would unblock each one</small></h2>
+<div id="refusals-list"></div>
+
+<h2 id="laws">The laws <small>what has been proved, and what has only been scripted</small></h2>
+<div id="laws-list"></div>
+
+<h2 id="audit">Auditing a "0 sorry" claim <small>why a true claim can still be uncheckable</small></h2>
+<p class="dim">Every formal-biology project says its proofs are machine-checked with no gaps. You cannot tell from a file that never asks the prover to print what each theorem rests on. Three different things can be true of such a file: the proofs are fine and nobody can tell; a gap is in there and the prover only warned about it; or a result was simply assumed, which passes any search for the word "sorry".</p>
+<div class="box">
+  <p>So we add one audit line per theorem to a <b>copy</b> and run the strict checker over both. Run against another project's 76-theorem file, at a pinned commit, on 2026-11-19:</p>
+  <pre>as published     REJECTED  no axiom audit (76 of 76 theorems have no audit line)
+with audit added CHECKED   axioms [Classical.choice, Quot.sound, propext]</pre>
+  <p>The claim was <b>true</b> and <b>not checkable</b> from what had been published. Seventy-six added lines make it checkable. That is a contribution to offer upstream, not a criticism.</p>
+  <p class="small">What this still does not say: that a theorem is the <i>right</i> theorem. A proof whose assumptions contradict each other is valid and says nothing, and no script catches that &mdash; it needs a reader.</p>
+</div>
+
+<h2 id="files">Download what the run produced <small>a design, not a construct</small></h2>
+<div class="scroll"><table id="files"><thead><tr><th>file</th><th>what it is</th><th>size</th></tr></thead><tbody></tbody></table></div>
+<p class="small" id="draftnote"></p>
+
+<h2>Where the numbers come from <small>two open-access papers, read as full text</small></h2>
+<div id="sources"></div>
+
+<p class="small" style="margin-top:34px">Scope limit: <span id="scope"></span></p>
+<p class="small" id="stamp"></p>
+
+<script>
+const FILE_NOTES = {
+  '.gb': 'The construct, annotated. Slots with no sequence from a paper appear as real sequence gaps, not as invented bases.',
+  '-golden-gate.opentrons.py': 'Liquid-handling steps for assembling the slots that do exist. Never run on hardware; check every volume first.',
+  '-golden-gate.autoprotocol.json': 'The same run written in Autoprotocol.',
+  '-justification.jsonld': 'The build log as linked data: every slot, number and verdict back to the record that justified it.',
+  '.v': 'The design: the behaviour that was asked for.',
+  '.lean': 'The laws, with an axiom audit line per theorem.',
+  'parts.json': 'The part registry: every value with the sentence it was quoted from and where that sentence sits.'
+};
+const noteFor = (f) => Object.entries(FILE_NOTES).find(([k]) => f.endsWith(k))?.[1] ?? '';
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const chip = (r) => r === 'inside' ? '<span class="chip ok">inside</span>' : r === 'outside' ? '<span class="chip bad">outside</span>' : '<span class="chip warn">cannot tell</span>';
+const kb = (b) => b > 1024 ? (b / 1024).toFixed(1) + ' kB' : b + ' B';
+
+const GUARDS = [
+  ['evidence', 'there is no quote, no locator, no reference &mdash; or the paper is quoting somebody else’s measurement rather than reporting its own'],
+  ['fact', 'there is no evidence under it, no unit, no measurement conditions, or the value is not a finite number'],
+  ['law', 'the proof file asks for no axiom audit, the Lean kernel rejects it, or a proof leans on an assumption somebody wrote in by hand'],
+  ['verdict', 'never turned away &mdash; it answers inside, outside, or cannot-assess. Missing inputs, or inputs measured under conditions that cannot be compared, give cannot-assess'],
+  ['build', 'any verdict under it is outside or cannot-assess. The kernel then records a refusal naming what was missing, and writes no files']
+];
+
+fetch('data.json').then((r) => r.json()).then((d) => {
+  document.querySelector('#guards tbody').innerHTML = GUARDS.map(([s, w]) => `<tr><td><code>${s}</code></td><td>${w}</td></tr>`).join('');
+
+  const t = d.run.tally;
+  document.getElementById('runbox').innerHTML =
+    `<p><b>${esc(d.run.module)}</b> in <i>${esc(d.run.host)}</i>: lowered to ${d.run.gates} gate(s) needing ${Object.keys(d.run.mapping).length} repressor(s), ${d.run.cascades} cascade(s).</p>`
+    + `<p>Repressors chosen: ${Object.entries(d.run.mapping).map(([w, r]) => `<code>${esc(r)}</code>`).join(' ')} &mdash; none reused, none in a pair the papers report as interfering.</p>`
+    + `<p>${chip('inside')} ${t.inside} &nbsp; ${chip('outside')} ${t.outside} &nbsp; ${chip('cannot-assess')} ${t['cannot-assess']} &nbsp;&nbsp; <span class="dim">${d.run.slots.filled} of ${d.run.slots.total} sequence slots filled from a paper that was read</span></p>`;
+
+  document.querySelector('#verdicts tbody').innerHTML = d.verdicts.map((v) =>
+    `<tr><td>${chip(v.result)}</td><td><code>${esc(v.law)}</code></td><td>${esc(v.label)}</td><td>${esc(v.detail)}</td></tr>`).join('');
+
+  document.getElementById('traces').innerHTML = d.verdicts.map((v) => `
+    <details><summary>${chip(v.result)} ${esc(v.label)} <small>${v.inputs.length} input(s), each with its quote</small></summary><div>
+      <p class="dim">${esc(v.detail)}</p>
+      <p class="small">Decided by: ${esc(v.by)}</p>
+      ${v.inputs.map((i) => `<div class="box"><b>${esc(i.quantity)} = ${esc(i.value)} ${esc(i.unit)}</b>
+        <div class="q">&ldquo;${esc(i.quote)}&rdquo;</div>
+        <div class="small">${esc(i.where)} &mdash; <a href="https://doi.org/${esc(i.doi)}" target="_blank" rel="noopener">${esc(i.doi)}</a></div>
+        <div class="small">measured in: ${Object.entries(i.conditions || {}).filter(([, x]) => x !== null && x !== undefined).map(([k, x]) => `${esc(k)} = ${esc(x)}`).join(', ')}</div></div>`).join('')}
+    </div></details>`).join('');
+
+  document.getElementById('refusals-list').innerHTML = d.refusals.map((r) => `
+    <div class="box"><p><span class="chip bad">refused</span> <b>${esc(r.what)}</b></p>
+      <ul>${r.because.map((b) => `<li>${esc(b)}</li>`).join('')}</ul></div>`).join('')
+    + (d.missing_measurements.length ? `<div class="box"><p><b>${d.missing_measurements.length} measurement(s) would unblock the model.</b> Each one has an unsigned draft record ready for a result to be written into, below. Unsigned on purpose: publishing a record is the key owner's decision, not a script's.</p></div>` : '');
+
+  document.getElementById('laws-list').innerHTML = d.laws.map((l) => `
+    <details><summary>${l.verdict === 'CHECKED' ? '<span class="chip ok">proved</span>' : '<span class="chip mute">script</span>'} ${esc(l.name)} <small>${esc(l.checked_by)}</small></summary><div>
+      <p>${esc(l.informal)}</p>
+      ${l.lean_file ? `<p class="small">File <code>${esc(l.lean_file)}</code> &middot; ${l.audited ?? '?'} declaration(s) audited &middot; toolchain <code>${esc(l.toolchain)}</code><br>Axioms: <code>${l.axioms.join(', ')}</code> <span class="dim">(${esc(l.axioms_are)})</span></p>`
+        : `<p class="small">Checked by ${esc(l.script)}. <b>Not</b> checked by the Lean kernel, and this page does not claim otherwise.</p>`}
+    </div></details>`).join('');
+
+  document.querySelector('#files tbody').innerHTML = d.files.map((f) =>
+    `<tr><td><a href="files/${esc(f.file)}">${esc(f.file)}</a></td><td>${noteFor(f.file)}</td><td class="num">${kb(f.bytes)}</td></tr>`).join('');
+  document.getElementById('draftnote').innerHTML = d.drafts.length
+    ? `${d.drafts.length} unsigned draft record(s), one per missing measurement: ` + d.drafts.map((x) => `<a href="files/${esc(x.file)}">${esc(x.file.split('/').pop())}</a>`).join(', ')
+    : '';
+
+  document.getElementById('sources').innerHTML = d.sources.map((s) => `
+    <div class="box"><p>${esc(s.citation)}</p>
+      <p class="small"><a href="https://doi.org/${esc(s.doi)}" target="_blank" rel="noopener">${esc(s.doi)}</a> &middot; ${esc(s.pmcid)} &middot; read as ${esc(s.read)} &middot; retrieved ${esc(s.retrieved)}</p></div>`).join('')
+    + `<div class="box"><p><b>Two defects in those papers change what can be used.</b></p><ul>${d.source_defects.map((x) => `<li>${esc(x.what)} <span class="dim">&mdash; ${esc(x.consequence)}</span></li>`).join('')}</ul></div>`;
+
+  document.getElementById('scope').textContent = d.scope_limit;
+  document.getElementById('stamp').textContent = `Store: ${d.store.nodes} records (${d.store.builds} built, ${d.store.refusals} refused), every identifier and link recomputed clean. Page data built ${d.built}.`;
+}).catch((e) => { document.getElementById('runbox').innerHTML = '<p class="small">Could not load data.json: ' + esc(e.message) + '</p>'; });
+</script>
+</div>
+</body>
+</html>

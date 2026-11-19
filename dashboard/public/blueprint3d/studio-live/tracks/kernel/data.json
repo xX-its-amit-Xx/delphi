@@ -1,0 +1,501 @@
+{
+ "built": "2026-11-19",
+ "kernel_version": "0.1.0",
+ "store": {
+  "nodes": 63,
+  "by_type": {
+   "evidence": 23,
+   "fact": 28,
+   "law": 3,
+   "verdict": 6,
+   "build": 1,
+   "refusal": 2
+  },
+  "verdicts": {
+   "inside": 2,
+   "outside": 2,
+   "cannot_assess": 2
+  },
+  "builds": 1,
+  "refusals": 2,
+  "chain_problems": 0
+ },
+ "run": {
+  "module": "and2",
+  "host": "Escherichia coli",
+  "gates": 3,
+  "cascades": 2,
+  "mapping": {
+   "w1": "PhlF",
+   "w2": "LmrA",
+   "w3": "ButR"
+  },
+  "slots": {
+   "total": 14,
+   "filled": 3
+  },
+  "tally": {
+   "inside": 2,
+   "outside": 2,
+   "cannot-assess": 2
+  },
+  "design_file": "tracks/kernel/compile/designs/and2.v"
+ },
+ "laws": [
+  {
+   "name": "cascade_noise_margin",
+   "informal": "In a cascade, the upstream gate's OFF level must sit below the downstream gate's half-maximal input and its ON level above it. Otherwise the downstream gate cannot tell the two states apart and the circuit's logic is not realised in the cell.",
+   "lean_file": "tracks/kernel/lean/CircuitLaws.lean",
+   "script": null,
+   "verdict": "CHECKED",
+   "toolchain": "leanprover/lean4:v4.35.0",
+   "audited": 6,
+   "axioms": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+   ],
+   "axioms_are": "the bound check.sh confirmed every audited theorem was within",
+   "checked_by": "the Lean kernel, with an axiom audit"
+  },
+  {
+   "name": "distinct_orthogonal_repressors",
+   "informal": "Two gates in one circuit must use repressors that do not bind each other's promoters. A repressor used twice, or a pair the record reports as cross-reacting, makes the wiring diagram and the cell disagree.",
+   "script": "tracks/kernel/compile/compile.mjs (orthogonality check over the crosstalk groups in parts.json)",
+   "verdict": null,
+   "toolchain": null,
+   "audited": null,
+   "axioms": [],
+   "axioms_are": null,
+   "checked_by": "a script, not the Lean kernel"
+  },
+  {
+   "name": "model_parameters_present",
+   "informal": "A predictive model of a gate needs four numbers: both output levels, the half-maximal input and the cooperativity. A model built with any of them guessed is not a prediction.",
+   "script": "tracks/kernel/compile/emit.mjs (parameter completeness per gate)",
+   "verdict": null,
+   "toolchain": null,
+   "audited": null,
+   "axioms": [],
+   "axioms_are": null,
+   "checked_by": "a script, not the Lean kernel"
+  }
+ ],
+ "verdicts": [
+  {
+   "law": "cascade_noise_margin",
+   "label": "PhlF -> ButR",
+   "result": "cannot-assess",
+   "detail": "inputs were measured under different strain: \"DH5alpha\" vs \"DH10B\". A law applied across them would compare numbers that are not comparable.",
+   "by": "kernel",
+   "inputs": [
+    {
+     "quantity": "output_off_REU",
+     "value": 0.1,
+     "unit": "REU",
+     "conditions": {
+      "host": "Escherichia coli",
+      "strain": "DH5alpha",
+      "medium": "LB",
+      "temperature_C": 37,
+      "reference_standard": "pJ23101-YFP (BBa_J23101 + BBa_B0032 5'UTR + YFP) = 1 REU, DH10B"
+     },
+     "doi": "10.1038/nchembio.1411",
+     "quote": "the range of P is inserted into the PhlF response function, yielding outputs of 16 and 0.1 REU",
+     "where": "Results, modelling the NAND circuit"
+    },
+    {
+     "quantity": "output_on_REU",
+     "value": 16,
+     "unit": "REU",
+     "conditions": {
+      "host": "Escherichia coli",
+      "strain": "DH5alpha",
+      "medium": "LB",
+      "temperature_C": 37,
+      "reference_standard": "pJ23101-YFP (BBa_J23101 + BBa_B0032 5'UTR + YFP) = 1 REU, DH10B"
+     },
+     "doi": "10.1038/nchembio.1411",
+     "quote": "the range of P is inserted into the PhlF response function, yielding outputs of 16 and 0.1 REU",
+     "where": "Results, modelling the NAND circuit"
+    },
+    {
+     "quantity": "threshold_REU",
+     "value": 1.3,
+     "unit": "REU",
+     "conditions": {
+      "host": "Escherichia coli",
+      "strain": "DH10B",
+      "medium": "M9 minimal + glucose",
+      "temperature_C": 37,
+      "reference_standard": "pJ23101-YFP (BBa_J23101 + BBa_B0032 5'UTR + YFP) = 1 REU, DH10B"
+     },
+     "doi": "10.1038/nchembio.1411",
+     "quote": "The thresholds for the gates are similar with an average of = 0.4 REU and a range of 0.1 (TarA) to 1.3 REU (ButR).",
+     "where": "Results, NOT gate construction & response function measurement"
+    }
+   ]
+  },
+  {
+   "law": "cascade_noise_margin",
+   "label": "LmrA -> ButR",
+   "result": "cannot-assess",
+   "detail": "inputs were measured under different strain: \"DH5alpha\" vs \"DH10B\". A law applied across them would compare numbers that are not comparable.",
+   "by": "kernel",
+   "inputs": [
+    {
+     "quantity": "output_off_REU",
+     "value": 1.4,
+     "unit": "REU",
+     "conditions": {
+      "host": "Escherichia coli",
+      "strain": "DH5alpha",
+      "medium": "LB",
+      "temperature_C": 37,
+      "reference_standard": "pJ23101-YFP (BBa_J23101 + BBa_B0032 5'UTR + YFP) = 1 REU, DH10B"
+     },
+     "doi": "10.1038/nchembio.1411",
+     "quote": "the range of the P input is converted to 61 and 1.4 REU by the LmrA response function",
+     "where": "Results, modelling the NAND circuit"
+    },
+    {
+     "quantity": "output_on_REU",
+     "value": 61,
+     "unit": "REU",
+     "conditions": {
+      "host": "Escherichia coli",
+      "strain": "DH5alpha",
+      "medium": "LB",
+      "temperature_C": 37,
+      "reference_standard": "pJ23101-YFP (BBa_J23101 + BBa_B0032 5'UTR + YFP) = 1 REU, DH10B"
+     },
+     "doi": "10.1038/nchembio.1411",
+     "quote": "the range of the P input is converted to 61 and 1.4 REU by the LmrA response function",
+     "where": "Results, modelling the NAND circuit"
+    },
+    {
+     "quantity": "threshold_REU",
+     "value": 1.3,
+     "unit": "REU",
+     "conditions": {
+      "host": "Escherichia coli",
+      "strain": "DH10B",
+      "medium": "M9 minimal + glucose",
+      "temperature_C": 37,
+      "reference_standard": "pJ23101-YFP (BBa_J23101 + BBa_B0032 5'UTR + YFP) = 1 REU, DH10B"
+     },
+     "doi": "10.1038/nchembio.1411",
+     "quote": "The thresholds for the gates are similar with an average of = 0.4 REU and a range of 0.1 (TarA) to 1.3 REU (ButR).",
+     "where": "Results, NOT gate construction & response function measurement"
+    }
+   ]
+  },
+  {
+   "law": "cascade_noise_margin",
+   "label": "worst case in the set: highest OFF against the lowest threshold",
+   "result": "outside",
+   "detail": "low margin -2.00 REU (threshold 0.1 - OFF 2.1), high margin 2.90 REU (ON 3 - threshold 0.1)",
+   "by": "kernel arithmetic under Delphi.Circuit.margins_pos / no_margin_of_le",
+   "inputs": [
+    {
+     "quantity": "output_off_REU_max",
+     "value": 2.1,
+     "unit": "REU",
+     "conditions": {
+      "host": "Escherichia coli",
+      "strain": "DH10B",
+      "medium": "M9 minimal + glucose",
+      "temperature_C": 37,
+      "reference_standard": "pJ23101-YFP (BBa_J23101 + BBa_B0032 5'UTR + YFP) = 1 REU, DH10B"
+     },
+     "doi": "10.1038/nchembio.1411",
+     "quote": "the OFF states range between 0.1 and 2.1 REU",
+     "where": "Results, NOT gate construction & response function measurement"
+    },
+    {
+     "quantity": "threshold_REU",
+     "value": 0.1,
+     "unit": "REU",
+     "conditions": {
+      "host": "Escherichia coli",
+      "strain": "DH10B",
+      "medium": "M9 minimal + glucose",
+      "temperature_C": 37,
+      "reference_standard": "pJ23101-YFP (BBa_J23101 + BBa_B0032 5'UTR + YFP) = 1 REU, DH10B"
+     },
+     "doi": "10.1038/nchembio.1411",
+     "quote": "The thresholds for the gates are similar with an average of = 0.4 REU and a range of 0.1 (TarA) to 1.3 REU (ButR).",
+     "where": "Results, NOT gate construction & response function measurement"
+    },
+    {
+     "quantity": "output_on_REU_min",
+     "value": 3,
+     "unit": "REU",
+     "conditions": {
+      "host": "Escherichia coli",
+      "strain": "DH10B",
+      "medium": "M9 minimal + glucose",
+      "temperature_C": 37,
+      "reference_standard": "pJ23101-YFP (BBa_J23101 + BBa_B0032 5'UTR + YFP) = 1 REU, DH10B"
+     },
+     "doi": "10.1038/nchembio.1411",
+     "quote": "all of the NOT gates have sufficiently high ON states (between 3 and 70 REU) to achieve full repression by crossing the threshold required by a downstream circuit",
+     "where": "Results, NOT gate construction & response function measurement"
+    }
+   ]
+  },
+  {
+   "law": "cascade_noise_margin",
+   "label": "best case in the set: lowest OFF against the highest threshold",
+   "result": "inside",
+   "detail": "low margin 1.20 REU (threshold 1.3 - OFF 0.1), high margin 1.70 REU (ON 3 - threshold 1.3)",
+   "by": "kernel arithmetic under Delphi.Circuit.margins_pos / no_margin_of_le",
+   "inputs": [
+    {
+     "quantity": "output_off_REU_min",
+     "value": 0.1,
+     "unit": "REU",
+     "conditions": {
+      "host": "Escherichia coli",
+      "strain": "DH10B",
+      "medium": "M9 minimal + glucose",
+      "temperature_C": 37,
+      "reference_standard": "pJ23101-YFP (BBa_J23101 + BBa_B0032 5'UTR + YFP) = 1 REU, DH10B"
+     },
+     "doi": "10.1038/nchembio.1411",
+     "quote": "the OFF states range between 0.1 and 2.1 REU",
+     "where": "Results, NOT gate construction & response function measurement"
+    },
+    {
+     "quantity": "threshold_REU",
+     "value": 1.3,
+     "unit": "REU",
+     "conditions": {
+      "host": "Escherichia coli",
+      "strain": "DH10B",
+      "medium": "M9 minimal + glucose",
+      "temperature_C": 37,
+      "reference_standard": "pJ23101-YFP (BBa_J23101 + BBa_B0032 5'UTR + YFP) = 1 REU, DH10B"
+     },
+     "doi": "10.1038/nchembio.1411",
+     "quote": "The thresholds for the gates are similar with an average of = 0.4 REU and a range of 0.1 (TarA) to 1.3 REU (ButR).",
+     "where": "Results, NOT gate construction & response function measurement"
+    },
+    {
+     "quantity": "output_on_REU_min",
+     "value": 3,
+     "unit": "REU",
+     "conditions": {
+      "host": "Escherichia coli",
+      "strain": "DH10B",
+      "medium": "M9 minimal + glucose",
+      "temperature_C": 37,
+      "reference_standard": "pJ23101-YFP (BBa_J23101 + BBa_B0032 5'UTR + YFP) = 1 REU, DH10B"
+     },
+     "doi": "10.1038/nchembio.1411",
+     "quote": "all of the NOT gates have sufficiently high ON states (between 3 and 70 REU) to achieve full repression by crossing the threshold required by a downstream circuit",
+     "where": "Results, NOT gate construction & response function measurement"
+    }
+   ]
+  },
+  {
+   "law": "distinct_orthogonal_repressors",
+   "label": "the 3 repressor(s) chosen",
+   "result": "inside",
+   "detail": "PhlF, LmrA, ButR: no repressor reused, and no pair appears in a crosstalk group the record reports",
+   "by": "script over the crosstalk groups in parts.json",
+   "inputs": [
+    {
+     "quantity": "dynamic_range_fold",
+     "value": 5,
+     "unit": "fold",
+     "conditions": {
+      "host": "Escherichia coli",
+      "strain": "DH10B",
+      "medium": "M9 minimal + glucose",
+      "temperature_C": 37,
+      "reference_standard": "pJ23101-YFP (BBa_J23101 + BBa_B0032 5'UTR + YFP) = 1 REU, DH10B"
+     },
+     "doi": "10.1038/nchembio.1411",
+     "quote": "The dynamic ranges of the gates vary from 207-fold (SrpR) to 5-fold (SmcR and ButR)",
+     "where": "Results, NOT gate construction & response function measurement"
+    }
+   ]
+  },
+  {
+   "law": "model_parameters_present",
+   "label": "the four Hill parameters, every gate",
+   "result": "outside",
+   "detail": "7 parameter(s) not in any record read: PhlF.K, PhlF.n, LmrA.K, LmrA.n, ButR.ymin, ButR.ymax, ButR.n",
+   "by": "parameter completeness over parts.json",
+   "inputs": [
+    {
+     "quantity": "output_on_REU",
+     "value": 16,
+     "unit": "REU",
+     "conditions": {
+      "host": "Escherichia coli",
+      "strain": "DH5alpha",
+      "medium": "LB",
+      "temperature_C": 37,
+      "reference_standard": "pJ23101-YFP (BBa_J23101 + BBa_B0032 5'UTR + YFP) = 1 REU, DH10B"
+     },
+     "doi": "10.1038/nchembio.1411",
+     "quote": "the range of P is inserted into the PhlF response function, yielding outputs of 16 and 0.1 REU",
+     "where": "Results, modelling the NAND circuit"
+    }
+   ]
+  }
+ ],
+ "builds": [
+  {
+   "artifact": "and2: assembly plan (annotated construct + liquid-handling protocols)",
+   "id": "k141672a20d4e0283",
+   "files": [
+    {
+     "path": "tracks/kernel/compile/out/and2.gb",
+     "sha256": "d099428e94637b51",
+     "bytes": 9823
+    },
+    {
+     "path": "tracks/kernel/compile/out/and2-golden-gate.opentrons.py",
+     "sha256": "ec69beede1f0d350",
+     "bytes": 1999
+    },
+    {
+     "path": "tracks/kernel/compile/out/and2-golden-gate.autoprotocol.json",
+     "sha256": "3174e959f12393de",
+     "bytes": 2265
+    }
+   ]
+  }
+ ],
+ "refusals": [
+  {
+   "what": "and2: orderable sequence (FASTA)",
+   "because": [
+    "a FASTA cannot represent an unknown base run honestly: 11 of 14 slot(s) have no sequence from a primary record (BBa_J23101, gate_PhlF, terminator_slot, BBa_J23101, gate_LmrA, terminator_slot, BBa_J23101, gate_ButR, terminator_slot, reporter_YFP, terminator_slot)"
+   ]
+  },
+  {
+   "what": "and2: predictive model (SBML)",
+   "because": [
+    "model_parameters_present (the four Hill parameters, every gate): outside the law — 7 parameter(s) not in any record read: PhlF.K, PhlF.n, LmrA.K, LmrA.n, ButR.ymin, ButR.ymax, ButR.n"
+   ]
+  }
+ ],
+ "missing_measurements": [
+  {
+   "draft": "and2-w1-k.trig"
+  },
+  {
+   "draft": "and2-w1-n.trig"
+  },
+  {
+   "draft": "and2-w2-k.trig"
+  },
+  {
+   "draft": "and2-w2-n.trig"
+  },
+  {
+   "draft": "and2-w3-ymin.trig"
+  },
+  {
+   "draft": "and2-w3-ymax.trig"
+  },
+  {
+   "draft": "and2-w3-n.trig"
+  }
+ ],
+ "sources": [
+  {
+   "key": "stanton2014",
+   "doi": "10.1038/nchembio.1411",
+   "pmcid": "PMC4165527",
+   "citation": "Stanton BC, Nielsen AAK, Tamsir A, Clancy K, Peterson T, Voigt CA. Genomic mining of prokaryotic repressors for orthogonal logic gates. Nature Chemical Biology 10:99-105 (2014).",
+   "read": "full_text",
+   "retrieved": "2026-11-19"
+  },
+  {
+   "key": "kelly2009",
+   "doi": "10.1186/1754-1611-3-4",
+   "pmcid": "PMC2683166",
+   "citation": "Kelly JR, Rubin AJ, Davis JH, Ajo-Franklin CM, Cumbers J, Czar MJ, de Mora K, Glieberman AL, Monie DD, Endy D. Measuring the activity of BioBrick promoters using an in vivo reference standard. Journal of Biological Engineering 3:4 (2009).",
+   "read": "full_text",
+   "retrieved": "2026-11-19"
+  }
+ ],
+ "source_defects": [
+  {
+   "source": "stanton2014",
+   "what": "The abstract and discussion both say 16 orthogonal gates, but the sentence listing them names 20 repressors (TetR, IcaRA, AmtR, BetI, SrpR, Orf2, BM3R1, ButR, PhlF, AmeR, QacR, LmrA, PsrA, HlyIIR, McbR, ScbR, TarA, LitR, HapR, SmcR).",
+   "consequence": "The registry does not record a count of orthogonal gates, and the orthogonality law is applied only to the named pairs the paper states crosstalk for."
+  },
+  {
+   "source": "kelly2009",
+   "what": "The multi-laboratory sentence prints BBa_J23150 twice: 'BBa_J23150: 0.14-0.23 RPU; BBa_J23150: 0.38-0.61 RPU; BBa_J23103: 0.77-0.96 RPU'. One of those two ranges belongs to another promoter, almost certainly BBa_J23151, but the paper as printed does not say which.",
+   "consequence": "The 0.38-0.61 RPU range is recorded as unattributable and is not used. J23151 keeps only the separately printed 'approximately 0.5 RPU'."
+  }
+ ],
+ "scope_limit": "Transcriptional logic and fluorescent reporters in laboratory Escherichia coli only. This registry deliberately contains no toxin, virulence, host-range, immune-evasion or resistance-transfer part, and the compiler refuses any part identifier that is not in this file.",
+ "files": [
+  {
+   "file": "and2.gb",
+   "bytes": 9823
+  },
+  {
+   "file": "and2-golden-gate.opentrons.py",
+   "bytes": 1999
+  },
+  {
+   "file": "and2-golden-gate.autoprotocol.json",
+   "bytes": 2265
+  },
+  {
+   "file": "and2-justification.jsonld",
+   "bytes": 29941
+  },
+  {
+   "file": "and2.v",
+   "bytes": 699
+  },
+  {
+   "file": "CircuitLaws.lean",
+   "bytes": 5750
+  },
+  {
+   "file": "parts.json",
+   "bytes": 23106
+  }
+ ],
+ "drafts": [
+  {
+   "file": "nanopub-drafts/and2-w1-k.trig",
+   "bytes": 1899
+  },
+  {
+   "file": "nanopub-drafts/and2-w1-n.trig",
+   "bytes": 1888
+  },
+  {
+   "file": "nanopub-drafts/and2-w2-k.trig",
+   "bytes": 1899
+  },
+  {
+   "file": "nanopub-drafts/and2-w2-n.trig",
+   "bytes": 1888
+  },
+  {
+   "file": "nanopub-drafts/and2-w3-n.trig",
+   "bytes": 1888
+  },
+  {
+   "file": "nanopub-drafts/and2-w3-ymax.trig",
+   "bytes": 1899
+  },
+  {
+   "file": "nanopub-drafts/and2-w3-ymin.trig",
+   "bytes": 1902
+  }
+ ]
+}

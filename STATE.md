@@ -32,7 +32,9 @@ Read this first, then BRAIN.md. Updated 2026-11-18.
 - Paper watcher: `node tracks/watch/watch.mjs` (Europe PMC -> `queue.jsonl`), readers write `watch-*.json` (prompt shape in BRAIN/brief; outputs in `delphi-work/agents6/`), `node tracks/watch/verify.mjs --from <folder>` (Lean-checks every record, writes `summary.json`, badges), `--status` prints the tally
 - Print files: `python -I tracks/print/make_poc.py && python -I tracks/print/test_poc.py [--fail-once]`
 - Holdout: `node holdout/check-leaks.mjs tracks`; `node sim-engine/scales/atlas/holdout-html-scan.mjs`
+- Kernel (new 2026-11-19, `tracks/kernel/`): `node tracks/kernel/test-kernel.mjs [--fail-once|--with-lean]` (28 faults, 0 may survive); `bash tracks/lean/check.sh tracks/kernel/lean/CircuitLaws.lean`; `node tracks/kernel/compile/compile.mjs tracks/kernel/compile/designs/and2.v`; `node tracks/kernel/compile/expect.mjs [--record]`; `node tracks/kernel/cli.mjs {summary|verify|laws|verdicts|refusals|builds|trace <id>|why <text>}`; `node tracks/kernel/audit-lean.mjs <file|url>`; `node tracks/kernel/page.mjs`
 - Deploy: `node dashboard/predeploy.mjs` then `cd dashboard && npx wrangler deploy`. Live: https://delphi-mission-control.ashenoy000.workers.dev/blueprint3d/studio-live/tracks/
+  - predeploy still FAILS 3 checks for one reason only: no root `node_modules`, so the MCP/Lean-exposure checks cannot run. Deploys are done with `npx wrangler deploy` directly. Open decision for Amit: `npm install` at the root (D: has under 5 GB free).
 
 ## Deliverables of 2026-11-13 (dashboard section "Deliverables")
 1. PRINT: `tracks/print/make_poc.py` -> `studio-live/tracks/print/{single-print-plate,active-plate,passive-plate,bonding-jig}.stl` + manifest. Thicknesses doubled to meet Formlabs' 0.4 mm supported-wall minimum. NOT met: Form Now's 1.5 mm rule for Flexible 80A. Nothing printed.
@@ -79,3 +81,26 @@ Read this first, then BRAIN.md. Updated 2026-11-18.
 4. Does "linker biology" mean crosslinker chemistry (how I read it) or "Lean for biology"?
 5. Post the drafted issue replies as public comments?  6. Coupon swelling measurement (#21) needs a printer.
 7. Standing: revoke the GitHub token, rotate the Frontier token, Nebius key, cluster SSH key.
+
+## The kernel and the biological compiler (2026-11-19)
+Asked for: "turn delphi into a kernel" + a pasted spec for a nanopub-driven genetic-circuit compiler.
+We had none of it. Full rationale, decisions and findings: BRAIN.md (2026-11-19 entries). In short:
+- `tracks/kernel/kernel.mjs`: five primitives (evidence, fact, law, verdict, build) over an append-only
+  hash-chained store. `law()` runs tracks/lean/check.sh itself. `cannot-assess` is never a pass.
+  `build()` refuses on any non-inside verdict and mints a refusal naming what was missing.
+- `tracks/kernel/lean/CircuitLaws.lean`: 6 audited theorems, ALL CHECKED. PROPOSED for the registry,
+  parked under tracks/ like HygromorphCeiling.lean (lean/ is session 31's).
+- `tracks/kernel/compile/`: HDL subset -> gates -> DNA (GenBank with real assembly_gap for open slots),
+  Opentrons + Autoprotocol, SBML, unsigned nanopub drafts, JSON-LD justification. `expected.json` pins
+  the verdicts: 2 inside, 2 outside, 2 cannot-assess; 1 artifact built, 2 refused; 3 of 14 slots filled.
+- `tracks/kernel/audit-lean.mjs`: audits anyone's Lean file; holdout-screened, counts and hashes only.
+- Live: .../studio-live/tracks/kernel/ (version 4fd29ff2-7079-4fe9-8541-301bfc1efd9e). 4 new reproduce rows.
+
+### Open (kernel)
+- Registry exposure (AGENTS-RULE) for the circuit laws belongs to the lean thread; ours are proposals.
+- Orthogonality and parameter-completeness are script-checked, not Lean-checked. Candidates to formalise.
+- Promoter/repressor sequences are open slots: parts.igem.org 403s automated requests and the SynBioHub
+  mirror is behind a bot check, which we do not attempt to pass.
+- A third-party repo listing surfaced held-out-clade species names into this session's tool-result cache
+  (.claude-antigravity/projects/.../tool-results/bn4i1fwfp.txt). No repo file touched; all leak gates
+  clean. Flagged for the holdout thread (93) to rule on; not deleted by us.

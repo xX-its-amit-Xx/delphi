@@ -69,6 +69,14 @@ run('watch', 'paper watcher: committed extractions re-checked by the Lean kernel
 // the second reading of the checked papers, compared with the first (same numbers or not), and the public files built from both
 run('watch', 'paper watcher: second reader compared with the first', 'node', ['tracks/watch/second.mjs'], { expect: /papers have a second reading/ });
 run('watch', 'paper watcher: public page data, feed, digest and Lean starter files', 'node', ['tracks/watch/community.mjs'], { expect: /community: \d+ checked papers/ });
+// the kernel: its own guards (28 injected faults, none may survive), the circuit laws under the Lean
+// kernel, and a full compile whose verdict tally must be the recorded one
+run('kernel', 'kernel guards: 28 injected faults must all be caught', 'node', ['tracks/kernel/test-kernel.mjs', '--fail-once'], { expect: /0 survived/ });
+run('kernel', 'circuit laws, Lean kernel + axiom audit', 'bash', ['tracks/lean/check.sh', 'tracks/kernel/lean/CircuitLaws.lean'],
+  { skipIf: !bash ? 'bash not found' : !lean ? 'no Lean toolchain at C:/Temp/elan' : null, expect: /ALL CHECKED/ });
+run('kernel', 'compile the AND circuit: verdicts and refusals as recorded', 'node', ['tracks/kernel/compile/expect.mjs'], { expect: /as recorded/ });
+run('kernel', 'kernel store: every id and chain link recomputed', 'node', ['tracks/kernel/cli.mjs', 'verify'], { expect: /every id matches its content/ });
+
 // the case scripts, re-executed in a scratch copy: every committed number must come back
 run('suite', 'case scripts re-run: numbers identical to the committed results', 'node', ['tracks/suite/rerun-cases.mjs'], { skipIf: py ? null : 'python not found', expect: /0 differ or error/ });
 run('numeric', 'wood bilayer records against the wide-plate ceiling 9/4', 'python', ['-I', 'tracks/scripts/check-hygromorph-plate-ceiling.py'], { skipIf: py ? null : 'python not found', expect: /plate ceiling not contradicted/ });
