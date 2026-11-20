@@ -71,7 +71,15 @@ export class Refused extends Error {
 export class Kernel {
   constructor({ file = DEFAULT_STORE, leanCheck = realLeanCheck } = {}) {
     this.file = file;
-    this.leanCheck = leanCheck;
+    // Memoised by the bytes checked, not by the file's name or the law's: identical bytes give the
+    // Lean kernel nothing new to decide, and several laws proved in one file would otherwise start the
+    // whole toolchain once each. The memo lives for this process only, so a changed file is rechecked.
+    const seen = new Map();
+    this.leanCheck = (abs) => {
+      const key = sha(fs.readFileSync(abs, 'utf8'));
+      if (!seen.has(key)) seen.set(key, leanCheck(abs));
+      return seen.get(key);
+    };
     this.nodes = new Map();
     this.lines = [];
     this.load();

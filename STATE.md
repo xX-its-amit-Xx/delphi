@@ -88,19 +88,34 @@ We had none of it. Full rationale, decisions and findings: BRAIN.md (2026-11-19 
 - `tracks/kernel/kernel.mjs`: five primitives (evidence, fact, law, verdict, build) over an append-only
   hash-chained store. `law()` runs tracks/lean/check.sh itself. `cannot-assess` is never a pass.
   `build()` refuses on any non-inside verdict and mints a refusal naming what was missing.
-- `tracks/kernel/lean/CircuitLaws.lean`: 6 audited theorems, ALL CHECKED. PROPOSED for the registry,
-  parked under tracks/ like HygromorphCeiling.lean (lean/ is session 31's).
+- `tracks/kernel/lean/CircuitLaws.lean`: 12 audited theorems, ALL CHECKED. All three laws are now Lean
+  laws: the two that were script-checked (orthogonality, parameter completeness) were formalised
+  2026-11-19 and the scripts now only supply the data. PROPOSED for the registry, parked under tracks/
+  like HygromorphCeiling.lean (lean/ is session 31's). leanCheck is memoised by file bytes, so one file
+  proving three laws starts the toolchain once.
 - `tracks/kernel/compile/`: HDL subset -> gates -> DNA (GenBank with real assembly_gap for open slots),
   Opentrons + Autoprotocol, SBML, unsigned nanopub drafts, JSON-LD justification. `expected.json` pins
   the verdicts: 2 inside, 2 outside, 2 cannot-assess; 1 artifact built, 2 refused; 3 of 14 slots filled.
 - `tracks/kernel/audit-lean.mjs`: audits anyone's Lean file; holdout-screened, counts and hashes only.
 - Live: .../studio-live/tracks/kernel/ (version 4fd29ff2-7079-4fe9-8541-301bfc1efd9e). 4 new reproduce rows.
 
+## One explainer video per feature (2026-11-19)
+Amit: each major feature add ships with a 1-2 minute first-principles video. `tracks/video/`:
+`node tracks/video/render.mjs <id> [--dry|--no-audio|--still <scene>]`, scripts in
+`tracks/video/scripts/`. Local only: Windows SAPI for the voice, Playwright/Edge for frames,
+ffmpeg-static (`C:/Temp/ffmpeg-install`). Every number spoken is a `{{token}}` filled from the
+feature's own run output, so a stale figure stops the render; `--dry` is a reproduce row.
+Output in `C:/Temp/delphi-video/<id>/`; `page.mjs` copies mp4+vtt+poster next to the page.
+The mp4 is gitignored (recipe is versioned, artifact is not). First one: kernel, 1:57.
+
 ### Open (kernel)
 - Registry exposure (AGENTS-RULE) for the circuit laws belongs to the lean thread; ours are proposals.
-- Orthogonality and parameter-completeness are script-checked, not Lean-checked. Candidates to formalise.
 - Promoter/repressor sequences are open slots: parts.igem.org 403s automated requests and the SynBioHub
-  mirror is behind a bot check, which we do not attempt to pass.
+  mirror is behind a bot check (api.synbiohub.org returns 401 "Login required"), which we do not pass.
+  Unblocked only by Amit opening one Registry page himself.
+- Upstreamed to fractastical/morpholib: issue #331 (nanopub provenance pins commit a2201fd3, which
+  predates all five artifacts it cites) and PR #332 (axiom-audit.sh + AXIOM-AUDIT.md; 115 theorems
+  across 3 files, all CHECKED on the standard three axioms). Fork: xX-its-amit-Xx/morpholib.
 - A third-party repo listing surfaced held-out-clade species names into this session's tool-result cache
   (.claude-antigravity/projects/.../tool-results/bn4i1fwfp.txt). No repo file touched; all leak gates
   clean. Flagged for the holdout thread (93) to rule on; not deleted by us.

@@ -46,6 +46,18 @@ if (fs.existsSync(draftDir)) {
   }
 }
 
+// the explainer video, if it has been rendered. It is deployed but NOT committed: the recipe
+// (tracks/video/) is versioned and regenerates it, so the repo does not carry a megabyte per feature.
+const VID = process.env.DELPHI_VIDEO_DIR ?? 'C:/Temp/delphi-video/kernel';
+const video = [];
+for (const f of ['kernel.mp4', 'kernel.vtt', 'kernel-poster.png']) {
+  const src = path.join(VID, f);
+  if (!fs.existsSync(src)) continue;
+  fs.copyFileSync(src, path.join(PUB, f));
+  video.push({ file: f, bytes: fs.statSync(src).size });
+}
+if (!video.length) console.log('note     no rendered video at ' + VID + ' — the page will show its fallback link');
+
 // one trace per refusal: the quotes underneath it
 const quoteOf = (factId) => {
   const f = K.get(factId);
@@ -54,29 +66,40 @@ const quoteOf = (factId) => {
   return { quantity: f.quantity, value: f.value, unit: f.unit, conditions: f.conditions, doi: ev?.ref ?? null, quote: ev?.quote ?? null, where: ev?.where ?? null };
 };
 
+// The store keeps every run ever made. The page is about THIS run, so it shows the nodes the run
+// named and says how many nodes the store holds in total, rather than mixing the two.
+const mine = (type) => {
+  const want = new Set(run.ids?.[type + 's'] ?? []);
+  const all = K.all(type);
+  return want.size ? all.filter((n) => want.has(n.id)) : all;
+};
+
 const data = {
   built: new Date().toISOString().slice(0, 10),
   kernel_version: K.all('law')[0]?.kernel ?? null,
   store: K.summary(),
   run: { module: run.module, host: run.host, gates: run.gates, cascades: run.cascades, mapping: run.mapping, slots: run.slots, tally: run.tally, design_file: run.design },
-  laws: K.all('law').map((l) => ({
+  laws: mine('law').map((l) => ({
     name: l.name, informal: l.informal, lean_file: l.lean_file, script: l.script,
     verdict: l.audit?.verdict ?? null, toolchain: l.audit?.toolchain ?? null,
     audited: l.audit?.audited ?? null, axioms: l.audit?.axioms ?? [], axioms_are: l.audit?.axioms_are ?? null,
-    checked_by: l.lean_file ? 'the Lean kernel, with an axiom audit' : 'a script, not the Lean kernel',
+    checked_by: l.lean_file
+      ? (l.script ? 'the Lean kernel, with an axiom audit — a script supplies the data it is applied to' : 'the Lean kernel, with an axiom audit')
+      : 'a script, not the Lean kernel',
   })),
-  verdicts: K.all('verdict').map((v) => ({
+  verdicts: mine('verdict').map((v) => ({
     law: v.law_name, label: v.label, result: v.result, detail: v.detail, by: v.by,
     inputs: (v.facts ?? []).map(quoteOf).filter(Boolean),
   })),
-  builds: K.all('build').map((b) => ({ artifact: b.artifact, id: b.id, files: (b.emitted ?? []).map((f) => ({ path: f.path, sha256: f.sha256, bytes: f.bytes })) })),
-  refusals: K.all('refusal').map((r) => ({ what: r.what, because: r.because })),
+  builds: mine('build').map((b) => ({ artifact: b.artifact, id: b.id, files: (b.emitted ?? []).map((f) => ({ path: f.path, sha256: f.sha256, bytes: f.bytes })) })),
+  refusals: mine('refusal').map((r) => ({ what: r.what, because: r.because })),
   missing_measurements: (run.artifacts.find((a) => a.artifact === 'predictive model')?.drafts ?? []).map((d) => ({ draft: d.split('/').pop() })),
   sources: Object.entries(reg.sources).map(([k, s]) => ({ key: k, doi: s.doi, pmcid: s.pmcid, citation: s.citation, read: s.read, retrieved: s.retrieved })),
   source_defects: reg.known_defects_in_the_sources,
   scope_limit: reg.scope_limit,
   files: copied.map((c) => ({ ...c, from: undefined })).map((c) => ({ file: c.file, bytes: c.bytes })),
   drafts,
+  video,
 };
 
 fs.writeFileSync(path.join(PUB, 'data.json'), JSON.stringify(data, null, 1) + '\n');

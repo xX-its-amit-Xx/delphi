@@ -76,6 +76,9 @@ run('kernel', 'circuit laws, Lean kernel + axiom audit', 'bash', ['tracks/lean/c
   { skipIf: !bash ? 'bash not found' : !lean ? 'no Lean toolchain at C:/Temp/elan' : null, expect: /ALL CHECKED/ });
 run('kernel', 'compile the AND circuit: verdicts and refusals as recorded', 'node', ['tracks/kernel/compile/expect.mjs'], { expect: /as recorded/ });
 run('kernel', 'kernel store: every id and chain link recomputed', 'node', ['tracks/kernel/cli.mjs', 'verify'], { expect: /every id matches its content/ });
+// the explainer video's script: every number it speaks must still resolve against the live run output,
+// so a changed verdict cannot leave a video quoting a figure the kernel no longer stands behind
+run('video', 'kernel explainer: every spoken number still resolves from the run', 'node', ['tracks/video/render.mjs', 'kernel', '--no-audio', '--dry'], { expect: /every token resolved/ });
 
 // the case scripts, re-executed in a scratch copy: every committed number must come back
 run('suite', 'case scripts re-run: numbers identical to the committed results', 'node', ['tracks/suite/rerun-cases.mjs'], { skipIf: py ? null : 'python not found', expect: /0 differ or error/ });

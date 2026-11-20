@@ -1,4 +1,4 @@
-# Lean4Bio paper watch, 2026-11-18
+# Lean4Bio paper watch, 2026-11-19
 
 99 new papers found since 2026-05-01, plus 2 from our back catalogue. 6 carried numbers a law of ours takes: 40 separate checks (31 by the Lean kernel, 9 by a rank-direction script), 28 inside the law and 12 outside. 2 papers were inside on every check. 95 papers could not be checked, for 6 reasons:
 

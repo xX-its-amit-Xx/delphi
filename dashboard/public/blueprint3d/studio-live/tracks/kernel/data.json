@@ -1,23 +1,23 @@
 {
- "built": "2026-11-19",
+ "built": "2026-11-20",
  "kernel_version": "0.1.0",
  "store": {
-  "nodes": 63,
+  "nodes": 75,
   "by_type": {
    "evidence": 23,
    "fact": 28,
-   "law": 3,
-   "verdict": 6,
-   "build": 1,
-   "refusal": 2
+   "law": 6,
+   "verdict": 12,
+   "build": 2,
+   "refusal": 4
   },
   "verdicts": {
-   "inside": 2,
-   "outside": 2,
-   "cannot_assess": 2
+   "inside": 4,
+   "outside": 4,
+   "cannot_assess": 4
   },
-  "builds": 1,
-  "refusals": 2,
+  "builds": 2,
+  "refusals": 4,
   "chain_problems": 0
  },
  "run": {
@@ -49,7 +49,7 @@
    "script": null,
    "verdict": "CHECKED",
    "toolchain": "leanprover/lean4:v4.35.0",
-   "audited": 6,
+   "audited": 12,
    "axioms": [
     "Classical.choice",
     "Quot.sound",
@@ -61,24 +61,34 @@
   {
    "name": "distinct_orthogonal_repressors",
    "informal": "Two gates in one circuit must use repressors that do not bind each other's promoters. A repressor used twice, or a pair the record reports as cross-reacting, makes the wiring diagram and the cell disagree.",
-   "script": "tracks/kernel/compile/compile.mjs (orthogonality check over the crosstalk groups in parts.json)",
-   "verdict": null,
-   "toolchain": null,
-   "audited": null,
-   "axioms": [],
-   "axioms_are": null,
-   "checked_by": "a script, not the Lean kernel"
+   "lean_file": "tracks/kernel/lean/CircuitLaws.lean",
+   "script": "tracks/kernel/compile/compile.mjs supplies the chosen repressors and the crosstalk groups in parts.json; the rule applied to them is the Lean theorem",
+   "verdict": "CHECKED",
+   "toolchain": "leanprover/lean4:v4.35.0",
+   "audited": 12,
+   "axioms": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+   ],
+   "axioms_are": "the bound check.sh confirmed every audited theorem was within",
+   "checked_by": "the Lean kernel, with an axiom audit — a script supplies the data it is applied to"
   },
   {
    "name": "model_parameters_present",
    "informal": "A predictive model of a gate needs four numbers: both output levels, the half-maximal input and the cooperativity. A model built with any of them guessed is not a prediction.",
-   "script": "tracks/kernel/compile/emit.mjs (parameter completeness per gate)",
-   "verdict": null,
-   "toolchain": null,
-   "audited": null,
-   "axioms": [],
-   "axioms_are": null,
-   "checked_by": "a script, not the Lean kernel"
+   "lean_file": "tracks/kernel/lean/CircuitLaws.lean",
+   "script": "tracks/kernel/compile/emit.mjs supplies which parameters each gate has; the rule applied to them is the Lean theorem, which also proves the response is monotone so that \"the threshold\" names one input level",
+   "verdict": "CHECKED",
+   "toolchain": "leanprover/lean4:v4.35.0",
+   "audited": 12,
+   "axioms": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+   ],
+   "axioms_are": "the bound check.sh confirmed every audited theorem was within",
+   "checked_by": "the Lean kernel, with an axiom audit — a script supplies the data it is applied to"
   }
  ],
  "verdicts": [
@@ -303,7 +313,7 @@
    "label": "the 3 repressor(s) chosen",
    "result": "inside",
    "detail": "PhlF, LmrA, ButR: no repressor reused, and no pair appears in a crosstalk group the record reports",
-   "by": "script over the crosstalk groups in parts.json",
+   "by": "Delphi.Circuit.not_orthogonal_of_reuse/_of_crossreact, over the crosstalk groups in parts.json",
    "inputs": [
     {
      "quantity": "dynamic_range_fold",
@@ -327,7 +337,7 @@
    "label": "the four Hill parameters, every gate",
    "result": "outside",
    "detail": "7 parameter(s) not in any record read: PhlF.K, PhlF.n, LmrA.K, LmrA.n, ButR.ymin, ButR.ymax, ButR.n",
-   "by": "parameter completeness over parts.json",
+   "by": "Delphi.Circuit.not_modelable_of_one_missing, over the parameters present in parts.json",
    "inputs": [
     {
      "quantity": "output_on_REU",
@@ -350,7 +360,7 @@
  "builds": [
   {
    "artifact": "and2: assembly plan (annotated construct + liquid-handling protocols)",
-   "id": "k141672a20d4e0283",
+   "id": "kc0e5b81a5adea56c",
    "files": [
     {
      "path": "tracks/kernel/compile/out/and2.gb",
@@ -453,7 +463,7 @@
   },
   {
    "file": "and2-justification.jsonld",
-   "bytes": 29941
+   "bytes": 33098
   },
   {
    "file": "and2.v",
@@ -461,7 +471,7 @@
   },
   {
    "file": "CircuitLaws.lean",
-   "bytes": 5750
+   "bytes": 11188
   },
   {
    "file": "parts.json",
@@ -496,6 +506,20 @@
   {
    "file": "nanopub-drafts/and2-w3-ymin.trig",
    "bytes": 1902
+  }
+ ],
+ "video": [
+  {
+   "file": "kernel.mp4",
+   "bytes": 3290086
+  },
+  {
+   "file": "kernel.vtt",
+   "bytes": 2161
+  },
+  {
+   "file": "kernel-poster.png",
+   "bytes": 95300
   }
  ]
 }

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DELPHI video stage</title>
+<!--
+  The stage a feature video is rendered from. It draws ONE FRAME for a given time in milliseconds:
+  render.mjs calls window.__draw(t) and takes a screenshot, so the same timeline always produces the
+  same frames and the video is reproducible from the repo.
+
+  No network, no fonts, no libraries. Nothing is animated by the browser's own clock: every position
+  and opacity on screen is a function of t. Narration is NOT burned in — it ships as a .vtt track, so
+  the picture never shows the words that are being spoken.
+-->
+<style>
+  html, body { margin: 0; padding: 0; background: #080b10; }
+  #stage {
+    position: relative; width: 1280px; height: 720px; overflow: hidden;
+    background: radial-gradient(1100px 620px at 18% -12%, #11202e 0%, #080b10 62%);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    color: #e8eef5; -webkit-font-smoothing: antialiased;
+  }
+  #stage::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image: linear-gradient(#ffffff08 1px, transparent 1px), linear-gradient(90deg, #ffffff08 1px, transparent 1px);
+    background-size: 64px 64px;
+  }
+  .wrap { position: absolute; inset: 0; padding: 74px 84px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; }
+  .mark { position: absolute; top: 34px; left: 84px; font-size: 15px; letter-spacing: .26em; color: #4e6479; font-weight: 600; }
+  .bar { position: absolute; left: 0; bottom: 0; height: 4px; background: #7dd3fc; }
+  .src { position: absolute; left: 84px; bottom: 40px; right: 84px; font-size: 17px; color: #6b8299; line-height: 1.4; }
+  .label { font-size: 26px; color: #7dd3fc; letter-spacing: .02em; margin-bottom: 26px; font-weight: 600; }
+  .big { font-size: 128px; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
+  .huge { font-size: 170px; font-weight: 700; letter-spacing: -.04em; line-height: 1; color: #fff; }
+  .sub { font-size: 32px; color: #9fb3c6; margin-top: 22px; font-weight: 400; }
+  .unit { font-size: 34px; color: #9fb3c6; margin-top: 14px; }
+  .item { font-size: 36px; line-height: 1.45; margin: 12px 0; color: #dce6f0; }
+  .item b { color: #7dd3fc; font-weight: 600; }
+  .row { display: flex; gap: 18px; align-items: stretch; }
+  .box { flex: 1; border: 2px solid #22384b; border-radius: 14px; padding: 22px 10px; text-align: center; font-size: 26px; color: #8aa2b8; background: #0d1620; }
+  .box.on { border-color: #7dd3fc; color: #fff; background: #10263a; }
+  .arrow { align-self: center; color: #3d556b; font-size: 30px; }
+  .panel { flex: 1; border: 2px solid #22384b; border-radius: 16px; padding: 26px 28px; background: #0d1620; }
+  .panel h4 { margin: 0 0 16px; font-size: 27px; color: #cfe0ee; font-weight: 600; }
+  .panel li { font-size: 24px; color: #93a9bd; line-height: 1.6; list-style: none; margin-bottom: 6px; }
+  .panel.warn { border-color: #6b4f16; background: #1a1407; }
+  .panel.warn li { color: #d9b464; }
+  .chip { border-radius: 999px; padding: 14px 26px; font-size: 25px; border: 2px solid #22384b; color: #8aa2b8; }
+  .chip.ok { border-color: #34d399; color: #6ee7b7; }
+  .chip.bad { border-color: #fbbf24; color: #fbbf24; }
+  .verdict { font-size: 40px; font-weight: 700; }
+  .link { font-size: 27px; color: #7dd3fc; margin-top: 30px; word-break: break-all; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+let TL = null;
+const E = (x) => x < 0 ? 0 : x > 1 ? 1 : 1 - Math.pow(1 - x, 3);           // ease-out cubic
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+// opacity+rise for something that enters `at` seconds into the scene over `dur` seconds
+const ent = (f, at, dur = 0.5) => E((f - at) / dur);
+const style = (p) => `opacity:${p.toFixed(3)};transform:translateY(${((1 - p) * 16).toFixed(2)}px)`;
+
+function sceneAt(t) {
+  let s = TL.scenes[0];
+  for (const sc of TL.scenes) if (t >= sc.start_ms) s = sc;
+  return s;
+}
+
+function draw(sc, f) {
+  const L = sc.label ? `<div class="label" style="${style(ent(f, 0))}">${esc(sc.label)}</div>` : '';
+  const src = sc.source ? `<div class="src" style="${style(ent(f, 0.5))}">${esc(sc.source)}</div>` : '';
+  if (sc.kind === 'title')
+    return `<div class="wrap"><div class="big" style="${style(ent(f, 0.05, 0.7))}">${esc(sc.label)}</div>
+      <div class="sub" style="${style(ent(f, 0.5, 0.7))}">${esc(sc.sub || '')}</div></div>`;
+  if (sc.kind === 'closing')
+    return `<div class="wrap">${L}<div class="sub" style="${style(ent(f, 0.35))};font-size:38px;color:#dce6f0">${esc(sc.sub || '')}</div>
+      <div class="link" style="${style(ent(f, 0.7))}">${esc(TL.link || '')}</div></div>`;
+  if (sc.kind === 'lines') {
+    const items = (sc.items || []).map((it, i) => {
+      const txt = esc(it).replace(/^([^—]+)—/, '<b>$1</b>—');
+      return `<div class="item" style="${style(ent(f, 0.18 + i * 0.17))}">${txt}</div>`;
+    }).join('');
+    return `<div class="wrap">${L}${items}</div>${src}`;
+  }
+  if (sc.kind === 'number')
+    return `<div class="wrap">${L}<div class="huge" style="${style(ent(f, 0.15, 0.6))}">${esc(sc.big)}</div>
+      <div class="unit" style="${style(ent(f, 0.45))}">${esc(sc.unit || '')}</div></div>${src}`;
+  if (sc.kind === 'pipeline') {
+    const n = sc.steps.length;
+    const boxes = sc.steps.map((s, i) => {
+      const p = ent(f, 0.15 + i * (0.5 / n), 0.3);
+      return `<div class="box ${p > 0.6 ? 'on' : ''}" style="${style(Math.max(p, 0.15))}">${esc(s)}</div>` +
+             (i < n - 1 ? `<div class="arrow" style="opacity:${(p * 0.9).toFixed(2)}">&rarr;</div>` : '');
+    }).join('');
+    return `<div class="wrap">${L}<div class="row">${boxes}</div>
+      <div class="sub" style="${style(ent(f, 0.78))};font-size:27px">each one names the one below it, and the chain is hashed</div></div>`;
+  }
+  if (sc.kind === 'beforeafter') {
+    const side = (d, cls, at) => `<div class="panel ${cls}" style="${style(ent(f, at, 0.6))}"><h4>${esc(d.head)}</h4>
+      ${d.items.map((it, i) => `<li style="${style(ent(f, at + 0.12 + i * 0.1))}">${esc(it)}</li>`).join('')}</div>`;
+    return `<div class="wrap">${L}<div class="row">${side(sc.left, '', 0.15)}${side(sc.right, 'warn', 0.4)}</div></div>`;
+  }
+  if (sc.kind === 'gate') {
+    const chips = ['inside', 'inside', f > 0.42 ? 'cannot-assess' : 'inside'];
+    const row = chips.map((c, i) => `<div class="chip ${c === 'inside' ? 'ok' : 'bad'}" style="${style(ent(f, 0.12 + i * 0.1))}">${esc(c)}</div>`).join('');
+    const refused = f > 0.58;
+    return `<div class="wrap">${L}<div class="row" style="gap:14px">${row}</div>
+      <div class="row" style="margin-top:46px;gap:26px">
+        <div class="verdict" style="${style(ent(f, 0.3))};color:${refused ? '#3d556b' : '#6ee7b7'}">${esc(sc.pass)}</div>
+        <div class="arrow" style="opacity:${refused ? 1 : 0.25}">&rarr;</div>
+        <div class="verdict" style="${style(ent(f, 0.62))};color:#fbbf24">${refused ? esc(sc.fail) : ''}</div>
+      </div></div>`;
+  }
+  return `<div class="wrap">${L}</div>`;
+}
+
+window.__draw = function (t) {
+  const sc = sceneAt(t);
+  const f = (t - sc.start_ms) / Math.max(1, sc.dur_ms);
+  const stage = document.getElementById('stage');
+  stage.innerHTML = `<div class="mark">DELPHI</div>${draw(sc, f)}` +
+    `<div class="bar" style="width:${(1280 * t / TL.total_ms).toFixed(1)}px"></div>`;
+  return sc.id;
+};
+window.__load = async function (url) { TL = await (await fetch(url)).json(); return TL.total_ms; };
+</script>
+</body>
+</html>

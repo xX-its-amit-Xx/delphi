@@ -91,16 +91,24 @@ try {
   process.exit(1);
 }
 
+// These two were script-checked when the kernel first ran. They are now theorems in the same file,
+// so the rule itself is proved and the script only supplies the data it is applied to.
 const lawOrtho = K.law({
   name: 'distinct_orthogonal_repressors',
   informal: 'Two gates in one circuit must use repressors that do not bind each other\'s promoters. A repressor used twice, or a pair the record reports as cross-reacting, makes the wiring diagram and the cell disagree.',
-  script: 'tracks/kernel/compile/compile.mjs (orthogonality check over the crosstalk groups in parts.json)',
+  lean_file: 'tracks/kernel/lean/CircuitLaws.lean',
+  lean_decls: ['Delphi.Circuit.not_orthogonal_of_reuse', 'Delphi.Circuit.not_orthogonal_of_crossreact'],
+  script: 'tracks/kernel/compile/compile.mjs supplies the chosen repressors and the crosstalk groups in parts.json; the rule applied to them is the Lean theorem',
 });
 const lawParams = K.law({
   name: 'model_parameters_present',
   informal: 'A predictive model of a gate needs four numbers: both output levels, the half-maximal input and the cooperativity. A model built with any of them guessed is not a prediction.',
-  script: 'tracks/kernel/compile/emit.mjs (parameter completeness per gate)',
+  lean_file: 'tracks/kernel/lean/CircuitLaws.lean',
+  lean_decls: ['Delphi.Circuit.not_complete_of_halfMax_none', 'Delphi.Circuit.not_modelable_of_one_missing', 'Delphi.Circuit.hill_strict_mono'],
+  script: 'tracks/kernel/compile/emit.mjs supplies which parameters each gate has; the rule applied to them is the Lean theorem, which also proves the response is monotone so that "the threshold" names one input level',
 });
+log(`law      ${lawOrtho.name}: ${lawOrtho.audit.verdict}, ${lawOrtho.lean_decls.length} declaration(s) audited`);
+log(`law      ${lawParams.name}: ${lawParams.audit.verdict}, ${lawParams.lean_decls.length} declaration(s) audited`);
 
 // ---------------------------------------------------------------------------------------------------
 // 4. technology mapping
@@ -211,8 +219,8 @@ verdicts.push(K.verdict({
     const dupes = pairs.filter((r, i) => pairs.indexOf(r) !== i);
     const cross = nonOrtho.filter((g) => g.members.filter((m) => pairs.includes(m)).length > 1);
     return dupes.length || cross.length
-      ? { result: 'outside', detail: `${dupes.length ? 'repressor reused: ' + dupes.join(', ') + '. ' : ''}${cross.length ? 'cross-reacting pair chosen: ' + cross.map((g) => g.members.join('/')).join('; ') : ''}`.trim(), by: 'script over the crosstalk groups in parts.json' }
-      : { result: 'inside', detail: `${pairs.join(', ')}: no repressor reused, and no pair appears in a crosstalk group the record reports`, by: 'script over the crosstalk groups in parts.json' };
+      ? { result: 'outside', detail: `${dupes.length ? 'repressor reused: ' + dupes.join(', ') + '. ' : ''}${cross.length ? 'cross-reacting pair chosen: ' + cross.map((g) => g.members.join('/')).join('; ') : ''}`.trim(), by: 'Delphi.Circuit.not_orthogonal_of_reuse/_of_crossreact, over the crosstalk groups in parts.json' }
+      : { result: 'inside', detail: `${pairs.join(', ')}: no repressor reused, and no pair appears in a crosstalk group the record reports`, by: 'Delphi.Circuit.not_orthogonal_of_reuse/_of_crossreact, over the crosstalk groups in parts.json' };
   },
 }));
 
@@ -222,8 +230,8 @@ verdicts.push(K.verdict({
   law: lawParams.id, label: 'the four Hill parameters, every gate',
   facts: [Object.values(facts)[0]],
   apply: () => sbmlTry.refused
-    ? { result: 'outside', detail: `${sbmlTry.missing.length} parameter(s) not in any record read: ${sbmlTry.missing.map((m) => `${m.repressor ?? m.gate}.${m.parameter}`).join(', ')}`, by: 'parameter completeness over parts.json' }
-    : { result: 'inside', detail: 'every gate has both output levels, a threshold and a cooperativity', by: 'parameter completeness over parts.json' },
+    ? { result: 'outside', detail: `${sbmlTry.missing.length} parameter(s) not in any record read: ${sbmlTry.missing.map((m) => `${m.repressor ?? m.gate}.${m.parameter}`).join(', ')}`, by: 'Delphi.Circuit.not_modelable_of_one_missing, over the parameters present in parts.json' }
+    : { result: 'inside', detail: 'every gate has both output levels, a threshold and a cooperativity', by: 'Delphi.Circuit.not_modelable_of_one_missing, over the parameters present in parts.json' },
 }));
 
 const tally = { inside: 0, outside: 0, 'cannot-assess': 0 };
@@ -319,7 +327,16 @@ try {
 const jg = emit.justify(plan, K.all(), path.join(OUT, `${net.module}-justification.jsonld`));
 log(`justify  ${path.relative(ROOT, jg.path).split(path.sep).join('/')} (${jg.bytes} bytes)`);
 
-const summary = { design: path.relative(ROOT, designFile).split(path.sep).join('/'), module: net.module, host: HOST, gates: net.gates.length, cascades: net.cascades.length, mapping: Object.fromEntries([...assigned.entries()].map(([w, p]) => [w, p.repressor])), avoided_non_orthogonal: clashes, verdicts: verdicts.map((v) => ({ law: v.law_name, label: v.label, result: v.result, detail: v.detail })), tally, artifacts: results, slots: { total: slots.length, filled: slots.filter((s) => s.sequence).length }, kernel: K.summary() };
+// Which nodes THIS run decided. The store is append-only and keeps every earlier run's nodes too, so
+// anything that reports "what the run said" has to name its own nodes rather than read the whole store.
+const ids = {
+  laws: [lawMargin.id, lawOrtho.id, lawParams.id],
+  verdicts: verdicts.map((v) => v.id),
+  builds: results.filter((r) => r.minted).map((r) => r.minted),
+  refusals: results.filter((r) => r.refusal).map((r) => r.refusal),
+};
+
+const summary = { ids, design: path.relative(ROOT, designFile).split(path.sep).join('/'), module: net.module, host: HOST, gates: net.gates.length, cascades: net.cascades.length, mapping: Object.fromEntries([...assigned.entries()].map(([w, p]) => [w, p.repressor])), avoided_non_orthogonal: clashes, verdicts: verdicts.map((v) => ({ law: v.law_name, label: v.label, result: v.result, detail: v.detail })), tally, artifacts: results, slots: { total: slots.length, filled: slots.filter((s) => s.sequence).length }, kernel: K.summary() };
 fs.writeFileSync(path.join(OUT, 'last-run.json'), JSON.stringify(summary, null, 1) + '\n');
 if (JSON_OUT) console.log(JSON.stringify(summary, null, 1));
 else {
