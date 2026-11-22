@@ -50,7 +50,7 @@ if (fs.existsSync(draftDir)) {
 // (tracks/video/) is versioned and regenerates it, so the repo does not carry a megabyte per feature.
 const VID = process.env.DELPHI_VIDEO_DIR ?? 'C:/Temp/delphi-video/kernel';
 const video = [];
-for (const f of ['kernel.mp4', 'kernel.vtt', 'kernel-poster.png']) {
+for (const f of ['kernel.mp4', 'kernel.vtt', 'kernel-poster.png', 'kernel-graph.mp4', 'kernel-graph-poster.png']) {
   const src = path.join(VID, f);
   if (!fs.existsSync(src)) continue;
   fs.copyFileSync(src, path.join(PUB, f));

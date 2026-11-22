@@ -108,6 +108,19 @@ feature's own run output, so a stale figure stops the render; `--dry` is a repro
 Output in `C:/Temp/delphi-video/<id>/`; `page.mjs` copies mp4+vtt+poster next to the page.
 The mp4 is gitignored (recipe is versioned, artifact is not). First one: kernel, 1:57.
 
+### The graph film (2026-11-22)
+Amit's house style for a summary film, from the delphi repo's own `scripts/site/build-graph-video.py`
+and the text thread that set it: the pkg.scienceoracle.com growth replay, **no title or closing card**,
+Helvetica Neue (the MIT face; Arial is the metric clone used on this box and the choice is printed in
+the provenance line), every number computed from a repo file, ~60 s. Ours:
+`python tracks/video/kernel-graph.py [--check|--preview|--fast|--no-guards|--workers N]`, output
+`C:/Temp/delphi-video/kernel/kernel-graph.mp4` (62 s, 1920x1080, silent, 1.34 MB).
+The store is already a hash-chained graph, so the film is the store replayed in chain order: six
+chapters, one per kernel primitive. Inputs: `store/nodes.jsonl`, `compile/out/last-run.json`,
+`compile/parts.json`, `lean/CircuitLaws.lean`, plus the guard test run at render time for the faults
+figure. `--check` is a reproduce row and fails if a figure stops resolving or a node has no place.
+Nodes this run named are full strength; earlier runs' are set back, because the store keeps every run.
+
 ### Open (kernel)
 - Registry exposure (AGENTS-RULE) for the circuit laws belongs to the lean thread; ours are proposals.
 - Promoter/repressor sequences are open slots: parts.igem.org 403s automated requests and the SynBioHub

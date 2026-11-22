@@ -79,6 +79,9 @@ run('kernel', 'kernel store: every id and chain link recomputed', 'node', ['trac
 // the explainer video's script: every number it speaks must still resolve against the live run output,
 // so a changed verdict cannot leave a video quoting a figure the kernel no longer stands behind
 run('video', 'kernel explainer: every spoken number still resolves from the run', 'node', ['tracks/video/render.mjs', 'kernel', '--no-audio', '--dry'], { expect: /every token resolved/ });
+// the graph film: every node in the store must have a place and a time, and every figure in the
+// ledger must resolve from a repo file, so the film cannot outlive the records it is drawn from
+run('video', 'kernel graph film: every node placed and every figure traced to a file', 'python', ['tracks/video/kernel-graph.py', '--check'], { expect: /every figure traced to a file/ });
 
 // the case scripts, re-executed in a scratch copy: every committed number must come back
 run('suite', 'case scripts re-run: numbers identical to the committed results', 'node', ['tracks/suite/rerun-cases.mjs'], { skipIf: py ? null : 'python not found', expect: /0 differ or error/ });
