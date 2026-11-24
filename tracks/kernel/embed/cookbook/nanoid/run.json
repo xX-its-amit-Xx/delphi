@@ -1,0 +1,176 @@
+{
+ "example": "nanoid",
+ "repo": "https://github.com/ai/nanoid",
+ "commit": "055d1700cc67ac843e3efb5235d806b419ec7b2b",
+ "committed": "2026-11-05",
+ "kind": "README claims checked by scripts, no Lean",
+ "licence": "MIT",
+ "tool": {
+  "name": "@delphisci/delphi",
+  "version": "0.3.0",
+  "tarball": "delphisci-delphi-0.3.0.tgz",
+  "sha256": "312fff9631a92bb8791a52486b3db444f2de5f48711fe906e7e5ac53cfa8d955"
+ },
+ "summary": {
+  "nodes": 13,
+  "by_type": {
+   "evidence": 2,
+   "fact": 3,
+   "law": 3,
+   "verdict": 3,
+   "refusal": 1,
+   "build": 1
+  },
+  "verdicts": {
+   "inside": 2,
+   "outside": 0,
+   "cannot_assess": 1
+  },
+  "builds": 1,
+  "refusals": 1,
+  "chain_problems": 0
+ },
+ "extra": {
+  "report": "# Two README claims, checked against the repository\n\nRepository https://github.com/ai/nanoid, commit `055d1700cc67ac843e3efb5235d806b419ec7b2b` (2026-11-05).\n\n| claim in README.md | checked against | result | detail |\n|---|---|---|---|\n| No dependencies | package.json | inside | package.json: 0 dependencies, 0 peerDependencies, 0 optionalDependencies against 0 claimed |\n| 117 bytes (minified and brotlied) | the size limit in package.json | inside | README 117, enforced limit 117 |\n| 117 bytes, as a measurement | nothing: no measurement was recorded | cannot-assess | the run did not install or execute the project's build tools |\n\nBoth laws here are checked by a script, not by a proof assistant, and each record says so.\n",
+  "check": "// Does the manifest list as many runtime dependencies as the README claims? Inside when the counts\n// are equal. devDependencies are not counted: they are not installed for a user of the package.\nimport fs from 'node:fs';\n\nexport default (values) => {\n  const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));\n  const kinds = ['dependencies', 'peerDependencies', 'optionalDependencies'];\n  const counts = kinds.map((k) => Object.keys(pkg[k] ?? {}).length);\n  const total = counts.reduce((a, b) => a + b, 0);\n  return {\n    result: total === values.dependencies_claimed ? 'inside' : 'outside',\n    detail: `package.json: ${kinds.map((k, i) => `${counts[i]} ${k}`).join(', ')} against ${values.dependencies_claimed} claimed`,\n  };\n};\n",
+  "claimed_bytes": 117,
+  "limit_bytes": 117,
+  "readme_line": 13,
+  "manifest_line": 77
+ },
+ "steps": [
+  {
+   "recipe": "adopt",
+   "shown": "delphi init --name nanoid",
+   "exit": 0,
+   "id": null,
+   "out": "initialised  .delphi\nproject      nanoid\nstore        .delphi/store/nodes.jsonl  (append-only, one record per line, commit it)\nmethod       .delphi/BEST_PRACTICES.md  (generated; regenerate with `delphi best-practices`)\ngraph        .delphi/graph/index.html   (rewritten after every mint, private to this project)\nlaws         .delphi/laws/              (put your Lean files here)\n\nNext: record the source of one number you already rely on.\n  delphi evidence --kind doi --ref <doi> --quote \"<the words it prints>\" --where \"<table or section>\"\n\nLean files are checked in your own Lake project, found from the file, so they see your\ntoolchain and your libraries. With no Lean on this machine, `delphi law --lean` is refused\nas unchecked, never passed. A law given with --script says on its record that a script\nchecked it."
+  },
+  {
+   "recipe": "record",
+   "shown": "delphi evidence --kind file --ref README.md --quote '- **Small.** 117 bytes (minified and brotlied). No dependencies.' --where 'line 13, the feature list' --retrieved 2026-11-05",
+   "exit": 0,
+   "id": "kab4f4b54ba97a05f",
+   "out": "evidence kab4f4b54ba97a05f  file:README.md\ngraph    1 node(s), 0 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "record",
+   "shown": "delphi fact --statement 'The README says the package has no dependencies' --quantity dependencies_claimed --value 0 --unit count --condition file=README.md --condition commit=055d1700 --evidence kab4f4b54ba97a05f",
+   "exit": 0,
+   "id": "k22a5f0963672709f",
+   "out": "fact     k22a5f0963672709f  dependencies_claimed = 0 count\ngraph    2 node(s), 1 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "record",
+   "shown": "delphi fact --statement 'The README gives the size of the nanoid import, minified and brotlied' --quantity size_claimed_bytes --value 117 --unit bytes --condition file=README.md --condition commit=055d1700 --evidence kab4f4b54ba97a05f",
+   "exit": 0,
+   "id": "k510910c2df0ced51",
+   "out": "fact     k510910c2df0ced51  size_claimed_bytes = 117 bytes\ngraph    3 node(s), 2 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "record",
+   "shown": "delphi evidence --kind file --ref package.json --quote '\"limit\": \"117 B\"' --where 'line 77, the first size-limit entry (import { nanoid })' --retrieved 2026-11-05",
+   "exit": 0,
+   "id": "k0a4fef80fd02ac6b",
+   "out": "evidence k0a4fef80fd02ac6b  file:package.json\ngraph    4 node(s), 2 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "record",
+   "shown": "delphi fact --statement \"The limit the project's own size check enforces on the nanoid import\" --quantity size_limit_bytes --value 117 --unit bytes --condition file=package.json --condition commit=055d1700 --evidence k0a4fef80fd02ac6b",
+   "exit": 0,
+   "id": "k9fe87ec86c266aa2",
+   "out": "fact     k9fe87ec86c266aa2  size_limit_bytes = 117 bytes\ngraph    5 node(s), 3 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "no-check",
+   "shown": "delphi law --name no_runtime_dependencies --informal 'A package has no runtime dependencies when its manifest lists none.'",
+   "exit": 1,
+   "id": null,
+   "out": "REFUSED  law no_runtime_dependencies\n         - no Lean file and no script: nothing to check"
+  },
+  {
+   "recipe": "law",
+   "shown": "delphi law --name no_runtime_dependencies --informal 'A package has no runtime dependencies when its manifest lists none under dependencies, peerDependencies or optionalDependencies.' --script .delphi/checks/manifest-dependencies.mjs",
+   "exit": 0,
+   "id": "k11c8206a7f379eb4",
+   "out": "law      k11c8206a7f379eb4  no_runtime_dependencies\n         checked by a script, NOT by a proof assistant: .delphi/checks/manifest-dependencies.mjs\ngraph    6 node(s), 3 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "law",
+   "shown": "delphi law --name readme_matches_enforced_limit --informal 'A size printed in a README is the size the project holds itself to when it equals the limit its own size check is configured with.' --script 'the expression recorded in each verdict'",
+   "exit": 0,
+   "id": "k360d4af5c47deeec",
+   "out": "law      k360d4af5c47deeec  readme_matches_enforced_limit\n         checked by a script, NOT by a proof assistant: the expression recorded in each verdict\ngraph    7 node(s), 3 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "law",
+   "shown": "delphi law --name size_within_claim --informal 'A published size holds when the size measured the way the claim says is no larger than the claim.' --script 'the expression recorded in each verdict'",
+   "exit": 0,
+   "id": "k29300f625781417b",
+   "out": "law      k29300f625781417b  size_within_claim\n         checked by a script, NOT by a proof assistant: the expression recorded in each verdict\ngraph    8 node(s), 3 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "verdict",
+   "shown": "delphi verdict --law k11c8206a7f379eb4 --fact k22a5f0963672709f --requires dependencies_claimed --check .delphi/checks/manifest-dependencies.mjs --label 'README: no dependencies'",
+   "exit": 0,
+   "id": "kafaebca92589d5c3",
+   "out": "verdict  kafaebca92589d5c3  INSIDE  no_runtime_dependencies [README: no dependencies]\n         package.json: 0 dependencies, 0 peerDependencies, 0 optionalDependencies against 0 claimed\ngraph    9 node(s), 5 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "verdict",
+   "shown": "delphi verdict --law k360d4af5c47deeec --fact k510910c2df0ced51 --fact k9fe87ec86c266aa2 --requires size_claimed_bytes --requires size_limit_bytes --expr 'size_claimed_bytes === size_limit_bytes' --label 'README size against the enforced limit'",
+   "exit": 0,
+   "id": "k7c73447fb152f50b",
+   "out": "verdict  k7c73447fb152f50b  INSIDE  readme_matches_enforced_limit [README size against the enforced limit]\n         size_claimed_bytes === size_limit_bytes  with size_claimed_bytes=117, size_limit_bytes=117\ngraph    10 node(s), 8 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "verdict",
+   "shown": "delphi verdict --law k29300f625781417b --fact k510910c2df0ced51 --requires size_claimed_bytes --requires size_measured_bytes --expr 'size_measured_bytes <= size_claimed_bytes' --label 'README size, measured'",
+   "exit": 0,
+   "id": "k58590bd0441e6d65",
+   "out": "verdict  k58590bd0441e6d65  CANNOT-ASSESS  size_within_claim [README size, measured]\n         missing input(s): size_measured_bytes\n         cannot-assess is not a pass. A build resting on this will be refused.\ngraph    11 node(s), 10 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "build",
+   "shown": "delphi build --artifact 'a \"117 bytes, measured\" badge' --verdict k58590bd0441e6d65",
+   "exit": 1,
+   "id": "kacca985deb02b003",
+   "out": "REFUSED  a \"117 bytes, measured\" badge\n         - size_within_claim (README size, measured): could not be assessed — missing input(s): size_measured_bytes\n\nThe refusal is itself a record: kacca985deb02b003. It is the shortest list of what would have to\nbe true for this artifact to be honest, so it is worth publishing rather than hiding."
+  },
+  {
+   "recipe": "build",
+   "shown": "delphi build --artifact 'README claims report' --verdict kafaebca92589d5c3 --verdict k7c73447fb152f50b --file delphi-audit/REPORT.md",
+   "exit": 0,
+   "id": "kf080fe42a37124e6",
+   "out": "build    kf080fe42a37124e6  README claims report\n         3ff64193b27e34eb       728  delphi-audit/REPORT.md\ngraph    13 node(s), 13 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "read",
+   "shown": "delphi why badge",
+   "exit": 0,
+   "id": null,
+   "out": "refusal  kacca985deb02b003  a \"117 bytes, measured\" badge\n         - size_within_claim (README size, measured): could not be assessed — missing input(s): size_measured_bytes\n  verdict  k58590bd0441e6d65  CANNOT-ASSESS  size_within_claim [README size, measured]  missing input(s): size_measured_bytes\n    fact     k510910c2df0ced51  size_claimed_bytes = 117 bytes  [file=README.md, commit=055d1700]\n      evidence kab4f4b54ba97a05f  file:README.md  \"- **Small.** 117 bytes (minified and brotlied). No dependencies.\"  (line 13, the feature list)\n    law      k29300f625781417b  size_within_claim  script: the expression recorded in each verdict"
+  },
+  {
+   "recipe": "read",
+   "shown": "delphi summary",
+   "exit": 0,
+   "id": null,
+   "out": "store    .delphi/store/nodes.jsonl\nnodes    13  (2 evidence, 3 fact, 3 law, 3 verdict, 1 refusal, 1 build)\nverdicts 2 inside, 0 outside, 1 cannot-assess\nbuilds   1 minted, 1 refused\nchain    every id and link recomputed clean"
+  },
+  {
+   "recipe": "ci",
+   "shown": "delphi verify",
+   "exit": 0,
+   "id": null,
+   "out": "verified 13 node(s): every id matches its content and every chain link holds"
+  },
+  {
+   "recipe": "ci",
+   "shown": "delphi doctor",
+   "exit": 0,
+   "id": null,
+   "out": "note     3 law(s) are checked by a script, not by a proof assistant: no_runtime_dependencies, readme_matches_enforced_limit, size_within_claim. Each record says so; this is a note, not a problem.\nnote     1 refusal(s) on record. These are the most useful thing in the store to publish: `delphi why <name>` prints what each one was missing.\ndoctor: 13 node(s) sound — store chain, 0 proof file(s), 1 artifact file(s) all match their recorded hashes; 2 note(s)"
+  }
+ ]
+}

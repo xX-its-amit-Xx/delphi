@@ -251,6 +251,15 @@ faultCaught('two runs that assessed nothing, with nobody asked', () => {
   return /answered nothing 2 times|ask a person/.test(d.out);
 });
 
+// a build that names a verdict id nobody minted is refused, and the refusal must not itself damage the
+// store: before kernel 0.2.1 it recorded the dangling id, and verify failed from then on
+faultCaught('a build naming a verdict that is not in the store', () => {
+  const r = chain(GOOD());
+  const b = r.run(['build', '--artifact', 'from a mistyped id', '--verdict', 'k0000000000000000']);
+  const v = r.run(['verify']);
+  return b.code !== 0 && /is not in the store/.test(b.out) && v.code === 0;
+});
+
 // working with no project at all must say so rather than inventing one
 faultCaught('a command run outside any project', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'delphi-bare-'));
@@ -265,6 +274,6 @@ faultCaught('init run twice without --force', () => {
   return r.code !== 0 && /already exists/.test(r.out) && JSON.parse(fs.readFileSync(path.join(P.dir, '.delphi/config.json'), 'utf8')).project === 'testproj';
 });
 
-console.log(`\n${passed} passed, ${failed} failed, ${FAULTS.length + 7} fault(s) injected, ${survivors.length} survived`);
+console.log(`\n${passed} passed, ${failed} failed, ${FAULTS.length + 8} fault(s) injected, ${survivors.length} survived`);
 if (survivors.length) console.log(`survivors: ${survivors.join('; ')}`);
 process.exit(failed ? 1 : 0);

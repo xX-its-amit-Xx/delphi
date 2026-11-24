@@ -64,15 +64,28 @@
 </video>
 <p class="small">Silent by design: no narration and no soundtrack, so nothing is asserted that the picture does not show. Every figure in the right-hand column is read from a repo file by <code>tracks/video/kernel-graph.py</code> &mdash; the store, the run's own output, the parts registry and the Lean file &mdash; and <code>--check</code> fails the build if any of them stops resolving. The faults figure is measured by running the kernel's own guard test at render time, not remembered.</p>
 
-<h2 id="cli">Use it in your own project <small>a command-line toolset, a cookbook and a film</small></h2>
+<h2 id="cli">Use it in your own project <small>an npm package, a cookbook run on three public repositories, and a film</small></h2>
 <p class="dim">The kernel now comes as a command, <code>delphi</code>, that you run inside a repository that already exists. One command adds a small folder holding the project's record. After that there is one command for each thing the method asks of you: write down a source and the words you read in it, write down the number, record a checked statement, apply it, and ask for the result &mdash; which you get only if everything under it held.</p>
 <video id="clifilm" controls preload="none" poster="cli-graph-poster.png" playsinline style="width:100%;max-width:860px;border-radius:12px;border:1px solid var(--line, #22384b);background:#f6f3ec">
   <source src="cli-graph.mp4" type="video/mp4">
   Your browser cannot play this video. <a href="cli-graph.mp4">Download it</a> (MP4, silent).
 </video>
-<p class="small">The film replays a real session: 26 commands run on a public repository, <a href="https://github.com/fractastical/morpholib">fractastical/morpholib</a>, at one named commit. Three of its Lean files each say they contain no <code>sorry</code>. The run found that this is true of all 115 theorems, and that none of the three files could have shown it as published, because none asks Lean to print the axioms its theorems rest on. Nothing was pushed to that repository. Silent by design; <code>tracks/video/cli-graph.py --check</code> fails if a figure stops resolving.</p>
+<p class="small">The film replays real sessions: 60 commands run on three public repositories that are not ours, each at one named commit, all from the installed npm package. It follows the first in full, then shows the other two side by side. Nothing was pushed to any of them. Silent by design; <code>tracks/video/cli-graph.py --check</code> fails if a figure stops resolving.</p>
+<pre style="overflow:auto;font-size:12.5px;line-height:1.5">npm install --save-dev https://delphi-mission-control.ashenoy000.workers.dev/blueprint3d/studio-live/tracks/kernel/files/delphisci-delphi-0.3.0.tgz
+npx delphi init</pre>
+<p class="small">Node 20 or later, no dependencies. Version 0.3.0, sha256 <code>312fff9631a92bb8</code>: the same file the three runs below used. It is not on the npm registry; claiming a name there is a decision for a person.</p>
+<details open><summary>Does it work on a repository it was not written for?</summary>
+<p class="dim">We ran it on three, chosen to be different kinds of project. The tool was the same installed package each time. Each row is a real run you can read command by command in the cookbook.</p>
+<div class="scroll"><table><thead><tr><th>repository</th><th>what it claims</th><th>what the run found</th></tr></thead><tbody>
+<tr><td><a href="https://github.com/fractastical/morpholib">fractastical/morpholib</a><br><span class="small">commit befd35cd &middot; 26 commands</span></td><td>Three Lean proof files each say they contain no gaps (<code>sorry</code>).</td><td><b>True, but nobody could have checked it.</b> All 115 theorems are accepted. None of the files asks the prover to print what each theorem rests on, so as published all three were refused. A copy with one added line per theorem was accepted.</td></tr>
+<tr><td><a href="https://github.com/ai/nanoid">ai/nanoid</a><br><span class="small">commit 055d1700 &middot; 19 commands</span></td><td>The README says the library is 117 bytes and has no dependencies. No proofs anywhere.</td><td><b>The files agree with the README.</b> The package lists no dependency, and 117 bytes is exactly the limit the project's own size check enforces. Whether the code <i>measures</i> 117 bytes was not measured here, so that answer is "cannot tell" and the badge resting on it was refused.</td></tr>
+<tr><td><a href="https://github.com/fahad-96/wolstenholme-zolotarev">fahad-96/wolstenholme-zolotarev</a><br><span class="small">commit bec02d30 &middot; 15 commands</span></td><td>Two number-theory results proved in Lean, "no <code>sorry</code>, no new axiom".</td><td><b>Checkable as published, and it checks.</b> The authors ship a file that asks the prover to print what each of its 14 headline theorems rests on. It was accepted with nothing added, inside the project's own Lean setup. Their claim that the results are new to the standard library cannot be settled from their repository alone: "cannot tell".</td></tr>
+</tbody></table></div>
+<p class="small">What this shows: the tool is not fitted to one project. What it does not show: that it fits every project. Three is three.</p>
+</details>
 <details><summary>What do the commands look like?</summary>
-<pre style="overflow:auto;font-size:12.5px;line-height:1.5">delphi init                       add a .delphi/ folder to this repository; nothing else changes
+<pre style="overflow:auto;font-size:12.5px;line-height:1.5">npm install --save-dev &lt;the address above&gt;    then every command below is `npx delphi …`
+delphi init                       add a .delphi/ folder to this repository; nothing else changes
 delphi evidence --kind doi --ref … --quote "…" --where "…"
 delphi fact --quantity … --value … --unit … --condition k=v --evidence &lt;id&gt;
 delphi audit File.lean            copy a Lean file with one axiom-audit line per theorem added
@@ -83,12 +96,15 @@ delphi verify   delphi doctor     the two to put in CI
 delphi why &lt;name&gt;                 walk a result, or a refusal, back to the words it rests on</pre>
 </details>
 <details><summary>What is the "private knowledge graph"?</summary>
-<p class="dim">Every command that records something rewrites a small page and two data files inside the project, so the project always has a current, linkable picture of what it has checked and on what grounds. "Published" here means published into the project's own folder. The tool opens no network connection and contacts no registry; sending anything to an outside registry stays a person's decision. <a href="files/cookbook/graph.html">Open the graph the recorded run produced</a>.</p>
+<p class="dim">Every command that records something rewrites a small page and two data files inside the project, so the project always has a current, linkable picture of what it has checked and on what grounds. "Published" here means published into the project's own folder. The tool opens no network connection and contacts no registry; sending anything to an outside registry stays a person's decision. Open the graph each recorded run produced: <a href="files/cookbook/morpholib/graph">morpholib</a>, <a href="files/cookbook/nanoid/graph">nanoid</a>, <a href="files/cookbook/wolstenholme/graph">wolstenholme-zolotarev</a>.</p>
 </details>
 <details><summary>How do I know the tool itself is sound?</summary>
-<p class="dim">It is tested the way the rest of this work is: a correct sequence must go through untouched, and then one deliberate mistake is injected at a time &mdash; a missing quote, a number typed as a phrase, a proof file with no audit, an output edited after it was recorded &mdash; and every one must be caught. 28 are injected and none survives. The method document is generated from the kernel's own checks, and its build fails if it states a rule nothing enforces.</p>
+<p class="dim">It is tested the way the rest of this work is: a correct sequence must go through untouched, and then one deliberate mistake is injected at a time &mdash; a missing quote, a number typed as a phrase, a proof file with no audit, an output edited after it was recorded &mdash; and every one must be caught. 29 are injected and none survives. The method document is generated from the kernel's own checks, and its build fails if it states a rule nothing enforces.</p>
+<p class="dim">The package is tested as a stranger would meet it: packed, installed into an empty folder, and driven from there. That test found a real fault the others had missed. A result refused because of a mistyped record id left the project's record pointing at nothing, and every later integrity check failed. It is fixed, and it is now the 29th injected fault.</p>
+<p class="dim">The part that runs the Lean prover is checked too: five deliberately bad proof files must be rejected and one good one accepted. The good one matters. The first version of that check rejected all five bad files because Lean had never started.</p>
 </details>
-<p><a href="files/COOKBOOK.md">The cookbook</a> (every command and its real output) &middot; <a href="files/BEST_PRACTICES.md">The method document</a> &middot; <a href="files/cookbook/REPORT.md">The audit report the run produced</a> &middot; <a href="files/cookbook/nodes.jsonl">The store it made</a></p>
+<p><a href="files/COOKBOOK.md">The cookbook</a> (all 60 commands and their real output) &middot; <a href="files/delphisci-delphi-0.3.0.tgz">The npm package</a> &middot; <a href="files/BEST_PRACTICES.md">The method document</a></p>
+<p class="small">What each run produced &mdash; morpholib: <a href="files/cookbook/morpholib/REPORT.md">report</a>, <a href="files/cookbook/morpholib/nodes.jsonl">record</a> &middot; nanoid: <a href="files/cookbook/nanoid/REPORT.md">report</a>, <a href="files/cookbook/nanoid/nodes.jsonl">record</a> &middot; wolstenholme-zolotarev: <a href="files/cookbook/wolstenholme/REPORT.md">report</a>, <a href="files/cookbook/wolstenholme/nodes.jsonl">record</a> (38 records in all)</p>
 
 <h2 id="how">How it works <small>five steps, and what each one turns away</small></h2>
 <div class="flow"><span>evidence</span><i>&rarr;</i><span>fact</span><i>&rarr;</i><span>verdict</span><i>&rarr;</i><span>build</span><i>&rarr;</i><span>files</span><i style="margin-left:10px">and a law only exists once the Lean kernel has accepted it</i></div>
@@ -135,6 +151,8 @@ const FILE_NOTES = {
   '-justification.jsonld': 'The build log as linked data: every slot, number and verdict back to the record that justified it.',
   '.v': 'The design: the behaviour that was asked for.',
   '.lean': 'The laws, with an axiom audit line per theorem.',
+  '.tgz': 'The command-line toolset as an npm package. Install it by this address; it has no dependencies.',
+  'COOKBOOK.md': 'Every command run on three public repositories, with what each printed.',
   'parts.json': 'The part registry: every value with the sentence it was quoted from and where that sentence sits.'
 };
 const noteFor = (f) => Object.entries(FILE_NOTES).find(([k]) => f.endsWith(k))?.[1] ?? '';

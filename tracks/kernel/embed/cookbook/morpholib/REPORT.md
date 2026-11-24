@@ -6,7 +6,7 @@ Repository https://github.com/fractastical/morpholib, commit `befd35cd32908d818b
 |---|---|---|---|---|---|
 | `morphoeval/lean/MathOfBiology.lean` | 76 | 0 | refused: nothing to audit | CHECKED | Classical.choice, Quot.sound, propext |
 | `morphoeval/lean/Ruliobiology.lean` | 31 | 0 | refused: nothing to audit | CHECKED | Classical.choice, Quot.sound, propext |
-| `morphoeval/lean/LinearResource.lean` | 8 | 0 | refused: nothing to audit | CHECKED | Classical.choice, Quot.sound, propext |
+| `morphoeval/lean/LinearResource.lean` | 8 | 0 | refused: nothing to audit | CHECKED | Quot.sound, propext |
 
 The claims are true. They were not checkable from the files as published, because no file asks Lean to
 print the axioms its theorems depend on. One `#print axioms` line per theorem makes each file checkable.

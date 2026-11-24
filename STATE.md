@@ -68,7 +68,8 @@ Read this first, then BRAIN.md. Updated 2026-11-18.
 - Issues #17-#42: 1 resolved (#27), 12 partly, 11 need Amit, 2 blocked. Drafts in `tracks/research/agent-scripts/is-fix-*/`; no comments posted.
 
 ## What is running
-- Windows scheduled task "Delphi paper watcher (daily)", 06:17, wrapper `C:Tempdelphi-watch-dailyun.cmd` (row in registry-claims.md). No cluster jobs, no GPUs. Explorer/Discovery still decline the SSH key.
+- Windows scheduled task "Delphi paper watcher (daily)", 06:17, wrapper `C:Tempdelphi-watch-daily
+un.cmd` (row in registry-claims.md). No cluster jobs, no GPUs. Explorer/Discovery still decline the SSH key.
 
 ## Standing constraints
 - Frozen holdout: nothing from the held-out clade (roster in holdout/split.json) in any file, mesh, manifest or log. Never add allowlist entries. Agents may download tables that contain it: keep raw downloads out of the repo.
@@ -126,20 +127,35 @@ Ask (text thread, 24 Nov): a command-line toolset to embed the method in an exis
 best-practice doc, a command per step, a private knowledge graph, a cookbook on a real public repo.
 - `tracks/kernel/embed/delphi.mjs`: init, evidence, fact, audit, law, verdict, build, verify, doctor,
   summary, log, trace, why, graph, best-practices. Store in `<project>/.delphi/`. Kernel is 0.2.0
-  (takes a `root`, so paths in nodes are relative to the embedding project).
+  → 0.2.1 (takes a `root`, so paths in nodes are relative to the embedding project).
 - Graph (`embed/graph.mjs`) is rewritten after every mint, into the project only. No network, no
   registry: "published" means into the project's own folder.
 - `embed/best-practices.mjs`: 12 rules, each matched literally against its guard in kernel.mjs
   (`--check` fails if a guard goes), 5 habits marked unenforced.
-- `embed/test-embed.mjs`: real CLI in a temp project, 52 checks, 28 faults, 0 survive.
-- `embed/cookbook.mjs --repo <checkout>` ran 26 commands on fractastical/morpholib @ befd35cd and
-  wrote COOKBOOK.md from the output; `--check` is offline. Finding: 115 declarations in 3 Lean files
-  all CHECKED; 0 audit lines as published, so 3 refusals. Same finding as our PR #332 there, still
-  unmerged at that commit. Checkout: `C:/Temp/delphi-cookbook/morpholib` (13 MB sparse; has .delphi/).
-- Film: `python tracks/video/cli-graph.py [--check|--preview|--fast]` replays the recorded cookbook
-  run, 68 s silent, `C:/Temp/delphi-video/kernel/cli-graph.mp4`. Page section `#cli`.
-- 4 new reproduce rows. Not done: npm packaging; an orx-run adapter; lesson learned the hard way —
-  never patch JS regexes through a Python heredoc (`\b` became a backspace byte twice).
+- `embed/test-embed.mjs`: real CLI in a temp project, 53 checks, 29 faults, 0 survive.
+- **npm package (24 Nov, later):** `tracks/kernel/package.json` = `@delphisci/delphi` 0.3.0, `private`
+  (not on the registry), bin `delphi`, 8 files, no deps. Published as a tarball at
+  `<site>/tracks/kernel/files/delphisci-delphi-0.3.0.tgz`; `npm install <that address>`.
+  `embed/test-install.mjs` packs, installs into an empty folder, drives the installed copy.
+- `embed/lean-check.mjs` replaces `tracks/lean/check.sh` for the CLI: runs `lake env lean` in the
+  nearest Lake project above the file (or `DELPHI_LEAN_PROJECT` / config `lean_project`); `--probes`.
+  On this box plain `lean` has no default toolchain, so probes need `DELPHI_LEAN_PROJECT=lean`.
+- Kernel 0.2.1: a refusal no longer records a dangling id (it broke `verify` for good).
+- Cookbook is three runs through the installed package: `cookbook.mjs --run all|<name>`, `--render`,
+  `--check` (offline; fails if the package bytes changed since the runs). Recipes in `embed/examples/`,
+  output in `embed/cookbook/<name>/`. morpholib @ befd35cd (26 cmds, 115 decls, refused as published);
+  ai/nanoid @ 055d1700 (19 cmds, script laws, no Lean); fahad-96/wolstenholme-zolotarev @ bec02d30
+  (15 cmds, Checks.lean CHECKED as published in its own Lake project). Checkouts under
+  `C:/Temp/delphi-cookbook/`. The wolstenholme checkout's `.lake/packages` is a JUNCTION to the shared
+  Mathlib build: remove it with `cmd /c rmdir`, never a recursive delete.
+- **Any edit to a shipped file (kernel.mjs, embed/{delphi,graph,best-practices,lean-check}.mjs,
+  embed/README.md, package.json) means: `cookbook.mjs --run all` (needs Lean, ~3 min), re-render the
+  film, then `page.mjs`.** page.mjs refuses to publish a tarball the cookbook was not run with.
+- Film: `python tracks/video/cli-graph.py [--check|--preview|--fast]`, 76 s silent, replays all three
+  runs, `C:/Temp/delphi-video/kernel/cli-graph.mp4`. Page section `#cli`.
+- Reproduce rows: CLI faults, npm install, Lean-check probes, best-practice, cookbook, film.
+  Not done: registry publish (a person's call), a licence (package says UNLICENSED), an orx-run
+  adapter. Lesson: never patch JS regexes through a heredoc; write a patch file with Write.
 
 ### Open (kernel)
 - Registry exposure (AGENTS-RULE) for the circuit laws belongs to the lean thread; ours are proposals.

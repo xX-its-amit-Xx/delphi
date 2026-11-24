@@ -6,21 +6,23 @@ repository: the pkg.scienceoracle.com growth replay, warm paper, teal edges, the
 counting ledger down the right-hand side. No title card and no closing card. It is silent by design,
 so nothing is asserted that the picture does not show.
 
-What the film replays is a recorded run, not an illustration. tracks/kernel/embed/cookbook.mjs drove
-the real command line in a checkout of a public repository and committed every command, what it
-printed, and the store it made. The film draws that store, in the order it was minted, with the
-command that minted each node typed underneath it. A law the kernel refused leaves no node, so it is
-drawn as an empty ring where the law would have been.
+What the film replays is three recorded runs, not an illustration. tracks/kernel/embed/cookbook.mjs
+installed the npm package into an empty folder and drove that copy in checkouts of three public
+repositories, committing every command, what it printed, and the store it made. The film draws the
+first store in full, in the order it was minted, with the command that minted each node typed
+underneath it; then the other two, smaller, side by side. A law the kernel refused leaves no node, so
+it is drawn as an empty ring where the law would have been. A law checked by a script and not by a
+prover is drawn as a ring, not a disc.
 
 Every figure comes from a repo file or from a command run here:
 
-    tracks/kernel/embed/cookbook/run.json     the commands, their exit codes and what each printed
-    tracks/kernel/embed/cookbook/nodes.jsonl  the store that run minted: the graph itself
-    tracks/kernel/embed/cookbook/graph.json   its edges, every one a field in a record
+    tracks/kernel/embed/cookbook/<name>/run.json     the commands, their exit codes and what each printed
+    tracks/kernel/embed/cookbook/<name>/nodes.jsonl  the store that run minted: the graph itself
+    tracks/kernel/embed/cookbook/<name>/graph.json   its edges, every one a field in a record
     tracks/kernel/embed/best-practices.mjs    the rules it enforces and the habits it cannot
     tracks/kernel/embed/test-embed.mjs        run here, for the faults-injected and survivors figures
 
-    python tracks/video/cli-graph.py                # 1920x1080, 24 fps, ~68 s
+    python tracks/video/cli-graph.py                # 1920x1080, 24 fps, ~76 s
     python tracks/video/cli-graph.py --preview      # a few stills, no video
     python tracks/video/cli-graph.py --fast         # 12 fps, no supersampling, for iteration
     python tracks/video/cli-graph.py --check        # resolve every figure, place every node, no render
@@ -104,13 +106,14 @@ REFUSED = (178, 52, 140)
 BUILT = (47, 111, 237)
 
 # Timeline, seconds. One chapter per thing the toolset does, in the order a project meets them.
-T_INIT, T_IN0, T_IN1 = 0.2, 0.5, 10.0
-T_REC, T_RE0, T_RE1 = 10.8, 11.4, 22.0
-T_LAW, T_LA0, T_LA1 = 22.8, 23.4, 32.5
-T_VERD, T_VE0, T_VE1 = 33.3, 33.9, 44.0
-T_BUILD, T_BU0, T_BU1 = 44.8, 45.4, 54.5
-T_GUARD, T_GU0, T_GU1 = 55.3, 55.9, 66.5
-DURATION = 68.0
+T_INIT, T_IN0, T_IN1 = 0.2, 0.5, 8.6
+T_REC, T_RE0, T_RE1 = 9.4, 10.0, 19.0
+T_LAW, T_LA0, T_LA1 = 19.8, 20.4, 28.6
+T_VERD, T_VE0, T_VE1 = 29.4, 30.0, 38.4
+T_BUILD, T_BU0, T_BU1 = 39.2, 39.8, 47.2
+T_MORE, T_MO0, T_MO1 = 48.0, 48.6, 63.6
+T_GUARD, T_GU0, T_GU1 = 64.4, 65.0, 74.6
+DURATION = 76.0
 
 GX0, GX1, GY0, GY1 = 40, 1452, 150, 902
 COL_X, COL_W = 1496, 384
@@ -186,17 +189,17 @@ def node(cmd, cwd=None, timeout=240):
 # in a checkout of a public repository and committed what came back. The commands are kept beside the
 # nodes they minted, because the command is the thing this film is about.
 
-RUN = ROOT / "tracks/kernel/embed/cookbook/run.json"
-RUN_STORE = ROOT / "tracks/kernel/embed/cookbook/nodes.jsonl"
-RUN_GRAPH = ROOT / "tracks/kernel/embed/cookbook/graph.json"
+COOK = ROOT / "tracks/kernel/embed/cookbook"
+MAIN = "morpholib"                      # drawn in full
+MORE = ["nanoid", "wolstenholme"]       # drawn small, side by side, in the chapter after
 
 
-def mint():
-    """Load the recorded run: every command, what it said, and the node it minted."""
+def mint(name=MAIN):
+    """Load one recorded run: every command, what it said, and the node it minted."""
     need(CLI)
-    run = json.loads(need(RUN).read_text(encoding="utf8"))
-    rows = [json.loads(l) for l in need(RUN_STORE).read_text(encoding="utf8").splitlines() if l.strip()]
-    graph = json.loads(need(RUN_GRAPH).read_text(encoding="utf8"))
+    run = json.loads(need(COOK / name / "run.json").read_text(encoding="utf8"))
+    rows = [json.loads(l) for l in need(COOK / name / "nodes.jsonl").read_text(encoding="utf8").splitlines() if l.strip()]
+    graph = json.loads(need(COOK / name / "graph.json").read_text(encoding="utf8"))
     ids = {r["id"] for r in rows}
     steps, per_node = [], {}
     for s in run["steps"]:
@@ -265,8 +268,24 @@ def load(run_guards=True):
     D["best"] = best_practices()
     D["faults"] = fault_suite(run_guards)
     D["lean"] = lean_audit(D["rows"])
-    if D["lean"]["audited"] != D["run"]["declarations_audited"]:
+    if D["lean"]["audited"] != D["run"]["extra"]["declarations_audited"]:
         raise SystemExit("the recorded run and its store disagree about how many declarations were audited")
+    # the install that came before the first command: the cookbook packed the npm package, installed it
+    # into an empty folder, and ran every command from that copy. It is shown as the first line typed.
+    tool = D["run"]["tool"]
+    D["steps"].insert(0, {"step": "install", "cmd": f"npm install {tool['tarball']}", "minted": [], "exit": 0,
+                          "said": f"{tool['name']} {tool['version']}, no dependencies, installed into an empty folder; "
+                                  f"every command after this ran from that copy (sha256 {tool['sha256'][:16]})"})
+    D["chapter_of"] = {k: v + 1 for k, v in D["chapter_of"].items()}
+    half = (T_MO1 - T_MO0) / len(MORE)
+    D["more"] = []
+    for i, name in enumerate(MORE):
+        X = mint(name)
+        if X["run"]["tool"]["sha256"] != tool["sha256"]:
+            raise SystemExit(f"{name} was run with a different build of the package than {MAIN}; re-run the cookbook")
+        X["t0"], X["t1"] = T_MO0 + half * i, T_MO0 + half * (i + 1)
+        X["box"] = (60 + 700 * i, 196, 720 + 700 * i, 640)
+        D["more"].append(X)
     return D
 
 # ----------------------------------------------------------------------------- layout
@@ -275,9 +294,12 @@ def load(run_guards=True):
 # position in the chain, so the same store always draws the same picture.
 COLUMNS = [("evidence", 168), ("fact", 468), ("law", 772), ("verdict", 1072), ("build", 1344)]
 CHAPTER_OF_STEP = {
-    "adopt": 0, "record": 1, "as-published": 2, "audit": 2, "verdict": 3, "build": 4, "read": 5, "ci": 5,
+    "install": 0, "adopt": 0, "record": 1, "as-published": 2, "audit": 2, "verdict": 3, "build": 4,
+    "read": 6, "ci": 6,
 }
-WINDOW = [(T_IN0, T_IN1), (T_RE0, T_RE1), (T_LA0, T_LA1), (T_VE0, T_VE1), (T_BU0, T_BU1), (T_GU0, T_GU1)]
+GUARD_CH = 6
+WINDOW = [(T_IN0, T_IN1), (T_RE0, T_RE1), (T_LA0, T_LA1), (T_VE0, T_VE1), (T_BU0, T_BU1), (T_MO0, T_MO1),
+          (T_GU0, T_GU1)]
 
 
 def col_of(row):
@@ -319,9 +341,10 @@ def chapters(D):
     repo = run["repo"].replace("https://", "")
     refused = sum(1 for s in D["steps"] if s["step"] == "as-published" and s["exit"] != 0)
     return [
-        (T_INIT, "A public repository, and one command",
+        (T_INIT, "A public repository, npm install, and one command",
          f"{repo} at commit {run['commit'][:8]}. Three of its Lean files each say they contain no sorry. "
-         f"delphi init adds a store, a method document and a private graph, and changes nothing else."),
+         f"The tool arrives as an npm package; delphi init adds a store, a method document and a private "
+         f"graph, and changes nothing else."),
         (T_REC, "First, the claim in the project's own words",
          "evidence is a source and the exact line read in it; a fact is the number in that line, filed "
          "under it with the file and commit it belongs to. Neither can be recorded without the other."),
@@ -334,6 +357,9 @@ def chapters(D):
         (T_BUILD, "The refusal is the useful output",
          "an artifact appears only if every verdict under it holds. The badge resting on the untimed claim "
          "is refused, and the refusal recorded; the audit report is minted and its file hashed."),
+        (T_MORE, "The same package, on two other people's repositories",
+         " ".join(f"{X['run']['repo'].replace('https://github.com/', '')}: {X['run']['kind']}." for X in D["more"])
+         + " Nothing in the tool changed between the three."),
         (T_GUARD, "And the guards that hold it up",
          "the same command line is driven in a throwaway project with one deliberate fault injected at a "
          "time, and none may survive. Then two commands for CI: verify, and doctor."),
@@ -346,13 +372,14 @@ def ledger_rows(D):
     verdicts = [r for r in D["rows"] if r["type"] == "verdict"]
     tally = {k: sum(1 for r in verdicts if r["result"] == k) for k in ("inside", "outside", "cannot-assess")}
     refused = sum(1 for s in D["steps"] if s["step"] == "as-published" and s["exit"] != 0)
+    everyone = [D] + D["more"]
     rows = [
-        (T_IN0 + 0.6, f"{len(run['steps'])}", "commands run on the repository",
+        (T_IN0 + 0.3, run["tool"]["version"], "the npm package every command ran from",
+         "installed into an empty folder first; no dependencies"),
+        (T_IN0 + 2.6, f"{len(run['steps'])}", "commands run on the first repository",
          f"out of a toolset of {cmds}; every one shown as it ran"),
         (T_RE0 + 0.4, f"{len(b['rules'])}", "rules the kernel enforces",
-         "each names the guard behind it, and the doc fails if that guard goes"),
-        (T_RE0 + 3.0, f"{len(b['habits'])}", "habits it cannot enforce",
-         "listed apart, so nobody reads them as guarantees"),
+         f"each names its guard; {len(b['habits'])} habits it cannot enforce are listed apart"),
         (T_LA0 + 0.4, f"{refused}", "files refused as published",
          "none asks for its axioms to be printed"),
         (T_LA0 + 4.6, f"{lean['audited']}", "declarations audited, all accepted",
@@ -363,6 +390,9 @@ def ledger_rows(D):
          f"{sum(1 for r in D['rows'] if r['type'] == 'refusal')} refused, naming what was missing"),
         (T_BU0 + 3.0, f"{len(D['rows'])}", "nodes in the project's graph",
          f"{len(D['graph']['edges'])} edges, every one a field in a record"),
+        (T_MO0 + 0.4, f"{len(everyone)}", "public repositories, one package",
+         f"{sum(len(X['run']['steps']) for X in everyone)} commands, {sum(len(X['rows']) for X in everyone)} records; "
+         f"none of the three is ours"),
     ]
     if f["ran"]:
         rows.append((T_GU0 + 0.4, f"{f['injected']}", "faults injected into the toolset",
@@ -381,10 +411,19 @@ def paint(t, D, L, at):
         d.line([(P(GX0 - 8), P(y)), (P(GX1 + 8), P(y))], fill=GRID, width=max(1, SS // 2))
 
     paint_chapter(d, t, D)
-    paint_columns(d, t, D, L, at)
-    paint_graph(d, t, D, L, at)
-    paint_refused(d, t, D, L, at)
-    paint_detail(d, t, D, L, at)
+    # the first repository's graph is drawn on its own layer, so it can fade as a whole
+    main_k = 1.0 - ease_io((t - (T_MORE - 0.2)) / 0.8)
+    if main_k > 0.01:
+        layer = img.copy() if main_k < 0.999 else img
+        dl = ImageDraw.Draw(layer)
+        paint_columns(dl, t, D, L, at)
+        paint_graph(dl, t, D, L, at)
+        paint_refused(dl, t, D, L, at)
+        paint_detail(dl, t, D, L, at)
+        if layer is not img:
+            img = Image.blend(img, layer, main_k)
+            d = ImageDraw.Draw(img)
+    paint_more(d, t, D)
     paint_faults(d, t, D)
     paint_command(d, t, D)
     paint_ledger(d, t, D, ledger_rows(D))
@@ -520,10 +559,117 @@ def cmd_times(D):
         seen[ci] = n + 1
         t0, t1 = WINDOW[ci]
         # the guards chapter keeps its first stretch for the fault count before the CI commands appear
-        lead = (t1 - t0) * 0.42 if ci == 5 else 0.1
+        lead = (t1 - t0) * 0.42 if ci == GUARD_CH else 0.1
         slot = ((t1 - t0) * 0.92 - lead) / per[ci]
         out.append((t0 + lead + slot * n, slot, s))
+    # the two smaller runs: the commands that decided something, each at the moment its step ran
+    for X in D.get("more", []):
+        keys = key_steps(X)
+        for j, i in enumerate(keys):
+            t_i = more_time(X, i)
+            nxt = more_time(X, keys[j + 1]) if j + 1 < len(keys) else X["t1"]
+            out.append((t_i, max(0.6, nxt - t_i), X["steps"][i]))
+    out.sort(key=lambda r: r[0])
     return out
+
+
+def more_time(X, step_i):
+    """When a step of one of the smaller runs happens: in order, across that run's share of the chapter."""
+    return X["t0"] + 0.4 + (X["t1"] - X["t0"]) * 0.80 * (step_i / max(1, len(X["steps"])))
+
+
+def key_steps(X):
+    """The commands worth reading in a few seconds: a law refused or accepted, a verdict that held, the
+    verdict that could not be assessed, and the build refused because of it."""
+    steps, rows = X["steps"], {r["id"]: r for r in X["rows"]}
+    picked = []
+
+    def first(pred):
+        for i, s in enumerate(steps):
+            if i not in picked and pred(s, rows.get(s["minted"][0]) if s["minted"] else None):
+                picked.append(i)
+                return
+
+    first(lambda s, r: s["step"] in ("no-check", "as-published"))
+    first(lambda s, r: r is not None and r["type"] == "verdict" and r["result"] == "inside")
+    first(lambda s, r: r is not None and r["type"] == "verdict" and r["result"] == "cannot-assess")
+    first(lambda s, r: s["step"] == "build" and s["exit"] != 0)
+    return sorted(picked)
+
+
+def paint_more(d, t, D):
+    """Two other repositories, drawn small: the same five columns, the same colours, their own stores."""
+    for X in D["more"]:
+        k = min(appear(t, X["t0"] - 0.3, 0.6), 1.0 - ease_io((t - (T_GUARD - 0.5)) / 0.6))
+        if k <= 0.01:
+            continue
+        x0, y0, x1, y1 = X["box"]
+        run = X["run"]
+        d.rectangle([P(x0), P(y0), P(x1), P(y1)], fill=mix(PAPER, PAPER2, k), outline=mix(PAPER, RULE, k), width=max(1, SS))
+        d.text((P(x0), P(y0 - 44)), run["repo"].replace("https://", ""), font=font(DISPLAY, 19), fill=mix(PAPER, INK, k))
+        d.text((P(x0), P(y0 - 19)), f"commit {run['commit'][:8]}  ·  {len(run['steps'])} commands",
+               font=font(BODY, 12), fill=mix(PAPER, INK3, k))
+        cols = [c for c, _ in COLUMNS]
+        cx = {c: x0 + 62 + (x1 - x0 - 124) * i / (len(cols) - 1) for i, c in enumerate(cols)}
+        L = {}
+        for c in cols:
+            rs = [r for r in X["rows"] if col_of(r) == c]
+            for i, r in enumerate(rs):
+                L[r["id"]] = (cx[c], y0 + 62 + (y1 - y0 - 96) * ((i + 0.5) / max(1, len(rs))))
+            lab = "build / refusal" if c == "build" else c
+            f = font(LABEL, 11)
+            d.text((P(cx[c] - f.getlength(lab) / SS / 2), P(y0 + 14)), lab, font=f, fill=mix(PAPER, INK3, k))
+        at = {nid: more_time(X, si) for nid, si in X["chapter_of"].items()}
+        for e in X["graph"]["edges"]:
+            if e["from"] not in L or e["to"] not in L:
+                continue
+            a = min(k, appear(t, max(at[e["from"]], at[e["to"]]) + 0.1, 0.4))
+            if a <= 0.01:
+                continue
+            (ax, ay), (bx, by) = L[e["from"]], L[e["to"]]
+            mx = (ax + bx) / 2
+            d.line([(P(ax), P(ay)), (P(mx), P(ay)), (P(mx), P(by)), (P(bx), P(by))],
+                   fill=mix(PAPER2, EDGE, 0.40 * a), width=max(1, SS), joint="curve")
+        for r in X["rows"]:
+            a = min(k, appear(t, at[r["id"]], 0.4))
+            if a <= 0.01:
+                continue
+            x, y = L[r["id"]]
+            rad = 7 + 4 * (1 - ease_io(min(1.0, (t - at[r["id"]]) / 0.7)))
+            box = [P(x - rad), P(y - rad), P(x + rad), P(y + rad)]
+            if r["type"] == "law" and r.get("script") and not r.get("lean_file"):
+                d.ellipse(box, fill=mix(PAPER, PAPER2, k), outline=mix(PAPER2, INK, a), width=max(2, SS * 2))
+            else:
+                d.ellipse(box, fill=mix(PAPER2, node_color(r), a))
+            lab = {"build": r.get("artifact"), "refusal": r.get("what"),
+                   "verdict": r.get("result"), "law": r.get("name")}.get(r["type"])
+            if lab:
+                f = font(LABEL, 11)
+                lab = fit(str(lab), f, 128)
+                lw = f.getlength(lab) / SS
+                lx = max(x0 + 6, min(x - lw / 2, x1 - 6 - lw))      # a label never leaves its panel
+                d.text((P(lx), P(y - rad - 18)), lab, font=f, fill=mix(PAPER2, INK, a))
+        # what this store says, read from the store
+        a = min(k, appear(t, X["t0"] + (X["t1"] - X["t0"]) * 0.78, 0.6))
+        if a > 0.01:
+            vs = [r for r in X["rows"] if r["type"] == "verdict"]
+            n = lambda res: sum(1 for r in vs if r["result"] == res)
+            line1 = (f"{n('inside')} inside  ·  {n('outside')} outside  ·  {n('cannot-assess')} cannot-assess  ·  "
+                     f"{sum(1 for r in X['rows'] if r['type'] == 'build')} built  ·  "
+                     f"{sum(1 for r in X['rows'] if r['type'] == 'refusal')} refused")
+            lean = [r for r in X["rows"] if r["type"] == "law" and r.get("lean_file")]
+            script = [r for r in X["rows"] if r["type"] == "law" and r.get("script") and not r.get("lean_file")]
+            where = {"own": "in the repository's own Lake project", "named": "in a Lake project named for the check",
+                     "none": "with plain lean"}
+            notes = [f"{l['lean_file']} accepted by Lean as published: {l['audit']['audited']} theorems audited, "
+                     f"{where.get(l['audit'].get('lean_project'), '')}" for l in lean]
+            if script:
+                notes.append(f"{len(script)} law{'s' if len(script) != 1 else ''} checked by a script, not a prover, and recorded as such "
+                             f"(drawn as {'rings' if len(script) != 1 else 'a ring'})")
+            d.text((P(x0), P(y1 + 14)), line1, font=font(LABEL, 14), fill=mix(PAPER, INK, a))
+            fb = font(BODY, 12)
+            for j, ln in enumerate(notes[:3]):
+                d.text((P(x0), P(y1 + 40 + 19 * j)), fit(ln, fb, x1 - x0), font=fb, fill=mix(PAPER, INK2, a))
 
 
 def paint_command(d, t, D):
@@ -623,7 +769,7 @@ def paint_footer(d, t, D):
         return
     lines = [
         f"Built by tracks/video/cli-graph.py from tracks/kernel/embed/cookbook/: the commands shown are the ones "
-        f"cookbook.mjs ran on {D['run']['repo'].replace('https://', '')} at {D['run']['commit'][:8]}, and the graph is the store they made.",
+        f"cookbook.mjs ran, from the installed npm package, on three public repositories; each graph is the store they made.",
         f"Rule and habit counts read from best-practices.mjs; the fault figures measured by running "
         f"test-embed.mjs here; the audit figures are what Lean printed in that run. Type: {FACE_NAME}, "
         f"commands in {MONO_NAME}. Silent by design.",
@@ -682,16 +828,23 @@ def main():
     print(f"type     {FACE_NAME}; commands in {MONO_NAME}")
 
     missing = [r["id"] for r in D["rows"] if r["id"] not in L or r["id"] not in at]
+    for X in D["more"]:
+        print(f"more     {len(X['rows'])} node(s) on {X['run']['repo']} at {X['run']['commit'][:8]}, "
+              f"{len(key_steps(X))} of {len(X['steps'])} command(s) shown")
+        missing += [r["id"] for r in X["rows"] if r["id"] not in X["chapter_of"]]
+        if len(key_steps(X)) < 3:
+            raise SystemExit(f"{X['run']['example']}: fewer than three commands worth showing were found in the run")
     if missing:
         raise SystemExit(f"{len(missing)} node(s) have no place or no time: {missing}")
     if args.check:
-        print(f"check    {len(D['rows'])} node(s) placed and timed, {len(rows)} ledger figure(s) resolved, "
+        total = len(D["rows"]) + sum(len(X["rows"]) for X in D["more"])
+        print(f"check    {total} node(s) from {1 + len(D['more'])} recorded runs placed and timed, {len(rows)} ledger figure(s) resolved, "
               f"{len(chapters(D))} chapters, every figure traced to a file")
         return
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     if args.preview:
-        for i, t in enumerate([3.0, 9.0, 15.0, 20.0, 28.0, 38.0, 42.0, 50.0, 53.0, 60.0, 66.0]):
+        for i, t in enumerate([1.2, 7.5, 17.0, 24.0, 27.5, 37.0, 46.5, 52.0, 56.0, 63.0, 70.0, 75.0]):
             p = OUT_DIR / f"cli-preview-{i}.png"
             paint(t, D, L, at).save(p)
             print(f"preview  {p}")
@@ -708,7 +861,7 @@ def main():
         for n, _ in enumerate(pool.imap_unordered(_frame, jobs, chunksize=4), 1):
             if n % 120 == 0 or n == frames:
                 print(f"frames   {n}/{frames}", flush=True)
-    paint(DURATION * 0.62, D, L, at).save(OUT_PNG)
+    paint(T_MO1 - 0.2, D, L, at).save(OUT_PNG)
     subprocess.run([ffmpeg_bin(), "-y", "-loglevel", "error", "-framerate", str(FPS),
                     "-i", str(tmp / "f%05d.png"), "-c:v", "libx264", "-pix_fmt", "yuv420p",
                     "-crf", "20", "-movflags", "+faststart", str(OUT_MP4)], check=True)

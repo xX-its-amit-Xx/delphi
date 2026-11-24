@@ -29,7 +29,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-export const KERNEL_VERSION = '0.2.0';
+export const KERNEL_VERSION = '0.2.1';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT = path.resolve(HERE, '..', '..');
 const DEFAULT_STORE = path.join(HERE, 'store', 'nodes.jsonl');
@@ -264,7 +264,11 @@ export class Kernel {
       if (v.result === 'cannot-assess') why.push(`${v.law_name}${v.label ? ' (' + v.label + ')' : ''}: could not be assessed — ${v.detail ?? ''}`.trim());
     }
     if (why.length) {
-      const refusal = this.append({ type: 'refusal', what: artifact, because: why, verdicts, facts });
+      // A refusal links only to nodes that exist. An id that is not in the store is named in
+      // `because`; recording it as a reference too would leave the store pointing at nothing, and
+      // one mistyped id would make verify() fail from then on (0.2.1).
+      const here = (ids) => ids.filter((id) => this.nodes.has(id));
+      const refusal = this.append({ type: 'refusal', what: artifact, because: why, verdicts: here(verdicts), facts: here(facts) });
       throw Object.assign(new Refused(artifact, why), { refusal: refusal.id });
     }
     // emit() writes the files and returns [{path, bytes}]; the kernel records their hashes so the

@@ -8,9 +8,16 @@ source and its words, then a number, then a checked statement, then a verdict, a
 **What can you do with it that you could not before?** Run one command in your own repository, and
 from then on get a refusal, with its reason, whenever a result would outlive its justification.
 
+## Install
+
 ```bash
-node tracks/kernel/embed/delphi.mjs help
+npm install --save-dev https://delphi-mission-control.ashenoy000.workers.dev/blueprint3d/studio-live/tracks/kernel/files/delphisci-delphi-0.3.0.tgz
+npx delphi init
+npx delphi help
 ```
+
+Node 20 or later, no dependencies. The package is not on the npm registry; the address above is a
+tarball. From a checkout of this repository the same command line is `node tracks/kernel/embed/delphi.mjs`.
 
 | command | what it does |
 |---|---|
@@ -26,6 +33,7 @@ node tracks/kernel/embed/delphi.mjs help
 | `summary` `log` `trace` `why` | read the store; `why <name>` walks a result or a refusal back to the words under it |
 | `graph` | rewrites the project's knowledge graph (also done automatically after every mint) |
 | `best-practices` | prints the method document, generated from the kernel's guards |
+| `version` | the installed version, and the kernel's |
 
 ## The files here
 
@@ -34,10 +42,13 @@ node tracks/kernel/embed/delphi.mjs help
 | `delphi.mjs` | the command line |
 | `graph.mjs` | the store as a graph: `graph.json`, JSON-LD and one self-contained page |
 | `best-practices.mjs` | the method document. Each rule names the guard in `kernel.mjs` that enforces it; `--check` fails if a guard has gone |
-| `test-embed.mjs` | drives the real command line in a temporary project: a baseline that must pass, then 28 faults, one at a time |
-| `cookbook.mjs` | runs every recipe against a checkout of a public repository and writes `COOKBOOK.md` from what came back |
+| `lean-check.mjs` | the Lean check: runs Lean in the Lake project a file belongs to and rejects anything that is not an audited proof. `--probes` checks the checker |
+| `test-embed.mjs` | drives the real command line in a temporary project: a baseline that must pass, then 29 faults, one at a time |
+| `test-install.mjs` | packs the npm package, installs it into an empty folder and drives the installed copy |
+| `cookbook.mjs` | runs every recipe against checkouts of three public repositories, through the installed package, and writes `COOKBOOK.md` from what came back |
+| `examples/` | the three recipes: Lean proofs with no audit, README numbers with no Lean, Lean proofs that publish their own audit |
 | `COOKBOOK.md` | the cookbook. Generated; do not edit by hand |
-| `cookbook/` | the store, graph and report that run produced |
+| `cookbook/<name>/` | the store, graph and report each run produced |
 
 ## "Private knowledge graph", precisely
 
@@ -54,15 +65,20 @@ build step and there is no command for it.
 - A law given with `--script` is checked by a script, and its record says so on its face.
 - `--expr` runs a JavaScript expression you typed, with only the quantity names in scope. It is a
   convenience for arithmetic, not a sandbox for code you do not trust.
-- Lean files are checked by `tracks/lean/check.sh`, which needs a Lean 4 toolchain. Without one a
-  Lean law is refused as unchecked. It is never passed.
-- The tool is not packaged for installation yet: it runs from this repository by path.
+- A Lean file is checked inside the nearest Lake project above it, so it sees your toolchain and your
+  libraries. To use a different project, set `DELPHI_LEAN_PROJECT` or pass `--lean-project` to `init`;
+  the law record says which was used. With no Lean on the machine a Lean law is refused as
+  unchecked. It is never passed.
+- It does not build your Lean project. Run `lake build` first, as you would before any check.
+- It is not published to the npm registry. Whether to claim a name there is a decision for a person.
 
 ## Check it
 
 ```bash
-node tracks/kernel/embed/test-embed.mjs            # 52 checks, 28 injected faults, none may survive
+node tracks/kernel/embed/test-embed.mjs            # 53 checks, 29 injected faults, none may survive
+node tracks/kernel/embed/test-install.mjs          # pack, install into an empty folder, drive that copy
+node tracks/kernel/embed/lean-check.mjs --probes   # five bad Lean files rejected, one good one accepted
 node tracks/kernel/embed/best-practices.mjs --check
-node tracks/kernel/embed/cookbook.mjs --check      # the recorded run is self-consistent (offline)
+node tracks/kernel/embed/cookbook.mjs --check      # the three recorded runs are self-consistent (offline)
 python tracks/video/cli-graph.py --check           # the film's figures all resolve
 ```

@@ -26,11 +26,11 @@ const ONLINE = process.argv.includes('--online');
 const ONLY = (arg('--only') ?? '').split(',').filter(Boolean);
 
 const rows = [];
-function run(group, name, cmd, args, { skipIf = null, expect = null, timeout = 1_500_000 } = {}) {
+function run(group, name, cmd, args, { skipIf = null, expect = null, timeout = 1_500_000, env = {} } = {}) {
   if (ONLY.length && !ONLY.includes(group)) return;
   if (skipIf) { rows.push({ group, name, status: 'SKIPPED', why: skipIf }); console.log(`  SKIPPED  ${group.padEnd(9)} ${name}  (${skipIf})`); return; }
   const t0 = Date.now();
-  const r = spawnSync(cmd, args, { cwd: ROOT, encoding: 'utf8', timeout, env: { ...process.env, PYTHONIOENCODING: 'utf-8' } });
+  const r = spawnSync(cmd, args, { cwd: ROOT, encoding: 'utf8', timeout, env: { ...process.env, PYTHONIOENCODING: 'utf-8', ...env } });
   const out = `${r.stdout ?? ''}${r.stderr ?? ''}`;
   const ok = r.status === 0 && (!expect || expect.test(out));
   const last = out.trim().split('\n').filter(Boolean).slice(-1)[0] ?? '';
@@ -76,11 +76,19 @@ run('kernel', 'circuit laws, Lean kernel + axiom audit', 'bash', ['tracks/lean/c
   { skipIf: !bash ? 'bash not found' : !lean ? 'no Lean toolchain at C:/Temp/elan' : null, expect: /ALL CHECKED/ });
 run('kernel', 'compile the AND circuit: verdicts and refusals as recorded', 'node', ['tracks/kernel/compile/expect.mjs'], { expect: /as recorded/ });
 run('kernel', 'kernel store: every id and chain link recomputed', 'node', ['tracks/kernel/cli.mjs', 'verify'], { expect: /every id matches its content/ });
-// the embeddable CLI, driven as a real command line in a real temporary project: 28 injected faults,
+// the embeddable CLI, driven as a real command line in a real temporary project: 29 injected faults,
 // none may survive. The CLI is tested separately from the kernel because a guard inside kernel.mjs is
 // no use if the command line coerces a bad input into a good one on the way in — one of the faults is
 // exactly that, and it caught a real defect in the first draft.
-run('kernel', 'embeddable CLI: 28 injected faults must all be caught', 'node', ['tracks/kernel/embed/test-embed.mjs', '--fail-once'], { expect: /0 survived/ });
+run('kernel', 'embeddable CLI: 29 injected faults must all be caught', 'node', ['tracks/kernel/embed/test-embed.mjs', '--fail-once'], { expect: /0 survived/ });
+// the npm package: packed, installed into an empty folder, and a whole chain driven through the
+// installed copy from outside this repository. Its last check deletes one shipped file and requires
+// the command to fail, so the test cannot pass by quietly running the source tree instead.
+run('kernel', 'npm package: installed into an empty folder and driven from there', 'node', ['tracks/kernel/embed/test-install.mjs'], { expect: / 0 failed/ });
+// the Lean check the package ships: five deliberately bad files must be rejected and one good one
+// accepted. Without the good one, "all rejected" is also what a checker that cannot start Lean says.
+run('kernel', 'packaged Lean check: bad files rejected, a good one accepted', 'node', ['tracks/kernel/embed/lean-check.mjs', '--probes'],
+  { skipIf: !lean ? 'no Lean toolchain at C:/Temp/elan' : null, expect: /the good one accepted/, env: { ELAN_HOME: 'C:/Temp/elan', DELPHI_LEAN_PROJECT: 'lean' } });
 // the generated best-practice document: every rule it states must still have a guard behind it, so
 // the doc cannot quietly become a description of a rule nobody enforces any more
 run('kernel', 'best-practice doc: every rule still has a guard behind it', 'node', ['tracks/kernel/embed/best-practices.mjs', '--check'], { expect: /still enforced by a guard/ });
@@ -90,10 +98,11 @@ run('video', 'kernel explainer: every spoken number still resolves from the run'
 // the graph film: every node in the store must have a place and a time, and every figure in the
 // ledger must resolve from a repo file, so the film cannot outlive the records it is drawn from
 run('video', 'kernel graph film: every node placed and every figure traced to a file', 'python', ['tracks/video/kernel-graph.py', '--check'], { expect: /every figure traced to a file/ });
-// the cookbook was written by running it on a public repository; offline, its committed store must
-// still verify and every node id printed in the document must be in that store
-run('kernel', 'cookbook: the recorded run on a public repository is self-consistent', 'node', ['tracks/kernel/embed/cookbook.mjs', '--check'], { expect: /every id and chain link recomputed/ });
-// the toolset film replays that recorded run; every node must have a place and every figure a source
+// the cookbook was written by running the installed package on three public repositories; offline,
+// each committed store must still verify, every id printed in the document must be in one of them,
+// the document must be exactly what the runs render to, and the package must not have changed since
+run('kernel', 'cookbook: three recorded runs on public repositories are self-consistent', 'node', ['tracks/kernel/embed/cookbook.mjs', '--check'], { expect: /every id and chain link recomputed/ });
+// the toolset film replays those recorded runs; every node must have a place and every figure a source
 run('video', 'toolset film: every node placed and every figure traced to a file', 'python', ['tracks/video/cli-graph.py', '--check'], { expect: /every figure traced to a file/ });
 
 // the case scripts, re-executed in a scratch copy: every committed number must come back

@@ -1,0 +1,261 @@
+{
+ "example": "morpholib",
+ "repo": "https://github.com/fractastical/morpholib",
+ "commit": "befd35cd32908d818bdc325aac89108817933ab9",
+ "committed": "2026-11-22",
+ "kind": "Lean proofs that publish no axiom audit",
+ "licence": "non-standard: only counts, hashes and one claim line per file are kept",
+ "tool": {
+  "name": "@delphisci/delphi",
+  "version": "0.3.0",
+  "tarball": "delphisci-delphi-0.3.0.tgz",
+  "sha256": "312fff9631a92bb8791a52486b3db444f2de5f48711fe906e7e5ac53cfa8d955"
+ },
+ "summary": {
+  "nodes": 15,
+  "by_type": {
+   "evidence": 3,
+   "fact": 3,
+   "law": 3,
+   "verdict": 4,
+   "refusal": 1,
+   "build": 1
+  },
+  "verdicts": {
+   "inside": 3,
+   "outside": 0,
+   "cannot_assess": 1
+  },
+  "builds": 1,
+  "refusals": 1,
+  "chain_problems": 0
+ },
+ "extra": {
+  "report": "# Axiom audit of three Lean files\n\nRepository https://github.com/fractastical/morpholib, commit `befd35cd32908d818bdc325aac89108817933ab9` (2026-11-22).\n\n| file | declarations | audit lines as published | as published | with audit lines added | axioms |\n|---|---|---|---|---|---|\n| `morphoeval/lean/MathOfBiology.lean` | 76 | 0 | refused: nothing to audit | CHECKED | Classical.choice, Quot.sound, propext |\n| `morphoeval/lean/Ruliobiology.lean` | 31 | 0 | refused: nothing to audit | CHECKED | Classical.choice, Quot.sound, propext |\n| `morphoeval/lean/LinearResource.lean` | 8 | 0 | refused: nothing to audit | CHECKED | Quot.sound, propext |\n\nThe claims are true. They were not checkable from the files as published, because no file asks Lean to\nprint the axioms its theorems depend on. One `#print axioms` line per theorem makes each file checkable.\n\nThis says nothing about whether the theorems are the right theorems, or match the biology they are named\nafter. That needs a reader.\n",
+  "rows": [
+   {
+    "file": "morphoeval/lean/MathOfBiology.lean",
+    "declarations": 76,
+    "audit_lines_as_published": 0,
+    "verdict": "CHECKED",
+    "axioms": [
+     "Classical.choice",
+     "Quot.sound",
+     "propext"
+    ]
+   },
+   {
+    "file": "morphoeval/lean/Ruliobiology.lean",
+    "declarations": 31,
+    "audit_lines_as_published": 0,
+    "verdict": "CHECKED",
+    "axioms": [
+     "Classical.choice",
+     "Quot.sound",
+     "propext"
+    ]
+   },
+   {
+    "file": "morphoeval/lean/LinearResource.lean",
+    "declarations": 8,
+    "audit_lines_as_published": 0,
+    "verdict": "CHECKED",
+    "axioms": [
+     "Quot.sound",
+     "propext"
+    ]
+   }
+  ],
+  "check": "// Is the file's own claim true of the file? Inside when the code holds exactly as many `sorry` as it\n// claims and no hand-written axiom. The Lean kernel's acceptance is the law this is applied under;\n// this script only counts, so that the verdict names numbers a reader can recount.\nimport fs from 'node:fs';\n\nexport default (values, facts) => {\n  const file = facts[0].conditions.file;\n  const src = fs.readFileSync(file, 'utf8');\n  const code = src.replace(/\\/-[\\s\\S]*?-\\//g, ' ').replace(/--[^\\n]*/g, ' ');\n  const sorry = (code.match(/\\bsorry\\b/g) ?? []).length;\n  const axioms = (code.match(/^\\s*axiom\\s+/gm) ?? []).length;\n  return {\n    result: sorry === values.sorry_claimed && axioms === 0 ? 'inside' : 'outside',\n    detail: `${file}: ${sorry} sorry in code against ${values.sorry_claimed} claimed, ${axioms} hand-written axiom(s)`,\n  };\n};\n",
+  "declarations_audited": 115,
+  "files": [
+   "morphoeval/lean/MathOfBiology.lean",
+   "morphoeval/lean/Ruliobiology.lean",
+   "morphoeval/lean/LinearResource.lean"
+  ]
+ },
+ "steps": [
+  {
+   "recipe": "adopt",
+   "shown": "delphi init --name morpholib",
+   "exit": 0,
+   "id": null,
+   "out": "initialised  .delphi\nproject      morpholib\nstore        .delphi/store/nodes.jsonl  (append-only, one record per line, commit it)\nmethod       .delphi/BEST_PRACTICES.md  (generated; regenerate with `delphi best-practices`)\ngraph        .delphi/graph/index.html   (rewritten after every mint, private to this project)\nlaws         .delphi/laws/              (put your Lean files here)\n\nNext: record the source of one number you already rely on.\n  delphi evidence --kind doi --ref <doi> --quote \"<the words it prints>\" --where \"<table or section>\"\n\nLean files are checked in your own Lake project, found from the file, so they see your\ntoolchain and your libraries. With no Lean on this machine, `delphi law --lean` is refused\nas unchecked, never passed. A law given with --script says on its record that a script\nchecked it."
+  },
+  {
+   "recipe": "record",
+   "shown": "delphi evidence --kind file --ref morphoeval/lean/MathOfBiology.lean --quote 'in pure core Lean 4 (zero external dependencies, zero `sorry`s, sub-second kernel check).' --where \"line 8, the file's header comment\" --retrieved 2026-11-22",
+   "exit": 0,
+   "id": "k8385c2c983dc1c4c",
+   "out": "evidence k8385c2c983dc1c4c  file:morphoeval/lean/MathOfBiology.lean\ngraph    1 node(s), 0 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "record",
+   "shown": "delphi fact --statement 'MathOfBiology.lean states that it contains no sorry' --quantity sorry_claimed --value 0 --unit count --condition file=morphoeval/lean/MathOfBiology.lean --condition commit=befd35cd --evidence k8385c2c983dc1c4c",
+   "exit": 0,
+   "id": "kdcbf9d1df9057817",
+   "out": "fact     kdcbf9d1df9057817  sorry_claimed = 0 count\ngraph    2 node(s), 1 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "record",
+   "shown": "delphi evidence --kind file --ref morphoeval/lean/Ruliobiology.lean --quote 'Kernel-check (0 sorry, 0 custom axioms, no Mathlib):' --where \"line 10, the file's header comment\" --retrieved 2026-11-22",
+   "exit": 0,
+   "id": "k8d1011f43d5f7fc6",
+   "out": "evidence k8d1011f43d5f7fc6  file:morphoeval/lean/Ruliobiology.lean\ngraph    3 node(s), 1 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "record",
+   "shown": "delphi fact --statement 'Ruliobiology.lean states that it contains no sorry' --quantity sorry_claimed --value 0 --unit count --condition file=morphoeval/lean/Ruliobiology.lean --condition commit=befd35cd --evidence k8d1011f43d5f7fc6",
+   "exit": 0,
+   "id": "k628b6f9ff55fd9b6",
+   "out": "fact     k628b6f9ff55fd9b6  sorry_claimed = 0 count\ngraph    4 node(s), 2 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "record",
+   "shown": "delphi evidence --kind file --ref morphoeval/lean/LinearResource.lean --quote '(0 sorry, no additional axioms). STATUS: PROTOTYPE — not yet emitted into the KG.' --where \"line 7, the file's header comment\" --retrieved 2026-11-22",
+   "exit": 0,
+   "id": "k7b5041a927d1e37c",
+   "out": "evidence k7b5041a927d1e37c  file:morphoeval/lean/LinearResource.lean\ngraph    5 node(s), 2 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "record",
+   "shown": "delphi fact --statement 'LinearResource.lean states that it contains no sorry' --quantity sorry_claimed --value 0 --unit count --condition file=morphoeval/lean/LinearResource.lean --condition commit=befd35cd --evidence k7b5041a927d1e37c",
+   "exit": 0,
+   "id": "k10511a275f5fa506",
+   "out": "fact     k10511a275f5fa506  sorry_claimed = 0 count\ngraph    6 node(s), 3 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "as-published",
+   "shown": "delphi law --name MathOfBiology_as_published --informal 'Every theorem in this file is accepted by the Lean kernel with no sorry and no added axiom.' --lean morphoeval/lean/MathOfBiology.lean",
+   "exit": 1,
+   "id": null,
+   "out": "REFUSED  law MathOfBiology_as_published\n         - morphoeval/lean/MathOfBiology.lean has 76 theorem(s) and no \"#print axioms\" line: nothing in it can be audited"
+  },
+  {
+   "recipe": "as-published",
+   "shown": "delphi law --name Ruliobiology_as_published --informal 'Every theorem in this file is accepted by the Lean kernel with no sorry and no added axiom.' --lean morphoeval/lean/Ruliobiology.lean",
+   "exit": 1,
+   "id": null,
+   "out": "REFUSED  law Ruliobiology_as_published\n         - morphoeval/lean/Ruliobiology.lean has 31 theorem(s) and no \"#print axioms\" line: nothing in it can be audited"
+  },
+  {
+   "recipe": "as-published",
+   "shown": "delphi law --name LinearResource_as_published --informal 'Every theorem in this file is accepted by the Lean kernel with no sorry and no added axiom.' --lean morphoeval/lean/LinearResource.lean",
+   "exit": 1,
+   "id": null,
+   "out": "REFUSED  law LinearResource_as_published\n         - morphoeval/lean/LinearResource.lean has 8 theorem(s) and no \"#print axioms\" line: nothing in it can be audited"
+  },
+  {
+   "recipe": "audit",
+   "shown": "delphi audit morphoeval/lean/MathOfBiology.lean",
+   "exit": 0,
+   "id": null,
+   "out": "audit    morphoeval/lean/MathOfBiology.lean  sha256 2907c36ca2c36fcd\n         76 theorem(s) and lemma(s), 0 axiom-audit line(s) as published, 0 sorry in code, 0 hand-written axiom(s), 0 import(s)\n         copy with 76 audit line(s) appended -> .delphi/laws/MathOfBiology.Audited.lean  (the original was only read)"
+  },
+  {
+   "recipe": "audit",
+   "shown": "delphi law --name MathOfBiology_audited --informal 'Every theorem and lemma in this file is accepted by the Lean kernel on its three standard axioms, with no sorry and no hand-written axiom.' --lean MathOfBiology.Audited.lean",
+   "exit": 0,
+   "id": "k2d8d7e578a17676d",
+   "out": "law      k2d8d7e578a17676d  MathOfBiology_audited\n         .delphi/laws/MathOfBiology.Audited.lean  CHECKED  axioms [Classical.choice, Quot.sound, propext]  76 declaration(s) audited\n         checked in the Lake project named for this check, leanprover/lean4:v4.35.0\ngraph    7 node(s), 3 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "audit",
+   "shown": "delphi audit morphoeval/lean/Ruliobiology.lean",
+   "exit": 0,
+   "id": null,
+   "out": "audit    morphoeval/lean/Ruliobiology.lean  sha256 79d470f8eb339b95\n         31 theorem(s) and lemma(s), 0 axiom-audit line(s) as published, 0 sorry in code, 0 hand-written axiom(s), 0 import(s)\n         copy with 31 audit line(s) appended -> .delphi/laws/Ruliobiology.Audited.lean  (the original was only read)"
+  },
+  {
+   "recipe": "audit",
+   "shown": "delphi law --name Ruliobiology_audited --informal 'Every theorem and lemma in this file is accepted by the Lean kernel on its three standard axioms, with no sorry and no hand-written axiom.' --lean Ruliobiology.Audited.lean",
+   "exit": 0,
+   "id": "k9132887d6adcec44",
+   "out": "law      k9132887d6adcec44  Ruliobiology_audited\n         .delphi/laws/Ruliobiology.Audited.lean  CHECKED  axioms [Classical.choice, Quot.sound, propext]  31 declaration(s) audited\n         checked in the Lake project named for this check, leanprover/lean4:v4.35.0\ngraph    8 node(s), 3 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "audit",
+   "shown": "delphi audit morphoeval/lean/LinearResource.lean",
+   "exit": 0,
+   "id": null,
+   "out": "audit    morphoeval/lean/LinearResource.lean  sha256 94741a6acae4c1cc\n         8 theorem(s) and lemma(s), 0 axiom-audit line(s) as published, 0 sorry in code, 0 hand-written axiom(s), 0 import(s)\n         copy with 8 audit line(s) appended -> .delphi/laws/LinearResource.Audited.lean  (the original was only read)"
+  },
+  {
+   "recipe": "audit",
+   "shown": "delphi law --name LinearResource_audited --informal 'Every theorem and lemma in this file is accepted by the Lean kernel on its three standard axioms, with no sorry and no hand-written axiom.' --lean LinearResource.Audited.lean",
+   "exit": 0,
+   "id": "kcaa376871942f6a4",
+   "out": "law      kcaa376871942f6a4  LinearResource_audited\n         .delphi/laws/LinearResource.Audited.lean  CHECKED  axioms [Quot.sound, propext]  8 declaration(s) audited\n         checked in the Lake project named for this check, leanprover/lean4:v4.35.0\ngraph    9 node(s), 3 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "verdict",
+   "shown": "delphi verdict --law k2d8d7e578a17676d --fact kdcbf9d1df9057817 --requires sorry_claimed --check .delphi/checks/claim-matches-file.mjs --label 'MathOfBiology: the zero-sorry claim'",
+   "exit": 0,
+   "id": "k1e4d15121973226f",
+   "out": "verdict  k1e4d15121973226f  INSIDE  MathOfBiology_audited [MathOfBiology: the zero-sorry claim]\n         morphoeval/lean/MathOfBiology.lean: 0 sorry in code against 0 claimed, 0 hand-written axiom(s)\ngraph    10 node(s), 5 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "verdict",
+   "shown": "delphi verdict --law k9132887d6adcec44 --fact k628b6f9ff55fd9b6 --requires sorry_claimed --check .delphi/checks/claim-matches-file.mjs --label 'Ruliobiology: the zero-sorry claim'",
+   "exit": 0,
+   "id": "kb51caeb94192b4c6",
+   "out": "verdict  kb51caeb94192b4c6  INSIDE  Ruliobiology_audited [Ruliobiology: the zero-sorry claim]\n         morphoeval/lean/Ruliobiology.lean: 0 sorry in code against 0 claimed, 0 hand-written axiom(s)\ngraph    11 node(s), 7 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "verdict",
+   "shown": "delphi verdict --law kcaa376871942f6a4 --fact k10511a275f5fa506 --requires sorry_claimed --check .delphi/checks/claim-matches-file.mjs --label 'LinearResource: the zero-sorry claim'",
+   "exit": 0,
+   "id": "kc889878ccaef6613",
+   "out": "verdict  kc889878ccaef6613  INSIDE  LinearResource_audited [LinearResource: the zero-sorry claim]\n         morphoeval/lean/LinearResource.lean: 0 sorry in code against 0 claimed, 0 hand-written axiom(s)\ngraph    12 node(s), 9 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "verdict",
+   "shown": "delphi verdict --law k2d8d7e578a17676d --fact kdcbf9d1df9057817 --requires kernel_check_seconds --expr 'kernel_check_seconds < 1' --label 'MathOfBiology: the sub-second claim'",
+   "exit": 0,
+   "id": "kcc2a658ba4df8e79",
+   "out": "verdict  kcc2a658ba4df8e79  CANNOT-ASSESS  MathOfBiology_audited [MathOfBiology: the sub-second claim]\n         missing input(s): kernel_check_seconds\n         cannot-assess is not a pass. A build resting on this will be refused.\ngraph    13 node(s), 11 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "build",
+   "shown": "delphi build --artifact 'a \"checks in under a second\" badge' --verdict kcc2a658ba4df8e79",
+   "exit": 1,
+   "id": "ka76c8b9868c534e6",
+   "out": "REFUSED  a \"checks in under a second\" badge\n         - MathOfBiology_audited (MathOfBiology: the sub-second claim): could not be assessed — missing input(s): kernel_check_seconds\n\nThe refusal is itself a record: ka76c8b9868c534e6. It is the shortest list of what would have to\nbe true for this artifact to be honest, so it is worth publishing rather than hiding."
+  },
+  {
+   "recipe": "build",
+   "shown": "delphi build --artifact 'axiom audit report' --verdict k1e4d15121973226f --verdict kb51caeb94192b4c6 --verdict kc889878ccaef6613 --file delphi-audit/REPORT.md",
+   "exit": 0,
+   "id": "ke73d3f7d102807f4",
+   "out": "build    ke73d3f7d102807f4  axiom audit report\n         26eab6750063af51       988  delphi-audit/REPORT.md\ngraph    15 node(s), 15 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "read",
+   "shown": "delphi why badge",
+   "exit": 0,
+   "id": null,
+   "out": "refusal  ka76c8b9868c534e6  a \"checks in under a second\" badge\n         - MathOfBiology_audited (MathOfBiology: the sub-second claim): could not be assessed — missing input(s): kernel_check_seconds\n  verdict  kcc2a658ba4df8e79  CANNOT-ASSESS  MathOfBiology_audited [MathOfBiology: the sub-second claim]  missing input(s): kernel_check_seconds\n    fact     kdcbf9d1df9057817  sorry_claimed = 0 count  [file=morphoeval/lean/MathOfBiology.lean, commit=befd35cd]\n      evidence k8385c2c983dc1c4c  file:morphoeval/lean/MathOfBiology.lean  \"in pure core Lean 4 (zero external dependencies, zero `sorry`s, sub-second kern…\"  (line 8, the file's header comment)\n    law      k2d8d7e578a17676d  MathOfBiology_audited  .delphi/laws/MathOfBiology.Audited.lean -> CHECKED axioms[Classical.choice, Quot.sound, propext]"
+  },
+  {
+   "recipe": "read",
+   "shown": "delphi summary",
+   "exit": 0,
+   "id": null,
+   "out": "store    .delphi/store/nodes.jsonl\nnodes    15  (3 evidence, 3 fact, 3 law, 4 verdict, 1 refusal, 1 build)\nverdicts 3 inside, 0 outside, 1 cannot-assess\nbuilds   1 minted, 1 refused\nchain    every id and link recomputed clean"
+  },
+  {
+   "recipe": "ci",
+   "shown": "delphi verify",
+   "exit": 0,
+   "id": null,
+   "out": "verified 15 node(s): every id matches its content and every chain link holds"
+  },
+  {
+   "recipe": "ci",
+   "shown": "delphi doctor",
+   "exit": 0,
+   "id": null,
+   "out": "note     1 refusal(s) on record. These are the most useful thing in the store to publish: `delphi why <name>` prints what each one was missing.\ndoctor: 15 node(s) sound — store chain, 3 proof file(s), 1 artifact file(s) all match their recorded hashes; 1 note(s)"
+  }
+ ]
+}

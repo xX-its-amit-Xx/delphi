@@ -1,0 +1,153 @@
+{
+ "example": "wolstenholme",
+ "repo": "https://github.com/fahad-96/wolstenholme-zolotarev",
+ "commit": "bec02d3023b5ebb2e6c1aaed75c5c72a2e594a90",
+ "committed": "2026-10-16",
+ "kind": "Lean proofs checked as published, in the project's own Lake environment",
+ "licence": "Apache-2.0",
+ "tool": {
+  "name": "@delphisci/delphi",
+  "version": "0.3.0",
+  "tarball": "delphisci-delphi-0.3.0.tgz",
+  "sha256": "312fff9631a92bb8791a52486b3db444f2de5f48711fe906e7e5ac53cfa8d955"
+ },
+ "summary": {
+  "nodes": 10,
+  "by_type": {
+   "evidence": 2,
+   "fact": 2,
+   "law": 2,
+   "verdict": 2,
+   "refusal": 1,
+   "build": 1
+  },
+  "verdicts": {
+   "inside": 1,
+   "outside": 0,
+   "cannot_assess": 1
+  },
+  "builds": 1,
+  "refusals": 1,
+  "chain_problems": 0
+ },
+ "extra": {
+  "report": "# The repository's own audit, re-run and recorded\n\nRepository https://github.com/fahad-96/wolstenholme-zolotarev, commit `bec02d3023b5ebb2e6c1aaed75c5c72a2e594a90` (2026-10-16).\n\n| claim in README.md | checked by | result | detail |\n|---|---|---|---|\n| Every proof is complete, on standard axioms | Lean, on `Checks.lean` as published (leanprover/lean4:v4.35.0) | CHECKED | 14 theorem(s) audited; axioms Classical.choice, Quot.sound, propext |\n| No sorry, admit, native_decide, set_option or new axiom | a count over the Lean sources | inside | 10 Lean file(s): 0 sorry, 0 admit, 0 native_decide, 0 set_option, 0 axiom against 0 claimed |\n| Neither result is in Mathlib yet | nothing: no search of Mathlib was recorded | cannot-assess | not decidable from this repository alone |\n\nNothing had to be added to check the first claim: the repository asks Lean to print its axioms itself.\n\nThis says nothing about whether the Lean statements are the classical theorems they are named after.\nThat needs a reader, and the repository restates each one in `Checks.lean` so a reader can.\n",
+  "check": "// Do the Lean sources hold as many forbidden constructs as the README claims (none)? Counts are\n// taken over code only: comments and doc-comments are removed first, because a file may talk about\n// `sorry` without using it. Folders that are not the project's own source are skipped.\nimport fs from 'node:fs';\nimport path from 'node:path';\n\nconst SKIP = new Set(['.lake', '.delphi', '.git', 'node_modules']);\nconst leanFiles = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) =>\n  e.isDirectory() ? (SKIP.has(e.name) ? [] : leanFiles(path.join(dir, e.name))) : e.name.endsWith('.lean') ? [path.join(dir, e.name)] : []);\n\nexport default (values) => {\n  const files = leanFiles('.');\n  const count = { sorry: 0, admit: 0, native_decide: 0, set_option: 0, axiom: 0 };\n  for (const f of files) {\n    const code = fs.readFileSync(f, 'utf8').replace(/\\/-[\\s\\S]*?-\\//g, ' ').replace(/--[^\\n]*/g, ' ');\n    count.sorry += (code.match(/\\bsorry\\b/g) ?? []).length;\n    count.admit += (code.match(/\\badmit\\b/g) ?? []).length;\n    count.native_decide += (code.match(/\\bnative_decide\\b/g) ?? []).length;\n    count.set_option += (code.match(/\\bset_option\\b/g) ?? []).length;\n    count.axiom += (code.match(/^\\s*axiom\\s+/gm) ?? []).length;\n  }\n  const total = Object.values(count).reduce((a, b) => a + b, 0);\n  return {\n    result: total === values.forbidden_constructs_claimed ? 'inside' : 'outside',\n    detail: `${files.length} Lean file(s): ${Object.entries(count).map(([k, v]) => `${v} ${k}`).join(', ')} against ${values.forbidden_constructs_claimed} claimed`,\n  };\n};\n",
+  "audited": 14,
+  "asked": 14,
+  "toolchain": "leanprover/lean4:v4.35.0",
+  "axioms": [
+   "Classical.choice",
+   "Quot.sound",
+   "propext"
+  ],
+  "lean_project": "own"
+ },
+ "steps": [
+  {
+   "recipe": "adopt",
+   "shown": "delphi init --name wolstenholme-zolotarev",
+   "exit": 0,
+   "id": null,
+   "out": "initialised  .delphi\nproject      wolstenholme-zolotarev\nstore        .delphi/store/nodes.jsonl  (append-only, one record per line, commit it)\nmethod       .delphi/BEST_PRACTICES.md  (generated; regenerate with `delphi best-practices`)\ngraph        .delphi/graph/index.html   (rewritten after every mint, private to this project)\nlaws         .delphi/laws/              (put your Lean files here)\n\nNext: record the source of one number you already rely on.\n  delphi evidence --kind doi --ref <doi> --quote \"<the words it prints>\" --where \"<table or section>\"\n\nLean files are checked in your own Lake project, found from the file, so they see your\ntoolchain and your libraries. With no Lean on this machine, `delphi law --lean` is refused\nas unchecked, never passed. A law given with --script says on its record that a script\nchecked it."
+  },
+  {
+   "recipe": "record",
+   "shown": "delphi evidence --kind file --ref README.md --quote 'There is no `sorry`, `admit` or `native_decide`, no new axiom, and no `set_option`.' --where 'lines 10 to 11, the opening section' --retrieved 2026-10-16",
+   "exit": 0,
+   "id": "kd2b609c91b6f259a",
+   "out": "evidence kd2b609c91b6f259a  file:README.md\ngraph    1 node(s), 0 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "record",
+   "shown": "delphi fact --statement 'The README says the Lean sources use no sorry, admit, native_decide, set_option or new axiom' --quantity forbidden_constructs_claimed --value 0 --unit count --condition file=README.md --condition commit=bec02d30 --evidence kd2b609c91b6f259a",
+   "exit": 0,
+   "id": "k56eec1882a6aaba7",
+   "out": "fact     k56eec1882a6aaba7  forbidden_constructs_claimed = 0 count\ngraph    2 node(s), 1 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "record",
+   "shown": "delphi evidence --kind file --ref README.md --quote 'Neither result is in Mathlib yet.' --where 'line 8, the opening paragraph' --retrieved 2026-10-16",
+   "exit": 0,
+   "id": "k267e48521d96f98d",
+   "out": "evidence k267e48521d96f98d  file:README.md\ngraph    3 node(s), 1 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "record",
+   "shown": "delphi fact --statement 'The README says Mathlib has no proof of either result' --quantity mathlib_proofs_claimed --value 0 --unit count --condition file=README.md --condition commit=bec02d30 --evidence k267e48521d96f98d",
+   "exit": 0,
+   "id": "k95315e9965f6ff5a",
+   "out": "fact     k95315e9965f6ff5a  mathlib_proofs_claimed = 0 count\ngraph    4 node(s), 2 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "as-published",
+   "shown": "delphi law --name headline_theorems_audited --informal 'Each headline theorem restated in Checks.lean is accepted by the Lean kernel on its three standard axioms, with no sorry.' --lean Checks.lean",
+   "exit": 0,
+   "id": "kd85b43944b4bc374",
+   "out": "law      kd85b43944b4bc374  headline_theorems_audited\n         Checks.lean  CHECKED  axioms [Classical.choice, Quot.sound, propext]  14 declaration(s) audited\n         checked in this repository's own Lake project, leanprover/lean4:v4.35.0\ngraph    5 node(s), 2 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "law",
+   "shown": "delphi law --name absent_upstream --informal 'A result is new to a library when a search of that library at a named commit finds no proof of it.' --script 'a search of Mathlib that nobody has recorded here'",
+   "exit": 0,
+   "id": "kef16ad1d5d69f7c2",
+   "out": "law      kef16ad1d5d69f7c2  absent_upstream\n         checked by a script, NOT by a proof assistant: a search of Mathlib that nobody has recorded here\ngraph    6 node(s), 2 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "verdict",
+   "shown": "delphi verdict --law kd85b43944b4bc374 --fact k56eec1882a6aaba7 --requires forbidden_constructs_claimed --check .delphi/checks/no-forbidden-constructs.mjs --label 'README: no sorry, admit, native_decide, set_option or new axiom'",
+   "exit": 0,
+   "id": "k867d8b30b715dee5",
+   "out": "verdict  k867d8b30b715dee5  INSIDE  headline_theorems_audited [README: no sorry, admit, native_decide, set_option or new axiom]\n         10 Lean file(s): 0 sorry, 0 admit, 0 native_decide, 0 set_option, 0 axiom against 0 claimed\ngraph    7 node(s), 4 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "verdict",
+   "shown": "delphi verdict --law kef16ad1d5d69f7c2 --fact k95315e9965f6ff5a --requires mathlib_proofs_claimed --requires mathlib_proofs_found --expr 'mathlib_proofs_found === mathlib_proofs_claimed' --label 'README: not in Mathlib yet'",
+   "exit": 0,
+   "id": "kf3e75e8e5c01ae1b",
+   "out": "verdict  kf3e75e8e5c01ae1b  CANNOT-ASSESS  absent_upstream [README: not in Mathlib yet]\n         missing input(s): mathlib_proofs_found\n         cannot-assess is not a pass. A build resting on this will be refused.\ngraph    8 node(s), 6 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "build",
+   "shown": "delphi build --artifact 'a \"new to Mathlib\" badge' --verdict kf3e75e8e5c01ae1b",
+   "exit": 1,
+   "id": "k6264d3abc33cb7d3",
+   "out": "REFUSED  a \"new to Mathlib\" badge\n         - absent_upstream (README: not in Mathlib yet): could not be assessed — missing input(s): mathlib_proofs_found\n\nThe refusal is itself a record: k6264d3abc33cb7d3. It is the shortest list of what would have to\nbe true for this artifact to be honest, so it is worth publishing rather than hiding."
+  },
+  {
+   "recipe": "build",
+   "shown": "delphi build --artifact 'audit record' --verdict k867d8b30b715dee5 --file delphi-audit/REPORT.md",
+   "exit": 0,
+   "id": "kbdc5fd6e3b25d892",
+   "out": "build    kbdc5fd6e3b25d892  audit record\n         58b7bae3d0e6fdae      1078  delphi-audit/REPORT.md\ngraph    10 node(s), 8 edge(s) -> .delphi/graph/ (index.html, graph.json, graph.jsonld)"
+  },
+  {
+   "recipe": "read",
+   "shown": "delphi why badge",
+   "exit": 0,
+   "id": null,
+   "out": "refusal  k6264d3abc33cb7d3  a \"new to Mathlib\" badge\n         - absent_upstream (README: not in Mathlib yet): could not be assessed — missing input(s): mathlib_proofs_found\n  verdict  kf3e75e8e5c01ae1b  CANNOT-ASSESS  absent_upstream [README: not in Mathlib yet]  missing input(s): mathlib_proofs_found\n    fact     k95315e9965f6ff5a  mathlib_proofs_claimed = 0 count  [file=README.md, commit=bec02d30]\n      evidence k267e48521d96f98d  file:README.md  \"Neither result is in Mathlib yet.\"  (line 8, the opening paragraph)\n    law      kef16ad1d5d69f7c2  absent_upstream  script: a search of Mathlib that nobody has recorded here"
+  },
+  {
+   "recipe": "read",
+   "shown": "delphi summary",
+   "exit": 0,
+   "id": null,
+   "out": "store    .delphi/store/nodes.jsonl\nnodes    10  (2 evidence, 2 fact, 2 law, 2 verdict, 1 refusal, 1 build)\nverdicts 1 inside, 0 outside, 1 cannot-assess\nbuilds   1 minted, 1 refused\nchain    every id and link recomputed clean"
+  },
+  {
+   "recipe": "ci",
+   "shown": "delphi verify",
+   "exit": 0,
+   "id": null,
+   "out": "verified 10 node(s): every id matches its content and every chain link holds"
+  },
+  {
+   "recipe": "ci",
+   "shown": "delphi doctor",
+   "exit": 0,
+   "id": null,
+   "out": "note     1 law(s) are checked by a script, not by a proof assistant: absent_upstream. Each record says so; this is a note, not a problem.\nnote     1 refusal(s) on record. These are the most useful thing in the store to publish: `delphi why <name>` prints what each one was missing.\ndoctor: 10 node(s) sound — store chain, 1 proof file(s), 1 artifact file(s) all match their recorded hashes; 2 note(s)"
+  }
+ ]
+}

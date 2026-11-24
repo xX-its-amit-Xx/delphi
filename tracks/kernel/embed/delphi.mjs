@@ -15,7 +15,11 @@
 //   delphi graph                    rewrite the project's private knowledge graph
 //   delphi best-practices           print the generated method document
 //
+//   delphi version                  the installed version, and the kernel's
+//
 //   --json on any read command; --project <dir> to work on a store that is not above the cwd.
+//   Lean files are checked in the nearest Lake project above them. To use another one, set
+//   DELPHI_LEAN_PROJECT, or pass `--lean-project <dir>` to init.
 //
 // One design decision worth stating: every command that mints a node rewrites the project's knowledge
 // graph before it exits. That is what "published immediately" means here — published into the project,
@@ -27,9 +31,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import Kernel, { Refused } from '../kernel.mjs';
+import Kernel, { Refused, KERNEL_VERSION } from '../kernel.mjs';
 import { publish as publishGraph } from './graph.mjs';
 import { doc as bestPracticeDoc, check as bestPracticeCheck } from './best-practices.mjs';
+import { leanCheck } from './lean-check.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const sha = (s) => crypto.createHash('sha256').update(s, 'utf8').digest('hex');
@@ -69,11 +74,19 @@ function findProject(from) {
   }
 }
 
+// Which Lake project a Lean file is checked in. A project named in the config or the environment
+// wins; otherwise the checker walks up from the file to the repository's own lakefile.
+function checkerFor(root, cfg) {
+  const named = process.env.DELPHI_LEAN_PROJECT ?? cfg.lean_project ?? null;
+  const project = named ? (path.isAbsolute(named) ? named : path.join(root, named)) : null;
+  return (abs) => leanCheck(abs, { project });
+}
+
 function open(flags) {
   const root = flags.project ? path.resolve(String(flags.project)) : findProject(process.cwd());
   if (!root) die('no .delphi/ in this directory or any above it. Run `delphi init` first, or pass --project <dir>.');
   const cfg = JSON.parse(fs.readFileSync(path.join(root, '.delphi', CONFIG), 'utf8'));
-  const K = new Kernel({ file: path.join(root, '.delphi', 'store', 'nodes.jsonl'), root });
+  const K = new Kernel({ file: path.join(root, '.delphi', 'store', 'nodes.jsonl'), root, leanCheck: checkerFor(root, cfg) });
   return { root, cfg, K, dir: path.join(root, '.delphi') };
 }
 
@@ -125,6 +138,9 @@ function cmdInit(flags) {
     // project's own namespace rather than claiming identifiers in anybody else's.
     namespace: String(flags.namespace ?? `https://example.org/${project.replace(/[^\w-]/g, '-').toLowerCase()}/delphi/`),
     title: flags.title ? String(flags.title) : null,
+    // Optional: a Lake project to check Lean files in, when the repository's own is not the one to
+    // use. Relative to the repository. Left out, the checker finds the nearest lakefile itself.
+    ...(flags['lean-project'] ? { lean_project: String(flags['lean-project']) } : {}),
   };
   for (const d of ['store', cfg.graph_dir, cfg.laws_dir]) fs.mkdirSync(path.join(dir, d), { recursive: true });
   fs.writeFileSync(path.join(dir, CONFIG), JSON.stringify(cfg, null, 1) + '\n');
@@ -132,7 +148,7 @@ function cmdInit(flags) {
   const store = path.join(dir, 'store', 'nodes.jsonl');
   if (!fs.existsSync(store)) fs.writeFileSync(store, '');
   fs.writeFileSync(path.join(dir, 'BEST_PRACTICES.md'), bestPracticeDoc({ project, cmd: 'delphi' }));
-  const K = new Kernel({ file: store, root });
+  const K = new Kernel({ file: store, root, leanCheck: checkerFor(root, cfg) });
   regraph(root, cfg, K, { quiet: true });
 
   console.log(`initialised  ${path.relative(process.cwd(), dir) || '.delphi'}`);
@@ -145,9 +161,10 @@ function cmdInit(flags) {
   console.log('Next: record the source of one number you already rely on.');
   console.log('  delphi evidence --kind doi --ref <doi> --quote "<the words it prints>" --where "<table or section>"');
   console.log('');
-  console.log('Lean files are checked by the checker that ships beside the kernel, which needs a Lean 4');
-  console.log('toolchain on this machine. Without one, `delphi law --lean` is refused as unchecked, never');
-  console.log('passed. A law given with --script instead says on its record that a script checked it.');
+  console.log('Lean files are checked in your own Lake project, found from the file, so they see your');
+  console.log('toolchain and your libraries. With no Lean on this machine, `delphi law --lean` is refused');
+  console.log('as unchecked, never passed. A law given with --script says on its record that a script');
+  console.log('checked it.');
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -220,6 +237,7 @@ function cmdLaw(flags, { root, cfg, K, dir }) {
     });
     console.log(`law      ${n.id}  ${n.name}`);
     if (n.lean_file) console.log(`         ${n.lean_file}  ${n.audit?.verdict}  axioms [${(n.audit?.axioms ?? []).join(', ')}]  ${n.audit?.audited ?? '?'} declaration(s) audited`);
+    if (n.lean_file && n.audit?.lean_project) console.log(`         checked ${{ own: "in this repository's own Lake project", named: 'in the Lake project named for this check', none: 'with plain `lean`, outside any Lake project' }[n.audit.lean_project]}${n.audit.toolchain ? `, ${n.audit.toolchain}` : ''}`);
     if (n.script && !n.lean_file) console.log(`         checked by a script, NOT by a proof assistant: ${n.script}`);
     regraph(root, cfg, K);
     return n;
@@ -442,6 +460,11 @@ async function main() {
     console.log(fs.readFileSync(path.join(HERE, 'delphi.mjs'), 'utf8').split('\n').slice(1).filter((l) => l.startsWith('//')).map((l) => l.replace(/^\/\/ ?/, '')).join('\n'));
     return;
   }
+  if (cmd === 'version' || flags.version) {
+    const pkg = path.join(HERE, '..', 'package.json');
+    console.log(`delphi ${fs.existsSync(pkg) ? JSON.parse(fs.readFileSync(pkg, 'utf8')).version : 'from source'}  (kernel ${KERNEL_VERSION})`);
+    return;
+  }
   if (cmd === 'init') return cmdInit(flags);
   if (cmd === 'best-practices') {
     if (flags.check) {
@@ -484,7 +507,7 @@ async function main() {
       return show(flags, hits.map((h) => ({ node: h, trace: trace(P.K, h.id) })), () => hits.forEach((h) => { console.log(trace(P.K, h.id).join('\n')); console.log(''); }));
     }
     default:
-      die(`unknown command "${cmd}". Try: init, evidence, fact, audit, law, verdict, build, verify, doctor, summary, log, trace, why, graph, best-practices, help`);
+      die(`unknown command "${cmd}". Try: init, evidence, fact, audit, law, verdict, build, verify, doctor, summary, log, trace, why, graph, best-practices, version, help`);
   }
 }
 

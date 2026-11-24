@@ -8,8 +8,10 @@
 // cannot drift from what the kernel decided. Machine paths are stripped — the published data names
 // repo-relative paths only.
 
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import Kernel, { ROOT } from './kernel.mjs';
 
 const PUB = path.join(ROOT, 'dashboard/public/blueprint3d/studio-live/tracks/kernel');
@@ -50,16 +52,35 @@ if (fs.existsSync(draftDir)) {
 // graph that run produced, and the method document generated from the kernel's own guards. The
 // cookbook links to cookbook/… relatively, so the folder is kept beside it.
 const EMBED = path.join(ROOT, 'tracks/kernel/embed');
-fs.mkdirSync(path.join(PUB, 'files', 'cookbook'), { recursive: true });
+const EXAMPLES = ['morpholib', 'nanoid', 'wolstenholme'];
+// earlier versions published one run at files/cookbook/; those paths are gone, not left to go stale
+for (const f of ['nodes.jsonl', 'graph.html', 'REPORT.md']) fs.rmSync(path.join(PUB, 'files', 'cookbook', f), { force: true });
 for (const [src, as] of [
   [path.join(EMBED, 'COOKBOOK.md'), 'COOKBOOK.md'],
-  [path.join(EMBED, 'cookbook/nodes.jsonl'), 'cookbook/nodes.jsonl'],
-  [path.join(EMBED, 'cookbook/graph.html'), 'cookbook/graph.html'],
-  [path.join(EMBED, 'cookbook/REPORT.md'), 'cookbook/REPORT.md'],
+  ...EXAMPLES.flatMap((n) => ['nodes.jsonl', 'graph.html', 'REPORT.md'].map((f) => [path.join(EMBED, 'cookbook', n, f), `cookbook/${n}/${f}`])),
 ]) {
   if (!fs.existsSync(src)) continue;
+  fs.mkdirSync(path.dirname(path.join(PUB, 'files', as)), { recursive: true });
   fs.copyFileSync(src, path.join(PUB, 'files', as));
   copied.push({ file: as, bytes: fs.statSync(src).size, from: rel(src) });
+}
+
+// The npm package, as a tarball a stranger can `npm install` by address. It must be the very bytes the
+// cookbook's runs used: publishing a different build beside a cookbook made by another one would be
+// the artifact outliving its justification, which is the thing this track exists to refuse.
+let pkgInfo = null;
+{
+  const pkgDir = path.join(ROOT, 'tracks/kernel');
+  for (const f of fs.readdirSync(path.join(PUB, 'files'))) if (/^delphisci-delphi-.*\.tgz$/.test(f)) fs.rmSync(path.join(PUB, 'files', f));
+  const p = spawnSync(`npm pack --pack-destination "${path.join(PUB, 'files')}" --json`, { cwd: pkgDir, encoding: 'utf8', shell: true });
+  if (p.status !== 0) { console.error(`REFUSED to publish: npm pack failed\n${p.stdout}${p.stderr}`); process.exit(1); }
+  const meta = JSON.parse(p.stdout)[0];
+  const tgz = path.join(PUB, 'files', meta.filename);
+  const sha256 = crypto.createHash('sha256').update(fs.readFileSync(tgz)).digest('hex');
+  const used = JSON.parse(fs.readFileSync(path.join(EMBED, 'cookbook', EXAMPLES[0], 'run.json'), 'utf8')).tool;
+  if (used.sha256 !== sha256) { fs.rmSync(tgz); console.error(`REFUSED to publish: the package now packs to ${sha256.slice(0, 16)}, but the cookbook was run with ${used.sha256.slice(0, 16)}. Re-run tracks/kernel/embed/cookbook.mjs --run all first.`); process.exit(1); }
+  pkgInfo = { file: meta.filename, name: meta.name, version: meta.version, sha256, files: meta.files.length };
+  copied.push({ file: meta.filename, bytes: fs.statSync(tgz).size, from: 'tracks/kernel/package.json' });
 }
 {
   const { doc } = await import('./embed/best-practices.mjs');
@@ -120,6 +141,7 @@ const data = {
   source_defects: reg.known_defects_in_the_sources,
   scope_limit: reg.scope_limit,
   files: copied.map((c) => ({ ...c, from: undefined })).map((c) => ({ file: c.file, bytes: c.bytes })),
+  package: pkgInfo,
   drafts,
   video,
 };
