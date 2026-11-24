@@ -76,12 +76,25 @@ run('kernel', 'circuit laws, Lean kernel + axiom audit', 'bash', ['tracks/lean/c
   { skipIf: !bash ? 'bash not found' : !lean ? 'no Lean toolchain at C:/Temp/elan' : null, expect: /ALL CHECKED/ });
 run('kernel', 'compile the AND circuit: verdicts and refusals as recorded', 'node', ['tracks/kernel/compile/expect.mjs'], { expect: /as recorded/ });
 run('kernel', 'kernel store: every id and chain link recomputed', 'node', ['tracks/kernel/cli.mjs', 'verify'], { expect: /every id matches its content/ });
+// the embeddable CLI, driven as a real command line in a real temporary project: 28 injected faults,
+// none may survive. The CLI is tested separately from the kernel because a guard inside kernel.mjs is
+// no use if the command line coerces a bad input into a good one on the way in — one of the faults is
+// exactly that, and it caught a real defect in the first draft.
+run('kernel', 'embeddable CLI: 28 injected faults must all be caught', 'node', ['tracks/kernel/embed/test-embed.mjs', '--fail-once'], { expect: /0 survived/ });
+// the generated best-practice document: every rule it states must still have a guard behind it, so
+// the doc cannot quietly become a description of a rule nobody enforces any more
+run('kernel', 'best-practice doc: every rule still has a guard behind it', 'node', ['tracks/kernel/embed/best-practices.mjs', '--check'], { expect: /still enforced by a guard/ });
 // the explainer video's script: every number it speaks must still resolve against the live run output,
 // so a changed verdict cannot leave a video quoting a figure the kernel no longer stands behind
 run('video', 'kernel explainer: every spoken number still resolves from the run', 'node', ['tracks/video/render.mjs', 'kernel', '--no-audio', '--dry'], { expect: /every token resolved/ });
 // the graph film: every node in the store must have a place and a time, and every figure in the
 // ledger must resolve from a repo file, so the film cannot outlive the records it is drawn from
 run('video', 'kernel graph film: every node placed and every figure traced to a file', 'python', ['tracks/video/kernel-graph.py', '--check'], { expect: /every figure traced to a file/ });
+// the cookbook was written by running it on a public repository; offline, its committed store must
+// still verify and every node id printed in the document must be in that store
+run('kernel', 'cookbook: the recorded run on a public repository is self-consistent', 'node', ['tracks/kernel/embed/cookbook.mjs', '--check'], { expect: /every id and chain link recomputed/ });
+// the toolset film replays that recorded run; every node must have a place and every figure a source
+run('video', 'toolset film: every node placed and every figure traced to a file', 'python', ['tracks/video/cli-graph.py', '--check'], { expect: /every figure traced to a file/ });
 
 // the case scripts, re-executed in a scratch copy: every committed number must come back
 run('suite', 'case scripts re-run: numbers identical to the committed results', 'node', ['tracks/suite/rerun-cases.mjs'], { skipIf: py ? null : 'python not found', expect: /0 differ or error/ });

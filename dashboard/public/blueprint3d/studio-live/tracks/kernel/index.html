@@ -37,7 +37,7 @@
   <h1>The DELPHI kernel</h1>
   <p class="dim">A design is only as good as the records under it. This page shows a small trusted core that will not hand over a file unless every number in it traces back to a paper that printed it, and every law it was checked against has been accepted by the Lean proof kernel. When something is missing, it says so and names what would fix it, instead of filling the gap with a plausible guess.</p>
   <p class="small">An independent research project. Everything here is a <b>design</b>: nothing has been built, cloned, sequenced, or run on a robot.</p>
-  <div class="nav"><a href="../">Six tracks dashboard</a><a href="../alphaxiv/">Paper checks</a><a href="#watch">Watch (2 min)</a><a href="#graph">The graph film (60 s)</a><a href="#how">How it works</a><a href="#run">What the run said</a><a href="#refusals">What it refused</a><a href="#laws">The laws</a><a href="#audit">Auditing a "0 sorry" claim</a><a href="#files">Download</a></div>
+  <div class="nav"><a href="../">Six tracks dashboard</a><a href="../alphaxiv/">Paper checks</a><a href="#watch">Watch (2 min)</a><a href="#graph">The graph film (60 s)</a><a href="#cli">Use it in your project</a><a href="#how">How it works</a><a href="#run">What the run said</a><a href="#refusals">What it refused</a><a href="#laws">The laws</a><a href="#audit">Auditing a "0 sorry" claim</a><a href="#files">Download</a></div>
 </header>
 
 <div class="ways">
@@ -63,6 +63,32 @@
   Your browser cannot play this video. <a href="kernel-graph.mp4">Download it</a> (MP4, silent).
 </video>
 <p class="small">Silent by design: no narration and no soundtrack, so nothing is asserted that the picture does not show. Every figure in the right-hand column is read from a repo file by <code>tracks/video/kernel-graph.py</code> &mdash; the store, the run's own output, the parts registry and the Lean file &mdash; and <code>--check</code> fails the build if any of them stops resolving. The faults figure is measured by running the kernel's own guard test at render time, not remembered.</p>
+
+<h2 id="cli">Use it in your own project <small>a command-line toolset, a cookbook and a film</small></h2>
+<p class="dim">The kernel now comes as a command, <code>delphi</code>, that you run inside a repository that already exists. One command adds a small folder holding the project's record. After that there is one command for each thing the method asks of you: write down a source and the words you read in it, write down the number, record a checked statement, apply it, and ask for the result &mdash; which you get only if everything under it held.</p>
+<video id="clifilm" controls preload="none" poster="cli-graph-poster.png" playsinline style="width:100%;max-width:860px;border-radius:12px;border:1px solid var(--line, #22384b);background:#f6f3ec">
+  <source src="cli-graph.mp4" type="video/mp4">
+  Your browser cannot play this video. <a href="cli-graph.mp4">Download it</a> (MP4, silent).
+</video>
+<p class="small">The film replays a real session: 26 commands run on a public repository, <a href="https://github.com/fractastical/morpholib">fractastical/morpholib</a>, at one named commit. Three of its Lean files each say they contain no <code>sorry</code>. The run found that this is true of all 115 theorems, and that none of the three files could have shown it as published, because none asks Lean to print the axioms its theorems rest on. Nothing was pushed to that repository. Silent by design; <code>tracks/video/cli-graph.py --check</code> fails if a figure stops resolving.</p>
+<details><summary>What do the commands look like?</summary>
+<pre style="overflow:auto;font-size:12.5px;line-height:1.5">delphi init                       add a .delphi/ folder to this repository; nothing else changes
+delphi evidence --kind doi --ref … --quote "…" --where "…"
+delphi fact --quantity … --value … --unit … --condition k=v --evidence &lt;id&gt;
+delphi audit File.lean            copy a Lean file with one axiom-audit line per theorem added
+delphi law --name … --informal "…" --lean File.Audited.lean
+delphi verdict --law &lt;id&gt; --fact &lt;id&gt; --requires … --expr "…"
+delphi build --artifact "…" --verdict &lt;id&gt; --file out/thing
+delphi verify   delphi doctor     the two to put in CI
+delphi why &lt;name&gt;                 walk a result, or a refusal, back to the words it rests on</pre>
+</details>
+<details><summary>What is the "private knowledge graph"?</summary>
+<p class="dim">Every command that records something rewrites a small page and two data files inside the project, so the project always has a current, linkable picture of what it has checked and on what grounds. "Published" here means published into the project's own folder. The tool opens no network connection and contacts no registry; sending anything to an outside registry stays a person's decision. <a href="files/cookbook/graph.html">Open the graph the recorded run produced</a>.</p>
+</details>
+<details><summary>How do I know the tool itself is sound?</summary>
+<p class="dim">It is tested the way the rest of this work is: a correct sequence must go through untouched, and then one deliberate mistake is injected at a time &mdash; a missing quote, a number typed as a phrase, a proof file with no audit, an output edited after it was recorded &mdash; and every one must be caught. 28 are injected and none survives. The method document is generated from the kernel's own checks, and its build fails if it states a rule nothing enforces.</p>
+</details>
+<p><a href="files/COOKBOOK.md">The cookbook</a> (every command and its real output) &middot; <a href="files/BEST_PRACTICES.md">The method document</a> &middot; <a href="files/cookbook/REPORT.md">The audit report the run produced</a> &middot; <a href="files/cookbook/nodes.jsonl">The store it made</a></p>
 
 <h2 id="how">How it works <small>five steps, and what each one turns away</small></h2>
 <div class="flow"><span>evidence</span><i>&rarr;</i><span>fact</span><i>&rarr;</i><span>verdict</span><i>&rarr;</i><span>build</span><i>&rarr;</i><span>files</span><i style="margin-left:10px">and a law only exists once the Lean kernel has accepted it</i></div>

@@ -121,6 +121,26 @@ chapters, one per kernel primitive. Inputs: `store/nodes.jsonl`, `compile/out/la
 figure. `--check` is a reproduce row and fails if a figure stops resolving or a node has no place.
 Nodes this run named are full strength; earlier runs' are set back, because the store keeps every run.
 
+### The embeddable toolset: `delphi` CLI, cookbook, film (2026-11-24)
+Ask (text thread, 24 Nov): a command-line toolset to embed the method in an existing project, with a
+best-practice doc, a command per step, a private knowledge graph, a cookbook on a real public repo.
+- `tracks/kernel/embed/delphi.mjs`: init, evidence, fact, audit, law, verdict, build, verify, doctor,
+  summary, log, trace, why, graph, best-practices. Store in `<project>/.delphi/`. Kernel is 0.2.0
+  (takes a `root`, so paths in nodes are relative to the embedding project).
+- Graph (`embed/graph.mjs`) is rewritten after every mint, into the project only. No network, no
+  registry: "published" means into the project's own folder.
+- `embed/best-practices.mjs`: 12 rules, each matched literally against its guard in kernel.mjs
+  (`--check` fails if a guard goes), 5 habits marked unenforced.
+- `embed/test-embed.mjs`: real CLI in a temp project, 52 checks, 28 faults, 0 survive.
+- `embed/cookbook.mjs --repo <checkout>` ran 26 commands on fractastical/morpholib @ befd35cd and
+  wrote COOKBOOK.md from the output; `--check` is offline. Finding: 115 declarations in 3 Lean files
+  all CHECKED; 0 audit lines as published, so 3 refusals. Same finding as our PR #332 there, still
+  unmerged at that commit. Checkout: `C:/Temp/delphi-cookbook/morpholib` (13 MB sparse; has .delphi/).
+- Film: `python tracks/video/cli-graph.py [--check|--preview|--fast]` replays the recorded cookbook
+  run, 68 s silent, `C:/Temp/delphi-video/kernel/cli-graph.mp4`. Page section `#cli`.
+- 4 new reproduce rows. Not done: npm packaging; an orx-run adapter; lesson learned the hard way —
+  never patch JS regexes through a Python heredoc (`\b` became a backspace byte twice).
+
 ### Open (kernel)
 - Registry exposure (AGENTS-RULE) for the circuit laws belongs to the lean thread; ours are proposals.
 - Promoter/repressor sequences are open slots: parts.igem.org 403s automated requests and the SynBioHub
@@ -132,3 +152,6 @@ Nodes this run named are full strength; earlier runs' are set back, because the 
 - A third-party repo listing surfaced held-out-clade species names into this session's tool-result cache
   (.claude-antigravity/projects/.../tool-results/bn4i1fwfp.txt). No repo file touched; all leak gates
   clean. Flagged for the holdout thread (93) to rule on; not deleted by us.
+
+## FRO deck review (2026-11-23, deck/fro-review/)
+- Local only, nothing pushed: `deck/fro-review/site/deck/fro-v2/index.html` (18 slides) built by `deck/fro-review/build-v2.py` from the live v1 page; annotations in `deck/fro-review/JOEL-ANNOTATIONS.md`. delphibio.org is served by GitHub Pages from a repo not found here; deploy path pending Amit.

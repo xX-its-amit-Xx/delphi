@@ -29,7 +29,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-export const KERNEL_VERSION = '0.1.0';
+export const KERNEL_VERSION = '0.2.0';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT = path.resolve(HERE, '..', '..');
 const DEFAULT_STORE = path.join(HERE, 'store', 'nodes.jsonl');
@@ -69,8 +69,12 @@ export class Refused extends Error {
 // the store
 
 export class Kernel {
-  constructor({ file = DEFAULT_STORE, leanCheck = realLeanCheck } = {}) {
+  constructor({ file = DEFAULT_STORE, leanCheck = realLeanCheck, root = ROOT } = {}) {
     this.file = file;
+    // The directory relative paths are read against. It is this repo by default; a project that
+    // embeds the kernel (tracks/kernel/delphi.mjs init) passes its own, so paths in its nodes are
+    // relative to that project and mean the same thing on every machine that checks it out.
+    this.root = root;
     // Memoised by the bytes checked, not by the file's name or the law's: identical bytes give the
     // Lean kernel nothing new to decide, and several laws proved in one file would otherwise start the
     // whole toolchain once each. The memo lives for this process only, so a changed file is rechecked.
@@ -164,7 +168,7 @@ export class Kernel {
 
     let audit = null, lean_sha = null;
     if (lean_file) {
-      const abs = path.isAbsolute(lean_file) ? lean_file : path.join(ROOT, lean_file);
+      const abs = path.isAbsolute(lean_file) ? lean_file : path.join(this.root, lean_file);
       if (!fs.existsSync(abs)) why.push(`Lean file not found: ${lean_file}`);
       else {
         const src = fs.readFileSync(abs, 'utf8');
@@ -266,8 +270,8 @@ export class Kernel {
     // emit() writes the files and returns [{path, bytes}]; the kernel records their hashes so the
     // artifact on disk can be tied to this justification later.
     const written = (emit ? emit() : []).map((f) => {
-      const abs = path.isAbsolute(f.path) ? f.path : path.join(ROOT, f.path);
-      return { path: path.relative(ROOT, abs).split(path.sep).join('/'), sha256: sha(fs.readFileSync(abs, 'utf8')).slice(0, 16), bytes: fs.statSync(abs).size };
+      const abs = path.isAbsolute(f.path) ? f.path : path.join(this.root, f.path);
+      return { path: path.relative(this.root, abs).split(path.sep).join('/'), sha256: sha(fs.readFileSync(abs, 'utf8')).slice(0, 16), bytes: fs.statSync(abs).size };
     });
     return this.append({ type: 'build', artifact, verdicts, facts, emitted: written, note });
   }
